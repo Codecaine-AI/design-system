@@ -15,7 +15,7 @@ const app = {
   commands: { cwd: "app" },
   run: { mode: "browser", cwd: "app", start: "bun serve.ts", readyPattern: "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)" },
   runProfile: {
-    env: { NO_COLOR: "1", FIXTURE_PORT: "{port:ui}", FIXTURE_HELPER_PORT: "{port:helper}", FIXTURE_STRAY_PORT: "46997" },
+    env: { NO_COLOR: "1", FIXTURE_PORT: "{port:ui}", FIXTURE_HELPER_PORT: "{port:helper}", FIXTURE_STRAY_PORT: "46937" },
     unsetEnv: [],
     tempHome: true,
     fixtures: [],

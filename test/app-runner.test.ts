@@ -2,7 +2,7 @@
  * The app runner's contract with snapshot and verify:apps: a run sees only a sanitized environment,
  * binds only safe ports, is reachable at the URL its server printed, and stop() leaves nothing running.
  *
- * Runs use test/fixtures/runner/serve.ts (a stand-in server, not an app) on ports 46900-46999.
+ * Runs use test/fixtures/runner/serve.ts (a stand-in server, not an app) on ports 46900-46939.
  */
 import { afterAll, afterEach, describe, expect, test } from "bun:test";
 import { connect } from "node:net";
@@ -60,8 +60,8 @@ function fixtureApp(ports: Record<string, number>, overrides: Partial<AppEntry> 
         NO_COLOR: "1",
         FIXTURE_PORT: "{port:ui}",
         FIXTURE_HELPER_PORT: "{port:helper}",
-        FIXTURE_STRAY_PORT: "46999",
-        FIXTURE_DEAD_PORT: "46998",
+        FIXTURE_STRAY_PORT: "46939",
+        FIXTURE_DEAD_PORT: "46938",
       },
       unsetEnv: [],
       tempHome: true,
@@ -213,9 +213,9 @@ describe("startApp", () => {
 
   test("refuses a ready URL that is not on one of its profile ports, before contacting it", async () => {
     let hits = 0;
-    const other = Bun.serve({ hostname: "127.0.0.1", port: 46999, fetch: () => (hits++, new Response("not the app")) });
+    const other = Bun.serve({ hostname: "127.0.0.1", port: 46939, fetch: () => (hits++, new Response("not the app")) });
     try {
-      const app = fixtureApp({ ui: 46913, helper: 46914 }, {}, { start: "echo 'Local: http://127.0.0.1:46999/'; sleep 30" });
+      const app = fixtureApp({ ui: 46913, helper: 46914 }, {}, { start: "echo 'Local: http://127.0.0.1:46939/'; sleep 30" });
       await expect(startApp(app, { root: makeRoot(), outDir, timeoutMs: 10_000 })).rejects.toThrow(/not on one of its profile ports/);
       expect(hits).toBe(0);
     } finally {
@@ -295,15 +295,15 @@ describe("guardedContext", () => {
   test.skipIf(Boolean(noPlaywright))(
     "aborts and records requests to local ports the run did not start and to non-loopback hosts",
     async () => {
-      // 46999 is a live server this test started, not the run: only the guard keeps the page off it.
-      // 46998 is a named profile port nothing binds (like a dead kernel URL): blocked, but expected.
+      // 46939 is a live server this test started, not the run: only the guard keeps the page off it.
+      // 46938 is a named profile port nothing binds (like a dead kernel URL): blocked, but expected.
       let strayHits = 0;
       const stray = Bun.serve({
         hostname: "127.0.0.1",
-        port: 46999,
+        port: 46939,
         fetch: () => (strayHits++, new Response("stray", { headers: { "access-control-allow-origin": "*" } })),
       });
-      const running = await start(fixtureApp({ ui: 46916, helper: 46917, deadKernel: 46998 }), makeRoot());
+      const running = await start(fixtureApp({ ui: 46916, helper: 46917, deadKernel: 46938 }), makeRoot());
       const { chromium } = loadPlaywright(process.env.DS_MIRROR ?? "/Users/Ford/workspace-ds");
       const browser = await chromium.launch({ headless: true });
       try {
@@ -314,8 +314,8 @@ describe("guardedContext", () => {
         expect(results).toEqual({ own: "ok", helper: "ok", stray: "failed", dead: "failed", external: "failed" });
         expect(strayHits).toBe(0);
         expect(splitBlocked(running, blocked())).toEqual({
-          unexpected: ["GET http://127.0.0.1:46999/", "GET http://example.invalid/"],
-          expected: ["GET http://127.0.0.1:46998/"],
+          unexpected: ["GET http://127.0.0.1:46939/", "GET http://example.invalid/"],
+          expected: ["GET http://127.0.0.1:46938/"],
         });
       } finally {
         await browser.close();
@@ -383,7 +383,7 @@ describe("startApp electron", () => {
         `const { app, BrowserWindow } = require("electron");
 app.whenReady().then(() => {
   const win = new BrowserWindow({ width: 320, height: 240, show: false });
-  win.loadURL("data:text/html,<title>stand-in</title><script>fetch('http://127.0.0.1:46997/first-load').catch(() => {})</script>");
+  win.loadURL("data:text/html,<title>stand-in</title><script>fetch('http://127.0.0.1:46937/first-load').catch(() => {})</script>");
 });
 app.on("window-all-closed", () => app.quit());`,
       );
@@ -397,7 +397,7 @@ app.on("window-all-closed", () => app.quit());`,
       await window.waitForLoadState("load");
       await window.waitForTimeout(300);
       expect(await window.title()).toBe("stand-in");
-      expect(running.blocked!()).toEqual(["GET http://127.0.0.1:46997/first-load"]);
+      expect(running.blocked!()).toEqual(["GET http://127.0.0.1:46937/first-load"]);
       const pid = running.electron!.app.process().pid;
       await running.stop();
       expect(() => process.kill(pid, 0)).toThrow();
