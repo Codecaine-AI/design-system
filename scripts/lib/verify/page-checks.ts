@@ -6,7 +6,7 @@
  */
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import type { AppEntry, PassId, VerifySpec } from "../registry";
+import type { AppEntry, PassId, RouteSpec, VerifySpec } from "../registry";
 import { type BuildValues, buildValue, sameComputedValue, type Theme, tokenCssVar } from "./tokens";
 
 export type Status = "pass" | "fail" | "n/a";
@@ -45,6 +45,29 @@ export async function settle(page: any): Promise<void> {
     })
     .catch(() => undefined);
   await sleep(150);
+}
+
+/** A navigation/view-only step from the registry (never submit, save or send). */
+export async function runStep(page: any, step: NonNullable<RouteSpec["steps"]>[number]): Promise<void> {
+  switch (step.action) {
+    case "click":
+      await page.locator(step.target!).first().click({ timeout: 15_000 });
+      break;
+    case "press":
+      await page.keyboard.press(String(step.value ?? step.target));
+      break;
+    case "hover":
+      await page.locator(step.target!).first().hover({ timeout: 15_000 });
+      break;
+    case "scroll":
+      await page.locator(step.target!).first().evaluate((element: HTMLElement, top: number) => {
+        element.scrollTop = top;
+      }, Number(step.value ?? 0));
+      break;
+    case "wait":
+      await sleep(Number(step.value ?? 0));
+      break;
+  }
 }
 
 // -- token probes ---------------------------------------------------------------
@@ -144,6 +167,9 @@ export async function switchToDark(page: any, darkSwitch: VerifySpec["darkSwitch
       await page.goto(url.href, { waitUntil: "load", timeout: 60_000 });
       return true;
     }
+    case "steps":
+      for (const step of darkSwitch.steps) await runStep(page, step);
+      return false;
   }
 }
 

@@ -89,6 +89,7 @@ interface AppResult {
   ok: boolean;
   assertions: Assertion[];
   blockedRequests: string[];
+  expectedBlocked: string[];
   servedFiles?: RuntimeReport["servedFiles"];
   baseUrl?: string;
   ports?: Record<string, number>;
@@ -120,6 +121,7 @@ function newResult(app: AppEntry, args: Args, root: string, meta: AppResult["des
     ok: false,
     assertions: [],
     blockedRequests: [],
+    expectedBlocked: [],
     consoleErrors: [],
   };
 }
@@ -128,6 +130,7 @@ function absorb(result: AppResult, report: RuntimeReport) {
   result.runtimeVerified = !report.assertions.some((a) => a.id === "start");
   result.assertions.push(...report.assertions);
   result.blockedRequests = report.blockedRequests;
+  result.expectedBlocked = report.expectedBlocked;
   result.servedFiles = report.servedFiles;
   result.baseUrl = report.baseUrl;
   result.ports = report.ports;

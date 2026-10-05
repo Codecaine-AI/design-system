@@ -16,6 +16,7 @@
   <body>
     <div class="ds-shell" data-sidebar="expanded">
       <button class="ds-sidebar-toggle" type="button">Toggle sidebar</button>
+      <button class="theme-toggle" type="button" onclick="document.documentElement.dataset.theme = 'dark'">Dark mode</button>
       <div class="panel">Panel <code>mono</code></div>
     </div>
     <script>
@@ -26,7 +27,7 @@
         shell.dataset.sidebar = next;
         localStorage.setItem("fixture.sidebar", next);
       });
-      if (location.search.includes("stray")) fetch(`http://127.0.0.1:${new URLSearchParams(location.search).get("stray")}/`).catch(() => {});
+      for (const port of new URLSearchParams(location.search).getAll("fetch")) fetch(`http://127.0.0.1:${port}/`).catch(() => {});
     </script>
   </body>
 </html>

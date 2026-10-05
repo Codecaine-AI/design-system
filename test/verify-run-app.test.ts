@@ -14,10 +14,12 @@ import { type AppEntry, DESIGN_SYSTEM_ROOT } from "../scripts/lib/registry.ts";
 import { type Assertion, checkPage } from "../scripts/lib/verify/page-checks.ts";
 import { inRunningApp } from "../scripts/lib/verify/run-app.ts";
 import { loadBuildValues } from "../scripts/lib/verify/tokens.ts";
-import { browserSkip, FIXTURES, FONT_DIR, FONT_FILES, fixtureApp, MIRROR } from "./verify-support.ts";
+import { browserSkip, FIXTURE_VERIFY, FIXTURES, FONT_DIR, FONT_FILES, fixtureApp, MIRROR } from "./verify-support.ts";
 
 const UI_PORT = 46963;
 const STRAY_PORT = 46969;
+/** A named profile port the run never binds (like a dead service URL the profile points at). */
+const DEAD_PORT = 46968;
 const values = loadBuildValues(DESIGN_SYSTEM_ROOT);
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-verify-run-")));
 afterAll(() => rmSync(scratch, { recursive: true, force: true }));
@@ -36,6 +38,8 @@ function makeRoot(): string {
 
 function runnableApp(path = "/"): AppEntry {
   return fixtureApp({
+    // The fixture's own dark-mode button, reached through registry steps.
+    verify: { ...FIXTURE_VERIFY, darkSwitch: { kind: "steps", steps: [{ action: "click", target: ".theme-toggle" }] } },
     root: "app",
     commands: { cwd: "app" },
     routes: [{ id: "home", path }],
@@ -46,7 +50,7 @@ function runnableApp(path = "/"): AppEntry {
       tempHome: true,
       fixtures: [],
       flags: [],
-      ports: { ui: UI_PORT },
+      ports: { ui: UI_PORT, deadService: DEAD_PORT },
       proof: { status: "proven", method: "test fixture" },
     },
   });
@@ -76,7 +80,7 @@ describe.skipIf(Boolean(browserSkip))("inRunningApp", () => {
     expect(report.blockedRequests).toEqual([]);
   }, 60_000);
 
-  test("a stylesheet served from outside the root and a request to a port the run did not start fail", async () => {
+  test("a stylesheet served from outside the root and a request to a port the run did not start fail; a request to an unbound named port is expected-blocked", async () => {
     const root = makeRoot();
     const elsewhere = mkdtempSync(join(scratch, "elsewhere-"));
     const tokens = join(root, "app/tokens.css");
@@ -84,11 +88,12 @@ describe.skipIf(Boolean(browserSkip))("inRunningApp", () => {
     rmSync(tokens);
     symlinkSync(join(elsewhere, "tokens.css"), tokens);
 
-    const report = await verify(runnableApp(`/?stray=${STRAY_PORT}`), root);
+    const report = await verify(runnableApp(`/?fetch=${STRAY_PORT}&fetch=${DEAD_PORT}`), root);
     const found = byId(report.assertions);
     expect(found["served-from-root"]).toMatchObject({ status: "fail", message: expect.stringContaining(join(elsewhere, "tokens.css")) });
-    expect(found.requests).toMatchObject({ status: "fail", message: expect.stringContaining(`127.0.0.1:${STRAY_PORT}`) });
+    expect(found.requests).toMatchObject({ status: "fail", message: expect.stringMatching(new RegExp(`127\\.0\\.0\\.1:${STRAY_PORT}.*expected-blocked`)) });
     // The page fetches on every load (the sidebar check reloads it), so the same request is blocked more than once.
     expect([...new Set(report.blockedRequests)]).toEqual([`GET http://127.0.0.1:${STRAY_PORT}/`]);
+    expect([...new Set(report.expectedBlocked)]).toEqual([`GET http://127.0.0.1:${DEAD_PORT}/`]);
   }, 60_000);
 });
