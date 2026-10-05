@@ -7,11 +7,23 @@
 import { afterAll, afterEach, describe, expect, test } from "bun:test";
 import { connect } from "node:net";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
-import { guardedContext, profileEnv, readyUrl, servedFromRoot, splitBlocked, startApp, type RunningApp } from "../scripts/lib/app-runner.ts";
-import { loadPlaywright, playwrightUnavailable } from "../scripts/lib/playwright.ts";
+import {
+  guardedContext,
+  guardVerdict,
+  killRun,
+  profileEnv,
+  readyUrl,
+  rootProc,
+  servedFromRoot,
+  splitBlocked,
+  startApp,
+  type RunningApp,
+} from "../scripts/lib/app-runner.ts";
+import { loadPlaywright, playwrightAnchor, playwrightUnavailable } from "../scripts/lib/playwright.ts";
 import type { AppEntry } from "../scripts/lib/registry.ts";
 
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-runner-test-")));
@@ -48,7 +60,8 @@ function fixtureApp(ports: Record<string, number>, overrides: Partial<AppEntry> 
         NO_COLOR: "1",
         FIXTURE_PORT: "{port:ui}",
         FIXTURE_HELPER_PORT: "{port:helper}",
-        FIXTURE_STRAY_PORT: "46998",
+        FIXTURE_STRAY_PORT: "46999",
+        FIXTURE_DEAD_PORT: "46998",
       },
       unsetEnv: [],
       tempHome: true,
@@ -128,6 +141,48 @@ describe("readyUrl", () => {
   });
 });
 
+describe("guardVerdict", () => {
+  const allowed = new Set([47010, 4820]);
+  test.each([
+    ["the run's own port", "http://127.0.0.1:47010/src/main.tsx", "ok"],
+    ["an owner port, even when allowed", "http://127.0.0.1:4820/api", "owner-port"],
+    ["an owner port over websocket", "ws://localhost:4840/", "owner-port"],
+    ["a local port the run did not start", "http://127.0.0.1:47099/", "local-port"],
+    ["a public host that starts with 127.", "http://127.0.0.1.nip.io:47010/", "external"],
+    ["a public host", "https://fonts.googleapis.com/css", "external"],
+    ["a data URL", "data:text/plain,hi", "ok"],
+  ] as Array<[string, string, ReturnType<typeof guardVerdict>]>)("%s", (_, url, verdict) => {
+    expect(guardVerdict(new URL(url), allowed)).toBe(verdict);
+  });
+});
+
+describe("killRun", () => {
+  test("stops a run process that shares the tool's process group without signalling that group", async () => {
+    // Children spawned without detached: they share this test process's group. Signalling the group
+    // would also kill the sibling and this test runner.
+    const target = Bun.spawn(["sleep", "30"]);
+    const sibling = Bun.spawn(["sleep", "30"]);
+    try {
+      await killRun([rootProc(target.pid)], 2_000);
+      expect(await target.exited).not.toBe(0);
+      expect(sibling.exitCode).toBeNull();
+    } finally {
+      sibling.kill();
+      target.kill();
+    }
+  });
+
+  test("leaves a process alone whose pid was reused (its start time changed)", async () => {
+    const other = Bun.spawn(["sleep", "30"]);
+    try {
+      await killRun([{ pid: other.pid, started: "Thu Jan  1 00:00:00 1970" }], 1_000);
+      expect(other.exitCode).toBeNull();
+    } finally {
+      other.kill();
+    }
+  });
+});
+
 describe("startApp", () => {
   test("serves from the printed URL, runs with the sanitized env, and stop() frees every port the run bound", async () => {
     process.env.GITHUB_TOKEN = "ghp_planted";
@@ -156,13 +211,27 @@ describe("startApp", () => {
     await expect(startApp(app, { root: makeRoot(), outDir, timeoutMs: 10_000 })).rejects.toThrow(/exited \(code 3\).*see .*\.log/);
   });
 
+  test("refuses a ready URL that is not on one of its profile ports, before contacting it", async () => {
+    let hits = 0;
+    const other = Bun.serve({ hostname: "127.0.0.1", port: 46999, fetch: () => (hits++, new Response("not the app")) });
+    try {
+      const app = fixtureApp({ ui: 46913, helper: 46914 }, {}, { start: "echo 'Local: http://127.0.0.1:46999/'; sleep 30" });
+      await expect(startApp(app, { root: makeRoot(), outDir, timeoutMs: 10_000 })).rejects.toThrow(/not on one of its profile ports/);
+      expect(hits).toBe(0);
+    } finally {
+      other.stop(true);
+    }
+  });
+
   test.each([
     ["an owner port", fixtureApp({ ui: 3998, helper: 46914 }), /owner port/],
+    ["an owner port in allowedLocalPorts", fixtureApp({ ui: 46913, helper: 46914 }, {}), /allowedLocalPorts lists owner port 4820/],
     ["a port outside the run range", fixtureApp({ ui: 5000, helper: 46914 }), /outside 46900-47999/],
     ["an unproven profile", fixtureApp({ ui: 46913, helper: 46914 }, {}), /unproven/],
     ["run mode none", fixtureApp({ ui: 46913, helper: 46914 }, {}, { mode: "none", reason: "library only" }), /run mode none \(library only\)/],
   ])("refuses %s before it spawns anything", async (name, app, message) => {
     if (name === "an unproven profile") app.runProfile.proof = { status: "unproven", method: "" };
+    if (name === "an owner port in allowedLocalPorts") app.runProfile.allowedLocalPorts = [4820];
     const root = makeRoot();
     app.run.start = `touch ${join(root, "spawned")} && bun serve.ts`;
     await expect(startApp(app, { root, outDir })).rejects.toThrow(message);
@@ -180,14 +249,14 @@ describe("startApp", () => {
     expect(await (await fetch(`${running.baseUrl}/app.js`)).text()).toBe("js");
     expect(await (await fetch(`${running.baseUrl}/gallery/item`)).text()).toBe("<h1>home</h1>");
     expect((await fetch(`${running.baseUrl}/missing.js`)).status).toBe(404);
-    expect(servedFromRoot(running, running.servedFiles!())).toEqual({ ok: true, outside: [] });
+    expect(servedFromRoot(running, running.servedFiles!())).toEqual({ ok: true, outside: [], unresolved: [] });
     await running.stop();
     expect(await portOpen(46915)).toBe(false);
   });
 });
 
 describe("servedFromRoot", () => {
-  test("reports served files that resolve outside the root, following symlinks", () => {
+  test("reports served files outside the root (following symlinks) and paths it cannot map", () => {
     const root = makeRoot();
     const elsewhere = mkdtempSync(join(scratch, "elsewhere-"));
     writeFileSync(join(elsewhere, "tokens.css"), ":root{}");
@@ -195,24 +264,27 @@ describe("servedFromRoot", () => {
     writeFileSync(join(root, "app/src/main.tsx"), "");
     mkdirSync(join(root, "app/node_modules"), { recursive: true });
     symlinkSync(elsewhere, join(root, "app/node_modules/linked"));
-    const running = { app: fixtureApp({ ui: 46911 }), root, serveRoot: join(root, "app") } as RunningApp;
+    // Served under a base path, like Vite with `base: "/studio/"`.
+    const running = { app: fixtureApp({ ui: 46911 }), root, serveRoot: join(root, "app"), baseUrl: "http://127.0.0.1:46911/studio" } as RunningApp;
 
     const result = servedFromRoot(running, [
-      "http://127.0.0.1:46911/src/main.tsx?t=1",
+      "http://127.0.0.1:46911/studio/src/main.tsx?t=1",
       "/src/main.tsx",
       join(root, "app/src/main.tsx"),
       "/@vite/client",
       `/@fs${elsewhere}/tokens.css`,
-      "http://127.0.0.1:46911/node_modules/linked/tokens.css",
+      "http://127.0.0.1:46911/studio/node_modules/linked/tokens.css",
       join(elsewhere, "tokens.css"),
+      "http://127.0.0.1:46911/studio/src/gone.tsx",
     ]);
     const outsideFile = join(elsewhere, "tokens.css");
     expect(result.ok).toBe(false);
     expect(result.outside).toEqual([
       `/@fs${outsideFile} -> ${outsideFile}`,
-      `http://127.0.0.1:46911/node_modules/linked/tokens.css -> ${outsideFile}`,
+      `http://127.0.0.1:46911/studio/node_modules/linked/tokens.css -> ${outsideFile}`,
       outsideFile,
     ]);
+    expect(result.unresolved).toEqual([`http://127.0.0.1:46911/studio/src/gone.tsx -> ${join(root, "app/src/gone.tsx")}`]);
   });
 });
 
@@ -223,7 +295,14 @@ describe("guardedContext", () => {
   test.skipIf(Boolean(noPlaywright))(
     "aborts and records requests to local ports the run did not start and to non-loopback hosts",
     async () => {
+      // 46999 is a live server this test started, not the run: only the guard keeps the page off it.
       // 46998 is a named profile port nothing binds (like a dead kernel URL): blocked, but expected.
+      let strayHits = 0;
+      const stray = Bun.serve({
+        hostname: "127.0.0.1",
+        port: 46999,
+        fetch: () => (strayHits++, new Response("stray", { headers: { "access-control-allow-origin": "*" } })),
+      });
       const running = await start(fixtureApp({ ui: 46916, helper: 46917, deadKernel: 46998 }), makeRoot());
       const { chromium } = loadPlaywright(process.env.DS_MIRROR ?? "/Users/Ford/workspace-ds");
       const browser = await chromium.launch({ headless: true });
@@ -232,13 +311,15 @@ describe("guardedContext", () => {
         const page = await context.newPage();
         await page.goto(`${running.baseUrl}/`);
         const results = await page.evaluate(() => (globalThis as any).results);
-        expect(results).toEqual({ own: "ok", helper: "ok", stray: "failed", external: "failed" });
+        expect(results).toEqual({ own: "ok", helper: "ok", stray: "failed", dead: "failed", external: "failed" });
+        expect(strayHits).toBe(0);
         expect(splitBlocked(running, blocked())).toEqual({
-          unexpected: ["GET http://example.invalid/"],
+          unexpected: ["GET http://127.0.0.1:46999/", "GET http://example.invalid/"],
           expected: ["GET http://127.0.0.1:46998/"],
         });
       } finally {
         await browser.close();
+        stray.stop(true);
       }
     },
     30_000,
@@ -273,5 +354,55 @@ describe("installSignalHandlers", () => {
       expect(existsSync(tmp!)).toBe(false);
     },
     40_000,
+  );
+});
+
+const mirror = process.env.DS_MIRROR ?? "/Users/Ford/workspace-ds";
+const electronDir = (() => {
+  try {
+    return dirname(createRequire(join(process.env.DS_MIRROR ?? "/Users/Ford/workspace-ds", "system-view/package.json")).resolve("electron/package.json"));
+  } catch {
+    return null;
+  }
+})();
+if (!electronDir) console.warn("skipping the electron test: electron does not resolve from the mirror's system-view");
+
+describe("startApp electron", () => {
+  test.skipIf(Boolean(noPlaywright) || !electronDir)(
+    "guards the first window's first load, and stop() ends the app and keeps Playwright's signal handlers out",
+    async () => {
+      const root = makeRoot();
+      mkdirSync(join(root, "app/node_modules"), { recursive: true });
+      symlinkSync(electronDir!, join(root, "app/node_modules/electron"));
+      // The runner loads Playwright from <root>/codecaine/core/...; link the mirror's copy into this root.
+      mkdirSync(join(root, "node_modules"));
+      symlinkSync(dirname(createRequire(playwrightAnchor(mirror)).resolve("playwright/package.json")), join(root, "node_modules/playwright"));
+      writeFileSync(join(root, "app/package.json"), JSON.stringify({ name: "stand-in", main: "main.js" }));
+      writeFileSync(
+        join(root, "app/main.js"),
+        `const { app, BrowserWindow } = require("electron");
+app.whenReady().then(() => {
+  const win = new BrowserWindow({ width: 320, height: 240, show: false });
+  win.loadURL("data:text/html,<title>stand-in</title><script>fetch('http://127.0.0.1:46997/first-load').catch(() => {})</script>");
+});
+app.on("window-all-closed", () => app.quit());`,
+      );
+      const app = fixtureApp({}, {}, { mode: "electron", start: undefined, readyPattern: undefined, electron: { build: "true", main: "app/main.js" } });
+      app.runProfile.env = {};
+      const listeners = () => ["SIGINT", "SIGTERM", "SIGHUP"].map((sig) => process.listenerCount(sig as NodeJS.Signals));
+      const before = listeners();
+      const running = await start(app, root);
+      expect(listeners()).toEqual(before);
+      const window = await running.electron!.window();
+      await window.waitForLoadState("load");
+      await window.waitForTimeout(300);
+      expect(await window.title()).toBe("stand-in");
+      expect(running.blocked!()).toEqual(["GET http://127.0.0.1:46997/first-load"]);
+      const pid = running.electron!.app.process().pid;
+      await running.stop();
+      expect(() => process.kill(pid, 0)).toThrow();
+      expect(existsSync(running.tmp)).toBe(false);
+    },
+    60_000,
   );
 });

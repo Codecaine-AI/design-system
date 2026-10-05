@@ -16,11 +16,11 @@
  */
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import { installSignalHandlers, startApp, type RunningApp } from "./lib/app-runner";
-import { captureRoute, LAUNCH_OPTIONS, routeThemes, shotKey, warmUp } from "./lib/capture";
+import { installSignalHandlers, refreshStartedPorts, startApp, type RunningApp } from "./lib/app-runner";
+import { CaptureError, captureRoute, LAUNCH_OPTIONS, routeThemes, shotKey, warmUp } from "./lib/capture";
 import { loadPlaywright, playwrightVersion } from "./lib/playwright";
 import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, REGISTRY_PATH, resolvePath, type RouteSpec } from "./lib/registry";
 import { defaultOutDir, readManifest, SET_NAME, setDir, type SetManifest, type ShotEntry, type Theme } from "./lib/snapshot-set";
@@ -88,6 +88,7 @@ let failures = 0;
 let chromiumVersion = "";
 let stopError: string | undefined;
 let startError: string | undefined;
+let warmUpBlocked = { blocked: [] as string[], expectedBlocked: [] as string[] };
 
 try {
   console.log(`[${app.id}] starting (${app.run.mode}) from ${root}...`);
@@ -98,7 +99,7 @@ try {
     browser = await chromium.launch(LAUNCH_OPTIONS);
     chromiumVersion = browser.version();
     console.log(`[${app.id}] warming up: ${[...new Set(routes.map((route) => route.path || "/"))].join(" ")}`);
-    await warmUp(browser, running, routes);
+    warmUpBlocked = await warmUp(browser, running, routes);
   } else {
     chromiumVersion = `electron ${await running.electron.app.evaluate(() => process.versions.electron).catch(() => "?")}`;
   }
@@ -107,6 +108,8 @@ try {
     for (const theme of routeThemes(app, route) as Theme[]) {
       if (interrupted) break;
       const key = shotKey(route, theme);
+      // A stale PNG must never stand in for a capture that fails now.
+      rmSync(join(dir, `${key}.png`), { force: true });
       const problems: string[] = [];
       for (let attempt = 1; ; attempt++) {
         try {
@@ -146,7 +149,17 @@ try {
             continue;
           }
           console.error(`  ${key}: FAILED: ${message}`);
-          shots.push({ key, route: route.id, theme, gating: route.gating !== false, masks: [], error: message, retriedAfter: problems });
+          shots.push({
+            key,
+            route: route.id,
+            theme,
+            gating: route.gating !== false,
+            masks: [],
+            error: message,
+            retriedAfter: problems,
+            blocked: error instanceof CaptureError ? error.blocked : [],
+            expectedBlocked: error instanceof CaptureError ? error.expectedBlocked : [],
+          });
           failures += 1;
           break;
         }
@@ -160,6 +173,11 @@ try {
 } finally {
   await browser?.close().catch(() => undefined);
   if (running) {
+    refreshStartedPorts(running);
+    if (running.violations?.length) {
+      console.error(`[${app.id}] ${running.violations.join("; ")}`);
+      failures += 1;
+    }
     await running.stop().catch((error) => {
       stopError = error instanceof Error ? error.message : String(error);
       console.error(`[${app.id}] stop: ${stopError}`);
@@ -201,12 +219,14 @@ const manifest: SetManifest = {
         logPath: running.logPath,
         profileProof: app.runProfile.proof,
         ...(running.unproven ? { unproven: true } : {}),
+        ...(running.violations?.length ? { violations: running.violations } : {}),
         ...(stopError ? { stopError } : {}),
       }
     : { mode: app.run.mode, startError },
   // Requests the guard blocked: unexpected ones, and expected ones (the app's own named ports the run never bound).
-  blockedRequests: [...new Set(shots.flatMap((shot) => (shot.blocked as string[] | undefined) ?? []))],
-  expectedBlocked: [...new Set(shots.flatMap((shot) => (shot.expectedBlocked as string[] | undefined) ?? []))],
+  blockedRequests: [...new Set([...warmUpBlocked.blocked, ...shots.flatMap((shot) => (shot.blocked as string[] | undefined) ?? [])])],
+  expectedBlocked: [...new Set([...warmUpBlocked.expectedBlocked, ...shots.flatMap((shot) => (shot.expectedBlocked as string[] | undefined) ?? [])])],
+  warmUpBlocked,
   shots,
 };
 if (only && previous) {

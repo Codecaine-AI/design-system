@@ -168,7 +168,8 @@ export function sideBySide(images: RgbaImage[], gap = 16): RgbaImage {
   return { width, height, data };
 }
 
-export type ShotStatus = "identical" | "changed" | "missing-in-a" | "missing-in-b";
+/** error-in-x: the set's manifest records a failed capture for the shot (whatever PNG is on disk). */
+export type ShotStatus = "identical" | "changed" | "missing-in-a" | "missing-in-b" | "error-in-a" | "error-in-b";
 
 export interface ShotDiff {
   key: string;
@@ -188,6 +189,8 @@ export interface ShotDiff {
   maxChannelDelta: number;
   bbox?: Box;
   masks: Box[];
+  /** The capture error a manifest recorded for this shot. */
+  error?: string;
 }
 
 export interface SetDiff {
@@ -219,7 +222,9 @@ export function diffSets(outDir: string, app: string, a: string, b: string, only
     const { route } = splitKey(key, entry(manifestB, key) ?? entry(manifestA, key));
     return only.includes(key) || only.includes(route);
   };
-  const keys = [...new Set([...keysA, ...keysB])].filter(selected).sort();
+  // Keys come from the PNGs and from both manifests: a shot that failed in a set has an entry but no PNG.
+  const manifestKeys = [...(manifestA?.shots ?? []), ...(manifestB?.shots ?? [])].map((shot) => shot.key);
+  const keys = [...new Set([...keysA, ...keysB, ...manifestKeys])].filter(selected).sort();
 
   const shots: ShotDiff[] = [];
   const images = new Map<string, PixelDiff>();
@@ -232,10 +237,13 @@ export function diffSets(outDir: string, app: string, a: string, b: string, only
     const gating = judge ? judge.gating !== false : true;
     const masks = [...(shotA?.masks ?? []), ...(shotB?.masks ?? [])].flatMap((mask) => mask.boxes);
     const base = { key, route, theme, gating, ...(judge?.reason ? { reason: judge.reason } : {}), masks };
-    if (!keysA.has(key) || !keysB.has(key)) {
+    const errorB = typeof shotB?.error === "string" ? shotB.error : undefined;
+    const errorA = typeof shotA?.error === "string" ? shotA.error : undefined;
+    if (errorA || errorB || !keysA.has(key) || !keysB.has(key)) {
       shots.push({
         ...base,
-        status: keysA.has(key) ? "missing-in-b" : "missing-in-a",
+        status: errorB ? "error-in-b" : errorA ? "error-in-a" : keysA.has(key) ? "missing-in-b" : "missing-in-a",
+        ...(errorB || errorA ? { error: errorB ?? errorA } : {}),
         sizeMatch: false,
         changedPixels: 0,
         maskedPixels: 0,
@@ -275,7 +283,7 @@ export function diffSets(outDir: string, app: string, a: string, b: string, only
       shots: shots.length,
       identical: shots.filter((shot) => shot.status === "identical").length,
       changed: shots.filter((shot) => shot.status === "changed").length,
-      missing: shots.filter((shot) => shot.status.startsWith("missing")).length,
+      missing: shots.filter((shot) => shot.status.startsWith("missing") || shot.status.startsWith("error")).length,
       gatingFailures: failures.length,
       changedPixels: shots.reduce((sum, shot) => sum + shot.changedPixels, 0),
     },

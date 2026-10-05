@@ -63,7 +63,7 @@ for (const shot of result.shots) {
       ? `identical${shot.maskedPixels ? ` (${shot.maskedPixels} px masked)` : ""}`
       : shot.status === "changed"
         ? `${shot.changedPixels} px (${shot.percentChanged}%)${shot.sizeMatch ? "" : ", size mismatch"}`
-        : shot.status;
+        : `${shot.status}${shot.error ? `: ${shot.error.split("\n")[0]}` : ""}`;
   const mark = shot.status === "identical" ? "  ok  " : shot.gating ? "  DIFF" : "  diff";
   console.log(`${mark}  ${shot.key}  ${detail}${shot.gating ? "" : `  (non-gating: ${shot.reason ?? "no reason"})`}`);
 }

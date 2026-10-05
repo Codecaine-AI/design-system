@@ -2,13 +2,15 @@
  * Stand-in server for the app-runner tests (not an app). It writes the environment it received to
  * $HOME/env.json, starts a helper child that listens on a second port, then prints a Vite-style
  * colored ready line. GET / returns a page that requests its own port, the helper port, a port the
- * run never started, and a non-loopback host, and records which requests succeeded. GET /themed is a
+ * run never started (stray), a named profile port nothing binds (dead), and a non-loopback host, and
+ * records which requests succeeded. GET /themed is a
  * page that turns dark through data-theme, localStorage, ?theme=dark, a #dark button, or (with
  * ?follow=system) prefers-color-scheme.
  */
 const port = Number(process.env.FIXTURE_PORT);
 const helperPort = Number(process.env.FIXTURE_HELPER_PORT);
 const strayPort = Number(process.env.FIXTURE_STRAY_PORT);
+const deadPort = Number(process.env.FIXTURE_DEAD_PORT ?? 46998);
 
 await Bun.write(`${process.env.HOME}/env.json`, JSON.stringify(process.env));
 
@@ -26,6 +28,7 @@ const page = `<!doctype html><html><body><script>
     own: "/ping",
     helper: "http://127.0.0.1:${helperPort}/",
     stray: "http://127.0.0.1:${strayPort}/",
+    dead: "http://127.0.0.1:${deadPort}/",
     external: "http://example.invalid/",
   };
   window.results = Promise.all(Object.entries(targets).map(([name, url]) =>
