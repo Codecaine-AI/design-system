@@ -212,7 +212,8 @@ export async function withSentinel<T>(dsDir: string, journalDir: string, check: 
   const manifest = writeJournal(dsDir, journalDir);
   const removeStep = onInterrupt(() => {
     const result = restoreFromJournal(journalDir);
-    console.error(`verify:apps: restored ${result.restored.length} theme file(s); build ${result.build.ok ? "ok" : "FAILED"}, check ${result.check.ok ? "ok" : "FAILED"}`);
+    const what = result.restored.length ? `restored ${result.restored.join(", ")}` : "theme files already restored";
+    console.error(`verify:apps: ${what} in ${result.dsDir}; build ${result.build.ok ? "ok" : "FAILED"}, check ${result.check.ok ? "ok" : "FAILED"}`);
   });
   let value: T | undefined;
   let failure: unknown;

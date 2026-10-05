@@ -169,7 +169,9 @@ async function openBrowser(root: string, apps: AppEntry[]): Promise<{ browser?: 
   try {
     const { loadPlaywright, playwrightVersion } = await import("./lib/playwright");
     const { LAUNCH_OPTIONS } = await import("./lib/capture");
-    const browser = await loadPlaywright(root).chromium.launch(LAUNCH_OPTIONS);
+    // Playwright's own signal handlers exit(130) right after closing the browser, before our cleanup
+    // (stop the apps, restore the propagate journal) runs; onInterrupt closes the browser instead.
+    const browser = await loadPlaywright(root).chromium.launch({ ...LAUNCH_OPTIONS, handleSIGINT: false, handleSIGTERM: false, handleSIGHUP: false });
     onInterrupt(() => browser.close());
     return { browser, version: playwrightVersion(root) };
   } catch (error) {
