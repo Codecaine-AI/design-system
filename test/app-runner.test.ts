@@ -92,17 +92,18 @@ describe("profileEnv", () => {
     Object.assign(process.env, planted);
     try {
       const app = fixtureApp({ api: 47011 });
-      app.runProfile.env = { DATA_DIR: "{tmp}/data", API_URL: "http://127.0.0.1:{port:api}", DROP_ME: "x" };
+      app.runProfile.env = { DATA_DIR: "{tmp}/data", API_URL: "http://127.0.0.1:{port:api}", FIXTURES: "{ds}/apps/fixtures", DROP_ME: "x" };
       app.runProfile.unsetEnv = ["DROP_ME", "LANG"];
       const env = profileEnv(app, { root: "/r", tmp: "/t/run" });
 
-      const allowed = new Set(["PATH", "TERM", "TMPDIR", "HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME", "DATA_DIR", "API_URL"]);
+      const allowed = new Set(["PATH", "TERM", "TMPDIR", "HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME", "DATA_DIR", "API_URL", "FIXTURES"]);
       expect(Object.keys(env).filter((key) => !allowed.has(key) && !key.startsWith("BUN_INSTALL"))).toEqual([]);
       expect(env.PATH).toBe(process.env.PATH!);
       expect(env.HOME).toBe("/t/run");
       for (const key of ["XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME"]) expect(env[key]!.startsWith("/t/run/")).toBe(true);
       expect(env.DATA_DIR).toBe("/t/run/data");
       expect(env.API_URL).toBe("http://127.0.0.1:47011");
+      expect(env.FIXTURES).toBe(join(import.meta.dir, "..", "apps/fixtures"));
       expect("LANG" in env).toBe(false);
     } finally {
       for (const [key, value] of Object.entries(saved)) {

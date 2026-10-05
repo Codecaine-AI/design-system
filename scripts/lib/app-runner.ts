@@ -15,7 +15,8 @@
  *   electron  run `run.electron.build`, then Playwright `_electron.launch` against `run.electron.main`
  *   none      throws: the app has no screenshots and no runtime checks
  *
- * Placeholders `{tmp}`, `{root}` and `{port:<name>}` are substituted in `run.start`, `commands.*`,
+ * Placeholders `{tmp}`, `{root}`, `{ds}` (DESIGN_SYSTEM_ROOT, the design-system checkout the tool runs from)
+ * and `{port:<name>}` are substituted in `run.start`, `commands.*`,
  * `run.electron.build`, `runProfile.flags` and `runProfile.env` values. `runProfile.flags` go where the
  * start command says `{flags}`, else at its end (browser), or after the main entry (electron).
  *
@@ -90,7 +91,7 @@ export interface PlaceholderContext {
   ports: Record<string, number>;
 }
 
-/** Substitutes {tmp}, {root} and {port:<name>}. An unknown port name throws; other braces stay as written. */
+/** Substitutes {tmp}, {root}, {ds} and {port:<name>}. An unknown port name throws; other braces stay as written. */
 export function expandPlaceholders(text: string, ctx: PlaceholderContext): string {
   return text
     .replace(/\{port:([A-Za-z0-9_-]+)\}/g, (_, name: string) => {
@@ -99,7 +100,8 @@ export function expandPlaceholders(text: string, ctx: PlaceholderContext): strin
       return String(port);
     })
     .replaceAll("{tmp}", ctx.tmp)
-    .replaceAll("{root}", ctx.root);
+    .replaceAll("{root}", ctx.root)
+    .replaceAll("{ds}", DESIGN_SYSTEM_ROOT);
 }
 
 export function profileEnv(app: AppEntry, opts: { root: string; tmp: string }): Record<string, string> {
