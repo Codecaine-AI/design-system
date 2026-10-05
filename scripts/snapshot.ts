@@ -19,7 +19,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import { startApp, stopAllApps, type RunningApp } from "./lib/app-runner";
+import { installSignalHandlers, startApp, type RunningApp } from "./lib/app-runner";
 import { captureRoute, LAUNCH_OPTIONS, routeThemes, shotKey, warmUp } from "./lib/capture";
 import { loadPlaywright, playwrightVersion } from "./lib/playwright";
 import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, REGISTRY_PATH, resolvePath, type RouteSpec } from "./lib/registry";
@@ -76,14 +76,11 @@ function sha256(path: string): string | null {
 let running: RunningApp | undefined;
 let browser: any;
 let interrupted = false;
-for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
-  process.on(sig, () => {
-    if (interrupted) return;
-    interrupted = true;
-    console.error(`\n${sig}: stopping the app...`);
-    void Promise.allSettled([browser?.close(), stopAllApps()]).finally(() => process.exit(130));
-  });
-}
+// On a signal: stop capturing, close the browser, stop the app (app-runner), exit 130.
+installSignalHandlers(() => {
+  interrupted = true;
+  return browser?.close();
+});
 
 const startedAt = new Date();
 const shots: ShotEntry[] = [];

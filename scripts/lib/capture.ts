@@ -35,9 +35,17 @@ export const CONTEXT_OPTIONS = {
  * ±1 in a channel from run to run: partial re-raster of invalidated tiles
  * and GPU compositing. Scrollbars stay visible because themes style them
  * (Playwright hides them in headless mode by default).
+ *
+ * handleSIG* false: Playwright's own handlers close the browser and call
+ * process.exit(130) before the tool can stop the app it started, leaving the
+ * app's process groups orphaned. Tools install app-runner's
+ * installSignalHandlers instead.
  */
 export const LAUNCH_OPTIONS = {
   headless: true,
+  handleSIGINT: false,
+  handleSIGTERM: false,
+  handleSIGHUP: false,
   ignoreDefaultArgs: ["--hide-scrollbars"],
   args: [
     "--disable-gpu",
@@ -301,12 +309,18 @@ async function stableShot(page: any, masks: string[]) {
 
 /** Waits, runs the steps, applies post-load theme switches, then takes the stable shot. */
 async function settleAndShoot(page: any, network: ReturnType<typeof trackNetwork>, route: RouteSpec, viewport: { width: number; height: number }, afterLoad: () => Promise<void>, verifyTheme: () => Promise<void>) {
+  const waitFor = async () => {
+    if (route.waitFor) await page.locator(route.waitFor).first().waitFor({ state: "visible", timeout: 30_000 });
+    await network.quiet();
+  };
   await network.quiet();
-  if (route.waitFor) await page.locator(route.waitFor).first().waitFor({ state: "visible", timeout: 30_000 });
-  await network.quiet();
+  // route.waitFor is the state to capture. Without steps it is also "the app is ready" for the theme
+  // switch; with steps, it is reached by them (each step waits for its own target).
+  if (!route.steps?.length) await waitFor();
   await waitForAssets(page);
   await afterLoad();
   for (const step of route.steps ?? []) await runStep(page, step, network);
+  if (route.steps?.length) await waitFor();
   // A neutral pointer: steps that click or hover leave it over a control otherwise.
   await page.mouse.move(0, 0);
   await network.quiet();

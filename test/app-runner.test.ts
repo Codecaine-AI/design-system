@@ -244,3 +244,34 @@ describe("guardedContext", () => {
     30_000,
   );
 });
+
+describe("installSignalHandlers", () => {
+  test.skipIf(Boolean(noPlaywright))(
+    "Ctrl-C in a tool with a browser open stops the app's whole process group before exiting",
+    async () => {
+      const root = makeRoot();
+      const tool = Bun.spawn(["bun", join(import.meta.dir, "fixtures/runner/interrupt.ts"), root, outDir, process.env.DS_MIRROR ?? "/Users/Ford/workspace-ds"], {
+        stdout: "pipe",
+        stderr: "inherit",
+      });
+      let output = "";
+      const reader = tool.stdout.getReader();
+      const deadline = Date.now() + 25_000;
+      while (!output.includes("READY") && Date.now() < deadline) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        output += new TextDecoder().decode(value);
+      }
+      const tmp = /READY (\S+)/.exec(output)?.[1];
+      expect(tmp).toBeDefined();
+      expect(await portOpen(46926)).toBe(true);
+
+      tool.kill("SIGINT");
+      expect(await tool.exited).toBe(130);
+      expect(await portOpen(46925)).toBe(false);
+      expect(await portOpen(46926)).toBe(false);
+      expect(existsSync(tmp!)).toBe(false);
+    },
+    40_000,
+  );
+});

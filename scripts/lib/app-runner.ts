@@ -316,6 +316,36 @@ export async function stopAllApps(): Promise<void> {
   await Promise.allSettled([...live].map((running) => running.stop()));
 }
 
+const signalCleanups = new Set<() => unknown>();
+let signalHandlersInstalled = false;
+
+/**
+ * Opt-in for CLIs and library users: on SIGINT, SIGTERM or SIGHUP, run `cleanup` (close the browser),
+ * stop every app this process started, then exit 130. Launch browsers with LAUNCH_OPTIONS (handleSIG*
+ * false) so Playwright does not exit first. Returns a function that removes `cleanup`.
+ */
+export function installSignalHandlers(cleanup?: () => unknown): () => void {
+  if (cleanup) signalCleanups.add(cleanup);
+  if (!signalHandlersInstalled) {
+    signalHandlersInstalled = true;
+    let exiting = false;
+    for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
+      process.on(sig, () => {
+        if (exiting) return;
+        exiting = true;
+        console.error(`\n${sig}: stopping the apps this process started...`);
+        const bounded = (fn: () => unknown) => Promise.race([Promise.resolve().then(fn), sleep(10_000)]);
+        void Promise.allSettled([...signalCleanups].map(bounded))
+          .then(() => stopAllApps())
+          .finally(() => process.exit(130));
+      });
+    }
+  }
+  return () => {
+    if (cleanup) signalCleanups.delete(cleanup);
+  };
+}
+
 /** Re-reads the ports the run's processes listen on into running.startedPorts. */
 export function refreshStartedPorts(running: RunningApp): number[] {
   const internal = internals.get(running);
@@ -483,7 +513,17 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
         throw new Error(`${app.id}: the electron package does not resolve from ${app.root}: ${String(error).split("\n")[0]}`);
       }
       const { _electron } = loadPlaywright(root);
-      electronApp = await _electron.launch({ executablePath, args: [main, ...flags], cwd, env, timeout: timeoutMs });
+      electronApp = await _electron.launch({
+        executablePath,
+        args: [main, ...flags],
+        cwd,
+        env,
+        timeout: timeoutMs,
+        // Playwright's handlers would exit before stopAllApps runs; see installSignalHandlers.
+        handleSIGINT: false,
+        handleSIGTERM: false,
+        handleSIGHUP: false,
+      });
       const pid = electronApp.process()?.pid;
       if (pid) rootPids.push(pid);
       electronApp.process()?.stdout?.on("data", (chunk: Buffer) => appendFileSync(logPath, chunk));
