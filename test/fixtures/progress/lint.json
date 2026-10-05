@@ -1,0 +1,141 @@
+{
+  "root": "/fixture/root",
+  "pass": null,
+  "designSystem": {
+    "commit": "0123456789abcdef0123",
+    "tokensCssSha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+  },
+  "apps": [
+    {
+      "id": "alpha",
+      "ok": true,
+      "checks": [
+        {
+          "id": "structure",
+          "status": "n/a",
+          "violations": [],
+          "warnings": []
+        },
+        {
+          "id": "resolution",
+          "status": "pass",
+          "violations": [],
+          "warnings": []
+        },
+        {
+          "id": "wiring",
+          "status": "pass",
+          "violations": [],
+          "warnings": []
+        },
+        {
+          "id": "literals",
+          "status": "pass",
+          "violations": [],
+          "warnings": []
+        },
+        {
+          "id": "names",
+          "status": "pass",
+          "violations": [],
+          "warnings": []
+        },
+        {
+          "id": "shell",
+          "status": "pass",
+          "violations": [],
+          "warnings": []
+        }
+      ],
+      "literals": {
+        "hard": 2,
+        "floor": 0
+      }
+    },
+    {
+      "id": "beta",
+      "ok": false,
+      "checks": [
+        {
+          "id": "resolution",
+          "status": "pass",
+          "violations": [],
+          "warnings": []
+        },
+        {
+          "id": "wiring",
+          "status": "fail",
+          "violations": [
+            {
+              "file": "repos/beta/src/index.css",
+              "line": 1,
+              "message": "tokens.css is imported before fonts.css"
+            },
+            {
+              "file": "repos/beta/src/index.css",
+              "line": 3,
+              "message": "layout.css is missing"
+            }
+          ],
+          "warnings": []
+        },
+        {
+          "id": "literals",
+          "status": "fail",
+          "violations": [
+            {
+              "file": "repos/beta/src/App.tsx",
+              "line": 12,
+              "message": "31 hard literals, floor 0 <over>"
+            }
+          ],
+          "warnings": []
+        },
+        {
+          "id": "names",
+          "status": "warn",
+          "violations": [],
+          "warnings": [
+            {
+              "file": "repos/beta/src/lib.ts",
+              "line": 410,
+              "message": "library file over 400 lines"
+            }
+          ]
+        },
+        {
+          "id": "shell",
+          "status": "pass",
+          "violations": [],
+          "warnings": []
+        },
+        {
+          "id": "structure",
+          "status": "pass",
+          "violations": [],
+          "warnings": []
+        }
+      ],
+      "literals": {
+        "hard": 31,
+        "floor": 0
+      }
+    },
+    {
+      "id": "zeta",
+      "ok": true,
+      "checks": [
+        {
+          "id": "resolution",
+          "status": "pass",
+          "violations": [],
+          "warnings": []
+        }
+      ],
+      "literals": {
+        "hard": 0,
+        "floor": 0
+      }
+    }
+  ]
+}
