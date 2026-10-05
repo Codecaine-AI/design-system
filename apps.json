@@ -1,4 +1,688 @@
 {
   "version": 1,
-  "apps": []
+  "apps": [
+    {
+      "id": "sequence-renderer",
+      "name": "Sequence renderer",
+      "wave": 1,
+      "kind": "library",
+      "repo": "codecaine/core/sequence",
+      "root": "codecaine/core/sequence/packages/sequence",
+      "scan": {
+        "paths": [
+          "codecaine/core/sequence/packages/sequence/src/theme.ts",
+          "codecaine/core/sequence/packages/sequence/src/render",
+          "codecaine/core/sequence/packages/sequence/src/text.ts"
+        ],
+        "exclude": []
+      },
+      "stack": {
+        "summary": "TypeScript that emits SVG markup strings (renderSequenceSvgString); React wrapper SequenceDiagram",
+        "tailwind": "none",
+        "packageManager": "bun"
+      },
+      "consume": {
+        "via": "workspace",
+        "detail": "Core workspace member: `@codecaine-ai/design-system` as `workspace:*` for resolved JS token defaults (img, PDF and resvg exports cannot read CSS variables); hosts map --seq-* to --ds-* in CSS (docs-workbench sequence-embed.css)."
+      },
+      "entryStylesheet": null,
+      "theme": {
+        "rule": "light-dark"
+      },
+      "literalFloor": 0,
+      "allowlist": null,
+      "shell": false,
+      "folderStandard": false,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": false,
+          "reason": "renders inside a host's shell (STATE decision 2): no shell of its own"
+        },
+        "3": {
+          "required": false,
+          "reason": "library: no pass 3 (owner decision; the linter reports files over 400 lines as warnings)"
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": false,
+          "reason": "emits SVG strings and ships no stylesheet; the host page loads fonts.css and tokens.css"
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": false,
+          "reason": "renders inside a host's shell (STATE decision 2): no shell of its own"
+        },
+        "structure": {
+          "required": true
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": true
+        },
+        "snapshot": {
+          "required": true
+        },
+        "pixelDiff": {
+          "required": false,
+          "reason": "no pass 3: pass 1 changes colors by design, so review uses before/after sheets instead of a 0-pixel diff"
+        },
+        "tests": {
+          "required": true
+        }
+      },
+      "run": {
+        "mode": "static",
+        "cwd": "codecaine/core/sequence",
+        "start": "bun {ds}/apps/fixtures/sequence-renderer/serve.ts {flags}",
+        "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
+      },
+      "commands": {
+        "cwd": "codecaine/core/sequence",
+        "typecheck": "bun run typecheck:sequence"
+      },
+      "tests": {
+        "safe": [
+          {
+            "cmd": "bun test packages/sequence/src",
+            "cwd": "codecaine/core/sequence"
+          }
+        ]
+      },
+      "routes": [
+        {
+          "id": "login-flow",
+          "path": "/login-flow.html",
+          "waitFor": "svg.sequence-diagram"
+        },
+        {
+          "id": "combined-fragments",
+          "path": "/combined-fragments.html",
+          "waitFor": "svg.sequence-diagram"
+        },
+        {
+          "id": "minimal",
+          "path": "/minimal.html",
+          "waitFor": "svg.sequence-diagram"
+        }
+      ],
+      "runProfile": {
+        "env": {
+          "NO_COLOR": "1"
+        },
+        "unsetEnv": [
+          "DOCS_SHARED_API_URL",
+          "DOCS_SHARED_API_TOKEN",
+          "DOCS_SHARED_PROJECT_ID",
+          "DOCS_STATIC",
+          "DOCS_API",
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN"
+        ],
+        "tempHome": true,
+        "fixtures": [],
+        "flags": [
+          "--root",
+          "{root}",
+          "--tmp",
+          "{tmp}",
+          "--port",
+          "{port:http}"
+        ],
+        "ports": {
+          "http": 47000
+        },
+        "proof": {
+          "status": "proven",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. All 3 routes rendered light and dark; 0 blocked requests; 18 connections seen, all inbound to :47000; no foreign connection.",
+          "date": "2026-10-05"
+        }
+      },
+      "verify": {
+        "route": "combined-fragments",
+        "probes": [
+          {
+            "selector": "svg.sequence-diagram rect.seq-background",
+            "property": "fill",
+            "token": "color.surface.page"
+          },
+          {
+            "selector": "svg.sequence-diagram .seq-participants > .seq-participant--box[data-participant-id=\"p1\"] > rect",
+            "property": "fill",
+            "token": "color.surface.panel"
+          },
+          {
+            "selector": "svg.sequence-diagram .seq-participants > .seq-participant--box[data-participant-id=\"p1\"] > .seq-participant-label",
+            "property": "fill",
+            "token": "color.text.body"
+          }
+        ],
+        "darkSwitch": {
+          "kind": "query",
+          "param": "theme",
+          "value": "dark"
+        }
+      },
+      "exceptions": [
+        {
+          "what": "verify has no border probe",
+          "reason": "the diagram's strokes (lifelines, participant borders, fragment frames) are the accent and fragment-accent hues, which stay product colors; the neutral roles are page, panel and text"
+        },
+        {
+          "what": "the run is a fixture page, not the library itself",
+          "reason": "a library has no UI: apps/fixtures/sequence-renderer/serve.ts renders the engine's own example programs inline in a host page that loads tokens.css, so before/after sheets exist for the pilot"
+        }
+      ]
+    },
+    {
+      "id": "sequence-studio",
+      "name": "Sequence studio",
+      "wave": 1,
+      "kind": "app",
+      "repo": "codecaine/core/sequence",
+      "root": "codecaine/core/sequence/packages/studio",
+      "scan": {
+        "paths": [
+          "codecaine/core/sequence/packages/studio/src"
+        ],
+        "exclude": []
+      },
+      "stack": {
+        "summary": "React 19, Vite 7.3, plain CSS variables; bun (Core workspace)",
+        "tailwind": "none",
+        "packageManager": "bun"
+      },
+      "consume": {
+        "via": "workspace",
+        "detail": "Core workspace member: add `@codecaine-ai/design-system` as `workspace:*`, then @import fonts.css, tokens.css and layout.css in src/index.css; add the package dir to server.fs.allow in vite.config.ts."
+      },
+      "entryStylesheet": "codecaine/core/sequence/packages/studio/src/index.css",
+      "theme": {
+        "rule": "light-dark"
+      },
+      "literalFloor": 1,
+      "allowlist": "apps/allowlists/sequence-studio.json",
+      "shell": true,
+      "folderStandard": true,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": true
+        },
+        "3": {
+          "required": true
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": true
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": true
+        },
+        "structure": {
+          "required": true
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": true
+        },
+        "snapshot": {
+          "required": true
+        },
+        "pixelDiff": {
+          "required": true
+        },
+        "tests": {
+          "required": false,
+          "reason": "the studio package has no tests (the sequence package tests belong to sequence-renderer); typecheck runs through commands.typecheck"
+        }
+      },
+      "run": {
+        "mode": "browser",
+        "cwd": "codecaine/core/sequence/packages/studio",
+        "start": "bun x --bun vite {flags}",
+        "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
+      },
+      "commands": {
+        "cwd": "codecaine/core/sequence/packages/studio",
+        "typecheck": "bun x --bun tsc -p tsconfig.json --noEmit",
+        "build": "bun x --bun vite build --outDir {tmp}/sequence-studio-dist --emptyOutDir"
+      },
+      "tests": {
+        "safe": [],
+        "unsafe": []
+      },
+      "routes": [
+        {
+          "id": "gallery",
+          "path": "/",
+          "waitFor": "section[aria-label=\"Examples\"]"
+        },
+        {
+          "id": "editor",
+          "path": "/",
+          "steps": [
+            {
+              "action": "click",
+              "target": "button[title=\"Open a new draft seeded from Login flow\"]"
+            }
+          ],
+          "waitFor": ".editor .diagram-card svg"
+        }
+      ],
+      "runProfile": {
+        "env": {
+          "NO_COLOR": "1"
+        },
+        "unsetEnv": [
+          "DOCS_SHARED_API_URL",
+          "DOCS_SHARED_API_TOKEN",
+          "DOCS_SHARED_PROJECT_ID",
+          "DOCS_STATIC",
+          "DOCS_API",
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN"
+        ],
+        "tempHome": true,
+        "fixtures": [],
+        "flags": [
+          "--port",
+          "{port:ui}",
+          "--strictPort",
+          "--host",
+          "127.0.0.1"
+        ],
+        "ports": {
+          "ui": 47010
+        },
+        "proof": {
+          "status": "proven",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. gallery and editor rendered light and dark; 0 blocked requests; 30 connections seen, all inbound to :47010; no foreign connection.",
+          "date": "2026-10-05"
+        }
+      },
+      "verify": {
+        "route": "gallery",
+        "probes": [
+          {
+            "selector": "html",
+            "property": "background-color",
+            "token": "color.surface.page"
+          },
+          {
+            "selector": "button[title=\"Open a new draft seeded from Login flow\"]",
+            "property": "background-color",
+            "token": "color.surface.panel"
+          },
+          {
+            "selector": "body",
+            "property": "color",
+            "token": "color.text.body"
+          },
+          {
+            "selector": "button[title=\"Open a new draft seeded from Login flow\"]",
+            "property": "border-top-color",
+            "token": "color.border.default"
+          }
+        ],
+        "darkSwitch": {
+          "kind": "attribute",
+          "target": "html"
+        },
+        "sidebar": {
+          "toggle": ".ds-sidebar-toggle",
+          "storageKey": "sequence-studio.sidebar"
+        }
+      },
+      "exceptions": [
+        {
+          "what": "the editor route opens an example",
+          "reason": "opening an example seeds a draft in localStorage (the studio's only store); every capture uses a fresh browser context, so nothing persists and no file or service is written"
+        },
+        {
+          "what": "StyleRail.tsx color-input fallback #000000",
+          "reason": "owner decision: style engines hide their color controls but keep the code for now; <input type=color> needs a hex value"
+        }
+      ]
+    },
+    {
+      "id": "docs-workbench",
+      "name": "Docs workbench",
+      "wave": 1,
+      "kind": "app",
+      "repo": "codecaine/core/docs-system",
+      "root": "codecaine/core/docs-system/packages/docs-workbench",
+      "scan": {
+        "paths": [
+          "codecaine/core/docs-system/packages/docs-workbench/web/src",
+          "codecaine/core/docs-system/packages/docs-workbench/web/index.html",
+          "codecaine/core/docs-system/packages/docs-workbench/web/playground.html",
+          "codecaine/core/docs-system/packages/docs-workbench/electron"
+        ],
+        "exclude": []
+      },
+      "stack": {
+        "summary": "React 19.2, Vite 7.3, Tailwind 4.3 (@tailwindcss/vite); browser SPA via docs-cli serve, static export and Electron 37; bun",
+        "tailwind": "v4",
+        "packageManager": "bun"
+      },
+      "consume": {
+        "via": "workspace",
+        "detail": "Already wired: `workspace:*` through Core; web/src/theme/tokens.css imports the package tokens.css. Add the package path to spaSourceRoots in src/spa.ts or `serve` keeps a stale build. A standalone docs-system install cannot resolve it (not in its workspaces)."
+      },
+      "entryStylesheet": "codecaine/core/docs-system/packages/docs-workbench/web/src/index.css",
+      "theme": {
+        "rule": "light-dark",
+        "storageKey": "docs-viewer-theme"
+      },
+      "literalFloor": 14,
+      "allowlist": "apps/allowlists/docs-workbench.json",
+      "shell": true,
+      "folderStandard": true,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": true
+        },
+        "3": {
+          "required": true
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": true
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": true
+        },
+        "structure": {
+          "required": true
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": true
+        },
+        "snapshot": {
+          "required": true
+        },
+        "pixelDiff": {
+          "required": true
+        },
+        "tests": {
+          "required": true
+        }
+      },
+      "run": {
+        "mode": "browser",
+        "cwd": "codecaine/core/docs-system",
+        "start": "bun {ds}/apps/fixtures/docs-workbench/serve.ts {flags}",
+        "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
+      },
+      "commands": {
+        "cwd": "codecaine/core/docs-system",
+        "typecheck": "bunx --bun tsc --noEmit"
+      },
+      "tests": {
+        "safe": [
+          {
+            "cmd": "bun test packages/docs-workbench/src packages/docs-workbench/web/src",
+            "cwd": "codecaine/core/docs-system"
+          }
+        ],
+        "unsafe": [
+          {
+            "cmd": "DOCS_SMOKE_ROOT=<dir> bun test packages/docs-workbench/web/src/__tests__/live-smoke.test.tsx",
+            "reason": "boots a real docs server on a random port 42000-43999 over a copy of DOCS_SMOKE_ROOT; skipped while DOCS_SMOKE_ROOT is unset, which the profile guarantees"
+          },
+          {
+            "cmd": "bun run app / bun run app:dev (electron)",
+            "reason": "Electron app: uses the owner's userData and, without --standalone, hands off to the central docs service"
+          },
+          {
+            "cmd": "docs-cli serve without --standalone",
+            "reason": "hands off to the installed central docs service (:4820) whenever background.json exists"
+          }
+        ]
+      },
+      "routes": [
+        {
+          "id": "doc-callout",
+          "path": "/#/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout",
+          "waitFor": "[data-docs-page-transition=\"idle\"][aria-busy=\"false\"]"
+        },
+        {
+          "id": "doc-visual-system-themes",
+          "path": "/#/10-system-design/50-editor-design/40-visual-system/30-themes",
+          "waitFor": "[data-docs-page-transition=\"idle\"][aria-busy=\"false\"]",
+          "steps": [
+            {
+              "action": "scroll",
+              "target": "[data-docs-scroller]",
+              "value": 250
+            }
+          ]
+        },
+        {
+          "id": "doc-canvas-embed",
+          "path": "/#/10-system-design/40-block-vocabulary/50-flow-and-diagrams/50-canvas",
+          "waitFor": "[data-canvas-frame]",
+          "steps": [
+            {
+              "action": "scroll",
+              "target": "[data-docs-scroller]",
+              "value": 700
+            }
+          ]
+        },
+        {
+          "id": "doc-sequence-embed",
+          "path": "/#/10-system-design/40-block-vocabulary/50-flow-and-diagrams/40-sequence",
+          "waitFor": "[data-docs-block-type=\"sequence\"]",
+          "steps": [
+            {
+              "action": "scroll",
+              "target": "[data-docs-scroller]",
+              "value": 600
+            }
+          ]
+        },
+        {
+          "id": "export-dialog",
+          "path": "/#/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout",
+          "steps": [
+            {
+              "action": "click",
+              "target": "aside button:text-is(\"Export\")"
+            }
+          ],
+          "waitFor": "dialog[open]"
+        },
+        {
+          "id": "lab-annotate",
+          "path": "/#/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout",
+          "steps": [
+            {
+              "action": "click",
+              "target": "button[data-docs-lab-toggle]"
+            }
+          ],
+          "waitFor": "[data-lab-dock][data-lab-annotate-panel]"
+        },
+        {
+          "id": "playground",
+          "path": "/playground.html",
+          "themes": [
+            "light"
+          ],
+          "waitFor": "iframe[title=\"dark\"]"
+        }
+      ],
+      "runProfile": {
+        "env": {
+          "NO_COLOR": "1",
+          "CODECAINE_DOCS_STATE_DIR": "{tmp}/docs-state",
+          "CODECAINE_DOCS_GLOBAL_THEMES": "{tmp}/docs-state/themes",
+          "CODECAINE_DOCS_CODE_THEMES": "{tmp}/docs-state/code-themes",
+          "CANVAS_STUDIO_URL": "http://localhost:3999",
+          "SEQUENCE_STUDIO_URL": "http://localhost:3998"
+        },
+        "unsetEnv": [
+          "DOCS_SHARED_API_URL",
+          "DOCS_SHARED_API_TOKEN",
+          "DOCS_SHARED_PROJECT_ID",
+          "DOCS_STATIC",
+          "DOCS_API",
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN",
+          "DOCS_SMOKE_ROOT",
+          "CODECAINE_DOCS_BACKGROUND_CONFIG",
+          "CODECAINE_ENV_FILE"
+        ],
+        "tempHome": true,
+        "fixtures": [],
+        "flags": [
+          "--root",
+          "{root}",
+          "--tmp",
+          "{tmp}",
+          "--api-port",
+          "{port:api}",
+          "--ui-port",
+          "{port:ui}",
+          "--dead-kernel-port",
+          "{port:deadKernel}"
+        ],
+        "ports": {
+          "api": 47020,
+          "ui": 47021,
+          "deadKernel": 47022
+        },
+        "proof": {
+          "status": "proven",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. State isolation recipe of verification/docs-system/README.md with a corpus copied from the repo's docs/ into {tmp}; serve runs --standalone --dev, never the central service. All 7 routes rendered (12 captures); the only blocked requests were 36 to the dead kernel port :47022 (own block, never bound; rendering did not need them); 120 connections seen, all inbound to :47021 or vite->api on :47020; no connection to :4820, :4840 or any other port; verify probes matched the light and dark token values.",
+          "date": "2026-10-05"
+        }
+      },
+      "verify": {
+        "route": "doc-callout",
+        "probes": [
+          {
+            "selector": "body",
+            "property": "background-color",
+            "token": "color.surface.page"
+          },
+          {
+            "selector": "aside.w-72.border-r",
+            "property": "background-color",
+            "token": "color.surface.sidebar"
+          },
+          {
+            "selector": "[data-doc-editor=\"true\"] p[data-block-id=\"b-15-callout-lead-2\"]",
+            "property": "color",
+            "token": "color.text.body"
+          },
+          {
+            "selector": "aside.w-72.border-r",
+            "property": "border-right-color",
+            "token": "color.border.default"
+          }
+        ],
+        "darkSwitch": {
+          "kind": "steps",
+          "steps": [
+            {
+              "action": "click",
+              "target": "nav[aria-label=\"Style sections\"] button:has(> span:text-is(\"Colors\"))"
+            },
+            {
+              "action": "click",
+              "target": "label:has-text(\"Dark mode\") input.style-toggle"
+            },
+            {
+              "action": "wait",
+              "target": "html[data-theme=\"dark\"]"
+            }
+          ]
+        },
+        "sidebar": {
+          "toggle": ".ds-sidebar-toggle",
+          "storageKey": "docs-workbench.sidebar"
+        }
+      },
+      "exceptions": [
+        {
+          "what": "corpus is docs-system's own docs/, not the frozen tarball",
+          "reason": "the frozen verification tarball holds private workspace docs; the fixture copies repo content into {tmp} at start"
+        },
+        {
+          "what": "CANVAS_STUDIO_URL and SEQUENCE_STUDIO_URL point at the owner's ports 3999/3998",
+          "reason": "build-time defines baked into links only (open-in-studio buttons); nothing fetches them, and the browser guard blocks any request to them"
+        },
+        {
+          "what": "routes omit the side peek and the link editor",
+          "reason": "the side peek needs a dispatched event and the link editor a double-click; neither is a navigation step the route spec supports"
+        },
+        {
+          "what": "dark switch clicks the Style Rail's Dark mode checkbox",
+          "reason": "the app takes dark from the server's global theme at boot, after load, so a data-theme attribute is overwritten; the click PUTs the global theme into {tmp}/docs-state only. If pass 1 hides the Colors pane (owner decision on color controls), keep Dark mode reachable and update these steps"
+        },
+        {
+          "what": "literal floor 14",
+          "reason": "allowlisted: the PDF export stylesheet and page-number color (export output), the hidden color-control code in style-rail-panes.tsx, the grain mask gradient, and the legacy stock-metrics constant"
+        }
+      ]
+    }
+  ]
 }
