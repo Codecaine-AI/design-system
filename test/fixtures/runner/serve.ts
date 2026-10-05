@@ -5,7 +5,7 @@
  * run never started (stray), a named profile port nothing binds (dead), and a non-loopback host, and
  * records which requests succeeded. GET /themed is a
  * page that turns dark through data-theme, localStorage, ?theme=dark, a #dark button, or (with
- * ?follow=system) prefers-color-scheme.
+ * ?follow=system) prefers-color-scheme. GET /csp is a page under `style-src 'self'` with a 2 s transition.
  */
 const port = Number(process.env.FIXTURE_PORT);
 const helperPort = Number(process.env.FIXTURE_HELPER_PORT);
@@ -54,6 +54,12 @@ Bun.serve({
   fetch: (request) => {
     const { pathname } = new URL(request.url);
     if (pathname === "/ping") return new Response("pong");
+    // A page under a strict CSP (like a server that sends `style-src 'self'`) with a slow transition.
+    if (pathname === "/csp")
+      return new Response(`<!doctype html><link rel="stylesheet" href="/slow.css"><div id="box">box</div>`, {
+        headers: { "content-type": "text/html", "content-security-policy": "default-src 'self'; style-src 'self'" },
+      });
+    if (pathname === "/slow.css") return new Response("#box { transition: opacity 2s; }", { headers: { "content-type": "text/css" } });
     return new Response(pathname === "/themed" ? themed : page, { headers: { "content-type": "text/html" } });
   },
 });
