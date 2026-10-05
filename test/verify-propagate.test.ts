@@ -173,7 +173,9 @@ describe.skipIf(Boolean(browserSkip))("the CLI on a scratch tree with a live-lin
     const tree = liveTree();
     const before = snapshot(tree.ds);
     const run = spawnCli(tree);
-    expect(await run.exited).toBe(0);
+    const code = await run.exited;
+    const output = code === 0 ? "" : `${await new Response(run.stdout).text()}${await new Response(run.stderr).text()}`;
+    expect([code, output]).toEqual([0, ""]);
     const results = readdirSync(join(tree.out, "live/verify"));
     const result = JSON.parse(readFileSync(join(tree.out, "live/verify", results[0]!), "utf8"));
     expect(result.assertions.map((a: any) => [a.id, a.status])).toEqual(
