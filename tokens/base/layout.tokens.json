@@ -1,0 +1,10 @@
+{
+  "layout": {
+    "lane": {
+      "$description": "Content measures. Blocks cap themselves at a lane and stay left-anchored.",
+      "text": { "$type": "dimension", "$value": "60ch", "$description": "Reading measure for prose. Resolve ch at the body font size, not on a larger heading." },
+      "code": { "$type": "dimension", "$value": "88ch", "$description": "Mono blocks: code, pseudocode, file trees." },
+      "wide": { "$type": "dimension", "$value": "1100px", "$description": "Data-heavy blocks: tables, state shapes, outlines." }
+    }
+  }
+}

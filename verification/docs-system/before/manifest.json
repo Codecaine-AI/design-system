@@ -1,0 +1,531 @@
+{
+  "out": "before",
+  "startedAt": "2026-10-05T16:30:57.930Z",
+  "finishedAt": "2026-10-05T16:32:28.577Z",
+  "environment": {
+    "playwright": "1.63.0",
+    "chromium": "153.0.8010.12",
+    "platform": "darwin arm64",
+    "bun": "1.4.2"
+  },
+  "codeUnderTest": {
+    "repo": "/Users/Ford/workspace/codecaine/core/docs-system",
+    "head": "2efb0c142378f6894ab7aa61ee7252d380a02f83",
+    "status": [
+      " M .agent-kernel/kernel.json",
+      " M .agent-kernel/trace.db",
+      " M .agent-kernel/trace.db-shm",
+      " M .agent-kernel/trace.db-wal",
+      "?? packages/docs-publish/codecaine-ai-docs-publish-0.1.0-proof.14.tgz",
+      "?? packages/docs-publish/codecaine-ai-docs-publish-0.1.0-proof.15.tgz",
+      "?? packages/docs-publish/codecaine-ai-docs-publish-0.1.0-proof.16.tgz",
+      "?? packages/docs-publish/codecaine-ai-docs-publish-0.1.0-proof.17.tgz",
+      "?? packages/docs-publish/codecaine-ai-docs-publish-0.1.0-proof.18.tgz",
+      "?? packages/docs-publish/codecaine-ai-docs-publish-0.1.0-proof.19.tgz",
+      "?? packages/docs-publish/codecaine-ai-docs-publish-0.1.0-proof.20.tgz"
+    ]
+  },
+  "fixtureSha256": "06080b7e09f3088076d1a05c0fdce646774d48cb382ef1035c9cc7f1d610bba6",
+  "shots": [
+    {
+      "key": "playground-file-tree",
+      "id": "playground-file-tree",
+      "theme": "split",
+      "url": "/playground.html",
+      "server": "docs-system",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2407,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [],
+      "reloads": 0
+    },
+    {
+      "key": "playground-callout",
+      "id": "playground-callout",
+      "theme": "split",
+      "url": "/playground.html?doc=10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout&type=callout",
+      "server": "docs-system",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2521,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [],
+      "reloads": 0
+    },
+    {
+      "key": "playground-process-outline",
+      "id": "playground-process-outline",
+      "theme": "split",
+      "url": "/playground.html?doc=10-system-design/40-block-vocabulary/50-flow-and-diagrams/10-process-outline&type=process-outline",
+      "server": "docs-system",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2407,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [],
+      "reloads": 0
+    },
+    {
+      "key": "playground-interaction-surface",
+      "id": "playground-interaction-surface",
+      "theme": "split",
+      "url": "/playground.html?doc=10-system-design/40-block-vocabulary/40-structured-reference/20-interaction-surface&type=interaction-surface",
+      "server": "docs-system",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2458,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [],
+      "reloads": 0
+    },
+    {
+      "key": "playground-call-stack",
+      "id": "playground-call-stack",
+      "theme": "split",
+      "url": "/playground.html?doc=10-system-design/40-block-vocabulary/30-trees-and-paths/30-call-stack&type=call-stack",
+      "server": "docs-system",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2428,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [],
+      "reloads": 0
+    },
+    {
+      "key": "playground-stack",
+      "id": "playground-stack",
+      "theme": "split",
+      "url": "/playground.html?doc=10-system-design/40-block-vocabulary/50-flow-and-diagrams/30-stack&type=stack",
+      "server": "docs-system",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2346,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [],
+      "reloads": 0
+    },
+    {
+      "key": "docs-callout-tones-light",
+      "id": "docs-callout-tones",
+      "theme": "light",
+      "url": "/#/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout",
+      "server": "docs-system",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2229,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "reloads": 0
+    },
+    {
+      "key": "docs-callout-tones-dark",
+      "id": "docs-callout-tones",
+      "theme": "dark",
+      "url": "/#/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout",
+      "server": "docs-system",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2191,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "reloads": 0
+    },
+    {
+      "key": "docs-visual-system-themes-light",
+      "id": "docs-visual-system-themes",
+      "theme": "light",
+      "url": "/#/10-system-design/50-editor-design/40-visual-system/30-themes",
+      "server": "docs-system",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2195,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "reloads": 0
+    },
+    {
+      "key": "docs-visual-system-themes-dark",
+      "id": "docs-visual-system-themes",
+      "theme": "dark",
+      "url": "/#/10-system-design/50-editor-design/40-visual-system/30-themes",
+      "server": "docs-system",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2160,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "reloads": 0
+    },
+    {
+      "key": "docs-canvas-embed-light",
+      "id": "docs-canvas-embed",
+      "theme": "light",
+      "url": "/#/10-system-design/40-block-vocabulary/50-flow-and-diagrams/50-canvas",
+      "server": "docs-system",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2212,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "reloads": 0
+    },
+    {
+      "key": "docs-canvas-embed-dark",
+      "id": "docs-canvas-embed",
+      "theme": "dark",
+      "url": "/#/10-system-design/40-block-vocabulary/50-flow-and-diagrams/50-canvas",
+      "server": "docs-system",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2127,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "reloads": 0
+    },
+    {
+      "key": "docs-sequence-and-code-light",
+      "id": "docs-sequence-and-code",
+      "theme": "light",
+      "url": "/#/10-system-design/40-block-vocabulary/50-flow-and-diagrams/40-sequence",
+      "server": "docs-system",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2077,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "reloads": 0
+    },
+    {
+      "key": "docs-sequence-and-code-dark",
+      "id": "docs-sequence-and-code",
+      "theme": "dark",
+      "url": "/#/10-system-design/40-block-vocabulary/50-flow-and-diagrams/40-sequence",
+      "server": "docs-system",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2130,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "reloads": 0
+    },
+    {
+      "key": "chrome-style-rail-light",
+      "id": "chrome-style-rail",
+      "theme": "light",
+      "url": "/#/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout",
+      "server": "docs-system",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2173,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "reloads": 0
+    },
+    {
+      "key": "chrome-style-rail-dark",
+      "id": "chrome-style-rail",
+      "theme": "dark",
+      "url": "/#/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout",
+      "server": "docs-system",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2233,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "reloads": 0
+    },
+    {
+      "key": "chrome-annotate-panel-light",
+      "id": "chrome-annotate-panel",
+      "theme": "light",
+      "url": "/#/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout",
+      "server": "docs-system",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2451,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "reloads": 0
+    },
+    {
+      "key": "chrome-annotate-panel-dark",
+      "id": "chrome-annotate-panel",
+      "theme": "dark",
+      "url": "/#/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout",
+      "server": "docs-system",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2441,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "reloads": 0
+    },
+    {
+      "key": "chrome-export-dialog-light",
+      "id": "chrome-export-dialog",
+      "theme": "light",
+      "url": "/#/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout",
+      "server": "docs-system",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2287,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "reloads": 0
+    },
+    {
+      "key": "chrome-export-dialog-dark",
+      "id": "chrome-export-dialog",
+      "theme": "dark",
+      "url": "/#/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout",
+      "server": "docs-system",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2184,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "reloads": 0
+    },
+    {
+      "key": "chrome-side-peek-light",
+      "id": "chrome-side-peek",
+      "theme": "light",
+      "url": "/#/00-foundation",
+      "server": "docs-system",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2513,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "reloads": 0
+    },
+    {
+      "key": "chrome-side-peek-dark",
+      "id": "chrome-side-peek",
+      "theme": "dark",
+      "url": "/#/00-foundation",
+      "server": "docs-system",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2414,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "reloads": 0
+    },
+    {
+      "key": "chrome-link-editor-light",
+      "id": "chrome-link-editor",
+      "theme": "light",
+      "url": "/#/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout",
+      "server": "docs-system",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2163,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "reloads": 0
+    },
+    {
+      "key": "chrome-link-editor-dark",
+      "id": "chrome-link-editor",
+      "theme": "dark",
+      "url": "/#/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout",
+      "server": "docs-system",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2144,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "reloads": 0
+    },
+    {
+      "key": "workspace-entity-model-light",
+      "id": "workspace-entity-model",
+      "theme": "light",
+      "url": "/#/specs/30-knowledge-system/30-entity-model",
+      "server": "workspace",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2620,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "reloads": 0
+    },
+    {
+      "key": "workspace-entity-model-dark",
+      "id": "workspace-entity-model",
+      "theme": "dark",
+      "url": "/#/specs/30-knowledge-system/30-entity-model",
+      "server": "workspace",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2651,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "reloads": 0
+    },
+    {
+      "key": "workspace-full-send-loop-light",
+      "id": "workspace-full-send-loop",
+      "theme": "light",
+      "url": "/#/specs/20-fleet-setup/40-full-send-and-babysit-skills",
+      "server": "workspace",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2075,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "reloads": 0
+    },
+    {
+      "key": "workspace-full-send-loop-dark",
+      "id": "workspace-full-send-loop",
+      "theme": "dark",
+      "url": "/#/specs/20-fleet-setup/40-full-send-and-babysit-skills",
+      "server": "workspace",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2079,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "reloads": 0
+    },
+    {
+      "key": "workspace-html-panel-light",
+      "id": "workspace-html-panel",
+      "theme": "light",
+      "url": "/#/specs/20-fleet-setup/50-theo-agent-fleet-reference",
+      "server": "workspace",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2398,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "reloads": 0
+    },
+    {
+      "key": "workspace-html-panel-dark",
+      "id": "workspace-html-panel",
+      "theme": "dark",
+      "url": "/#/specs/20-fleet-setup/50-theo-agent-fleet-reference",
+      "server": "workspace",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2421,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "reloads": 0
+    }
+  ]
+}

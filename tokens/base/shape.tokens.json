@@ -1,0 +1,25 @@
+{
+  "radius": {
+    "$description": "One corner radius app-wide. Every rounded surface uses radius.base; pills use radius.pill.",
+    "none": { "$type": "dimension", "$value": "0px", "$description": "Square corners." },
+    "base": { "$type": "dimension", "$value": "2px", "$description": "The single corner radius for panels, controls, chips and highlights. Seed: docs-system --radius." },
+    "pill": { "$type": "dimension", "$value": "9999px", "$description": "Fully round ends: toggles, sliders, dots, scrollbar thumbs." }
+  },
+  "border": {
+    "width": {
+      "none": { "$type": "dimension", "$value": "0px", "$description": "No border (borderless chips, hidden column rules)." },
+      "hairline": { "$type": "dimension", "$value": "1px", "$description": "Every frame, rule and divider." },
+      "ring": { "$type": "dimension", "$value": "1.5px", "$description": "Linked-panel ring, outline strokes, list circle markers." },
+      "focus": { "$type": "dimension", "$value": "2px", "$description": "Focus outline width." },
+      "rail": { "$type": "dimension", "$value": "3px", "$description": "Accent rails: callout tone rule, linked-panel pin, drop line." }
+    }
+  },
+  "focus": {
+    "ring": {
+      "offset": { "$type": "dimension", "$value": "2px", "$description": "Gap between a control and its focus outline." }
+    }
+  },
+  "blur": {
+    "glass": { "$type": "dimension", "$value": "14px", "$description": "Backdrop blur behind glass panels. Seed: --docs-lab-glass-blur." }
+  }
+}

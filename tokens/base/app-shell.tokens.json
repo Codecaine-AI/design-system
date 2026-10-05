@@ -1,0 +1,87 @@
+{
+  "layout": {
+    "sidebar": {
+      "width": {
+        "$type": "dimension",
+        "$value": "220px",
+        "$description": "Expanded sidebar width. Budget app: aside 218px, rounded to the 4px grid."
+      },
+      "width-collapsed": {
+        "$type": "dimension",
+        "$value": "68px",
+        "$description": "Collapsed icon rail. Budget app: .sidebar-collapsed .main-sidebar 68px. Equals 2 x (padding-x + item-padding-x) + icon-size, so nav icons hold still while the sidebar collapses."
+      },
+      "padding-x": {
+        "$type": "dimension",
+        "$value": "12px",
+        "$description": "Inline padding inside the sidebar, both states. Budget app: --sidebar-padding 12px (10px when collapsed, unified here)."
+      },
+      "item-height": {
+        "$type": "dimension",
+        "$value": "40px",
+        "$description": "Primary nav row height. Budget app: 11px + 22px icon + 11px = 44px; with the 20px icon it rounds to 40px."
+      },
+      "item-padding-x": {
+        "$type": "dimension",
+        "$value": "12px",
+        "$description": "Inline padding of a primary nav row. Budget app: nav a padding 11px 12px."
+      },
+      "icon-size": {
+        "$type": "dimension",
+        "$value": "20px",
+        "$description": "Nav icon box. Budget app: .outline-icon 20px (22px in the sidebar), rounded to the 4px grid."
+      },
+      "subitem-height": {
+        "$type": "dimension",
+        "$value": "28px",
+        "$description": "Subnav row height. Budget app: subnav a padding 7px around a 12px line, about 29px."
+      },
+      "toggle-size": {
+        "$type": "dimension",
+        "$value": "32px",
+        "$description": "Square collapse toggle in the sidebar header. Budget app: .sidebar-toggle 32px."
+      },
+      "avatar-size": {
+        "$type": "dimension",
+        "$value": "32px",
+        "$description": "Footer account avatar. Budget app: .avatar 31px, rounded to the 4px grid."
+      }
+    },
+    "topbar": {
+      "height": {
+        "$type": "dimension",
+        "$value": "72px",
+        "$description": "Topbar height. Budget app: .workspace-topbar and .sidebar-header 72px. The sidebar header and inspector header share it, so their bottom borders form one line."
+      },
+      "padding-x": {
+        "$type": "dimension",
+        "$value": "32px",
+        "$description": "Inline padding of the topbar. Budget app: .workspace-topbar padding 0 32px."
+      }
+    },
+    "inspector": {
+      "width": {
+        "$type": "dimension",
+        "$value": "360px",
+        "$description": "Right-hand inspector panel. Budget app: SidePeek --side-peek-width min(360px, 40vw)."
+      }
+    },
+    "content": {
+      "padding-x": {
+        "$type": "dimension",
+        "$value": "40px",
+        "$description": "Inline padding of the main content area. Budget app: main padding 42px, rounded to the 4px grid."
+      },
+      "padding-top": {
+        "$type": "dimension",
+        "$value": "32px",
+        "$description": "Space between the topbar and the first content block. Budget app: main padding-top 34px."
+      },
+      "padding-bottom": {
+        "$type": "dimension",
+        "$value": "48px",
+        "$description": "Space below the last content block. Budget app: main padding-bottom 48px."
+      }
+    }
+  }
+}

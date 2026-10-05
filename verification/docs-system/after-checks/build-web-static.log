@@ -1,0 +1,25 @@
+$ DOCS_STATIC=1 vite build web
+vite v7.3.6 building client environment for production...
+transforming...
+✓ 5632 modules transformed.
+rendering chunks...
+computing gzip size...
+dist-static/index.html                                      0.39 kB │ gzip:   0.26 kB
+dist-static/assets/IBMPlexMono-Regular-Du0PCiXT.woff2      49.25 kB
+dist-static/assets/IBMPlexMono-Medium-CiYsa3y2.woff2       50.40 kB
+dist-static/assets/IBMPlexMono-SemiBold-CT2p8cOJ.woff2     50.60 kB
+dist-static/assets/Inter-Regular-CKDp9E3C.woff2            98.87 kB
+dist-static/assets/Inter-SemiBold-Ctx7G98q.woff2          105.80 kB
+dist-static/assets/Inter-Medium-P1cOs5ep.woff2            105.92 kB
+dist-static/assets/Inter-Bold-CuhepTt8.woff2              106.14 kB
+dist-static/assets/index-DDjhGrkC.css                     295.17 kB │ gzip:  39.82 kB
+dist-static/assets/browser-BzBbrBKd.js                     32.14 kB │ gzip:  12.33 kB
+dist-static/assets/pdf-document-8bmnnMBd.js               199.83 kB │ gzip:  62.58 kB
+dist-static/assets/index-2rMz5uO4.js                      437.86 kB │ gzip: 181.21 kB
+dist-static/assets/index-TVfUErsi.js                    2,353.99 kB │ gzip: 714.90 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 5.33s

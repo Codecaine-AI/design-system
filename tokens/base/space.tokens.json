@@ -1,0 +1,19 @@
+{
+  "space": {
+    "$description": "Spacing scale on a 4px grid, with half steps at 2px and 6px. Also used for fixed sizes (row heights, icon boxes), as Tailwind does.",
+    "0": { "$type": "dimension", "$value": "0px", "$description": "No space." },
+    "0-5": { "$type": "dimension", "$value": "2px", "$description": "Hairline gaps: chip padding, icon-to-label gap." },
+    "1": { "$type": "dimension", "$value": "4px", "$description": "List item gap, table cell padding-y, tight row gaps." },
+    "1-5": { "$type": "dimension", "$value": "6px", "$description": "Panel header padding-y, small control padding." },
+    "2": { "$type": "dimension", "$value": "8px", "$description": "Panel padding-y, caption gap." },
+    "3": { "$type": "dimension", "$value": "12px", "$description": "Default inner padding of panels, code and tables." },
+    "4": { "$type": "dimension", "$value": "16px", "$description": "Card padding-x, indent step, icon box." },
+    "5": { "$type": "dimension", "$value": "20px", "$description": "Block margin (callout), title-to-content gap." },
+    "6": { "$type": "dimension", "$value": "24px", "$description": "Media block margin, page top and bottom padding." },
+    "7": { "$type": "dimension", "$value": "28px", "$description": "Row height of trees, tables and nav items." },
+    "8": { "$type": "dimension", "$value": "32px", "$description": "Panel header strip height." },
+    "10": { "$type": "dimension", "$value": "40px", "$description": "Heading margin-top, code gutter width." },
+    "12": { "$type": "dimension", "$value": "48px", "$description": "Large section gap." },
+    "16": { "$type": "dimension", "$value": "64px", "$description": "Page-level separation." }
+  }
+}

@@ -1,0 +1,3 @@
+[test]
+# Bare `bun test` runs only the package tests, not templates/ (its own app, with its own dependencies).
+root = "./test"

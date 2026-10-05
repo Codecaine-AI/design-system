@@ -1,0 +1,87 @@
+{
+  "out": "propagation",
+  "startedAt": "2026-10-05T17:32:57.760Z",
+  "finishedAt": "2026-10-05T17:33:08.025Z",
+  "environment": {
+    "playwright": "1.63.0",
+    "chromium": "153.0.8010.12",
+    "platform": "darwin arm64",
+    "bun": "1.4.2"
+  },
+  "codeUnderTest": {
+    "repo": "/Users/Ford/workspace/codecaine/core/docs-system",
+    "head": "2efb0c142378f6894ab7aa61ee7252d380a02f83",
+    "status": [
+      " M .agent-kernel/kernel.json",
+      " M .agent-kernel/trace.db",
+      " M .agent-kernel/trace.db-shm",
+      " M .agent-kernel/trace.db-wal",
+      " M packages/docs-publish/src/editor.css",
+      " M packages/docs-viewer/src/styles/code.css",
+      " M packages/docs-viewer/src/styles/image-grid.css",
+      " M packages/docs-viewer/src/styles/image-viewer.css",
+      " M packages/docs-viewer/src/styles/list-markers.css",
+      " M packages/docs-workbench/package.json",
+      " M packages/docs-workbench/web/src/__tests__/layout-metrics-drift.test.ts",
+      " M packages/docs-workbench/web/src/__tests__/style-rail-token-wiring.test.ts",
+      " M packages/docs-workbench/web/src/__tests__/style-rail.test.tsx",
+      " M packages/docs-workbench/web/src/index.css",
+      " M packages/docs-workbench/web/src/pages/sequence-embed.css",
+      " M packages/docs-workbench/web/src/shell/style-rail-settings.ts",
+      " M packages/docs-workbench/web/src/theme/index.css",
+      " M packages/docs-workbench/web/src/theme/notion-palette.css",
+      " M packages/docs-workbench/web/src/theme/read-surface.css",
+      " M packages/docs-workbench/web/src/theme/semantic.css",
+      " M packages/docs-workbench/web/src/theme/style-rail.css",
+      " M packages/docs-workbench/web/src/theme/theme-folders.ts",
+      " M packages/docs-workbench/web/vite.config.ts",
+      "?? packages/docs-publish/codecaine-ai-docs-publish-0.1.0-proof.14.tgz",
+      "?? packages/docs-publish/codecaine-ai-docs-publish-0.1.0-proof.15.tgz",
+      "?? packages/docs-publish/codecaine-ai-docs-publish-0.1.0-proof.16.tgz",
+      "?? packages/docs-publish/codecaine-ai-docs-publish-0.1.0-proof.17.tgz",
+      "?? packages/docs-publish/codecaine-ai-docs-publish-0.1.0-proof.18.tgz",
+      "?? packages/docs-publish/codecaine-ai-docs-publish-0.1.0-proof.19.tgz",
+      "?? packages/docs-publish/codecaine-ai-docs-publish-0.1.0-proof.20.tgz",
+      "?? packages/docs-workbench/web/src/__tests__/ds-tokens.ts",
+      "?? packages/docs-workbench/web/src/theme/design-tokens.ts",
+      "?? packages/docs-workbench/web/src/theme/tokens.css"
+    ]
+  },
+  "fixtureSha256": "06080b7e09f3088076d1a05c0fdce646774d48cb382ef1035c9cc7f1d610bba6",
+  "shots": [
+    {
+      "key": "docs-callout-tones-light",
+      "id": "docs-callout-tones",
+      "theme": "light",
+      "url": "/#/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout",
+      "server": "docs-system",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2150,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "reloads": 0
+    },
+    {
+      "key": "docs-callout-tones-dark",
+      "id": "docs-callout-tones",
+      "theme": "dark",
+      "url": "/#/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout",
+      "server": "docs-system",
+      "captureAttempts": 1,
+      "attempts": 2,
+      "stable": true,
+      "durationMs": 2083,
+      "blockedWrites": [],
+      "blockedExternal": [],
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_CONNECTION_REFUSED"
+      ],
+      "reloads": 0
+    }
+  ]
+}

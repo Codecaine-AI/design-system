@@ -1,0 +1,270 @@
+{
+  "servers": {
+    "docs-system": {"corpus": "docs-system", "apiPort": 4870, "uiPort": 4871},
+    "workspace": {"corpus": "workspace", "apiPort": 4872, "uiPort": 4873}
+  },
+  "shots": [
+    {
+      "id": "playground-file-tree",
+      "server": "docs-system",
+      "app": "playground",
+      "url": "/playground.html",
+      "themes": ["split"],
+      "covers": "Component playground, default view: file-tree block, registry defaults, light | dark halves"
+    },
+    {
+      "id": "playground-callout",
+      "server": "docs-system",
+      "app": "playground",
+      "url": "/playground.html?doc=10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout&type=callout",
+      "themes": ["split"],
+      "covers": "Callout block, every tone and variant, registry defaults"
+    },
+    {
+      "id": "playground-process-outline",
+      "server": "docs-system",
+      "app": "playground",
+      "url": "/playground.html?doc=10-system-design/40-block-vocabulary/50-flow-and-diagrams/10-process-outline&type=process-outline",
+      "themes": ["split"],
+      "covers": "Process-outline block (tree guides, notes, keywords), registry defaults"
+    },
+    {
+      "id": "playground-interaction-surface",
+      "server": "docs-system",
+      "app": "playground",
+      "url": "/playground.html?doc=10-system-design/40-block-vocabulary/40-structured-reference/20-interaction-surface&type=interaction-surface",
+      "themes": ["split"],
+      "covers": "Interaction-surface block (operation rows, signature tokens), registry defaults"
+    },
+    {
+      "id": "playground-call-stack",
+      "server": "docs-system",
+      "app": "playground",
+      "url": "/playground.html?doc=10-system-design/40-block-vocabulary/30-trees-and-paths/30-call-stack&type=call-stack",
+      "themes": ["split"],
+      "covers": "Call-stack block (frames, branches, comment column), registry defaults"
+    },
+    {
+      "id": "playground-stack",
+      "server": "docs-system",
+      "app": "playground",
+      "url": "/playground.html?doc=10-system-design/40-block-vocabulary/50-flow-and-diagrams/30-stack&type=stack",
+      "themes": ["split"],
+      "covers": "Stack block (layers, boundaries, uses arrows), registry defaults"
+    },
+    {
+      "id": "docs-callout-tones",
+      "server": "docs-system",
+      "app": "docs",
+      "url": "/#/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout",
+      "themes": ["light", "dark"],
+      "covers": "Workbench shell (sidebar tree, header, collapsed style rail), page title, prose, inline code, callouts of every tone"
+    },
+    {
+      "id": "docs-visual-system-themes",
+      "server": "docs-system",
+      "app": "docs",
+      "url": "/#/10-system-design/50-editor-design/40-visual-system/30-themes",
+      "themes": ["light", "dark"],
+      "steps": [
+        {
+          "action": "scroll",
+          "selector": "[data-docs-scroller]",
+          "top": 250,
+          "why": "file tree + manifest table + headings + bullet list"
+        }
+      ],
+      "covers": "Visual-system page: file-tree block, structured table, h2/h3, bullet list"
+    },
+    {
+      "id": "docs-canvas-embed",
+      "server": "docs-system",
+      "app": "docs",
+      "url": "/#/10-system-design/40-block-vocabulary/50-flow-and-diagrams/50-canvas",
+      "themes": ["light", "dark"],
+      "waitFor": ["[data-canvas-frame]"],
+      "steps": [
+        {
+          "action": "scroll",
+          "selector": "[data-docs-scroller]",
+          "top": 700,
+          "why": "canvas embed + doc reference chip + state-shape header"
+        }
+      ],
+      "covers": "Canvas embed (sidecar board), doc reference chip, inline code, state-shape block"
+    },
+    {
+      "id": "docs-sequence-and-code",
+      "server": "docs-system",
+      "app": "docs",
+      "url": "/#/10-system-design/40-block-vocabulary/50-flow-and-diagrams/40-sequence",
+      "themes": ["light", "dark"],
+      "waitFor": ["[data-docs-block-type=\"sequence\"]"],
+      "steps": [
+        {
+          "action": "scroll",
+          "selector": "[data-docs-scroller]",
+          "top": 600,
+          "why": "sequence embed + code block with line numbers + state-shape"
+        }
+      ],
+      "covers": "Sequence embed (renders its 'Sequence failed to load' card today: the src is bundle-relative), code block with gutter and copy button, state-shape"
+    },
+    {
+      "id": "workspace-entity-model",
+      "server": "workspace",
+      "app": "docs",
+      "url": "/#/specs/30-knowledge-system/30-entity-model",
+      "themes": ["light", "dark"],
+      "covers": "Workspace corpus with its sidebar tree expanded, note callout, structured table"
+    },
+    {
+      "id": "workspace-full-send-loop",
+      "server": "workspace",
+      "app": "docs",
+      "url": "/#/specs/20-fleet-setup/40-full-send-and-babysit-skills",
+      "themes": ["light", "dark"],
+      "steps": [
+        {
+          "action": "scroll",
+          "selector": "[data-docs-scroller]",
+          "top": 4300,
+          "why": "process-outline with trace tags + titled warning callout"
+        }
+      ],
+      "covers": "Workspace page in the app theme: process-outline (notes, keywords, trace tags), h2, titled warning callout"
+    },
+    {
+      "id": "workspace-html-panel",
+      "server": "workspace",
+      "app": "docs",
+      "url": "/#/specs/20-fleet-setup/50-theo-agent-fleet-reference",
+      "themes": ["light", "dark"],
+      "waitFor": ["[data-docs-block-type=\"html\"] iframe"],
+      "steps": [
+        {
+          "action": "scroll",
+          "selector": "[data-docs-scroller]",
+          "top": 200,
+          "why": "titled info callout + html panel head"
+        }
+      ],
+      "masks": [
+        {
+          "selector": "[data-docs-block-type=\"html\"] dialog",
+          "reason": "The html block's sandboxed iframe measures its own content and the panel scales it to fit; the measure races the frame's layout, so the scaled artifact (and the panel height, 604 or 659 px) differs between loads. The mask covers the artifact area; the panel head, border and everything above stay compared. Do not scroll past this block: everything below it shifts with the panel height."
+        }
+      ],
+      "covers": "Workspace page: titled info callout, doc link chip, html panel head (sandbox label, Expand button); the artifact itself is masked"
+    },
+    {
+      "id": "chrome-style-rail",
+      "server": "docs-system",
+      "app": "docs",
+      "url": "/#/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout",
+      "themes": ["light", "dark"],
+      "rail": "open",
+      "railPane": "theme.colors",
+      "covers": "Style rail open on the Colors pane (dark-mode switch, color swatches, nav, footer buttons); read only, nothing clicked"
+    },
+    {
+      "id": "chrome-annotate-panel",
+      "server": "docs-system",
+      "app": "docs",
+      "url": "/#/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout",
+      "themes": ["light", "dark"],
+      "steps": [
+        {
+          "action": "click",
+          "selector": "button[data-docs-lab-toggle]",
+          "why": "Show AI panel: annotate mode + the floating glass panel"
+        },
+        {"action": "waitFor", "selector": "[data-lab-dock][data-lab-annotate-panel]"},
+        {
+          "action": "waitFor",
+          "selector": "[data-docs-page-transition=\"idle\"][aria-busy=\"false\"] [data-docs-mode=\"annotate\"] [data-annotation-targeting=\"true\"]"
+        },
+        {
+          "action": "hover",
+          "selector": "[data-annotation-targeting=\"true\"] [data-block-id=\"b-15-callout-example-info-22\"]",
+          "why": "targeting resolves the hovered block first; the hover ring proves its handlers are live"
+        },
+        {"action": "waitFor", "selector": "[data-annotation-ui=\"hover-ring\"]", "state": "attached"},
+        {
+          "action": "click",
+          "selector": "[data-annotation-targeting=\"true\"] [data-block-id=\"b-15-callout-example-info-22\"]",
+          "why": "target the info callout: selected ring + inline composer (nothing is filed until Enter)"
+        },
+        {"action": "waitFor", "selector": "[data-docs-inline-composer-anchor] [data-docs-lab-composer]"},
+        {
+          "action": "scroll",
+          "selector": "[data-docs-scroller]",
+          "top": 0,
+          "why": "the composer's textarea.focus() sometimes centers it (scrolls ~80px) depending on layout timing; pin the scroll position"
+        }
+      ],
+      "covers": "Annotate mode: glass AI panel (kernel shown 'not connected'), targeting ring, inline composer"
+    },
+    {
+      "id": "chrome-export-dialog",
+      "server": "docs-system",
+      "app": "docs",
+      "url": "/#/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout",
+      "themes": ["light", "dark"],
+      "steps": [
+        {
+          "action": "click",
+          "selector": "aside button:text-is(\"Export\")",
+          "why": "opening fetches and writes nothing; only its Export button does"
+        },
+        {
+          "action": "waitFor",
+          "selector": "dialog[open]",
+          "why": "the export dialog is the only modal; matched by state, not by its CSS class"
+        }
+      ],
+      "covers": "Export dialog (modal, page checklist, select, buttons) over a dimmed page"
+    },
+    {
+      "id": "chrome-side-peek",
+      "server": "docs-system",
+      "app": "docs",
+      "url": "/#/00-foundation",
+      "themes": ["light", "dark"],
+      "steps": [
+        {
+          "action": "dispatch",
+          "event": "spectre:doc-reference-navigate",
+          "detail": {"ref": {"kind": "doc", "path": "00-foundation/00-manifesto"}, "intent": "peek"},
+          "why": "the event a plain click on the Manifesto chip sends; dispatched so no pointer hover or node selection lands in the shot"
+        },
+        {
+          "action": "waitFor",
+          "selector": "aside[data-doc-peek-panel] [data-docs-page-transition=\"idle\"][aria-busy=\"false\"]"
+        }
+      ],
+      "covers": "Side peek drawer showing another doc next to the page"
+    },
+    {
+      "id": "chrome-link-editor",
+      "server": "docs-system",
+      "app": "docs",
+      "url": "/#/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout",
+      "themes": ["light", "dark"],
+      "steps": [
+        {
+          "action": "dblclick",
+          "selector": "[data-doc-editor=\"true\"] p:has-text(\"Callout highlights short\")",
+          "why": "select one word (a selection never dirties the doc)"
+        },
+        {
+          "action": "press",
+          "key": "Meta+k",
+          "why": "Cmd+K opens the link popover; nothing changes until a link is applied"
+        },
+        {"action": "waitFor", "selector": "[data-doc-link-editor=\"true\"]"}
+      ],
+      "covers": "Editor link popover over a text selection (the app has no search or command palette; this is its only Cmd+K surface)"
+    }
+  ]
+}

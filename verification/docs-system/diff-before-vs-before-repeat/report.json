@@ -1,0 +1,526 @@
+{
+  "a": "before",
+  "b": "before-repeat",
+  "generatedAt": "2026-10-05T16:49:42.994Z",
+  "comparison": "exact RGBA",
+  "totals": {
+    "shots": 30,
+    "identical": 30,
+    "changed": 0,
+    "missing": 0,
+    "sizeMismatch": 0,
+    "changedPixels": 0
+  },
+  "shots": [
+    {
+      "key": "chrome-annotate-panel-dark",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "chrome-annotate-panel-light",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "chrome-export-dialog-dark",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "chrome-export-dialog-light",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "chrome-link-editor-dark",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "chrome-link-editor-light",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "chrome-side-peek-dark",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "chrome-side-peek-light",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "chrome-style-rail-dark",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "chrome-style-rail-light",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "docs-callout-tones-dark",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "docs-callout-tones-light",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "docs-canvas-embed-dark",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "docs-canvas-embed-light",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "docs-sequence-and-code-dark",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "docs-sequence-and-code-light",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "docs-visual-system-themes-dark",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "docs-visual-system-themes-light",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "playground-call-stack",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "playground-callout",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "playground-file-tree",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "playground-interaction-surface",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "playground-process-outline",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "playground-stack",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "workspace-entity-model-dark",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "workspace-entity-model-light",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "workspace-full-send-loop-dark",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "workspace-full-send-loop-light",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "workspace-html-panel-dark",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "workspace-html-panel-light",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    }
+  ]
+}

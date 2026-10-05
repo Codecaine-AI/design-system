@@ -1,0 +1,2 @@
+$ bun scripts/build.ts --check
+design-system: 10 build outputs are up to date.

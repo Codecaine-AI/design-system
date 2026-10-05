@@ -1,0 +1,80 @@
+(fail) AnnotatedCodeBlock > copies the displayed (pretty-printed) code from the header button
+(fail) Callout editor shares the styled title and icon while body edits and undo preserve metadata
+(fail) CodeBlockNodeView header band > copies the raw stored text (node.textContent) and confirms with Copied
+(fail) CodeBlockNodeView inside a real editor > mounts the shell around the live PM contentDOM and tracks line edits
+(fail) CodeShell (plain read surface) > copies the displayed text and shows a transient Copied confirmation
+(fail) DocEditor save boundary > a stale (409) save keeps the in-progress edit and shows the reload prompt
+(fail) DocEditor save boundary > the DOM-mutation + input-event pipeline reaches ProseMirror state (dom-sync)
+(fail) Plannotator > renders an inline error via data-plannotator-agent-error when onRunAgent resolves ok:false
+(fail) Plannotator > renders an inline error via data-plannotator-agent-error when onUndoPatch resolves ok:false
+(fail) StandaloneCanvasEmbed loaded canvases > deep-links sidecar authoring actions into Studio's editor
+(fail) StandaloneCanvasEmbed loaded canvases > keeps the existing canvas validation error state
+(fail) StandaloneCanvasEmbed loaded canvases > loads a sidecar as the same inert, expandable preview
+(fail) StandaloneSequenceEmbed full-screen pan and zoom > normalizes line-mode wheel deltas to pixels before clamping
+(fail) StandaloneSequenceEmbed full-screen pan and zoom > opens fitted and centered, zooms toward the wheel cursor, and Fit restores the framing
+(fail) StandaloneSequenceEmbed sidecar src loading > fetches the sidecar, validates it, and renders the read-only viewer
+(fail) StandaloneSequenceEmbed sidecar src loading > surfaces schema validation failures instead of rendering
+(fail) annotate mode > Cmd+drag text selection pins a text-range target and annotates it
+(fail) annotate mode > an unmodified release with a text selection does not pin a range target
+(fail) annotate mode > creates an agent-request annotation against a clicked block
+(fail) annotate mode > hover-targets a block (glide ring + block type chip) and clicking opens the anchored composer
+(fail) auto-save > advances its baseline to a host-returned doc and skips the reseed when that object round-trips as the document prop
+(fail) auto-save > keeps the doc dirty and re-saves when edits land during an in-flight save
+(fail) auto-save > pauses auto-save after a 409 and resumes once the host reloads the doc
+(fail) auto-save > reports save-state transitions dirty -> saving -> saved
+(fail) callout children keep top-level key behavior > Backspace in an empty NESTED item outdents it a level
+(fail) callout children keep top-level key behavior > Backspace in an empty list item converts it to a paragraph, then merges it upward
+(fail) callout children keep top-level key behavior > Enter at the end of an item adds a sibling item inside the callout, and typing fills it
+(fail) callout children keep top-level key behavior > Tab nests an item under its previous sibling; Shift-Tab brings it back
+(fail) callout children keep top-level key behavior > the cursor's editing host inside a callout is the editor itself
+(fail) doc peek wiring > a doc-reference event with intent 'navigate' routes through hash navigation
+(fail) doc peek wiring > a doc-reference event with intent 'peek' opens the peek panel with the target doc
+(fail) doc peek wiring > loads a legacy overview doc ref from its canonical parent bundle
+(fail) doc peek wiring > toggles the lab without remounting it and remembers the choice across navigation and reload
+(fail) docs lab integration > renders staged before/after regions, excludes their blocks, and accepts
+(fail) docs lab integration > shows stale proposals as conflict rows instead of inline regions
+(fail) docs lab integration > uses glass tabs for targeting, disconnected Apply, wash, and Escape
+(fail) draft-lock lifecycle (TG9.3) > disables Save and renders the conflict banner on a held-by-other acquire result
+(fail) edit mode save loop > a 409 stale save keeps the draft and shows the stale banner with a reload option
+(fail) edit mode save loop > a draft lock held by another session pauses saving (acquire conflict) and 423s direct ops
+(fail) edit mode save loop > auto-saves through /api/ops on the debounce alone (no manual action)
+(fail) edit mode save loop > navigating away while dirty flushes the old doc without clobbering the new one
+(fail) edit mode save loop > saves ops through /api/ops (hash precondition) on Cmd+S, persists to disk, and undoes once from the header
+(fail) edit mode save loop > shows the rejected op path and validation message instead of only the generic detail
+(fail) edit mode save loop > switching to annotate mode flushes pending edits through the unmount save
+(fail) import boundaries > stage/editor/features/ slices do not import sideways except snapping service imports and current section-fit exceptions
+(fail) live change events > another actor's ops arrive over SSE, refresh the open bundle, and flash the changed block
+(fail) page title rename > commits an edited title as a bundle move (prefix kept) and reports the new path
+(fail) page title rename > reverts on Escape and on empty/unchanged titles without touching disk
+(fail) reference chip > shows the target path as a tooltip without opening a hover card
+(fail) rich-text style tokens > reads every token on the edit surface
+(fail) rich-text style tokens > wears the same class string on both surfaces, so one knob moves both
+(fail) shared global theme > follows another tab's change to the shared cache without echoing it back
+(fail) shared global theme > keeps the per-project repo theme when the host does not offer global
+(fail) shared global theme > lands every project on global, ignoring a stored repo theme id and stale per-project caches
+(fail) shared global theme > never writes global after a read failure other than 404
+(fail) shared global theme > renders stock when global does not exist yet, and the first change creates it
+(fail) shared global theme > writes the explicit save to global
+(fail) static public-site shell > keeps the live shell unchanged: no repository link, Export button present
+(fail) static public-site shell > renders a read-only reading site with the exported site title and repository link
+(fail) structured-table add buttons > shows the dark two-line tooltip after the hover dwell and hides on leave
+(fail) style rail list settings > includes list settings in export/import and reset-to-defaults
+(fail) style rail navigation > round-trips the complete settings object through export and import
+(fail) useDocLabSession > accepts a proposal, applies the returned doc, and makes it undoable
+(fail) useDocLabSession > fetches change-sets and overlays the latest kernel event view
+(fail) useDocLabSession > keeps the static projection when the kernel session is not live
+(fail) useDocLabSession > populates session proposals from the initial fetch
+(fail) useDocLabSession > rejects the staged proposal and refreshes the bundle
+(fail) useDocLabSession > rejects without resolving the annotation before adding fallback feedback
+(fail) useDocLabSession > sends reject feedback through a live kernel session and refetches proposals
+(fail) useDocLabSession > surfaces stale accepts and refetches proposals
+(fail) useDocLabSession > targets a live kernel accept by transaction id
+(fail) useDocLabSession > tracks accept busy state through the applied refetch and records failures
+(fail) useDocLabSession > undoes the most recently accepted proposal
+(fail) useTransientHighlights > flash marks ids immediately and clears them after the duration
+(fail) useTransientHighlights > re-flashing an id keeps it lit until every window that holds it ends (refcounted)
+(fail) workbench shell > keeps the rail hidden and performs no write-back on a theme-locked serve
+(fail) workbench shell > loads repo settings ahead of stale cache and writes annotate edits to the active theme
+(fail) workbench shell > renders a legacy overview route and replaces its hash with the section route
+(fail) workbench shell > renders the tree, doc header, and AI toolbar toggle
+(fail) workbench shell > static mode renders read-only: no mode switcher, no undo, content still renders

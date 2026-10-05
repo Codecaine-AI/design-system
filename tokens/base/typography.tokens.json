@@ -1,0 +1,40 @@
+{
+  "font": {
+    "family": {
+      "sans": { "$type": "fontFamily", "$value": "Inter, ui-sans-serif, system-ui, sans-serif", "$description": "UI and reading text. Inter 400-700 ships with @codecaine-ai/text-measure fonts.css." },
+      "mono": { "$type": "fontFamily", "$value": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace", "$description": "Code, inline code chips, kbd. IBM Plex Mono 400-600 ships with @codecaine-ai/text-measure fonts.css." },
+      "serif": { "$type": "fontFamily", "$value": "ui-serif, Georgia, 'Times New Roman', serif", "$description": "Optional serif reading face (docs style rail font choice)." },
+      "mono-system": { "$type": "fontFamily", "$value": "ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace", "$description": "Platform mono, no web font (docs style rail 'Mono' choice)." }
+    },
+    "size": {
+      "micro": { "$type": "dimension", "$value": "10px", "$description": "Smallest uppercase labels: panel tabs, nav group labels, counts." },
+      "ui-2xs": { "$type": "dimension", "$value": "11px", "$description": "Uppercase section labels, compact selects." },
+      "ui-xs": { "$type": "dimension", "$value": "12px", "$description": "Panel header labels, line numbers, captions in chrome." },
+      "ui-sm": { "$type": "dimension", "$value": "13px", "$description": "Dense UI text: notes, field names." },
+      "ui-md": { "$type": "dimension", "$value": "13.5px", "$description": "Panel body text: table cells, descriptions, image captions." },
+      "ui-lg": { "$type": "dimension", "$value": "14px", "$description": "Navigation and app chrome text." },
+      "code": { "$type": "dimension", "$value": "13px", "$description": "Code blocks and mono rows (>= 13px floor)." },
+      "reading": { "$type": "dimension", "$value": "18px", "$description": "Document body text." },
+      "title": { "$type": "dimension", "$value": "2.25rem", "$description": "Page title (36px at the 16px root)." }
+    },
+    "weight": {
+      "regular": { "$type": "fontWeight", "$value": 400, "$description": "Body and UI text." },
+      "medium": { "$type": "fontWeight", "$value": 500, "$description": "Table headers, field names, selected nav items." },
+      "semibold": { "$type": "fontWeight", "$value": 600, "$description": "Headings, panel titles, uppercase labels." },
+      "bold": { "$type": "fontWeight", "$value": 700, "$description": "Page title." }
+    }
+  },
+  "line-height": {
+    "tight": { "$type": "number", "$value": 1.2, "$description": "Page title." },
+    "ui": { "$type": "number", "$value": 1.5, "$description": "Default UI line height (Tailwind preflight html line-height)." },
+    "reading": { "$type": "number", "$value": 1.45, "$description": "Document body text and table cells." },
+    "code": { "$type": "dimension", "$value": "21px", "$description": "Code line box: drives row height, zebra period and annotation overlays (13px / 21px)." },
+    "row": { "$type": "dimension", "$value": "28px", "$description": "Single-line list rows: file trees, outline rows." }
+  },
+  "letter-spacing": {
+    "normal": { "$type": "dimension", "$value": "0em", "$description": "Reading text." },
+    "title": { "$type": "dimension", "$value": "-0.02em", "$description": "Page title." },
+    "micro": { "$type": "dimension", "$value": "0.09em", "$description": "Uppercase micro and section labels." },
+    "micro-wide": { "$type": "dimension", "$value": "0.14em", "$description": "Uppercase panel tab labels." }
+  }
+}

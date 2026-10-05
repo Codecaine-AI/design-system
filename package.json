@@ -1,0 +1,36 @@
+{
+  "name": "@codecaine-ai/design-system",
+  "version": "0.1.0",
+  "private": true,
+  "description": "One look for every Codecaine and Lascari AI app: design tokens (CSS, Tailwind v4, JS, JSON), layout CSS and the style guide.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/js/index.d.ts",
+      "default": "./dist/js/index.js"
+    },
+    "./tokens.css": {
+      "style": "./dist/css/tokens.css",
+      "default": "./dist/css/tokens.css"
+    },
+    "./layout.css": {
+      "style": "./css/layout.css",
+      "default": "./css/layout.css"
+    },
+    "./tailwind.css": {
+      "style": "./dist/tailwind/theme.css",
+      "default": "./dist/tailwind/theme.css"
+    },
+    "./tailwind-strict.css": {
+      "style": "./dist/tailwind/strict.css",
+      "default": "./dist/tailwind/strict.css"
+    },
+    "./json/*": "./dist/json/*",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "bun scripts/build.ts",
+    "check": "bun scripts/build.ts --check",
+    "test": "bun test ./test"
+  }
+}

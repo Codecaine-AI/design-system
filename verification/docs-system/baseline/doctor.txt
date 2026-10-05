@@ -1,0 +1,46 @@
+$ bun scripts/doctor.ts
+Core workspace doctor — /Users/Ford/workspace/codecaine/core
+32 workspace members
+
+✓ Member repos: 7 present
+⚠ Observatory registry: member kernels unregistered or drifted
+    ⚠ prompt-kit: registry differs from manifest (registry wins; not modified)
+        readApiBaseUrl: registry http://127.0.0.1:4850 vs manifest http://127.0.0.1:51900
+    ⚠ canvas: registry differs from manifest (registry wins; not modified)
+        readApiBaseUrl: registry http://127.0.0.1:4822 vs manifest http://127.0.0.1:50386
+    ⚠ simple-research: registry differs from manifest (registry wins; not modified)
+        readApiBaseUrl: registry http://127.0.0.1:8788 vs manifest http://127.0.0.1:8792
+        viewerBaseUrl: registry http://127.0.0.1:5174 vs manifest http://127.0.0.1:5182
+    ⚠ docs-system: registry differs from manifest (registry wins; not modified)
+        catalogRoots: registry [/Users/Ford/workspace/codecaine/core/docs-system/catalog] vs manifest [/Users/Ford/workspace/codecaine/core/observatory/catalog, /Users/Ford/workspace/codecaine/core/observatory/packages/docs-kernel/catalog]
+    FIX: (cd observatory && bun run registry:sync)  # adds missing; never overwrites
+✗ Install freshness: manifests changed after the last install
+    newer than the last install: canvas/packages/canvas/package.json
+    newer than the last install: docs-system/packages/docs-publish/package.json
+    FIX: (cd "/Users/Ford/workspace/codecaine/core" && bun install)
+✓ Workspace symlinks: all 32 members symlinked in Core/node_modules
+✓ Consumer workspace resolution: 98 local dependency edges checked
+✓ Observatory prompt-kit symlink: points to prompt-kit/packages/prompt-kit
+✓ Single React: exactly one react (hoisted at Core/node_modules/react)
+✓ Vite prebundle audit: 5 configs; every workspace dep resolves to live source or is excluded
+⚠ Stale .vite caches: prebundle caches survive restarts and never hot-reload
+    cache: canvas/packages/studio/node_modules/.vite
+    cache: canvas/packages/canvas-agent/node_modules/.vite
+    cache: sequence/packages/studio/node_modules/.vite
+    cache: agent-kernel/examples/simple-research-kernel/node_modules/.vite
+    cache: docs-system/packages/docs-workbench/node_modules/.vite
+    cache: docs-system/packages/docs-viewer/node_modules/.vite
+    FIX: rm -rf "/Users/Ford/workspace/codecaine/core/canvas/packages/studio/node_modules/.vite"
+    FIX: rm -rf "/Users/Ford/workspace/codecaine/core/canvas/packages/canvas-agent/node_modules/.vite"
+    FIX: rm -rf "/Users/Ford/workspace/codecaine/core/sequence/packages/studio/node_modules/.vite"
+    FIX: rm -rf "/Users/Ford/workspace/codecaine/core/agent-kernel/examples/simple-research-kernel/node_modules/.vite"
+    FIX: rm -rf "/Users/Ford/workspace/codecaine/core/docs-system/packages/docs-workbench/node_modules/.vite"
+    FIX: rm -rf "/Users/Ford/workspace/codecaine/core/docs-system/packages/docs-viewer/node_modules/.vite"
+    or: bun run doctor:fix
+✓ Shadowing node_modules: no nested copies of workspace packages (conflict splits are fine)
+✓ Rogue dep protocols: all cross-repo deps are workspace:* (sanctioned exceptions only)
+✓ Lockfile drift: no per-repo lockfile is newer than Core/bun.lock
+
+✗ doctor found problems — fix commands above.
+error: script "doctor" exited with code 1
+exit=1

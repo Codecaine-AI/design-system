@@ -1,0 +1,2236 @@
+{
+  "createdAt": "2026-10-05T15:46:07.179Z",
+  "purpose": "Frozen inputs for the docs-system screenshot harness. snapshot.ts extracts this into its staging dir on every run.",
+  "archive": {
+    "file": "frozen-inputs.tar.gz",
+    "sha256": "06080b7e09f3088076d1a05c0fdce646774d48cb382ef1035c9cc7f1d610bba6",
+    "bytes": 2883484
+  },
+  "sources": [
+    {
+      "from": "/Users/Ford/workspace/codecaine/core/docs-system/docs",
+      "to": "corpora/docs-system/docs",
+      "exclude": [
+        ".index",
+        ".DS_Store"
+      ]
+    },
+    {
+      "from": "/Users/Ford/workspace/docs",
+      "to": "corpora/workspace/docs",
+      "exclude": [
+        ".index",
+        ".DS_Store"
+      ]
+    },
+    {
+      "from": "/Users/Ford/.local/state/codecaine-docs/themes",
+      "to": "state/themes",
+      "exclude": [
+        "*.bak*",
+        ".DS_Store"
+      ]
+    },
+    {
+      "from": "/Users/Ford/.local/state/codecaine-docs/code-themes",
+      "to": "state/code-themes",
+      "exclude": [
+        ".DS_Store"
+      ]
+    },
+    {
+      "from": "/Users/Ford/workspace/codecaine/core/docs-system/themes",
+      "to": "repo-themes",
+      "exclude": [
+        ".DS_Store"
+      ]
+    }
+  ],
+  "git": {
+    "docsSystem": {
+      "repo": "/Users/Ford/workspace/codecaine/core/docs-system",
+      "head": "2efb0c142378f6894ab7aa61ee7252d380a02f83",
+      "dirty": []
+    },
+    "workspaceDocs": {
+      "repo": "/Users/Ford/workspace",
+      "head": "b7d6983fd442a2bdc8588b52691c1524afa8125d",
+      "dirty": [
+        " M docs/specs/20-fleet-setup/doc.json",
+        "?? docs/specs/20-fleet-setup/40-full-send-and-babysit-skills/",
+        "?? docs/specs/20-fleet-setup/50-theo-agent-fleet-reference/"
+      ]
+    }
+  },
+  "notes": [
+    "state/ is a copy of ~/.local/state/codecaine-docs/{themes,code-themes} only (no tokens, daemon or project files).",
+    "The playground does NOT read this fixture: it bundles docs-system/docs/**/doc.json from the live checkout via import.meta.glob."
+  ],
+  "files": [
+    {
+      "path": "corpora/docs-system/docs/.changesets/005f3845-1282-4be0-ae6d-ca5fd8dcd78a.json",
+      "bytes": 468,
+      "sha256": "a950c8ab2e11eb132b8fd2159cc76228e321e096418647e438cc847dbdd50a50"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/0a7de911-35d5-4788-8d4f-e02a4877b5df.json",
+      "bytes": 467,
+      "sha256": "45bd0e0329b7dde76cad333418ce45ed40eb5d72ad4df3251b1e54b58b3dce05"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/0b060aee-8390-4df2-98d7-c7cc65ced35a.json",
+      "bytes": 453,
+      "sha256": "065530e0453a2a6a6c36efb763cdd7a811161fc3baa0d8a75a8b6b8030a3db90"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/0b7eb95f-3f80-48e2-9b51-7deda02549e1.json",
+      "bytes": 401,
+      "sha256": "bab58a810c948cb13f0c25ba32850c7019e3fb5237e175dcaa5a7b3a1d9d254e"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/190f057e-097b-4429-99c5-dd90e48cb1fe.json",
+      "bytes": 453,
+      "sha256": "064da9455287b464112ab88258a763b1b89686b48f9eadac9cec0634a4585946"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/2445012a-ba10-45b3-97a2-d13e72d4ff33.json",
+      "bytes": 444,
+      "sha256": "ff7049f8889c326efcbef1812b60cb0930a7c9b1e8f6532121f53fb12044e5f5"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/26c2fcbb-91c3-4203-a1fb-5338853fc9ca.json",
+      "bytes": 502,
+      "sha256": "aa807ed7c5a5db3fad1fe0010f5d7b1bec3ca401c9ad3e4e5e87562db4eec67e"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/27ec3014-9352-4c26-95e7-43a3b37de053.json",
+      "bytes": 493,
+      "sha256": "0116b8fbcad1b15360d38dd7833ce5be70b7fe5747014f16ffe7f73a71034298"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/2c14b648-1a5e-45cd-b403-1837b14e2b00.json",
+      "bytes": 465,
+      "sha256": "2632e99daa87df5a36cd16fcfb46bca90e4111e569a2b4acf415f5860b32bf00"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/2c2b9ceb-0af4-4595-8491-7209382931df.json",
+      "bytes": 444,
+      "sha256": "663d98f963706e44a6f6789bc0cbe272b25b8778ce2ef6c867d9777176c0e6c8"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/2e738ba3-65f4-450a-a96d-1e8808ea74d3.json",
+      "bytes": 462,
+      "sha256": "469d8fdbb79bd59f04e1af8cdb217406ef9f974b7ac30905345e2e949af13e4b"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/359de1aa-328d-48b9-97eb-2c22f83400ea.json",
+      "bytes": 503,
+      "sha256": "6d808eaf6001c5a2d06590d507a2b6f64b02ed33ce4615e86b4009cf040f4b5d"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/3efeafb3-2a6a-41b1-9a2e-d728ebb15388.json",
+      "bytes": 474,
+      "sha256": "ff03eddbc91e918e1a58cf7990b682863f6e52abc0ee679373f20013f8495602"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/4035bff7-ce98-4dbb-be5e-9401e794bc0b.json",
+      "bytes": 446,
+      "sha256": "fdcb9e9f0ae7a5996d88c3bb2847cbde946b8e03792a3ce0b9cc03716cb6e628"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/4ba818e2-4317-4a7c-96d0-298de1e54e64.json",
+      "bytes": 468,
+      "sha256": "3689b258c12a2a1356ca8743dd2869c76b7ee0ea83d6be65d4248803d815afd0"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/51526007-4ac8-4d11-b840-a632b7d4c070.json",
+      "bytes": 1323,
+      "sha256": "94db7eeed342db0a4b37d04e1fe4add58964b5f4f716876d8f02281c09d1e241"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/54d0ed9d-eb86-456f-aaf4-34bb5f76fbb0.json",
+      "bytes": 452,
+      "sha256": "c14e601e0537724b15f1d026e2a543775fb26f3199333227a4c049744c33ac16"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/55b8e96f-c0d2-400e-a54b-dcdbcab27949.json",
+      "bytes": 485,
+      "sha256": "46f5886a6e784716dc7467072d1bc5488004145c83050c0b1dcaa680eaf1e64a"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/56eb350c-3256-4936-a10a-dbb625851d03.json",
+      "bytes": 474,
+      "sha256": "b93dd9045f2c2c5c2f41a95fa855ed2a688b8ce15c8d27b95f20de11430abbb6"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/6638d0b5-ec65-4b00-9850-556d387a4ab5.json",
+      "bytes": 448,
+      "sha256": "612b7a0c9476f489f170b9643526f0448522db5f01ac43696d607c4eb13e6c5c"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/67dd3144-8a84-4c5f-88a8-b96f13fc0534.json",
+      "bytes": 463,
+      "sha256": "d476ad46b71a82a5ed30d3fed27aed25a175c443ea4b0b0f35d376d64a93c5e9"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/69a30aab-4de8-4b60-adce-8474e18c9ace.json",
+      "bytes": 466,
+      "sha256": "538f72fc301479ae9df818ff5189b269e1a20efc8cda03fc5e6798f56f75633a"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/745a49d6-ccd4-4841-af46-3d4bc0e1c9b2.json",
+      "bytes": 504,
+      "sha256": "fbdbf1af110868f055f09471e3aa5f2230dd0397ad68485c983d80d00d71f129"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/8c039f5d-dc10-4e05-a9d8-f36002ac1a20.json",
+      "bytes": 438,
+      "sha256": "fa20c5a0628fa04da12e7c4859abb2fa4726845bbe621abed2a5f552449780f0"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/97aba355-e3d4-44df-9213-bff6a75fab8f.json",
+      "bytes": 453,
+      "sha256": "6d4798b2bf477d10c3b0d10cdb5330fe794766017785ab4de609826f14523ce7"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/996dc79f-5925-45f5-929d-edfc14c9a738.json",
+      "bytes": 461,
+      "sha256": "d1662c417d9aac982e60070f86513ed0a08e5ce475634acde742b58cf80cd985"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/9a0acfea-9130-4183-ab42-ba076585b1e4.json",
+      "bytes": 440,
+      "sha256": "f131fdf4804095991f484f07fc885247706e7decbea27546fc5eaf615ec087b3"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/9bda8739-a553-48e6-bcb2-c08209e15e00.json",
+      "bytes": 469,
+      "sha256": "063844e784f9b1a2c8ec413691455e0b479d645d5ef78f973512099ca8447c56"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/9bfaf234-6b90-422d-a3ae-19e07aee5a6f.json",
+      "bytes": 435,
+      "sha256": "9a86212bb84a5fdf774f0e580cefcc06114e8532b814dfcc9e5ba070ba13c5b4"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/9d046783-a565-4d0a-842b-16abcdbfaea0.json",
+      "bytes": 471,
+      "sha256": "6bc318d702470bac5074524436449d0b718af5af354a0db6f85b404ad3b285f4"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/ae1db375-1d09-43a1-9fc3-8479b7b9e9f2.json",
+      "bytes": 404,
+      "sha256": "25de4e9bbaf84b6edc5f20ba2bf62d654008acb758cfaa278959f7de6561661f"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/b3ac3fd2-fa4f-4a7c-9734-e4e71e5dae67.json",
+      "bytes": 465,
+      "sha256": "78bbebdad44c4041661dff52ae5704487fc6c19af304a1cc26dafe9a56a4629e"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/bf3bcb7f-ba4a-40bd-b5d1-2258872586e4.json",
+      "bytes": 1289,
+      "sha256": "033b8d1caea3ff2b7c1236d84451ef766f7fa202060f021451c4e97aefd85a5e"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/c46e7f4d-e8ee-44dd-85bc-99eeae193a04.json",
+      "bytes": 485,
+      "sha256": "b8807fcfc54130085be60d8cfad294a4aea4da08590af39412fafb9d2f594648"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/cee5e78a-bc17-4c16-a6df-6a034aece3b4.json",
+      "bytes": 462,
+      "sha256": "eaf315b656f9c9de89d6e75541696f998f35b82160c57f5a24b81dfa4eac9fab"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/d50f3f7b-c81e-4aba-a02c-9b310e7d70db.json",
+      "bytes": 481,
+      "sha256": "a54db3155166f45041bb1ddbec3d8e2739026edbeb80e3e74e64aac8b68a0b0e"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/d8c0c234-af31-4c0e-acec-f596af327041.json",
+      "bytes": 459,
+      "sha256": "0f2578c13ec934eebb709abcd3d4d9a134808287a3c98b69d5622820cf1e234f"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/dbc70842-84c4-4a9b-8d5f-2e3b2a90fcac.json",
+      "bytes": 466,
+      "sha256": "f058f4808e7cb98910dfb5f680881ea279af43026216338e4e74d79ce161b070"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/f00b666d-5725-46ae-9e78-5ada044bc184.json",
+      "bytes": 462,
+      "sha256": "3fef41c57233ffc795e76e52b4157b535b84398ab9d82f5c1e31c651c72a56e0"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/fb6d3059-ed94-4dd4-b2df-7eb3b1072628.json",
+      "bytes": 443,
+      "sha256": "fba39d12c708aaf731457a46b569b91f99a8059d38a3ba6dc734591c4de79d17"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/fc95c07b-3f5a-4062-a468-2b3c84bd7b53.json",
+      "bytes": 483,
+      "sha256": "9b965fbe56f35be3ade2fa81f599976183b5daf7a58fff8164b96a155c13632f"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/14326f36-2a8a-48ce-af30-42eb778f6b55/backup/10-system-design/40-block-vocabulary/20-code-block/doc.json",
+      "bytes": 57437,
+      "sha256": "ebc8b9ef5c94a2493fa9445e672d2108d398e2793cde1363dcccecd4b0eb9b8c"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/14326f36-2a8a-48ce-af30-42eb778f6b55/backup/10-system-design/40-block-vocabulary/50-state-shape/doc.json",
+      "bytes": 66601,
+      "sha256": "7283613ccf8c1916515da320de6a06b9d6472b5ce307020f9e58abccaec498cb"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/14326f36-2a8a-48ce-af30-42eb778f6b55/backup/10-system-design/40-block-vocabulary/60-interaction-surface/doc.json",
+      "bytes": 63650,
+      "sha256": "bff2e778a62fb13941d9736d68cebefa988e117c5a98cb527938bedb7c12e9f4"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/14326f36-2a8a-48ce-af30-42eb778f6b55/backup/10-system-design/40-block-vocabulary/doc.json",
+      "bytes": 19699,
+      "sha256": "080261f614e18d3ac3a87668990c524180f76e37b1857e98eba1746888120eec"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/14326f36-2a8a-48ce-af30-42eb778f6b55/backup/10-system-design/50-editor-design/20-editing-interactions/40-in-place-editing/doc.json",
+      "bytes": 9385,
+      "sha256": "f1ffff6026ec771a48c3e25873a4da3931c37ed20d558a3d41081acfab0cd41b"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/14326f36-2a8a-48ce-af30-42eb778f6b55/backup/10-system-design/50-editor-design/40-visual-system/10-tokens/doc.json",
+      "bytes": 13561,
+      "sha256": "4135e661d161cb224f3d76d5c10f19b80f7eaa0b1ea71f005bf5a902a7b14a28"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/14326f36-2a8a-48ce-af30-42eb778f6b55/manifest.json",
+      "bytes": 1853,
+      "sha256": "3b8228eae84ab6a2f55055dbe6a85a77bde6e2b905193c171d18e84c27cb6483"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/215a93ff-0a9d-408f-ab71-65627aba0066/backup/10-system-design/40-block-vocabulary/50-flow-and-diagrams/10-process-outline/doc.json",
+      "bytes": 77062,
+      "sha256": "1d7160aa3be02fc9f4ff2d68daf7f3f39d9a7ce4e7b3f99fca7527bc43964864"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/215a93ff-0a9d-408f-ab71-65627aba0066/backup/10-system-design/40-block-vocabulary/70-sequence/doc.json",
+      "bytes": 46524,
+      "sha256": "404858cab51d90f9e677be8a111c7b56284894f379aced1334efbbc9878669f9"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/215a93ff-0a9d-408f-ab71-65627aba0066/backup/10-system-design/40-block-vocabulary/doc.json",
+      "bytes": 19926,
+      "sha256": "e4948b98dda4e11c03a7ea92341065e3c53d1ea0b2a41994497992b5ed7d4102"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/215a93ff-0a9d-408f-ab71-65627aba0066/manifest.json",
+      "bytes": 1221,
+      "sha256": "1d2ca1ffaf17e7c89ba3b6cde39ae970f7b527b61c7f0576a343bc9df4b2d959"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/26bbc5e0-fd7e-47c5-af78-01eb29dc68d2/backup/10-system-design/40-block-vocabulary/20-code/10-code-block/doc.json",
+      "bytes": 57437,
+      "sha256": "ebc8b9ef5c94a2493fa9445e672d2108d398e2793cde1363dcccecd4b0eb9b8c"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/26bbc5e0-fd7e-47c5-af78-01eb29dc68d2/backup/10-system-design/40-block-vocabulary/50-state-shape/doc.json",
+      "bytes": 66609,
+      "sha256": "dc36f0bdd3328ce6caf6c1296a35d3f5a41beab03a2dc83556924b6ed266d6c8"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/26bbc5e0-fd7e-47c5-af78-01eb29dc68d2/backup/10-system-design/40-block-vocabulary/60-interaction-surface/doc.json",
+      "bytes": 63658,
+      "sha256": "d1381bef163614f4c561a67058c336f6b53c345ecf69f4a5238570bf618139a0"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/26bbc5e0-fd7e-47c5-af78-01eb29dc68d2/backup/10-system-design/40-block-vocabulary/doc.json",
+      "bytes": 19791,
+      "sha256": "5d9f1c18265850952372ffdaa419305d4172354cb1ed22f99d180c23a2a409cd"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/26bbc5e0-fd7e-47c5-af78-01eb29dc68d2/manifest.json",
+      "bytes": 1426,
+      "sha256": "2889433ccba8ae50fe2aff5301d854437e241ec397f7cc1ec6c01ce1471e3758"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/334bf148-03ac-438f-afce-9f01780f2300/backup/10-system-design/40-block-vocabulary/20-code/10-code-block/doc.json",
+      "bytes": 57485,
+      "sha256": "948f0443f9509877163559f8a7e087a9b6f85fcb287b9b281ff38644b073af03"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/334bf148-03ac-438f-afce-9f01780f2300/backup/10-system-design/40-block-vocabulary/40-structured-reference/10-state-shape/doc.json",
+      "bytes": 66609,
+      "sha256": "dc36f0bdd3328ce6caf6c1296a35d3f5a41beab03a2dc83556924b6ed266d6c8"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/334bf148-03ac-438f-afce-9f01780f2300/backup/10-system-design/40-block-vocabulary/60-interaction-surface/doc.json",
+      "bytes": 63730,
+      "sha256": "55df303e7c0977fa8d812bfb274753381ee52f6a4512dbb5c04a63516314ac1b"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/334bf148-03ac-438f-afce-9f01780f2300/backup/10-system-design/40-block-vocabulary/doc.json",
+      "bytes": 19815,
+      "sha256": "c32eeaa88bb149fc96b45439363ca7b555033446a1e830487a56ac141fa1c2d5"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/334bf148-03ac-438f-afce-9f01780f2300/manifest.json",
+      "bytes": 1498,
+      "sha256": "f7ee932784cdf6b0cf48c242138393f0d0720aafa146bab1d87fe14a2df90c1b"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/37234acf-e80c-4ae0-ac02-4e80dbbea075/backup/10-system-design/40-block-vocabulary/50-flow-and-diagrams/50-canvas/assets/canvases/interaction-surfaces-v2.canvas.json",
+      "bytes": 3735,
+      "sha256": "6778b9e71f6d144f5443c9b0746af1e4af49b291887a0ca2c22e804e28745954"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/37234acf-e80c-4ae0-ac02-4e80dbbea075/backup/10-system-design/40-block-vocabulary/50-flow-and-diagrams/50-canvas/doc.json",
+      "bytes": 41461,
+      "sha256": "c937d4a70cad728ae5a7168f5eb30b31fa1b3d0f726fea6015034e37f1b04df7"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/37234acf-e80c-4ae0-ac02-4e80dbbea075/manifest.json",
+      "bytes": 1310,
+      "sha256": "69631c1cef7fd35bf439c06e0dde5b52c21f651cc8d9cc3758e2d8ea30bcf4d5"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/42aeca52-8e5d-43fd-a6f9-cd813cdaad78/backup/10-system-design/40-block-vocabulary/22-pseudocode/doc.json",
+      "bytes": 12580,
+      "sha256": "a8b61f45eaa1327cd3c3f3f04b9d12a737ffdcaa5d459c6748f891cf5372a97b"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/42aeca52-8e5d-43fd-a6f9-cd813cdaad78/backup/10-system-design/40-block-vocabulary/doc.json",
+      "bytes": 19707,
+      "sha256": "4b665b978e57c52aa44581b4adcd3d8d3bfd83524748a3829414f2197a1f550b"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/42aeca52-8e5d-43fd-a6f9-cd813cdaad78/manifest.json",
+      "bytes": 951,
+      "sha256": "5fcc0df580a60623f4d706de432e7a2fce17506194cd3f05315233160914893c"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/48734ec9-56a2-4d33-9425-4dcab9a422b0/backup/10-system-design/40-block-vocabulary/50-flow-and-diagrams/20-flow-strip/doc.json",
+      "bytes": 10586,
+      "sha256": "ce780ff4132b9938a9945c9b0f5216a4e4be3c060a736951d7d56c16b73fb907"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/48734ec9-56a2-4d33-9425-4dcab9a422b0/deleted/doc.json",
+      "bytes": 10586,
+      "sha256": "ce780ff4132b9938a9945c9b0f5216a4e4be3c060a736951d7d56c16b73fb907"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/48734ec9-56a2-4d33-9425-4dcab9a422b0/manifest.json",
+      "bytes": 625,
+      "sha256": "25c160cf0dada0238ca74c0b29a3d8e53773e5574bc610985d2ad0d53a77c2fd"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/5124ee7b-8438-4130-8d71-b371e2939633/backup/10-system-design/40-block-vocabulary/90-process-outline/doc.json",
+      "bytes": 77003,
+      "sha256": "94c07e6b80cadc019e6f59e621786804fa662a4f5f7e1b34017cd880f4a98de3"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/5124ee7b-8438-4130-8d71-b371e2939633/backup/10-system-design/40-block-vocabulary/91-call-stack/doc.json",
+      "bytes": 15576,
+      "sha256": "937f9d30e30465a3eb641aa116f45aa7c1bc82cad72773403bb833652778c035"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/5124ee7b-8438-4130-8d71-b371e2939633/backup/10-system-design/40-block-vocabulary/doc.json",
+      "bytes": 19753,
+      "sha256": "0a1968f0c6654c14890c0b8711865012ae7add6791046d1a3ca5773f808f2d58"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/5124ee7b-8438-4130-8d71-b371e2939633/manifest.json",
+      "bytes": 1185,
+      "sha256": "be493b49473246104813c22d08da81d4a77e9be3fb27c99598937e9609b722e1"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/10-system-design/30-data-model/50-mutation-model/doc.json",
+      "bytes": 27809,
+      "sha256": "bba17073f253fb567e4a83b29f6c8889c49ec0678982d743bf218eb059e32d4f"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/10-system-design/30-data-model/doc.json",
+      "bytes": 8237,
+      "sha256": "4da145c8b71bd4ec8027df251b34ede144ea68a5ec5dc81963f12893f78fd57c"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/10-system-design/40-block-vocabulary/10-rich-text/10-paragraph/doc.json",
+      "bytes": 12188,
+      "sha256": "80618181a9bfb790ded926f183eb958fe3847c00318636e5462126a237b0c1b3"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/10-system-design/40-block-vocabulary/10-rich-text/11-heading/doc.json",
+      "bytes": 10553,
+      "sha256": "d77c1fb6d370a2b69fd971fc20da24895436b2a056748d10cf72b4d6ddda4961"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/10-system-design/40-block-vocabulary/10-rich-text/12-list-item/doc.json",
+      "bytes": 11675,
+      "sha256": "e0e557c0010ed696c13a6fb614178cdd60050173eea7fc6f8eb41d2903a104dd"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/10-system-design/40-block-vocabulary/10-rich-text/13-quote/doc.json",
+      "bytes": 8839,
+      "sha256": "29bff2dd421cd900504e66b5e28fb49c8169b1a2d7e8e30caeb9ddd37673436c"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/10-system-design/40-block-vocabulary/10-rich-text/14-callout/doc.json",
+      "bytes": 15703,
+      "sha256": "01c9569330632ad00670dad55a4ffd8f161951b7bc1c4b3a950f97a187c6c7e2"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/10-system-design/40-block-vocabulary/10-rich-text/15-divider/doc.json",
+      "bytes": 8422,
+      "sha256": "6d1169512b3f6ae8f8a3ffcbd26b108d4d901447bf2c72c42aa8cf3e94c6fc41"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/10-system-design/40-block-vocabulary/10-rich-text/16-image/doc.json",
+      "bytes": 11757,
+      "sha256": "48b30560d4a33e681ea065bab2d537f527e784bde9672d14629c0bbcf3c688f3"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/10-system-design/40-block-vocabulary/10-rich-text/17-video/doc.json",
+      "bytes": 12539,
+      "sha256": "be2563439e0f68c236d9e6a027c0a73197265179f82fde1ed65cc59713fbecca"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/10-system-design/40-block-vocabulary/10-rich-text/doc.json",
+      "bytes": 29624,
+      "sha256": "bd8c8276ba379f8befdecb033890f9d1f845e88a2464c97e606a9342ffa7d796"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/10-system-design/40-block-vocabulary/20-code-block/doc.json",
+      "bytes": 54351,
+      "sha256": "3b20d5cca5f965396869a57d7d69bb69d76a9050c6d4ee6077c7d68b7c177959"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/10-system-design/40-block-vocabulary/30-structured-table/doc.json",
+      "bytes": 39896,
+      "sha256": "34e67751e9a35173058ed8f37696886cdcc716f14979ce54b3cbce2c7c6c8596"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/10-system-design/40-block-vocabulary/40-file-tree/doc.json",
+      "bytes": 36015,
+      "sha256": "7234c3a8f4676ff9b498fadc3215ec09144643d14752c137c0e9025fb6b140c8"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/10-system-design/40-block-vocabulary/50-state-shape/doc.json",
+      "bytes": 50218,
+      "sha256": "cae56622ab1ca0106f5220fcf6b36f44652d1579ee105de71747863d80be8625"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/10-system-design/40-block-vocabulary/60-interaction-surface/doc.json",
+      "bytes": 40368,
+      "sha256": "e32dd8f7cefd0bf3c87d53107c0b1f0c18ceeba9d2ed43237be880871eaa7a17"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/10-system-design/40-block-vocabulary/70-sequence/doc.json",
+      "bytes": 44357,
+      "sha256": "6dd2cfbcc251ff479081091495116d6543b2ca3f75c2b1c8daa40346e54ef942"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/10-system-design/40-block-vocabulary/80-canvas/doc.json",
+      "bytes": 39858,
+      "sha256": "25d64bbabf0bb4c676716ea430d040e4abe99244d5a679d34d4e34d06d1ce0a1"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/10-system-design/50-editor-design/40-visual-system/20-typography-and-fonts/doc.json",
+      "bytes": 8673,
+      "sha256": "304ac542f42eed805a1a998730a10746c13cec7a3002dd7e8402ccf60186927c"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/10-system-design/50-editor-design/40-visual-system/30-themes/doc.json",
+      "bytes": 13353,
+      "sha256": "aed22a8f09cf5328cc4364ae6f09a123735fc645eb30b66579019facf72fb5d9"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/10-system-design/50-editor-design/40-visual-system/doc.json",
+      "bytes": 3762,
+      "sha256": "b81b08772c635272e4d5721dbf720fe2ccc2c20751d7a861de466d292012c092"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/20-implementation/10-packages/10-docs-model/doc.json",
+      "bytes": 17805,
+      "sha256": "88627cc9300684f9b681f8476542eaeb88caba69ec9e51e5625666d827c4c083"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/20-implementation/10-packages/20-docs-index/doc.json",
+      "bytes": 9241,
+      "sha256": "53cfc4f6cdc8d2535501b9ee313656990e3234fac6a32a4dadcc1ea1439c60ae"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/20-implementation/10-packages/30-docs-server/doc.json",
+      "bytes": 10079,
+      "sha256": "22764c0563e80439dadc025f216490a129a3366c34881fdeb7502ba68ed9c7d2"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/20-implementation/10-packages/40-docs-viewer/doc.json",
+      "bytes": 11912,
+      "sha256": "56b330c0f09de968de02f5839934fbd1a237adc94780ee58fe8d7587bcf58690"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/20-implementation/10-packages/50-docs-workbench/doc.json",
+      "bytes": 11182,
+      "sha256": "c8bc9594cb73516371c59fd069e34403d043ab2ff4abead7420149404f34a550"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/20-implementation/10-packages/60-docs-cli/doc.json",
+      "bytes": 10596,
+      "sha256": "aa34a4a383993d23516cb42c9fa3904f07d23a5b33260583b5e2a4530c507dbc"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/20-implementation/10-packages/70-framework/doc.json",
+      "bytes": 9301,
+      "sha256": "5baadd6fcbec45b0f9cbb9f4015a2537205a65e30089c6ffbbbb16d7d0918d38"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/20-implementation/10-packages/80-external-canvas/doc.json",
+      "bytes": 14151,
+      "sha256": "e4c66662b4a6ff34ced85166a7ed3cb0915fb78e9ba0211cbf152996d9401232"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/20-implementation/10-packages/85-docs-mcp/doc.json",
+      "bytes": 16520,
+      "sha256": "a4c560eadf53ad0dbb9f823d79dfe4b936ee2c70b5d64d0a04cc1142903082da"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/20-implementation/10-packages/90-docs-publish/doc.json",
+      "bytes": 10459,
+      "sha256": "60a2c573ae29d3dc9cab59919ee1175f9e7495660c505dfefefd7ed87077ef04"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/20-implementation/10-packages/doc.json",
+      "bytes": 26956,
+      "sha256": "8ca3773a802e1563abf865a530353b3264e6cb02b45f40bb58f8ac38e2c691d5"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/20-implementation/20-workbench/doc.json",
+      "bytes": 11672,
+      "sha256": "8779c23cbd7e9083eafde710d3d4350e37c803324b3bdf9f88f526efa4188fbd"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/20-implementation/40-theming/10-system-ui/doc.json",
+      "bytes": 14884,
+      "sha256": "e07bc5753dda76296d6d7afca637bc1b11e8d6769b23cf82a9eb2409d0cdb764"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/20-implementation/40-theming/doc.json",
+      "bytes": 25900,
+      "sha256": "c3f99fb9c5fed1c791a810fc39712e637f8b3284aa3bbee85254b659a00ade0d"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/20-implementation/doc.json",
+      "bytes": 7099,
+      "sha256": "a94c19a438d2662700e8b70791a9753edda19d8539e5e14b0961e18664ece793"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/20-implementation/proposals.json",
+      "bytes": 13546,
+      "sha256": "12e9777719899c1f077349eb616b5f40a661afaa627387b86292ed2304ca4e6f"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/30-guides/10-docs-mcp/20-skills/doc.json",
+      "bytes": 10316,
+      "sha256": "142891bafa5a2d1c6783db1563b10efc26795369d83a056b1cf16a5949616f07"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/30-guides/10-docs-mcp/30-sync/doc.json",
+      "bytes": 9357,
+      "sha256": "4982dbaee160b7c267ff6325b742eed92e7fe1d12dd8f3031baa3b1c450307bf"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/backup/30-guides/10-docs-mcp/doc.json",
+      "bytes": 3783,
+      "sha256": "1944b0da0bf4e66b35c41511e3dc79759e37a8cee284ca77d412019ce758ab83"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/61be4dce-1772-4351-a891-38498950d38b/manifest.json",
+      "bytes": 9144,
+      "sha256": "c42487d7428c5df8629f6400e204f5f39d2f44e01b7dbdf37051bd5959f5ba75"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/6333f54a-16d1-432e-aef1-ed60ca955d2c/backup/10-system-design/20-translation-layer/assets/canvases/interaction-surfaces.canvas.json",
+      "bytes": 4073,
+      "sha256": "8dbcf602a24e0e5af22fd0d94601075bfe0b84b666db96d3db2c0389cb376a6f"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/6333f54a-16d1-432e-aef1-ed60ca955d2c/deleted",
+      "bytes": 4073,
+      "sha256": "8dbcf602a24e0e5af22fd0d94601075bfe0b84b666db96d3db2c0389cb376a6f"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/6333f54a-16d1-432e-aef1-ed60ca955d2c/manifest.json",
+      "bytes": 653,
+      "sha256": "5de5a1060c41349fb68f8e4171e49d4fade7f074a111d6fdc0f58365638272c2"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/6b278b05-a8fe-4315-b63b-804c50cfd200/backup/10-system-design/40-block-vocabulary/50-flow-and-diagrams/10-process-outline/doc.json",
+      "bytes": 77041,
+      "sha256": "3b32974475a1c2095687dd1fc92157eb5a593e3ca7bbabea79b41b5303dca880"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/6b278b05-a8fe-4315-b63b-804c50cfd200/backup/10-system-design/40-block-vocabulary/93-flow-strip/doc.json",
+      "bytes": 10582,
+      "sha256": "13e61cf8b0ce04823a882563b5868af4d74c954b2c0d9ca5ba16d9098c52fd68"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/6b278b05-a8fe-4315-b63b-804c50cfd200/backup/10-system-design/40-block-vocabulary/doc.json",
+      "bytes": 19884,
+      "sha256": "1b2c7fb47aad93f9838da2719abaa7e330c62e51c10aa4dbe4bdbc15d609ccf7"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/6b278b05-a8fe-4315-b63b-804c50cfd200/manifest.json",
+      "bytes": 1231,
+      "sha256": "743bd4b823da0964d088cda615c0bb7ff933bf0373f1df7e805c6a0f1fefd46a"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/71b0ad81-52c1-4025-8ce3-0c459c0f451f/backup/10-system-design/40-block-vocabulary/50-flow-and-diagrams/50-canvas/assets/canvases/interaction-surfaces.canvas.json",
+      "bytes": 4073,
+      "sha256": "8dbcf602a24e0e5af22fd0d94601075bfe0b84b666db96d3db2c0389cb376a6f"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/71b0ad81-52c1-4025-8ce3-0c459c0f451f/deleted",
+      "bytes": 4073,
+      "sha256": "8dbcf602a24e0e5af22fd0d94601075bfe0b84b666db96d3db2c0389cb376a6f"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/71b0ad81-52c1-4025-8ce3-0c459c0f451f/manifest.json",
+      "bytes": 743,
+      "sha256": "beac6e7ca97f7516cec6181139e97873f178e21865b540e98b55939f46797469"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/87f2a6d0-00c3-41ec-9364-d19d1adbbedb/backup/10-system-design/40-block-vocabulary/50-flow-and-diagrams/10-process-outline/doc.json",
+      "bytes": 77083,
+      "sha256": "b1fa09522b62750eaf73f8550e34bdf2072ca091c775be2283c70cbe80019ecc"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/87f2a6d0-00c3-41ec-9364-d19d1adbbedb/backup/10-system-design/40-block-vocabulary/50-flow-and-diagrams/40-sequence/doc.json",
+      "bytes": 46524,
+      "sha256": "404858cab51d90f9e677be8a111c7b56284894f379aced1334efbbc9878669f9"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/87f2a6d0-00c3-41ec-9364-d19d1adbbedb/backup/10-system-design/40-block-vocabulary/80-canvas/assets/canvases/interaction-surfaces.canvas.json",
+      "bytes": 4073,
+      "sha256": "8dbcf602a24e0e5af22fd0d94601075bfe0b84b666db96d3db2c0389cb376a6f"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/87f2a6d0-00c3-41ec-9364-d19d1adbbedb/backup/10-system-design/40-block-vocabulary/80-canvas/doc.json",
+      "bytes": 41458,
+      "sha256": "0a8e2b05b405ab0b29fa4a22e7068e684f364e6228034e7d3b0da58175829c62"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/87f2a6d0-00c3-41ec-9364-d19d1adbbedb/backup/10-system-design/40-block-vocabulary/doc.json",
+      "bytes": 19947,
+      "sha256": "72a570c02cd791be09d753a48983c35ccaac4c60f0546351779ef9f665b3485f"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/87f2a6d0-00c3-41ec-9364-d19d1adbbedb/backup/10-system-design/50-editor-design/50-canvas-and-media/doc.json",
+      "bytes": 19261,
+      "sha256": "443e1e436442dae1cecbe342d1c1fa0f9b1894d86d2fba5beb2de6e9557e0d9e"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/87f2a6d0-00c3-41ec-9364-d19d1adbbedb/backup/30-implementation/10-packages/80-external-canvas/doc.json",
+      "bytes": 14151,
+      "sha256": "e4c66662b4a6ff34ced85166a7ed3cb0915fb78e9ba0211cbf152996d9401232"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/87f2a6d0-00c3-41ec-9364-d19d1adbbedb/manifest.json",
+      "bytes": 2261,
+      "sha256": "8986a72556d756416d1db22c2ae5707391e49b0551a0c3e42b48a9cf18f262c8"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/b1b09d4b-8a17-4068-9d46-245e56e8a8cc/backup/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/13-quote/doc.json",
+      "bytes": 9238,
+      "sha256": "99588221f18e85ed5815f3cdd648ced79cf269b5f34f39ebe910a6ae4491a407"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/b1b09d4b-8a17-4068-9d46-245e56e8a8cc/deleted/doc.json",
+      "bytes": 9238,
+      "sha256": "99588221f18e85ed5815f3cdd648ced79cf269b5f34f39ebe910a6ae4491a407"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/b1b09d4b-8a17-4068-9d46-245e56e8a8cc/manifest.json",
+      "bytes": 640,
+      "sha256": "5405a2108c070056344457c273cbfeb4554c8a429075873641f8837007b824aa"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/c802fb68-e7d4-489b-94c9-efe2fc82aeba/backup/10-system-design/40-block-vocabulary/90-process-outline/doc.json",
+      "bytes": 77022,
+      "sha256": "5b12b958b7c505c50fa035b85a70b83f821885214036c732530147da8bffb491"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/c802fb68-e7d4-489b-94c9-efe2fc82aeba/backup/10-system-design/40-block-vocabulary/92-component-tree/doc.json",
+      "bytes": 14380,
+      "sha256": "dae5e06870cf9d9dad9cc21f39e85d7d7884387d0686170b54cfc4d582399ce9"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/c802fb68-e7d4-489b-94c9-efe2fc82aeba/backup/10-system-design/40-block-vocabulary/doc.json",
+      "bytes": 19772,
+      "sha256": "b3ccd2f6d8176b829b9324de6b747a84d9ff70e1b2774a3838c89af979050954"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/c802fb68-e7d4-489b-94c9-efe2fc82aeba/manifest.json",
+      "bytes": 1205,
+      "sha256": "f7973a415c8903390df64c8e69ef5d0bbc4c9bb06bc998b1e57cd5f45c296afd"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/c9c3a022-74d1-4120-93b1-8f6f6c7e4909/backup/10-system-design/30-data-model/20-block-design/doc.json",
+      "bytes": 13678,
+      "sha256": "6765d0dedbc57829bb395d775f6feccc1f262c0cb9883594b3169644babd80e2"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/c9c3a022-74d1-4120-93b1-8f6f6c7e4909/backup/10-system-design/40-block-vocabulary/10-rich-text/10-paragraph/doc.json",
+      "bytes": 12551,
+      "sha256": "4a4609f5876d086afa5a5018557e339f5afaf6ec9fecdeec81f581d86e0bddd5"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/c9c3a022-74d1-4120-93b1-8f6f6c7e4909/backup/10-system-design/40-block-vocabulary/10-rich-text/11-heading/doc.json",
+      "bytes": 10932,
+      "sha256": "252add2fa0495c08f5ed873f5a9657a1acb33c7f3d26f3b54873a4ccffd86315"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/c9c3a022-74d1-4120-93b1-8f6f6c7e4909/backup/10-system-design/40-block-vocabulary/10-rich-text/12-list-item/doc.json",
+      "bytes": 12053,
+      "sha256": "e6b6c84b8e7fc0534d06cb7ebcb8cceec00935e4f405a0606635ed2b8859b907"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/c9c3a022-74d1-4120-93b1-8f6f6c7e4909/backup/10-system-design/40-block-vocabulary/10-rich-text/13-quote/doc.json",
+      "bytes": 9220,
+      "sha256": "f9cf5a46c345653a168532d09a763de296065507d3ab8c0f32c35804deafb623"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/c9c3a022-74d1-4120-93b1-8f6f6c7e4909/backup/10-system-design/40-block-vocabulary/10-rich-text/14-callout/doc.json",
+      "bytes": 23998,
+      "sha256": "6b1fe44782bdab96f21bc4fa27f07a83e579d39246496ce459185b522a77b9c1"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/c9c3a022-74d1-4120-93b1-8f6f6c7e4909/backup/10-system-design/40-block-vocabulary/10-rich-text/15-divider/doc.json",
+      "bytes": 8818,
+      "sha256": "087d79ab697411a4ef2e1c50cdf6536667e97e940e5eb499a172bcf9ea83eb3d"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/c9c3a022-74d1-4120-93b1-8f6f6c7e4909/backup/10-system-design/40-block-vocabulary/10-rich-text/16-image/assets/images/two-renders.svg",
+      "bytes": 1566,
+      "sha256": "790c4f13a9f3979e09ec843b9238cba7c8e0a7acd764de6986e4e465e939177b"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/c9c3a022-74d1-4120-93b1-8f6f6c7e4909/backup/10-system-design/40-block-vocabulary/10-rich-text/16-image/doc.json",
+      "bytes": 12824,
+      "sha256": "90e34f05ea3c46f09cd6add490c073208f323c56c5c5e613f6f83e2ddbea4c7e"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/c9c3a022-74d1-4120-93b1-8f6f6c7e4909/backup/10-system-design/40-block-vocabulary/10-rich-text/17-video/doc.json",
+      "bytes": 14266,
+      "sha256": "21dc9f18c9bfa57be8042300defbf97c519c2b7ce97e2a8d970b91a1f3c48e99"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/c9c3a022-74d1-4120-93b1-8f6f6c7e4909/backup/10-system-design/40-block-vocabulary/10-rich-text/18-html/doc.json",
+      "bytes": 10433,
+      "sha256": "49818cf67491b556d9ec1189aad5eb113af8291f084c07729553ef5c3dc90adf"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/c9c3a022-74d1-4120-93b1-8f6f6c7e4909/backup/10-system-design/40-block-vocabulary/10-rich-text/19-image-grid/doc.json",
+      "bytes": 8467,
+      "sha256": "a8f88a9c2b69ce6c7acc58f58e36936e644d7422f37eb702b9615257a6b8ac5b"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/c9c3a022-74d1-4120-93b1-8f6f6c7e4909/backup/10-system-design/40-block-vocabulary/10-rich-text/doc.json",
+      "bytes": 32358,
+      "sha256": "ef9957bf329f5def42356735a4621a9cbb1dcd016e29cb67e7cd1eb8d7564e64"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/c9c3a022-74d1-4120-93b1-8f6f6c7e4909/backup/10-system-design/40-block-vocabulary/doc.json",
+      "bytes": 19681,
+      "sha256": "ba3f9dc103672e15b3cf00115a23b4a1ede47045f9e63e85a343e17395c8e2dc"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/c9c3a022-74d1-4120-93b1-8f6f6c7e4909/backup/10-system-design/50-editor-design/50-canvas-and-media/doc.json",
+      "bytes": 19225,
+      "sha256": "c4fa19d1943c8a3d6ec2f288bd52a45e44b008cc9ab184e81575513021287413"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/c9c3a022-74d1-4120-93b1-8f6f6c7e4909/backup/30-implementation/10-packages/90-docs-publish/doc.json",
+      "bytes": 13668,
+      "sha256": "9d1e0889da2468f45faa0dd74df003c5c9b26b4b70ee4153d9d089edfa6e984b"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/c9c3a022-74d1-4120-93b1-8f6f6c7e4909/manifest.json",
+      "bytes": 5164,
+      "sha256": "9fac272572875ca1ec1f5329219988c8be0ad6436a3b20c1f2789e1efffddd51"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/cb9d428a-041e-4074-9c0f-c2ba29bdc474/backup/10-system-design/40-block-vocabulary/90-process-outline/annotations.json",
+      "bytes": 396,
+      "sha256": "ec2e15c70e99b6953bc40ea8fba9b7c684153c7a34609dbfe26b9b789751f966"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/cb9d428a-041e-4074-9c0f-c2ba29bdc474/backup/10-system-design/40-block-vocabulary/90-process-outline/doc.json",
+      "bytes": 77041,
+      "sha256": "3b32974475a1c2095687dd1fc92157eb5a593e3ca7bbabea79b41b5303dca880"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/cb9d428a-041e-4074-9c0f-c2ba29bdc474/backup/10-system-design/40-block-vocabulary/doc.json",
+      "bytes": 19863,
+      "sha256": "535006a91258565ffb300b4a325264936134b121fb2a57c6aa873741d36677fe"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/cb9d428a-041e-4074-9c0f-c2ba29bdc474/manifest.json",
+      "bytes": 1337,
+      "sha256": "68acfe465e675219c5ab6f1f51da1d1a60f8530ea220bc00abcc37cc3814ac95"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/d7b9a8fe-165a-4803-bcb2-07c2820eaf7e/backup/30-guides/10-docs-mcp/10-setup/doc.json",
+      "bytes": 10081,
+      "sha256": "201d5bea463045919ad5f0b498ad2fb483f81786174b8f225960ff67349b0f93"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/d7b9a8fe-165a-4803-bcb2-07c2820eaf7e/backup/30-guides/10-docs-mcp/20-skills/doc.json",
+      "bytes": 10316,
+      "sha256": "f67c5d18092a08b01d5acc957c4655c35dbe4caa1cf6315190bb22d4a4aeef06"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/d7b9a8fe-165a-4803-bcb2-07c2820eaf7e/backup/30-guides/10-docs-mcp/30-sync/doc.json",
+      "bytes": 9357,
+      "sha256": "ef6a1821fde8957e495393968b292ddc3f79c9f9dcfc161d6e20fb2e30d04575"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/d7b9a8fe-165a-4803-bcb2-07c2820eaf7e/backup/30-guides/10-docs-mcp/40-recovery/doc.json",
+      "bytes": 15099,
+      "sha256": "48c65bbe262b127bae68159cc10138a49332f9ea0c7931f03af660a7e821c0fb"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/d7b9a8fe-165a-4803-bcb2-07c2820eaf7e/backup/30-guides/10-docs-mcp/50-document-management/doc.json",
+      "bytes": 13028,
+      "sha256": "d63ed33d4d6339fceb06f4ac1c2d0d944833a1c0c8816fa0a86fa11dc469476a"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/d7b9a8fe-165a-4803-bcb2-07c2820eaf7e/backup/30-guides/10-docs-mcp/doc.json",
+      "bytes": 3783,
+      "sha256": "c1f48161d32e453db8ded43889c24f9fbb4d20add5b22b386af2233a1a4affc8"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/d7b9a8fe-165a-4803-bcb2-07c2820eaf7e/backup/30-guides/doc.json",
+      "bytes": 1248,
+      "sha256": "00dd9c9cd2d96e51a043fe342bce914568745505866ecf68c5fb375ac6ebcb66"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/d7b9a8fe-165a-4803-bcb2-07c2820eaf7e/backup/30-implementation/10-packages/85-docs-mcp/doc.json",
+      "bytes": 16520,
+      "sha256": "a4c560eadf53ad0dbb9f823d79dfe4b936ee2c70b5d64d0a04cc1142903082da"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/d7b9a8fe-165a-4803-bcb2-07c2820eaf7e/manifest.json",
+      "bytes": 2054,
+      "sha256": "aa24f69b67053733066b204c3297d32e921eb1153dc15e80a0807b30e8b0bc5e"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/de6b5451-78a8-414c-9f37-25fb9667a313/backup/10-system-design/40-block-vocabulary/95-stack/doc.json",
+      "bytes": 17118,
+      "sha256": "5993b3cab803b471563ffd73e35ce5ff9ec6b9c632f18083d3968f66a5611f91"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/de6b5451-78a8-414c-9f37-25fb9667a313/backup/10-system-design/40-block-vocabulary/doc.json",
+      "bytes": 19905,
+      "sha256": "f4dd08c2780ac8cf0d8e78372573140c5d7ce004ea384acf59ef85eca4fc2fd1"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/de6b5451-78a8-414c-9f37-25fb9667a313/manifest.json",
+      "bytes": 952,
+      "sha256": "472eaf5bc132e3418d1874080933aa71d53630cd4ac9fa7ac8711fcdefd27eae"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/deb2d075-f5b7-4d2a-9598-1d5654a9767b/backup/10-system-design/40-block-vocabulary/30-structured-table/doc.json",
+      "bytes": 43638,
+      "sha256": "be99c78094466acc84b86580cb2c6726f6cc3a2d363d0957d8ff916504704322"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/deb2d075-f5b7-4d2a-9598-1d5654a9767b/backup/10-system-design/40-block-vocabulary/doc.json",
+      "bytes": 19839,
+      "sha256": "926a06a2e5640dd784e5e862924bd13c98387df6eb0a165d0d9b0ddc766d17e2"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/deb2d075-f5b7-4d2a-9598-1d5654a9767b/backup/10-system-design/50-editor-design/20-editing-interactions/40-in-place-editing/doc.json",
+      "bytes": 9393,
+      "sha256": "2a65cb65540eefeac0cecd351ecd8398ca7508373b3165a305c1d263e43a66ed"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/deb2d075-f5b7-4d2a-9598-1d5654a9767b/manifest.json",
+      "bytes": 1269,
+      "sha256": "dbcffdac0378fba0771e895287b8d09fc77987af2fd0b26cc19407cbb8e4558f"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/e2b81ba8-fcb5-40c0-ac9e-4238f41f8d09/backup/10-system-design/40-block-vocabulary/40-file-tree/doc.json",
+      "bytes": 41775,
+      "sha256": "cc7c65d941ba9e200a15cc10ccd661a95429013a780c2787583a3a5e48df10ad"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/e2b81ba8-fcb5-40c0-ac9e-4238f41f8d09/backup/10-system-design/40-block-vocabulary/41-file-explorer/doc.json",
+      "bytes": 11562,
+      "sha256": "77a31ca5514ad61eebf125e293c298e533de98ef06948373c73b13f20ab80e69"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/e2b81ba8-fcb5-40c0-ac9e-4238f41f8d09/backup/10-system-design/40-block-vocabulary/90-process-outline/doc.json",
+      "bytes": 76984,
+      "sha256": "f405cc037e0e51d9add27ab5972078068f48b7d41f3f15620452aa0645b3f785"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/e2b81ba8-fcb5-40c0-ac9e-4238f41f8d09/backup/10-system-design/40-block-vocabulary/doc.json",
+      "bytes": 19715,
+      "sha256": "a968736c8fe9dedc99c5971b0e96c49490855234342780b94fc1e3c282d5123c"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/e2b81ba8-fcb5-40c0-ac9e-4238f41f8d09/manifest.json",
+      "bytes": 1388,
+      "sha256": "678f90964d8b846bd6b24ed09db97226f0f1f3e885ceaa0811f2addf53c586b9"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/ede7e935-f2e6-4e63-9643-b5ea368cfdeb/backup/10-system-design/20-translation-layer/assets/canvases/interaction-surfaces-v2.canvas.json",
+      "bytes": 3735,
+      "sha256": "6778b9e71f6d144f5443c9b0746af1e4af49b291887a0ca2c22e804e28745954"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/ede7e935-f2e6-4e63-9643-b5ea368cfdeb/backup/10-system-design/20-translation-layer/doc.json",
+      "bytes": 12879,
+      "sha256": "87557dcda1272c1273ea2f0842a23da15cd5ab3cd5e85223941821a9bb002b08"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/ede7e935-f2e6-4e63-9643-b5ea368cfdeb/manifest.json",
+      "bytes": 1100,
+      "sha256": "72fc9c82b39d48933658fdc624e9e5037914738904796ffe58a6ccda38ba3706"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/ef67c0b5-337e-44c2-8b4f-46a067b13a42/backup/10-system-design/doc.json",
+      "bytes": 14038,
+      "sha256": "ea4cbe4341d243a927f95fc9eef0cbf0baee14ea36b536d425f415c439ac6143"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/ef67c0b5-337e-44c2-8b4f-46a067b13a42/manifest.json",
+      "bytes": 562,
+      "sha256": "68295b5d7eaa5b5bf751590a401d9d9c1b6d2e8867534586d4617f62557a1559"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/fe54bc8c-f03e-49fe-a008-db8c2ba915f9/backup/10-system-design/40-block-vocabulary/30-trees-and-paths/10-file-tree/doc.json",
+      "bytes": 41775,
+      "sha256": "cc7c65d941ba9e200a15cc10ccd661a95429013a780c2787583a3a5e48df10ad"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/fe54bc8c-f03e-49fe-a008-db8c2ba915f9/backup/10-system-design/40-block-vocabulary/41-file-explorer/doc.json",
+      "bytes": 11581,
+      "sha256": "88731ec93c6e64e51c3f5438f1cf10fe8613e9ce7c504749b0118172ee37d207"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/fe54bc8c-f03e-49fe-a008-db8c2ba915f9/backup/10-system-design/40-block-vocabulary/doc.json",
+      "bytes": 19734,
+      "sha256": "747284acf2a6b800ec6a7b3b2f0f3ff1f4163c1b66f7d7da07a8699cd13b1c75"
+    },
+    {
+      "path": "corpora/docs-system/docs/.changesets/file-management/fe54bc8c-f03e-49fe-a008-db8c2ba915f9/manifest.json",
+      "bytes": 1226,
+      "sha256": "7aed1f89bd2b820ebd871d6b53bbeeb1722fc362c95d6abc67022848c92c87bd"
+    },
+    {
+      "path": "corpora/docs-system/docs/.drafts/implementation-layer-audit.md",
+      "bytes": 5955,
+      "sha256": "832320aab5ed6a83157eb51721a6e25d22003796dff13bf3f1aceefdf8a94bbd"
+    },
+    {
+      "path": "corpora/docs-system/docs/.drafts/implementation-layer-proposal.md",
+      "bytes": 11909,
+      "sha256": "3dacc1162db02f8368d7a1355abc2ac7bf369a8072be69bb02292ee8553e7454"
+    },
+    {
+      "path": "corpora/docs-system/docs/.drafts/parent-docs-vs-00-overview.md",
+      "bytes": 3881,
+      "sha256": "2436cfc5482d2eac743b8c419953e9ac4673089d034dc6016311e904a109b84c"
+    },
+    {
+      "path": "corpora/docs-system/docs/00-foundation/00-manifesto/doc.json",
+      "bytes": 23310,
+      "sha256": "a3e748a250a530a88f861c1fa82c222328e957d25c8d22598220a46e0641b797"
+    },
+    {
+      "path": "corpora/docs-system/docs/00-foundation/10-design-principles/doc.json",
+      "bytes": 14194,
+      "sha256": "d250126e7a62b65c13dc0081cf0c44c0e33ec015d55756abc42b583e1f5044c3"
+    },
+    {
+      "path": "corpora/docs-system/docs/00-foundation/doc.json",
+      "bytes": 2685,
+      "sha256": "10e40d0ee82cb0114bb1ac6135ce2deb6ba1054946b6c9454be772d1a4209d87"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/10-doc-standards/10-structure/doc.json",
+      "bytes": 18410,
+      "sha256": "cd20d61c8a7f6497a0ddabf80f958b503adf05d48a16df3457058093e61e3b6d"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/10-doc-standards/10-structure/proposals.json",
+      "bytes": 26690,
+      "sha256": "94c979bce3bc40b0652eb5018ba121da0a96960f46484b1d5191d9bbb7488f6b"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/10-doc-standards/20-numbering/doc.json",
+      "bytes": 10608,
+      "sha256": "addeeabc84d78eed758e5c647a3fbeb953fc1301be026fafea9f3fc479afcf5c"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/10-doc-standards/20-numbering/proposals.json",
+      "bytes": 10171,
+      "sha256": "881d62df9bbf531129bfc65ba514a5d4416ade287a9084f4364bca073efad9bf"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/10-doc-standards/30-cross-doc-linking/doc.json",
+      "bytes": 13680,
+      "sha256": "aae19e0a4efc0355b0bfae3ff0f2bd2dd1f4fd8d9bd8bed048348cd1f19eefc2"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/10-doc-standards/30-cross-doc-linking/proposals.json",
+      "bytes": 2989,
+      "sha256": "e69f1bde3613440fba091ca20f858b5c501928bf8635fa42c38eff51029d1c68"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/10-doc-standards/40-code-linking/doc.json",
+      "bytes": 11107,
+      "sha256": "33cc2d14b91108e4d82f62e779ff7f7902f34761be414b185bc37e51975f3c5e"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/10-doc-standards/50-in-code-docs/doc.json",
+      "bytes": 10207,
+      "sha256": "9eb0aa1e54174b9b0e8f83ccf87d2d3f71c838b3cc5f53670699d454b758b7df"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/10-doc-standards/60-implementation-layer/doc.json",
+      "bytes": 18729,
+      "sha256": "7dfac522b271af5908079617a21816039a86cd4b52c1830ec316f0cf06153cfd"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/10-doc-standards/60-implementation-layer/proposals.json",
+      "bytes": 21697,
+      "sha256": "329852e98502a557017c301a231339040c26270d71c23fb6a3aa3c4751570a41"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/10-doc-standards/70-document-purpose/doc.json",
+      "bytes": 15023,
+      "sha256": "1d298f034d09adb6509f1fefe480cb55102c4d064ca29ddb3267f02a392d2692"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/10-doc-standards/70-document-purpose/proposals.json",
+      "bytes": 3855,
+      "sha256": "9c12a5afc70a899756143d30db45b6ae247acfd263d3d67345ee614fa77da2ed"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/10-doc-standards/80-authoring-lints/doc.json",
+      "bytes": 52332,
+      "sha256": "328394c1ba891dd6eab39274263658c4861b42f88e9ca8e79f8acfa45f4ec9f4"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/10-doc-standards/85-style-enforcement/doc.json",
+      "bytes": 77197,
+      "sha256": "f16405e289f1ea6300b96c6c5b4d5a57750c4b2ed350c0f9489a2bfff43bbebe"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/10-doc-standards/doc.json",
+      "bytes": 15785,
+      "sha256": "0952b4b08f59ffb51d0674ccb242532cf39add156b16ee07d054b1ee329ca26b"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/10-doc-standards/proposals.json",
+      "bytes": 19872,
+      "sha256": "64d77e337b9f9b7f2c0ed79b79eaebdbc0ce9d969813ab5293dbe8448c1cd28f"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/20-translation-layer/10-human-surface/doc.json",
+      "bytes": 7309,
+      "sha256": "175741a7b8b997a8af8449dd7298b41b312c10f4ee81afcb2b28df0985f180d4"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/20-translation-layer/20-agent-surface/doc.json",
+      "bytes": 6622,
+      "sha256": "2ffd60e66bb9aee78ccd0e21681b301704a3b5e59b191924a51414486ce5ccfc"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/20-translation-layer/assets/canvases/interaction-surfaces.canvas.json",
+      "bytes": 3750,
+      "sha256": "e801f2825b452e70400686a737346305e9094f5c17700ff7111d8158fafc188f"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/20-translation-layer/doc.json",
+      "bytes": 12869,
+      "sha256": "0bff986ae782da1747b15e94f935075ae96137f74d3d1e8cc4c7d312c68159ae"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/30-data-model/10-document-tree/doc.json",
+      "bytes": 23706,
+      "sha256": "53e5d29332a96bec1820506453732f52c3ae1b7d25845d42d34110f61f4ac4ba"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/30-data-model/20-block-design/10-state-schema/doc.json",
+      "bytes": 6873,
+      "sha256": "cf74bac77f51b36505dd636f2ce3abcdeab7a1bf1e983af92292a13faceb21c5"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/30-data-model/20-block-design/20-typed-actions/doc.json",
+      "bytes": 7232,
+      "sha256": "1f32b050ec4b83999387fb54db17106c1d70bad37017d4f0f7590de470d04b8f"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/30-data-model/20-block-design/30-doc-renderer/doc.json",
+      "bytes": 6347,
+      "sha256": "4e2dd973c551dfaee11d4d674c5a138cd2273bdcef00baf1d7ad1b3933385745"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/30-data-model/20-block-design/40-agent-renderer/doc.json",
+      "bytes": 5467,
+      "sha256": "36b232c0ad347dde437231d52fd97f8ad719942c78c16cc1bf0e634050ac7704"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/30-data-model/20-block-design/50-theming/doc.json",
+      "bytes": 8151,
+      "sha256": "a8757032b67f0e7f043c4f05652353890c7996068cf80bb9df247880bd48057b"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/30-data-model/20-block-design/60-agent-adapter/doc.json",
+      "bytes": 5667,
+      "sha256": "52b4f84056b198d621abb20014bd694ac26767eae7c5b3983ad7fa1f732d88ee"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/30-data-model/20-block-design/doc.json",
+      "bytes": 13663,
+      "sha256": "1993660e9b7b2f483f8a2dab4e4098db96c58077e749f053c7fb170b6fbfe45a"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/30-data-model/30-annotations/doc.json",
+      "bytes": 20351,
+      "sha256": "16758d95cb00f351a62813b949f1680aff1928de9ea4bac135d95dd6748ba8b6"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/30-data-model/40-serialization/doc.json",
+      "bytes": 7660,
+      "sha256": "7c90b67ab034a3354bf1155084b5f74cceb33f26fe1b2e9a3d8b589b24212543"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/30-data-model/50-mutation-model/10-undo-redo/doc.json",
+      "bytes": 8401,
+      "sha256": "6de3b0dfcec05c7a585f8adf0d1db3954920c518e7a32aceb48d2f9f21b2961d"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/30-data-model/50-mutation-model/20-copy-paste/doc.json",
+      "bytes": 7515,
+      "sha256": "c8964b7b01812ac89926ca468cb5a18428af75ef4a0bd822c06bd0c622997416"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/30-data-model/50-mutation-model/doc.json",
+      "bytes": 32057,
+      "sha256": "842e355cada23ed5fcc394f4f7006e8b0e7cf2bcb0b901423eb0e0db6cb91824"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/30-data-model/60-change-sets/doc.json",
+      "bytes": 14906,
+      "sha256": "ddd94a2f055cc2e55bb46c3154bcdbc543210838ee2ddcd3a9883dad71f4b1a6"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/30-data-model/doc.json",
+      "bytes": 8230,
+      "sha256": "d85fb3e6f384e9ea799944b72d63043507eeda40dcd7778ee8a7256ba2c171d9"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/10-paragraph/doc.json",
+      "bytes": 12588,
+      "sha256": "fff039f71b967d6786f65cc3d6a443df6c9ed1a4c5e48485a79d8e05b6596d35"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/11-heading/doc.json",
+      "bytes": 10941,
+      "sha256": "e9e5f821720448c36fcb07613413ef7d9a2236f149bc6abdf5b43276be9286e3"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/12-list-item/doc.json",
+      "bytes": 12058,
+      "sha256": "13b9e6245906e37f8932e5d83f35fed9f1e358aedaceb9ef06d83cf2b87d5dcd"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout/doc.json",
+      "bytes": 25317,
+      "sha256": "e087f1e7f21ea503d38659c3dc340764f135e4cd9b7ad9e3d32ec8ef24b344e0"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/15-divider/doc.json",
+      "bytes": 8845,
+      "sha256": "1f787482587b6f1423bef15bfd877e5b4032d80cb2cebd9796cf8f6d8c06a9eb"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/16-image/assets/images/two-renders.svg",
+      "bytes": 1566,
+      "sha256": "790c4f13a9f3979e09ec843b9238cba7c8e0a7acd764de6986e4e465e939177b"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/16-image/doc.json",
+      "bytes": 18739,
+      "sha256": "58eac6e298550ebd76935518bbf6328d1499e3fee7636187feba456e15d433ee"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/17-video/doc.json",
+      "bytes": 14281,
+      "sha256": "1faae7ab946d4d2316efd5622d484800dbfa8cb2abe26b569c0e23f65c136d07"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/18-html/doc.json",
+      "bytes": 10923,
+      "sha256": "0707da2e8959b02ec59f62eab7ec5a9b6602ee3bc43bb25c83e575cb5c007258"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/19-image-grid/doc.json",
+      "bytes": 8622,
+      "sha256": "b066f700466de66e6f193e715a8c97bb3155888f909edefa6f107e28e86a6155"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/doc.json",
+      "bytes": 31866,
+      "sha256": "a3779e4e1dbd7b58fa4762e4551fdcfd72d19aba22eab6a94a2c78bf18f7bb15"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/10-text-and-media/doc.json",
+      "bytes": 5862,
+      "sha256": "c495b14e30e2ee2fe0579b1c098ce329bcbcc25cc9994288af3053e3f9a11c4e"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/20-code/10-code-block/doc.json",
+      "bytes": 62948,
+      "sha256": "8b21f0d75d11b6e7d59db70d876ed2d397ca1cd11f250e5f7b1b2cc3f18acdd2"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/20-code/20-pseudocode/doc.json",
+      "bytes": 20043,
+      "sha256": "42ceb4f4086a6c9f9bd88a9be5cbb4002ad4663581de867a0788773296663cc8"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/20-code/doc.json",
+      "bytes": 1971,
+      "sha256": "c20b8cf1d17ffe5bb2ed2f3b41dffb8f0962fdba8eec05c4637909ec7855c367"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/30-trees-and-paths/10-file-tree/doc.json",
+      "bytes": 41779,
+      "sha256": "684c7194116b8893d85e3e9d744c2b27ca9b833c551c06f8b876f15a857751bb"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/30-trees-and-paths/20-file-explorer/doc.json",
+      "bytes": 18345,
+      "sha256": "d9f5ad16e906ac48e738d07db1386920140d3d65faa3bbd36b86708e9c625de9"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/30-trees-and-paths/30-call-stack/doc.json",
+      "bytes": 27178,
+      "sha256": "827b694a3f389882ec0477b256f953ecfbb166115a89e7faa53243a43f9d8a67"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/30-trees-and-paths/40-component-tree/doc.json",
+      "bytes": 24382,
+      "sha256": "960da3aef82aad050e0af023ad068539e9adb0a579dc1d1f5560cb67b2397dee"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/30-trees-and-paths/doc.json",
+      "bytes": 3076,
+      "sha256": "7ecbaae8a89a57168b6f3324152a09796da8e60c7efb16a9f75803cbb104af51"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/40-structured-reference/10-state-shape/doc.json",
+      "bytes": 65768,
+      "sha256": "c9d198e653d957b534f3b1e363cbb261c5d597780e251392b8c401fab3b3637a"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/40-structured-reference/20-interaction-surface/doc.json",
+      "bytes": 59596,
+      "sha256": "10c76aec0c50bc8bb5cfd79b33aca565a21b5753e77d9284e22e67dc08f234f7"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/40-structured-reference/30-structured-table/doc.json",
+      "bytes": 52049,
+      "sha256": "39109a3806ed5e0962224ac2727042e2708659670ddc111fd4fc3e541b06e2da"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/40-structured-reference/doc.json",
+      "bytes": 2647,
+      "sha256": "fa712fbe8c2f5a38e55d9136f4ad0d258adc23fda02bd8dfb95ddb6dc3e40d6d"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/50-flow-and-diagrams/10-process-outline/annotations.json",
+      "bytes": 396,
+      "sha256": "ec2e15c70e99b6953bc40ea8fba9b7c684153c7a34609dbfe26b9b789751f966"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/50-flow-and-diagrams/10-process-outline/doc.json",
+      "bytes": 80219,
+      "sha256": "92df0fb956b49123260980323dbd4472ddb23767e894fed859fb0d8fbde68cd1"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/50-flow-and-diagrams/30-stack/doc.json",
+      "bytes": 31288,
+      "sha256": "5f1ef32de44c9429661a301baa68b8b856769229c1cf360fe88ed135ad9e1237"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/50-flow-and-diagrams/40-sequence/doc.json",
+      "bytes": 52215,
+      "sha256": "7fda9c3f4195a5192fc41c3d4385c92654b68efbe04921ecd1d914e5b1cb39f5"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/50-flow-and-diagrams/50-canvas/assets/canvases/interaction-surfaces.canvas.json",
+      "bytes": 3750,
+      "sha256": "e801f2825b452e70400686a737346305e9094f5c17700ff7111d8158fafc188f"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/50-flow-and-diagrams/50-canvas/doc.json",
+      "bytes": 42331,
+      "sha256": "4b35a905e66ec6527519b1fdf576ce8abb72b80a28fdc53f92440bc6d1c13f29"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/50-flow-and-diagrams/doc.json",
+      "bytes": 3067,
+      "sha256": "aa8c9499987659508274c5afe90189d27d5d91d4e62c9450cc71ff830c00d72d"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/40-block-vocabulary/doc.json",
+      "bytes": 15615,
+      "sha256": "850166f63997b252fa273784c6b0c07c9214740445053b4f7c76c7431904c401"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/50-editor-design/10-reading-surface/doc.json",
+      "bytes": 21355,
+      "sha256": "7129a0676e8c73cce27181a2f54fcb11da73f3decd4c5c7ec4801ae1f9a0d122"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/50-editor-design/20-editing-interactions/10-typing-model/doc.json",
+      "bytes": 13831,
+      "sha256": "793f5973ebd90a54bff6575f293d148ba178d98aec1d9e944d18730070a4634e"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/50-editor-design/20-editing-interactions/20-slash-menu/doc.json",
+      "bytes": 13046,
+      "sha256": "379868695baa667ba95ce28fdefdc7c96df23e51af13ed9d8f84cc363b312459"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/50-editor-design/20-editing-interactions/30-selection-and-movement/doc.json",
+      "bytes": 13710,
+      "sha256": "7d4f13667eaf0b4074d4e0d116403641d1f1f9b5d253ca3f3228f1c4ce73fb26"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/50-editor-design/20-editing-interactions/40-in-place-editing/doc.json",
+      "bytes": 9413,
+      "sha256": "cd06141c996032bd9aca3601072a7d735a200f7228143768e57049afd647b9c3"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/50-editor-design/20-editing-interactions/doc.json",
+      "bytes": 10275,
+      "sha256": "c110823621e7ea69f5426881079d5f819997f4393018723fd6fe496e6495cf27"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/50-editor-design/30-style-rail/doc.json",
+      "bytes": 22523,
+      "sha256": "a3eb936304e9ac83a4a32a253b5d86cd469d6403f6f2b8150dff0a9704408d7d"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/50-editor-design/40-visual-system/10-tokens/doc.json",
+      "bytes": 13569,
+      "sha256": "9bd921e33937f7c351d663777bcada2d2215be52042d23734da0b8ce36ede15c"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/50-editor-design/40-visual-system/20-typography-and-fonts/doc.json",
+      "bytes": 22278,
+      "sha256": "f8ea73d3290492cf02fb5b59ad11f4392965b7c41822e7d4a3793516d7f7f0d2"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/50-editor-design/40-visual-system/30-themes/doc.json",
+      "bytes": 23858,
+      "sha256": "e996642a465e6e0702c4708625c2245dc0d7f922beaee21cd14f97011e53a568"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/50-editor-design/40-visual-system/40-code-colors/doc.json",
+      "bytes": 18405,
+      "sha256": "79eeaeae23e1df6acc76082af7091982fdb9220a65ff55f72f0d146fc6b85f99"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/50-editor-design/40-visual-system/50-block-widths/doc.json",
+      "bytes": 22890,
+      "sha256": "4ae5755a636f6e49661b80cc8d5bc1993356552755131138306501a8e5777050"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/50-editor-design/40-visual-system/60-text-measurement/doc.json",
+      "bytes": 28491,
+      "sha256": "ab588c83e8ccf96a6d33d19b78c8d7b7cdfd1506fd504ce79701a881b6bcb245"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/50-editor-design/40-visual-system/doc.json",
+      "bytes": 6298,
+      "sha256": "348cdbc66cbef684ac976e6e74168be37f872e8c4d5fdb357f849c08f560cb57"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/50-editor-design/50-canvas-and-media/doc.json",
+      "bytes": 20139,
+      "sha256": "f25bc115a7e7a18df454369884b28a256ed4be834670b83af54f12c75e07acad"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/50-editor-design/doc.json",
+      "bytes": 6196,
+      "sha256": "83559879cad1f8ed5f1e5bb6c860fa9f00646208f2b00268a116caef5ea1477c"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/60-product-versioning/doc.json",
+      "bytes": 8650,
+      "sha256": "09f83e925b1a91dc13a0114ad238cad365b72235ab41c64aa02b38a6898695e6"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/70-central-docs-service/doc.json",
+      "bytes": 10411,
+      "sha256": "ea50473791e38dcafee0464f039e68b44a8a14aa70e420dedfdd2280bf46fc35"
+    },
+    {
+      "path": "corpora/docs-system/docs/10-system-design/doc.json",
+      "bytes": 14034,
+      "sha256": "acfcc18d6211c6e028e57dc1e6c70d8e7a2e61a89e037be9adc8a3bc7e08fe45"
+    },
+    {
+      "path": "corpora/docs-system/docs/30-implementation/10-packages/10-docs-model/doc.json",
+      "bytes": 37977,
+      "sha256": "80dfaf340cef96de74506c30815d60ea2562525a2d64c660f4cc5fc467e88560"
+    },
+    {
+      "path": "corpora/docs-system/docs/30-implementation/10-packages/20-docs-index/doc.json",
+      "bytes": 9226,
+      "sha256": "161aba9bb94ff49f71f0f0e27956baba073bbcfa53218b00b399f3322cf467d3"
+    },
+    {
+      "path": "corpora/docs-system/docs/30-implementation/10-packages/30-docs-server/doc.json",
+      "bytes": 21123,
+      "sha256": "39d3b8b3bf3c54ccf4867bcf90c9b3a557a8636c052d620ce5e79fe48afd9ae0"
+    },
+    {
+      "path": "corpora/docs-system/docs/30-implementation/10-packages/40-docs-viewer/doc.json",
+      "bytes": 14269,
+      "sha256": "650bc382b8918df30b6809ce00f96d9309717c33e6ad2a8a1834df196575fbeb"
+    },
+    {
+      "path": "corpora/docs-system/docs/30-implementation/10-packages/50-docs-workbench/doc.json",
+      "bytes": 12699,
+      "sha256": "61d525168b051d6485cebb9b5c3bbb2f33bf526528d2cedcb32e396e007d1cf9"
+    },
+    {
+      "path": "corpora/docs-system/docs/30-implementation/10-packages/60-docs-cli/doc.json",
+      "bytes": 17805,
+      "sha256": "2319b9af382780af67342d1c3040a73323ceb12a397426248569bcb06cb0d1a7"
+    },
+    {
+      "path": "corpora/docs-system/docs/30-implementation/10-packages/70-framework/doc.json",
+      "bytes": 9763,
+      "sha256": "de5afad47f240ddac8d49c8c203ef198c27013489aab2db232fa6a8cc386297d"
+    },
+    {
+      "path": "corpora/docs-system/docs/30-implementation/10-packages/80-external-canvas/doc.json",
+      "bytes": 27335,
+      "sha256": "61128d36e07c7976172147d04e7cafd51014a261ce627a048cc355124f693897"
+    },
+    {
+      "path": "corpora/docs-system/docs/30-implementation/10-packages/85-docs-mcp/doc.json",
+      "bytes": 41037,
+      "sha256": "e4c79095ae9f75a3e1d858ecfb4123d012fb4858cec2e510c59e8b743690bb76"
+    },
+    {
+      "path": "corpora/docs-system/docs/30-implementation/10-packages/90-docs-publish/doc.json",
+      "bytes": 19568,
+      "sha256": "19be428adbbd20319a262dcdfc9726d1d1b2823505c69cae149565b726c367be"
+    },
+    {
+      "path": "corpora/docs-system/docs/30-implementation/10-packages/doc.json",
+      "bytes": 26900,
+      "sha256": "3e634567334a01de32f73c7bad3edfb6fc9631942c0404dca913691ad84f1df8"
+    },
+    {
+      "path": "corpora/docs-system/docs/30-implementation/20-workbench/doc.json",
+      "bytes": 19162,
+      "sha256": "05dff2bc40f9f281d30054705a2f44e8cc0f71499202d972f1b28678f1ed9e88"
+    },
+    {
+      "path": "corpora/docs-system/docs/30-implementation/40-theming/10-system-ui/doc.json",
+      "bytes": 28126,
+      "sha256": "d08393244a4e28b28ccbb620fc724e4a6715f30960ce2be8d098d82fd91a99fa"
+    },
+    {
+      "path": "corpora/docs-system/docs/30-implementation/40-theming/doc.json",
+      "bytes": 52071,
+      "sha256": "c6d2d9dd86dc424e9667de606ff22489bcd0f2b6ae229caa2253aef2f4eefefa"
+    },
+    {
+      "path": "corpora/docs-system/docs/30-implementation/doc.json",
+      "bytes": 7142,
+      "sha256": "a7e704089e9bbc76c300d0b985f4e1fc0f772b281bb36829b1a2faa16e7b6c74"
+    },
+    {
+      "path": "corpora/docs-system/docs/30-implementation/proposals.json",
+      "bytes": 13546,
+      "sha256": "12e9777719899c1f077349eb616b5f40a661afaa627387b86292ed2304ca4e6f"
+    },
+    {
+      "path": "corpora/docs-system/docs/40-guides/10-docs-mcp/10-setup/doc.json",
+      "bytes": 10082,
+      "sha256": "c71ed8a5f6a47fc2634e19a6212fb4128ad2ca803745952d3f66779f0f5bb20f"
+    },
+    {
+      "path": "corpora/docs-system/docs/40-guides/10-docs-mcp/20-skills/doc.json",
+      "bytes": 15456,
+      "sha256": "699b1e8445018f627808dd3929b3a9871dc98b490b96b7e1f8b5a8d8c6437ca6"
+    },
+    {
+      "path": "corpora/docs-system/docs/40-guides/10-docs-mcp/30-sync/doc.json",
+      "bytes": 9360,
+      "sha256": "949e724bef5a0ee075f97b19eaa5d78d3d8a77dc83fb12b1f2a99c3834982061"
+    },
+    {
+      "path": "corpora/docs-system/docs/40-guides/10-docs-mcp/40-recovery/doc.json",
+      "bytes": 18603,
+      "sha256": "022488fc3e765e58a7bab50c4049487b61bdbedd182f8da483e0a0281a2a59f7"
+    },
+    {
+      "path": "corpora/docs-system/docs/40-guides/10-docs-mcp/50-document-management/doc.json",
+      "bytes": 13028,
+      "sha256": "16981c35e5b1cae65bb8e4b4d73fa39a7f498e364aaf657266035218552f2b51"
+    },
+    {
+      "path": "corpora/docs-system/docs/40-guides/10-docs-mcp/doc.json",
+      "bytes": 4425,
+      "sha256": "e6e278e842bc059a404f23cd2bc02372cc6b3a24e5d8a93d43fcdc12f2d2bb40"
+    },
+    {
+      "path": "corpora/docs-system/docs/40-guides/20-release-core-products/doc.json",
+      "bytes": 6529,
+      "sha256": "edf5cae4aed3691f7f28d19b38e7ade9045001858732cf6bd07047005fd694eb"
+    },
+    {
+      "path": "corpora/docs-system/docs/40-guides/30-run-central-docs/doc.json",
+      "bytes": 11336,
+      "sha256": "078e4299512990b1c062751f58d5e8e4f609eb1a8d1887dbbefe7987018a12a2"
+    },
+    {
+      "path": "corpora/docs-system/docs/40-guides/40-export-pdf/doc.json",
+      "bytes": 15976,
+      "sha256": "6ec2b9796726e518242c879b94cf379052b1279b87c14f518496c561718f7a85"
+    },
+    {
+      "path": "corpora/docs-system/docs/40-guides/50-deploy-github-pages/assets/images/actions-pages-build.png",
+      "bytes": 78399,
+      "sha256": "b77e7b3f2b1e2adb307ac9a757fa3ad9fa6b1f02c171b23ff872b86d639cee25"
+    },
+    {
+      "path": "corpora/docs-system/docs/40-guides/50-deploy-github-pages/assets/images/branch-gh-pages.png",
+      "bytes": 116444,
+      "sha256": "e6bf2bd1b874ec06e1bd0876153719ba2f2318796e8662786dde3038a2514671"
+    },
+    {
+      "path": "corpora/docs-system/docs/40-guides/50-deploy-github-pages/assets/images/live-guide.png",
+      "bytes": 544926,
+      "sha256": "c1ac8be57b985f8a3b4043f250d0ed34798d0ce32854ec62a35c8af2fda25aa8"
+    },
+    {
+      "path": "corpora/docs-system/docs/40-guides/50-deploy-github-pages/assets/images/live-overview.png",
+      "bytes": 544183,
+      "sha256": "892b084e148838139e91f7417e3cb0bc276ea2fbfb08c9e7cea63510aee49cd5"
+    },
+    {
+      "path": "corpora/docs-system/docs/40-guides/50-deploy-github-pages/assets/images/repo-home.png",
+      "bytes": 173315,
+      "sha256": "79384272231f20f40fc8677a938c85a190b28632ff9581e2f861ddbd8a8b8ab2"
+    },
+    {
+      "path": "corpora/docs-system/docs/40-guides/50-deploy-github-pages/doc.json",
+      "bytes": 31256,
+      "sha256": "754af40aac596208ce22a0906fea22b05c451455d8e25ef7c3d78e379bd82736"
+    },
+    {
+      "path": "corpora/docs-system/docs/40-guides/60-shared-env/doc.json",
+      "bytes": 12697,
+      "sha256": "0bc88be6e364642b4d48c58546802e1a55e3c407cffb991ec09f7510e970b92a"
+    },
+    {
+      "path": "corpora/docs-system/docs/40-guides/doc.json",
+      "bytes": 4109,
+      "sha256": "6b9b3f4fb201dc2d0dd97ac0f39cb45aed2fb0618a3da222c927b15811cddd6f"
+    },
+    {
+      "path": "corpora/docs-system/docs/90-specs/10-ui-mockups/doc.json",
+      "bytes": 85737,
+      "sha256": "130f9964e33d8e4a8ac7200bc886e02f6e5e7b02d3b1c56298511eb1aed0c6be"
+    },
+    {
+      "path": "corpora/docs-system/docs/90-specs/20-erd-diagrams/assets/canvases/trace-store-today.canvas.json",
+      "bytes": 13888,
+      "sha256": "df45ee0ceacd6437ffb38105cbed1e025956991cc16a9f925d1ae7a1800f38ab"
+    },
+    {
+      "path": "corpora/docs-system/docs/90-specs/20-erd-diagrams/doc.json",
+      "bytes": 142632,
+      "sha256": "a337264a5e593c7ffa1a93d9e1f215d8823f1fd5e86f9b92bf0d1f8554330b9b"
+    },
+    {
+      "path": "corpora/docs-system/docs/90-specs/30-interactive-html-diagrams/doc.json",
+      "bytes": 62944,
+      "sha256": "cc5358652c10947c1ab0766960013ab5f2e22042f9d6591f798a9547df66da68"
+    },
+    {
+      "path": "corpora/docs-system/docs/90-specs/doc.json",
+      "bytes": 3425,
+      "sha256": "eeb2fc7904f413146b31e3384347fa24e5b2bcc58905995c5b050a0317f6667b"
+    },
+    {
+      "path": "corpora/docs-system/docs/99-appendix/10-style-guide/10-writing-style/doc.json",
+      "bytes": 53837,
+      "sha256": "e78e5e2569fe0b4d8fb6d825d182c0efe0db88fec9ef7248c6beb92cf9e17ed8"
+    },
+    {
+      "path": "corpora/docs-system/docs/99-appendix/10-style-guide/20-structure/doc.json",
+      "bytes": 10429,
+      "sha256": "554da415bea3153073fcf1daee2f4b5348d621fd584a95851bbd438e1ab51408"
+    },
+    {
+      "path": "corpora/docs-system/docs/99-appendix/10-style-guide/30-ste-profile/annotations.json",
+      "bytes": 438,
+      "sha256": "8c24c9fe089ce0440335076e7e6218308590d33b4b6f2a12182de8b3e6d10887"
+    },
+    {
+      "path": "corpora/docs-system/docs/99-appendix/10-style-guide/30-ste-profile/doc.json",
+      "bytes": 23479,
+      "sha256": "f4be659414f2e6c26b8d86adfc2564a2e328b4a1165ca9d2c727c5affdbd06d3"
+    },
+    {
+      "path": "corpora/docs-system/docs/99-appendix/10-style-guide/40-vocabulary/doc.json",
+      "bytes": 110610,
+      "sha256": "babd071c84dbbc9d010bd630cf1323c3825089af230faf679c314a57c4085ed3"
+    },
+    {
+      "path": "corpora/docs-system/docs/99-appendix/10-style-guide/doc.json",
+      "bytes": 3689,
+      "sha256": "515423cc99b567a8cffa5e6d336a23dd140b0dbf4ef98a703bdc1a540cf71a04"
+    },
+    {
+      "path": "corpora/docs-system/docs/99-appendix/doc.json",
+      "bytes": 1637,
+      "sha256": "0e01f1e7d622d21bbfea6988137a911bda1d825c1dc14bf1f840999148ab065d"
+    },
+    {
+      "path": "corpora/docs-system/docs/assets/sequences/agent-edit-flow.sequence.json",
+      "bytes": 2325,
+      "sha256": "33b8cb24c2fd478b07ddd12886339bd8823f46c314e2af6096e1e4514ac176ba"
+    },
+    {
+      "path": "corpora/docs-system/docs/assets/sequences/login-flow.sequence.json",
+      "bytes": 2170,
+      "sha256": "a13c04bc8577af5c929631c138cc50ca7e8199f99b8df8fb9ed7bd9b932b88c1"
+    },
+    {
+      "path": "corpora/docs-system/docs/assets/sequences/order-distribution.sequence.json",
+      "bytes": 2150,
+      "sha256": "208fc59a8d7883f2aa3a7c7b42cb529f38f11b787f3a3c5e6d0ccd9878e70c7b"
+    },
+    {
+      "path": "corpora/docs-system/docs/assets/sequences/viewer-host-seam.sequence.json",
+      "bytes": 2100,
+      "sha256": "1c6cc738cae5d0c618bea3cac87f9638cc220dc6096c2efd6491ba5a830ef6ed"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/27904a7f-2398-4734-98a7-8872a06034a2.json",
+      "bytes": 478,
+      "sha256": "5dac83aa675847b344a0cc491924ab7208c47984441187a3cd11b843ef9a738a"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/2dc07456-9713-4811-851b-3ce9fc3e8536.json",
+      "bytes": 452,
+      "sha256": "10454416e6f6875aa3adfedd821acbab7b9f6e11ea83f5363841d9546e40b0d0"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/2f9cce33-81dd-4d1d-8d8b-eacd746cf0e9.json",
+      "bytes": 454,
+      "sha256": "204cedbde7ac6673e25c9a9006b1566d3be89377f276088081d56aa0c4038c12"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/460ba184-8d40-45dc-a4cf-acb660653ad0.json",
+      "bytes": 398,
+      "sha256": "7ac344ca881131acc0e2b1f567d31cf2695b9c6b7b594c025653a16146c5c771"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/495c1038-85fb-46a0-8b3f-97ba397cbc9d.json",
+      "bytes": 494,
+      "sha256": "dccf5aac0763453823fc4d4afd6e7fe22aece01858fa31b7efd986b65edfa7ea"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/4b34e524-7b27-47a5-a3d9-a4fca9949c62.json",
+      "bytes": 464,
+      "sha256": "3e67be7e44e3a4d3aa2d32291e510615bf3d7eb1f9d4f6190a0edca9e7dedd8c"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/71f713bf-2041-4b40-9809-d57d654f4849.json",
+      "bytes": 473,
+      "sha256": "3a328079a4d47324700c84b6a3f765fc79820799f5d352e4ce73b6163cb98503"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/7452211d-a8fe-4b97-a0ac-45247ddadcf2.json",
+      "bytes": 491,
+      "sha256": "1f5e345f7f326f0b0034b83f38d9873361ab5de7cef6f6c78970521123c804a3"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/7b362033-81ca-4c8f-8ea4-17fc249e39e6.json",
+      "bytes": 445,
+      "sha256": "683791078ccfa1edbae493ca40a8dca92de54faf6a1d8c3059d553fb9daf7ae7"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/7cd8c7da-7b91-4a90-a42d-6a3848dbbe38.json",
+      "bytes": 475,
+      "sha256": "81b656f3c4caf598a1774fa042c4b379d4280053a1fc86fdc9971eb707972770"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/7dda4799-9713-4e82-866e-a07eab2734b9.json",
+      "bytes": 481,
+      "sha256": "975dfb5c9d0ae8b1c0e8c91b8708481e2c645ed1ced2fc6cc2f3525f42ed830e"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/7f3ae759-a580-4e86-95a1-f2336f2c11b8.json",
+      "bytes": 466,
+      "sha256": "baad1dd375b2a2a92065341bcda3910360a9de9dac8d142238047d05bb05057f"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/9075c79b-72ff-4261-85d5-9211bdb4128f.json",
+      "bytes": 448,
+      "sha256": "41d8788cd54570a3af01da70515ac65d3a022f4079f7fddde165a536ad6f1c7f"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/9e269293-7ba0-4602-96b8-cdf7605d647d.json",
+      "bytes": 475,
+      "sha256": "80f56e38f5705544012b84b6b0adb07e367f6d94905726f8f4eb581b36e92412"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/bb5836ae-305b-4fab-a29c-0bcee921336b.json",
+      "bytes": 436,
+      "sha256": "792854373211cd07e6edd6049451b5603ed05d08264a931d741646af952b458f"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/eb783767-ada2-4cd5-8882-d3972b201dc7.json",
+      "bytes": 440,
+      "sha256": "63bd4d76c7c3729ac5900975a5c003c37574ed9f5447707f5bd1fe6669e9c478"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/ed661192-76b1-4023-a7e9-a4ec1f394a73.json",
+      "bytes": 480,
+      "sha256": "2ef4fd0ebdfd3968e3e852e3fae3861754c0fc6f63169277665ede273979c8bf"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/file-management/00fe7090-2a51-431b-95fc-d5e2241faccc/backup/specs/20-fleet-setup/50-theo-agent-fleet-reference/assets/images/codex-data-controls-2.webp",
+      "bytes": 19160,
+      "sha256": "f7e38c7735ff57b7b02acd4ae0f9bdeade37cb3668974eb17aee156fc65fe0c8"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/file-management/00fe7090-2a51-431b-95fc-d5e2241faccc/deleted",
+      "bytes": 19160,
+      "sha256": "f7e38c7735ff57b7b02acd4ae0f9bdeade37cb3668974eb17aee156fc65fe0c8"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/file-management/00fe7090-2a51-431b-95fc-d5e2241faccc/manifest.json",
+      "bytes": 668,
+      "sha256": "9255891316a3f89aa0c2d179dc983edf9a67d8f7b47a6241ec9dd38c357d5e80"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/file-management/7514d7ec-9c28-4402-84e2-f28ba5213bbe/backup/10-system-design/20-fleet-setup/doc.json",
+      "bytes": 46019,
+      "sha256": "dfeb973cdbf7f529c5ec7e5b851e0dc0f1ee12cef6d69dd355184282383fab5f"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/file-management/7514d7ec-9c28-4402-84e2-f28ba5213bbe/backup/10-system-design/doc.json",
+      "bytes": 2624,
+      "sha256": "2d62ecb8a49fb48f8ff0a28452b3d4b4865821ef0649dc3401667113b4504f98"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/file-management/7514d7ec-9c28-4402-84e2-f28ba5213bbe/backup/specs/10-branches-and-releases/doc.json",
+      "bytes": 37060,
+      "sha256": "9b1806f2b73c269bcaee060f54570bb598bd47ad750e62107f9a2ed7e1b8884b"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/file-management/7514d7ec-9c28-4402-84e2-f28ba5213bbe/manifest.json",
+      "bytes": 940,
+      "sha256": "740d62f5ae9ed7f04705da5e380900d063e30bdc211a7d75a2794f2d7667abf1"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/file-management/a1fc66db-f645-4551-8e5c-7b8b7fd9a9d4/backup/10-system-design/20-fleet-access-and-secrets/doc.json",
+      "bytes": 20551,
+      "sha256": "e0da813ba3d843f83458f852f87a80787bee685c7500a5daf4880d9eb5d983c2"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/file-management/a1fc66db-f645-4551-8e5c-7b8b7fd9a9d4/manifest.json",
+      "bytes": 727,
+      "sha256": "77f51dd098165beb49bd32fb0b4641f8772d0d4becaae5ade7cee9fbe42d56fe"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/file-management/f402f5a6-1012-4bd2-bc7d-e7f394cf437d/backup/10-system-design/10-branches-and-releases/doc.json",
+      "bytes": 37060,
+      "sha256": "9b1806f2b73c269bcaee060f54570bb598bd47ad750e62107f9a2ed7e1b8884b"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/file-management/f402f5a6-1012-4bd2-bc7d-e7f394cf437d/backup/10-system-design/20-fleet-setup/doc.json",
+      "bytes": 46030,
+      "sha256": "63b311f1854decd65e69334a30563a45353e531d847884538d8ab895be93f248"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/file-management/f402f5a6-1012-4bd2-bc7d-e7f394cf437d/backup/10-system-design/doc.json",
+      "bytes": 2635,
+      "sha256": "63ab2b818ccaba760b4cc9bf57299c12cffbba1e28a37026051ba1dfe139b85f"
+    },
+    {
+      "path": "corpora/workspace/docs/.changesets/file-management/f402f5a6-1012-4bd2-bc7d-e7f394cf437d/manifest.json",
+      "bytes": 992,
+      "sha256": "2b4e9e13238544c7578f34b257b0090559937559fb1f51ae24577dd17371b8c1"
+    },
+    {
+      "path": "corpora/workspace/docs/00-foundation/doc.json",
+      "bytes": 2508,
+      "sha256": "b384a9d2d1812409b9f9806e1d9205f8e62d4b254b735c8e52805990715dd2f0"
+    },
+    {
+      "path": "corpora/workspace/docs/10-system-design/doc.json",
+      "bytes": 1800,
+      "sha256": "bda2e101926736d9c3a6c14549ff1f598d9ee2fc6bc6d838b725054ecf212a85"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/10-branches-and-releases/doc.json",
+      "bytes": 37062,
+      "sha256": "d34cb78f01491d372d942c2ca90c652305a3508e55ff37cb9114dfad8d2b04ab"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/10-access-and-secrets/doc.json",
+      "bytes": 21772,
+      "sha256": "8236cd1f8e149513bd426502ac946130747e0050fd31ebf78f9c27d8d9482229"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/20-nas-storage/doc.json",
+      "bytes": 8391,
+      "sha256": "8375e740fe5a3e62e8af0d0efed4644b8b2650088c55633ec999a7aa6d323c8b"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/30-local-development-servers/doc.json",
+      "bytes": 11402,
+      "sha256": "b0d621c3f90ee3bd48dc57d2430d2f21d23595bff7cb991e14ed6b5fd994c9a6"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/40-full-send-and-babysit-skills/doc.json",
+      "bytes": 50699,
+      "sha256": "313ed65fa5b4d3dd3b2719d3ab4ca23c44621edab227e4631ba3ea01a23d1f94"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/50-theo-agent-fleet-reference/assets/images/btop-alvin.webp",
+      "bytes": 29772,
+      "sha256": "3f3c0539c078fef120efa5eedd0933e538c9f9cd24662972ab89269f2100cc1c"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/50-theo-agent-fleet-reference/assets/images/cmux-dock-tooltip.webp",
+      "bytes": 9046,
+      "sha256": "912f6bd11c71fc838c359e97f6295ddfd472c82258e5db54c323bf44e2c219a1"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/50-theo-agent-fleet-reference/assets/images/cmux-npx-t3-connect.webp",
+      "bytes": 20236,
+      "sha256": "a02cab30aaec3f08b00850b86055ceb7ca41d3a0ea148fd6ec34e091dad755de"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/50-theo-agent-fleet-reference/assets/images/codex-data-controls.webp",
+      "bytes": 19160,
+      "sha256": "f7e38c7735ff57b7b02acd4ae0f9bdeade37cb3668974eb17aee156fc65fe0c8"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/50-theo-agent-fleet-reference/assets/images/cpamc-claude-accounts.webp",
+      "bytes": 20750,
+      "sha256": "ada9f96bc5a190f78c59b548bf00a403b8b6900748d771c7419213daac207b92"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/50-theo-agent-fleet-reference/assets/images/cpamc-codex-accounts.webp",
+      "bytes": 20674,
+      "sha256": "79fb70dbd4330d77336dfb9c9f862c988bf6c45b1397ec5b4e61c301a87c49f3"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/50-theo-agent-fleet-reference/assets/images/cpamc-config-common.webp",
+      "bytes": 19634,
+      "sha256": "260ea751d33d29dcf42e6c1947e03f23c45c142fd85e92738fbf9059ba979b87"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/50-theo-agent-fleet-reference/assets/images/cpamc-quota-overview.webp",
+      "bytes": 20848,
+      "sha256": "73e8244be0c47c9b38c305716660db35b9a012cbe7b4829bfcd33dd6a44e4304"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/50-theo-agent-fleet-reference/assets/images/cpamc-tailnet-url.webp",
+      "bytes": 6290,
+      "sha256": "c78c6160cf832021399f5ccb8624726dcbeab09d463b58f1ab141492245626ea"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/50-theo-agent-fleet-reference/assets/images/fleet-repo-identity-table.webp",
+      "bytes": 16034,
+      "sha256": "c6e4a75f73e4f1f43490de34ca721837dc88e644e2e4846113ef95c7eb175332"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/50-theo-agent-fleet-reference/assets/images/fleet-repo-setup-a-box.webp",
+      "bytes": 33196,
+      "sha256": "2e433f6ff85aa7924a02c372993a2da7a25d301fcda01ccbaef305b5f0f594c9"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/50-theo-agent-fleet-reference/assets/images/gmktec-k8-plus.webp",
+      "bytes": 27994,
+      "sha256": "56a6b547c8f9312f63622c64c469cf358c722f383b0b16a12b711a4759051350"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/50-theo-agent-fleet-reference/assets/images/t3-babysit-pr-skill.webp",
+      "bytes": 20780,
+      "sha256": "7c76df844998e818bcfc8e0629c295d651a1aba76c4a60cf3ab9f62d9c3a18e0"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/50-theo-agent-fleet-reference/assets/images/t3-connections-remote.webp",
+      "bytes": 14672,
+      "sha256": "4fcd0f3e8b9db712c92c13994ae8b0cbf53062d947aa3266f10da62921000752"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/50-theo-agent-fleet-reference/assets/images/t3-connections-status.webp",
+      "bytes": 20528,
+      "sha256": "ac81305266ca5abe41c234b3202d5419ca4dbb2ad94fdfc76c73e4683d720650"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/50-theo-agent-fleet-reference/assets/images/t3-load-balancing.webp",
+      "bytes": 11662,
+      "sha256": "899e4dff6f122ab88bd1cb0160a120bfb36ffb907adf7ba3d8c33ea8da35374c"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/50-theo-agent-fleet-reference/assets/images/t3-new-thread-composer.webp",
+      "bytes": 13352,
+      "sha256": "6069445b7d9251ffce55095076463bf43dd4c330700b4871d8edf61acf3dd8c8"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/50-theo-agent-fleet-reference/assets/images/t3-problem-prompt.webp",
+      "bytes": 19936,
+      "sha256": "4fec4859731ee9f532b8fccde3e7db493d140d352fd6a555348977f2271108dc"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/50-theo-agent-fleet-reference/assets/images/t3-real-sidebar.webp",
+      "bytes": 20828,
+      "sha256": "b33e10710dfc81585fa62467810e035e3086b2a1dc9666f0f2453ed320e31394"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/50-theo-agent-fleet-reference/assets/images/t3-run-on-menu.webp",
+      "bytes": 2536,
+      "sha256": "0514402e511be31997b8d1df9fd138e438fa4fbd11ca37108cf52b6cb59f6540"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/50-theo-agent-fleet-reference/assets/images/t3-settle-snooze.webp",
+      "bytes": 21886,
+      "sha256": "602725df332bc8b4cc4ba23444d0511fad5f49a87cb12d7250823eb769bf5c4f"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/50-theo-agent-fleet-reference/assets/images/t3-tailscale-preview-pr.webp",
+      "bytes": 20952,
+      "sha256": "2a85e9275519ba5c980dad1c7360ed0ae5e6a8ff374a65356d4b8f415dc96c61"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/50-theo-agent-fleet-reference/assets/images/t3-thread-machine-tooltip.webp",
+      "bytes": 15404,
+      "sha256": "8d829ae1b3f7ff8139ca5c5c3512749f442021878038a7f909e2e11d003318b0"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/50-theo-agent-fleet-reference/doc.json",
+      "bytes": 92596,
+      "sha256": "4e7ca2209d6ae6d46116624e7b624d019821439cb7c9bc01b0420be8a242e72a"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/20-fleet-setup/doc.json",
+      "bytes": 49193,
+      "sha256": "504f0c6cf9ae0ad3448a353fbc6537e40942b8a6c163898fcce635a0d938cd6b"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/30-knowledge-system/10-intent/doc.json",
+      "bytes": 17019,
+      "sha256": "9931a11f66528184a765cd5292286e1ecda29aa51ba69b38daca5c6237d62b41"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/30-knowledge-system/20-notion-workspace/assets/canvases/notion-relation-graph.canvas.json",
+      "bytes": 12325,
+      "sha256": "e200b56c8792115c17a9520af36f9d7124f3944079f16bd492e9a0ce91cada7c"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/30-knowledge-system/20-notion-workspace/doc.json",
+      "bytes": 15183,
+      "sha256": "008c8045c3dd1cb12633711d3809f8f44293b69abc25c1ec2175915e86a22fed"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/30-knowledge-system/30-entity-model/doc.json",
+      "bytes": 35576,
+      "sha256": "aff43bb703258d2197ddbcc3c949082f6afa876f6ac1c6c20b59aad5a498fdd5"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/30-knowledge-system/40-document-model/doc.json",
+      "bytes": 31872,
+      "sha256": "cb5ee453f739b1c05d33a183023a56c0d73923bbae31c0bb01ebcef56cf78e9b"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/30-knowledge-system/50-organization-profiles/doc.json",
+      "bytes": 21864,
+      "sha256": "b124fd4fe70cc9997be31c68d4360c72dd69dd4c46c266237ff5ee85bc9bb9b1"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/30-knowledge-system/60-storage-and-navigation/doc.json",
+      "bytes": 19900,
+      "sha256": "2a18d947b75ada56bc2fa4d8044871fc08ee31a6a74e19429264bd6c8bde9723"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/30-knowledge-system/70-decisions/doc.json",
+      "bytes": 11772,
+      "sha256": "05f6322147ea1d722c82052d8c61bf4ed3505557a1de5754c65c1a33cdf17279"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/30-knowledge-system/doc.json",
+      "bytes": 12290,
+      "sha256": "e3b1d45a337bdc84f75d82df3b937a9e4a5a059193273b84e3e57ded1a1360de"
+    },
+    {
+      "path": "corpora/workspace/docs/specs/doc.json",
+      "bytes": 3208,
+      "sha256": "caf14fb64cf302c0a5ad3aab3165e16c4cdf168ab1a605f041871b18b77ee655"
+    },
+    {
+      "path": "repo-themes/default/theme.json",
+      "bytes": 2752,
+      "sha256": "9f55840457a0e3f2da18f70ad4bbe641a6acf12eb25af8dd26e3e3828e7e4eef"
+    },
+    {
+      "path": "repo-themes/docs-system-classic/components/callout.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+    },
+    {
+      "path": "repo-themes/docs-system-classic/components/canvas.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+    },
+    {
+      "path": "repo-themes/docs-system-classic/components/code.json",
+      "bytes": 50,
+      "sha256": "1b00836544ccef85e8f130e5f5e7bc000e43e0f48cb673c77665e66e31dbcac3"
+    },
+    {
+      "path": "repo-themes/docs-system-classic/components/divider.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+    },
+    {
+      "path": "repo-themes/docs-system-classic/components/editor-controls.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+    },
+    {
+      "path": "repo-themes/docs-system-classic/components/file-tree.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+    },
+    {
+      "path": "repo-themes/docs-system-classic/components/heading.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+    },
+    {
+      "path": "repo-themes/docs-system-classic/components/image.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+    },
+    {
+      "path": "repo-themes/docs-system-classic/components/inline-code.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+    },
+    {
+      "path": "repo-themes/docs-system-classic/components/interaction-surface.json",
+      "bytes": 41,
+      "sha256": "8f6a29aac32ddd1b1d1b386e3496f25028edf58cc9a85e2f1f28bb435468f296"
+    },
+    {
+      "path": "repo-themes/docs-system-classic/components/linking.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+    },
+    {
+      "path": "repo-themes/docs-system-classic/components/list-item.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+    },
+    {
+      "path": "repo-themes/docs-system-classic/components/paragraph.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+    },
+    {
+      "path": "repo-themes/docs-system-classic/components/process-outline.json",
+      "bytes": 896,
+      "sha256": "e180a6e77ead243063960bd88913d8e1d35bb02b445ed3db6269a6d1961fe66a"
+    },
+    {
+      "path": "repo-themes/docs-system-classic/components/quote.json",
+      "bytes": 45,
+      "sha256": "514405e6021389decc96910117b7cc50ee738913844fcca0bc34268e716c691d"
+    },
+    {
+      "path": "repo-themes/docs-system-classic/components/sequence.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+    },
+    {
+      "path": "repo-themes/docs-system-classic/components/shell.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+    },
+    {
+      "path": "repo-themes/docs-system-classic/components/state-shape.json",
+      "bytes": 22,
+      "sha256": "c4621434d6cebef199a155f4b1368c26997c1361d4193c9b68dd8f622784517e"
+    },
+    {
+      "path": "repo-themes/docs-system-classic/components/structured-table.json",
+      "bytes": 141,
+      "sha256": "e16dd7ce6cef7f9b217357ca05b8e28496b84c159e136ab3513e9c12bf6b8d69"
+    },
+    {
+      "path": "repo-themes/docs-system-classic/components/surfaces.json",
+      "bytes": 26,
+      "sha256": "3b5dadb3c43dd9fada3d81252984f088bf408b9dc1e16d7c2adc31b039d3aec2"
+    },
+    {
+      "path": "repo-themes/docs-system-classic/components/video.json",
+      "bytes": 3,
+      "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+    },
+    {
+      "path": "repo-themes/docs-system-classic/theme.json",
+      "bytes": 2121,
+      "sha256": "55df69f785bba85478163125658383a1eb86eb3440d4461673d5cac4190ebbd8"
+    },
+    {
+      "path": "state/code-themes/active.json",
+      "bytes": 31,
+      "sha256": "4b8bf9dec85ac27af40d3aaefd7ad553ff85a5e8d15f23158f6ccb594a7d3139"
+    },
+    {
+      "path": "state/code-themes/cursor-dark-plus.json",
+      "bytes": 1011,
+      "sha256": "33f57c8e132b00f35e433faf28c7065e2d0b1703d37e79cd3cbf226be0f1e869"
+    },
+    {
+      "path": "state/themes/global/components/structured-table.json",
+      "bytes": 135,
+      "sha256": "d573f80ec6c29996ee7282007b87edab8d1a87a18735352d0c1fd41e6fc523d6"
+    },
+    {
+      "path": "state/themes/global/components/surfaces.json",
+      "bytes": 22,
+      "sha256": "4c1ed5bfcf005bf2e4d143f11a2fdf211662b285e26dab9d66d953c42829a989"
+    },
+    {
+      "path": "state/themes/global/theme.json",
+      "bytes": 2589,
+      "sha256": "1874265fcdfe1cc13ed51bf7bb7e5ef3d26a04a261435c2bf93874d577480397"
+    }
+  ]
+}

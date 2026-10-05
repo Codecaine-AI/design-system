@@ -1,0 +1,788 @@
+/*
+ * @codecaine-ai/design-system: app shell layout
+ *
+ * Framework-agnostic primitives for the default app layout. Load after
+ * dist/css/tokens.css. Every value comes from a --ds-* custom property.
+ *
+ *   .ds-shell            grid: sidebar | workspace | inspector (optional)
+ *   .ds-sidebar          collapsible sidebar, an icon rail when collapsed
+ *   .ds-workspace        topbar + main
+ *   .ds-topbar           sticky page header: h1 title + actions
+ *   .ds-main             page content inside a lane
+ *   .ds-inspector        optional right-hand panel
+ *
+ * State lives in attributes on .ds-shell:
+ *   data-sidebar="expanded" | "collapsed"     (missing = expanded)
+ *   data-inspector="open" | "closed"          (missing = closed)
+ *
+ * Guide: guide/layout.md. Demo: guide/app-shell-demo.html.
+ * React reference: templates/react-app-shell/.
+ */
+
+/* ------------------------------------------------------------------ */
+/* Shell grid                                                          */
+/* ------------------------------------------------------------------ */
+
+.ds-shell {
+  display: grid;
+  grid-template-areas: "sidebar workspace inspector";
+  grid-template-columns: var(--ds-layout-sidebar-width) minmax(0, 1fr) 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--ds-color-surface-page);
+  color: var(--ds-color-text-body);
+  font-family: var(--ds-font-family-sans);
+  font-size: var(--ds-font-size-ui-lg);
+  line-height: var(--ds-line-height-ui);
+  transition: grid-template-columns var(--ds-motion-duration-slow) var(--ds-motion-easing-standard);
+}
+
+.ds-shell[data-sidebar="collapsed"] {
+  grid-template-columns: var(--ds-layout-sidebar-width-collapsed) minmax(0, 1fr) 0;
+}
+
+.ds-shell[data-inspector="open"] {
+  grid-template-columns: var(--ds-layout-sidebar-width) minmax(0, 1fr) var(--ds-layout-inspector-width);
+}
+
+.ds-shell[data-sidebar="collapsed"][data-inspector="open"] {
+  grid-template-columns: var(--ds-layout-sidebar-width-collapsed) minmax(0, 1fr) var(--ds-layout-inspector-width);
+}
+
+/* Skip link: first focusable element in the shell. */
+.ds-skip-link {
+  position: fixed;
+  inset-block-start: var(--ds-space-2);
+  inset-inline-start: var(--ds-space-2);
+  z-index: var(--ds-z-top);
+  padding: var(--ds-space-2) var(--ds-space-3);
+  border-radius: var(--ds-radius-base);
+  background: var(--ds-color-surface-panel);
+  color: var(--ds-color-link);
+  font-size: var(--ds-font-size-ui-sm);
+  font-weight: var(--ds-font-weight-medium);
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+
+.ds-skip-link:focus-visible {
+  box-shadow: var(--ds-shadow-glass);
+  transform: none;
+  outline: var(--ds-border-width-focus) solid var(--ds-color-focus-ring);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+/* ------------------------------------------------------------------ */
+/* Sidebar                                                             */
+/* ------------------------------------------------------------------ */
+
+.ds-sidebar {
+  grid-area: sidebar;
+  position: sticky;
+  inset-block-start: 0;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  height: 100vh;
+  height: 100dvh;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--ds-color-surface-sidebar);
+  /* Inset edge instead of a border: the edge takes no width, so the rail
+     centre stays at width-collapsed / 2 and the toggle lines up with the icons. */
+  box-shadow: inset calc(-1 * var(--ds-border-width-hairline)) 0 0 var(--ds-color-border-default);
+}
+
+[dir="rtl"] .ds-sidebar {
+  box-shadow: inset var(--ds-border-width-hairline) 0 0 var(--ds-color-border-default);
+}
+
+.ds-sidebar-header {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--ds-space-2);
+  box-sizing: border-box;
+  height: var(--ds-layout-topbar-height);
+  /* End padding centres the toggle in the rail once collapsed. */
+  padding-inline-start: var(--ds-layout-sidebar-padding-x);
+  padding-inline-end: calc((var(--ds-layout-sidebar-width-collapsed) - var(--ds-layout-sidebar-toggle-size)) / 2);
+  border-block-end: var(--ds-border-width-hairline) solid var(--ds-color-border-default);
+}
+
+.ds-sidebar-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding-inline-start: var(--ds-layout-sidebar-item-padding-x);
+  overflow: hidden;
+  white-space: nowrap;
+  color: var(--ds-color-text-ink);
+  font-size: var(--ds-font-size-reading);
+  font-weight: var(--ds-font-weight-semibold);
+  letter-spacing: var(--ds-letter-spacing-title);
+  line-height: var(--ds-line-height-tight);
+  transition: opacity var(--ds-motion-duration-fast) var(--ds-motion-easing-standard);
+}
+
+/* Scrolling region between header and footer. */
+.ds-sidebar-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  box-sizing: border-box;
+  min-height: 0;
+  padding: var(--ds-space-4) var(--ds-layout-sidebar-padding-x);
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+/* ------------------------------------------------------------------ */
+/* Shell buttons (sidebar toggle, topbar actions, inspector close)     */
+/* ------------------------------------------------------------------ */
+
+.ds-shell-button,
+.ds-shell-icon-button {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ds-space-1-5);
+  box-sizing: border-box;
+  margin: 0;
+  border-radius: var(--ds-radius-base);
+  font: inherit;
+  font-size: var(--ds-font-size-ui-sm);
+  font-weight: var(--ds-font-weight-medium);
+  line-height: var(--ds-line-height-tight);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--ds-motion-duration-fast) var(--ds-motion-easing-standard),
+    border-color var(--ds-motion-duration-fast) var(--ds-motion-easing-standard),
+    color var(--ds-motion-duration-fast) var(--ds-motion-easing-standard);
+}
+
+.ds-shell-button {
+  height: var(--ds-space-8);
+  padding: 0 var(--ds-space-3);
+  border: var(--ds-border-width-hairline) solid var(--ds-color-border-default);
+  background: var(--ds-color-surface-page);
+  color: var(--ds-color-text-body);
+}
+
+.ds-shell-icon-button {
+  width: var(--ds-space-8);
+  height: var(--ds-space-8);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ds-color-text-muted);
+}
+
+.ds-shell-button:hover,
+.ds-shell-icon-button:hover {
+  background: var(--ds-color-fill-hover);
+  color: var(--ds-color-text-ink);
+}
+
+.ds-shell-button[aria-pressed="true"],
+.ds-shell-button[aria-expanded="true"],
+.ds-shell-icon-button[aria-pressed="true"] {
+  background: var(--ds-color-fill-active);
+  color: var(--ds-color-text-ink);
+}
+
+.ds-shell-button:disabled,
+.ds-shell-icon-button:disabled {
+  color: var(--ds-color-text-faint);
+  cursor: default;
+}
+
+.ds-shell-button:focus-visible,
+.ds-shell-icon-button:focus-visible {
+  outline: var(--ds-border-width-focus) solid var(--ds-color-focus-ring);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+.ds-shell-button svg,
+.ds-shell-icon-button svg {
+  display: block;
+  flex-shrink: 0;
+  width: var(--ds-space-4);
+  height: var(--ds-space-4);
+}
+
+/* The collapse toggle: right end of the sidebar header. */
+.ds-sidebar-toggle {
+  width: var(--ds-layout-sidebar-toggle-size);
+  height: var(--ds-layout-sidebar-toggle-size);
+  margin-inline-start: auto;
+}
+
+.ds-sidebar-toggle svg {
+  width: var(--ds-layout-sidebar-icon-size);
+  height: var(--ds-layout-sidebar-icon-size);
+}
+
+/* Chevron inside the panel glyph: points in when expanded, out when collapsed. */
+.ds-sidebar-toggle-arrow {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform var(--ds-motion-duration-slow) var(--ds-motion-easing-standard);
+}
+
+/* ------------------------------------------------------------------ */
+/* Navigation                                                          */
+/* ------------------------------------------------------------------ */
+
+.ds-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-1);
+}
+
+/* A second nav (secondary tools) sits at the bottom of the sidebar. */
+.ds-nav[data-placement="end"] {
+  margin-block-start: auto;
+  padding-block-start: var(--ds-space-6);
+}
+
+.ds-nav-heading {
+  margin: 0;
+  padding: var(--ds-space-1) var(--ds-layout-sidebar-item-padding-x);
+  overflow: hidden;
+  white-space: nowrap;
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-micro);
+  font-weight: var(--ds-font-weight-semibold);
+  letter-spacing: var(--ds-letter-spacing-micro);
+  line-height: var(--ds-line-height-tight);
+  text-transform: uppercase;
+}
+
+.ds-nav-item {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--ds-space-3);
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--ds-layout-sidebar-item-height);
+  margin: 0;
+  padding: 0 var(--ds-layout-sidebar-item-padding-x);
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--ds-radius-base);
+  background: transparent;
+  color: var(--ds-color-text-muted);
+  font: inherit;
+  font-size: var(--ds-font-size-ui-lg);
+  font-weight: var(--ds-font-weight-medium);
+  line-height: var(--ds-line-height-tight);
+  text-align: start;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--ds-motion-duration-fast) var(--ds-motion-easing-standard),
+    color var(--ds-motion-duration-fast) var(--ds-motion-easing-standard);
+}
+
+.ds-nav-item:hover {
+  background: var(--ds-color-fill-hover);
+  color: var(--ds-color-text-ink);
+}
+
+/* Current page: filled row, ink text, accent icon. */
+.ds-nav-item[aria-current="page"] {
+  background: var(--ds-color-fill-active);
+  color: var(--ds-color-text-ink);
+}
+
+/* Section that holds the current page (its subnav shows the page). */
+.ds-nav-item[data-active="true"] {
+  color: var(--ds-color-text-ink);
+}
+
+.ds-nav-item[aria-current="page"] .ds-nav-icon,
+.ds-nav-item[data-active="true"] .ds-nav-icon {
+  color: var(--ds-color-accent);
+}
+
+.ds-nav-item:focus-visible {
+  outline: var(--ds-border-width-focus) solid var(--ds-color-focus-ring);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+.ds-nav-icon {
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: var(--ds-layout-sidebar-icon-size);
+  height: var(--ds-layout-sidebar-icon-size);
+}
+
+.ds-nav-icon > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Labels are clipped, not shrunk, so they slide out under the rail edge. */
+.ds-nav-label {
+  flex-shrink: 0;
+  transition: opacity var(--ds-motion-duration-fast) var(--ds-motion-easing-standard);
+}
+
+/* Nested subnav: shown under its section while that section is active. */
+.ds-subnav {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-0-5);
+  margin-block-end: var(--ds-space-1);
+  /* Subitem text lines up with the parent label. */
+  padding-inline-start: calc(
+    var(--ds-layout-sidebar-item-padding-x) + var(--ds-layout-sidebar-icon-size) + var(--ds-space-3) - var(--ds-space-2)
+  );
+}
+
+/* Guide line under the centre of the parent icon. */
+.ds-subnav::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: calc(
+    var(--ds-layout-sidebar-item-padding-x) +
+      (var(--ds-layout-sidebar-icon-size) - var(--ds-border-width-hairline)) / 2
+  );
+  width: var(--ds-border-width-hairline);
+  background: var(--ds-color-border-guide);
+}
+
+/* A subnav inside a subnav indents one step and drops the guide line. */
+.ds-subnav .ds-subnav {
+  margin-block-end: 0;
+  padding-inline-start: var(--ds-space-3);
+}
+
+.ds-subnav .ds-subnav::before {
+  content: none;
+}
+
+.ds-subnav-item {
+  /* Block, not flex, so a long label ends in an ellipsis. */
+  display: block;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--ds-layout-sidebar-subitem-height);
+  margin: 0;
+  padding: 0 var(--ds-space-2);
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--ds-radius-base);
+  background: transparent;
+  color: var(--ds-color-text-muted);
+  font: inherit;
+  font-size: var(--ds-font-size-ui-sm);
+  font-weight: var(--ds-font-weight-regular);
+  line-height: var(--ds-layout-sidebar-subitem-height);
+  text-align: start;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--ds-motion-duration-fast) var(--ds-motion-easing-standard),
+    color var(--ds-motion-duration-fast) var(--ds-motion-easing-standard);
+}
+
+.ds-subnav-item:hover {
+  background: var(--ds-color-fill-hover);
+  color: var(--ds-color-text-ink);
+}
+
+.ds-subnav-item[aria-current="page"] {
+  background: var(--ds-color-fill-active);
+  color: var(--ds-color-text-ink);
+  font-weight: var(--ds-font-weight-medium);
+}
+
+.ds-subnav-item[data-active="true"] {
+  color: var(--ds-color-text-ink);
+}
+
+.ds-subnav-item:focus-visible {
+  outline: var(--ds-border-width-focus) solid var(--ds-color-focus-ring);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+.ds-sidebar-divider {
+  flex-shrink: 0;
+  width: 100%;
+  margin: var(--ds-space-2) 0;
+  border: 0;
+  border-block-start: var(--ds-border-width-hairline) solid var(--ds-color-border-subtle);
+}
+
+/* ------------------------------------------------------------------ */
+/* Sidebar footer slot (account card)                                  */
+/* ------------------------------------------------------------------ */
+
+.ds-sidebar-footer {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--ds-space-3);
+  box-sizing: border-box;
+  /* Avatar centre lines up with the nav icon centres in both states. */
+  padding-block: var(--ds-space-4);
+  padding-inline: calc(
+    var(--ds-layout-sidebar-padding-x) + var(--ds-layout-sidebar-item-padding-x) +
+      (var(--ds-layout-sidebar-icon-size) - var(--ds-layout-sidebar-avatar-size)) / 2
+  );
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.ds-avatar {
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: var(--ds-layout-sidebar-avatar-size);
+  height: var(--ds-layout-sidebar-avatar-size);
+  border-radius: var(--ds-radius-base);
+  background: var(--ds-color-teal-soft);
+  color: var(--ds-color-teal-text);
+  font-size: var(--ds-font-size-ui-xs);
+  font-weight: var(--ds-font-weight-semibold);
+  letter-spacing: var(--ds-letter-spacing-micro);
+  line-height: var(--ds-line-height-tight);
+}
+
+.ds-sidebar-footer-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-space-0-5);
+  min-width: 0;
+  line-height: var(--ds-line-height-tight);
+  transition: opacity var(--ds-motion-duration-fast) var(--ds-motion-easing-standard);
+}
+
+.ds-sidebar-footer-name {
+  overflow: hidden;
+  color: var(--ds-color-text-ink);
+  font-size: var(--ds-font-size-ui-sm);
+  font-weight: var(--ds-font-weight-medium);
+  text-overflow: ellipsis;
+}
+
+.ds-sidebar-footer-meta {
+  overflow: hidden;
+  color: var(--ds-color-text-muted);
+  font-size: var(--ds-font-size-ui-xs);
+  text-overflow: ellipsis;
+}
+
+/* ------------------------------------------------------------------ */
+/* Collapsed: icon rail                                                */
+/* ------------------------------------------------------------------ */
+
+.ds-shell[data-sidebar="collapsed"] .ds-sidebar-header {
+  gap: 0;
+}
+
+.ds-shell[data-sidebar="collapsed"] .ds-sidebar-title {
+  padding-inline-start: 0;
+  opacity: 0;
+}
+
+.ds-shell[data-sidebar="collapsed"] .ds-nav-label,
+.ds-shell[data-sidebar="collapsed"] .ds-sidebar-footer-text {
+  opacity: 0;
+}
+
+.ds-shell[data-sidebar="collapsed"] .ds-nav-heading,
+.ds-shell[data-sidebar="collapsed"] .ds-subnav {
+  display: none;
+}
+
+/* With the subnav hidden, the section row carries the "you are here" fill. */
+.ds-shell[data-sidebar="collapsed"] .ds-nav-item[data-active="true"] {
+  background: var(--ds-color-fill-active);
+}
+
+.ds-shell[data-sidebar="collapsed"] .ds-sidebar-toggle-arrow {
+  transform: rotate(180deg);
+}
+
+[dir="rtl"] .ds-sidebar-toggle svg {
+  transform: scaleX(-1);
+}
+
+/* ------------------------------------------------------------------ */
+/* Workspace: topbar + main                                            */
+/* ------------------------------------------------------------------ */
+
+.ds-workspace {
+  grid-area: workspace;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ds-topbar {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: var(--ds-z-raised);
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--ds-space-4);
+  box-sizing: border-box;
+  height: var(--ds-layout-topbar-height);
+  padding: 0 var(--ds-layout-topbar-padding-x);
+  border-block-end: var(--ds-border-width-hairline) solid var(--ds-color-border-default);
+  background: var(--ds-color-surface-page);
+}
+
+.ds-topbar-title {
+  /* Natural width, capped at half the bar: it never drops below
+     min(its text, 50%), because the actions give way first. */
+  flex: 0 0 auto;
+  min-width: 0;
+  max-width: 50%;
+  margin: 0;
+  overflow: hidden;
+  color: var(--ds-color-text-ink);
+  font-size: var(--ds-font-size-reading);
+  font-weight: var(--ds-font-weight-semibold);
+  letter-spacing: var(--ds-letter-spacing-title);
+  line-height: var(--ds-line-height-tight);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* With no actions, the title may use the whole bar. */
+.ds-topbar-title:last-child {
+  flex: 0 1 auto;
+  max-width: none;
+}
+
+.ds-topbar-actions {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: var(--ds-space-2);
+  min-width: 0;
+  /* Out of room, the actions scroll sideways instead of squeezing the title
+     or widening the page. The padding keeps focus rings inside the scroll
+     box; the negative margin cancels it in the layout. */
+  margin: calc(-1 * var(--ds-space-1));
+  margin-inline-start: auto;
+  padding: var(--ds-space-1);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+/* Main content. The lane caps the content box; padding sits outside it. */
+.ds-main {
+  flex: 1;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: calc(var(--ds-layout-lane-wide) + 2 * var(--ds-layout-content-padding-x));
+  margin-inline: auto;
+  padding: var(--ds-layout-content-padding-top) var(--ds-layout-content-padding-x)
+    var(--ds-layout-content-padding-bottom);
+}
+
+.ds-main:focus {
+  outline: none;
+}
+
+.ds-main[data-lane="text"] {
+  max-width: calc(var(--ds-layout-lane-text) + 2 * var(--ds-layout-content-padding-x));
+}
+
+.ds-main[data-lane="code"] {
+  max-width: calc(var(--ds-layout-lane-code) + 2 * var(--ds-layout-content-padding-x));
+}
+
+.ds-main[data-lane="full"] {
+  max-width: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Inspector (optional right-hand panel)                               */
+/* ------------------------------------------------------------------ */
+
+.ds-inspector {
+  grid-area: inspector;
+  position: sticky;
+  inset-block-start: 0;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  height: 100vh;
+  height: 100dvh;
+  min-width: 0;
+  overflow: hidden;
+  visibility: hidden;
+  background: var(--ds-color-surface-panel);
+  /* Inset edge instead of a border: a closed inspector takes no width at all. */
+  box-shadow: inset var(--ds-border-width-hairline) 0 0 var(--ds-color-border-default);
+  /* Hide only after the closing slide finishes. */
+  transition: visibility 0s linear var(--ds-motion-duration-slow);
+}
+
+[dir="rtl"] .ds-inspector {
+  box-shadow: inset calc(-1 * var(--ds-border-width-hairline)) 0 0 var(--ds-color-border-default);
+}
+
+.ds-shell[data-inspector="open"] .ds-inspector {
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+.ds-inspector-header {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--ds-space-2);
+  box-sizing: border-box;
+  min-width: var(--ds-layout-inspector-width);
+  height: var(--ds-layout-topbar-height);
+  padding-inline: var(--ds-space-6) var(--ds-space-4);
+  border-block-end: var(--ds-border-width-hairline) solid var(--ds-color-border-default);
+}
+
+.ds-inspector-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--ds-color-text-ink);
+  font-size: var(--ds-font-size-ui-md);
+  font-weight: var(--ds-font-weight-semibold);
+  line-height: var(--ds-line-height-tight);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ds-inspector-body {
+  flex: 1;
+  box-sizing: border-box;
+  min-width: var(--ds-layout-inspector-width);
+  min-height: 0;
+  padding: var(--ds-space-6);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+/* ------------------------------------------------------------------ */
+/* Narrow viewports                                                    */
+/* ------------------------------------------------------------------ */
+
+/* 800px matches NARROW_VIEWPORT_QUERY in the React template, where the
+   sidebar starts collapsed. There is no breakpoint token: custom properties
+   cannot be used in media queries. */
+@media (max-width: 800px) {
+  .ds-shell {
+    --ds-layout-content-padding-x: var(--ds-space-4);
+    --ds-layout-topbar-padding-x: var(--ds-space-4);
+  }
+
+  /* The inspector covers the workspace instead of pushing it. */
+  .ds-shell[data-inspector="open"] {
+    grid-template-columns: var(--ds-layout-sidebar-width) minmax(0, 1fr) 0;
+  }
+
+  .ds-shell[data-sidebar="collapsed"][data-inspector="open"] {
+    grid-template-columns: var(--ds-layout-sidebar-width-collapsed) minmax(0, 1fr) 0;
+  }
+
+  .ds-inspector {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-end: 0;
+    z-index: var(--ds-z-overlay);
+    width: min(var(--ds-layout-inspector-width), 100%);
+    box-shadow:
+      var(--ds-shadow-glass),
+      inset var(--ds-border-width-hairline) 0 0 var(--ds-color-border-default);
+    transform: translateX(100%);
+    transition:
+      transform var(--ds-motion-duration-slow) var(--ds-motion-easing-emphasized),
+      visibility 0s linear var(--ds-motion-duration-slow);
+  }
+
+  [dir="rtl"] .ds-inspector {
+    box-shadow:
+      var(--ds-shadow-glass),
+      inset calc(-1 * var(--ds-border-width-hairline)) 0 0 var(--ds-color-border-default);
+    transform: translateX(-100%);
+  }
+
+  .ds-shell[data-inspector="open"] .ds-inspector {
+    transform: none;
+    transition-delay: 0s;
+  }
+
+  .ds-inspector-header,
+  .ds-inspector-body {
+    min-width: 0;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Preferences and media                                               */
+/* ------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-shell,
+  .ds-sidebar-title,
+  .ds-shell-button,
+  .ds-shell-icon-button,
+  .ds-sidebar-toggle-arrow,
+  .ds-nav-item,
+  .ds-nav-label,
+  .ds-subnav-item,
+  .ds-sidebar-footer-text,
+  .ds-inspector,
+  .ds-shell[data-inspector="open"] .ds-inspector {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .ds-nav-item[aria-current="page"],
+  .ds-subnav-item[aria-current="page"],
+  .ds-shell[data-sidebar="collapsed"] .ds-nav-item[data-active="true"],
+  .ds-shell-button[aria-pressed="true"],
+  .ds-shell-button[aria-expanded="true"],
+  .ds-shell-icon-button[aria-pressed="true"] {
+    outline: var(--ds-border-width-hairline) solid currentColor;
+  }
+}
+
+@media print {
+  .ds-shell {
+    display: block;
+  }
+
+  .ds-sidebar,
+  .ds-inspector,
+  .ds-topbar-actions,
+  .ds-skip-link {
+    display: none;
+  }
+
+  .ds-topbar {
+    position: static;
+  }
+}

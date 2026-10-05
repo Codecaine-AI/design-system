@@ -1,0 +1,13 @@
+$ bunx --bun tsc --noEmit
+packages/docs-server/src/agent-tools.ts(266,41): error TS2322: Type '(InteractiveCanvasObject | { id: string; style: CanvasObjectStyle | undefined; author?: string | null | undefined; type: InteractiveCanvasObjectType; ... 8 more ...; layout?: { ...; } | ... 1 more ... | undefined; })[]' is not assignable to type 'InteractiveCanvasObject[]'.
+  Type 'InteractiveCanvasObject | { id: string; style: CanvasObjectStyle | undefined; author?: string | null | undefined; type: InteractiveCanvasObjectType; ... 8 more ...; layout?: { ...; } | ... 1 more ... | undefined; }' is not assignable to type 'InteractiveCanvasObject'.
+    Type '{ id: string; style: CanvasObjectStyle | undefined; author?: string | null | undefined; type: InteractiveCanvasObjectType; ... 8 more ...; layout?: { ...; } | ... 1 more ... | undefined; }' is not assignable to type 'InteractiveCanvasObject'.
+      Types of property 'detail' are incompatible.
+        Type 'string | null | undefined' is not assignable to type 'string | undefined'.
+          Type 'null' is not assignable to type 'string | undefined'.
+packages/docs-server/src/agent-tools.ts(320,34): error TS2322: Type '{ id: string; label?: string | null | undefined; color?: CanvasHue | null | undefined; style?: CanvasConnectionStyle | null | undefined; from: CanvasConnectionEndpoint; to: CanvasConnectionEndpoint; waypoints?: [...][] | ... 1 more ... | undefined; labelPosition?: { ...; } | ... 1 more ... | undefined; arrow?: Canva...' is not assignable to type 'InteractiveCanvasConnection[]'.
+  Type '{ id: string; label?: string | null | undefined; color?: CanvasHue | null | undefined; style?: CanvasConnectionStyle | null | undefined; from: CanvasConnectionEndpoint; to: CanvasConnectionEndpoint; waypoints?: [...][] | ... 1 more ... | undefined; labelPosition?: { ...; } | ... 1 more ... | undefined; arrow?: Canva...' is not assignable to type 'InteractiveCanvasConnection'.
+    Types of property 'label' are incompatible.
+      Type 'string | null | undefined' is not assignable to type 'string | undefined'.
+        Type 'null' is not assignable to type 'string | undefined'.
+exit=2

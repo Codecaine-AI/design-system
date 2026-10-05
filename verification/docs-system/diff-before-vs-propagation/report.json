@@ -1,0 +1,56 @@
+{
+  "a": "before",
+  "b": "propagation",
+  "generatedAt": "2026-10-05T17:33:08.553Z",
+  "comparison": "exact RGBA",
+  "totals": {
+    "shots": 2,
+    "identical": 1,
+    "changed": 1,
+    "missing": 0,
+    "sizeMismatch": 0,
+    "changedPixels": 506
+  },
+  "shots": [
+    {
+      "key": "docs-callout-tones-dark",
+      "status": "identical",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 0,
+      "totalPixels": 1296000,
+      "percentChanged": 0,
+      "maxChannelDelta": 0
+    },
+    {
+      "key": "docs-callout-tones-light",
+      "status": "changed",
+      "sizeMatch": true,
+      "sizeA": [
+        1440,
+        900
+      ],
+      "sizeB": [
+        1440,
+        900
+      ],
+      "changedPixels": 506,
+      "totalPixels": 1296000,
+      "percentChanged": 0.039,
+      "maxChannelDelta": 244,
+      "bbox": {
+        "x": 376,
+        "y": 408,
+        "width": 67,
+        "height": 54
+      }
+    }
+  ]
+}

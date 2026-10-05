@@ -1,0 +1,278 @@
+{
+  "color": {
+    "surface": {
+      "page": { "$type": "color", "$value": "#fdfdfd", "$description": "Page background: warm paper off-white (1% below white so the grain overlay can brighten). Seed: --palette-page." },
+      "panel": { "$type": "color", "$value": "#f8f8f7", "$description": "Panels, cards, tables, trees. Seed: --palette-panel." },
+      "sidebar": { "$type": "color", "$value": "#f9f9f9", "$description": "Sidebar surface, a step deeper than the page. Seed: --palette-sidebar." },
+      "sunken": { "$type": "color", "$value": "color-mix(in srgb, {color.text.ink} 5%, {color.surface.panel})", "$description": "Recessed well inside a panel. Seed: --docs-sunken." },
+      "inset": { "$type": "color", "$value": "{color.surface.sidebar}", "$description": "Surface that sits below the page (Primer canvas-inset). Seed: --palette-inset (dark only in docs-system)." }
+    },
+    "text": {
+      "ink": { "$type": "color", "$value": "#1f1f1f", "$description": "Titles, headings, strong text, field names. Seed: --palette-ink." },
+      "body": { "$type": "color", "$value": "#2a2a2a", "$description": "Body text (AA). Seed: --palette-text." },
+      "secondary": { "$type": "color", "$value": "color-mix(in srgb, {color.text.body} 84%, transparent)", "$description": "Body text one step quieter. Seed: --docs-text-secondary." },
+      "muted": { "$type": "color", "$value": "#666562", "$description": "Secondary text, >= 4.5:1 on page and panel. Seed: --palette-muted." },
+      "faint": { "$type": "color", "$value": "#9b9a97", "$description": "Guides, gutters, placeholders. Not for text. Seed: --palette-faint." },
+      "on-solid": { "$type": "color", "$value": "#ffffff", "$description": "Default glyph on a solid fill. On a hue or status solid use its own on-solid (color.yellow.on-solid): this one is under 4.5:1 on the light gray, yellow, orange and red solids. Seed: --palette-glyph." }
+    },
+    "border": {
+      "default": { "$type": "color", "$value": "#e6e5e3", "$description": "Frames, rules, dividers, inputs. Seed: --palette-rule." },
+      "subtle": { "$type": "color", "$value": "#efeeec", "$description": "Row rules and inner separators. Seed: --palette-rule-soft." },
+      "strong": { "$type": "color", "$value": "color-mix(in srgb, {color.border.default} 70%, {color.text.faint} 30%)", "$description": "Header rules that must read over a default rule. Seed: --docs-border-strong." },
+      "guide": { "$type": "color", "$value": "color-mix(in srgb, {color.text.faint} 45%, {color.border.default})", "$description": "Tree indent guides. Seed: --docs-guide." }
+    },
+    "fill": {
+      "chip": { "$type": "color", "$value": "#ebebe9", "$description": "Inline code chips and neutral tags. Seed: --palette-chip." },
+      "hover": { "$type": "color", "$value": "color-mix(in srgb, {color.text.ink} 6%, {color.surface.panel})", "$description": "Hover background of rows (tables, trees, disclosures, media buttons). Seed: --docs-hover." },
+      "active": { "$type": "color", "$value": "{color.gray.soft}", "$description": "Selected or active row (sidebar selection), pressed toggles, button hover. Seed: --muted." },
+      "accent": { "$type": "color", "$value": "{color.blue.soft}", "$description": "Accent wash behind an active tab or accent button; pair with color.blue.text. Seed: --accent." }
+    },
+    "accent": { "$type": "color", "$value": "#0078df", "$description": "Interactive accent: selection outlines, drop indicators, toggles. Fills, borders and focus only: text uses color.link (light accent is 4.34:1 on the page, under AA). Seed: --palette-accent." },
+    "link": { "$type": "color", "$value": "#245a81", "$description": "Links and doc references. Seed: --palette-link." },
+    "focus-ring": { "$type": "color", "$value": "{color.accent}", "$description": "Focus outline, >= 3:1 on page, panel and sidebar. Seed: --docs-focus-ring." },
+    "selection": { "$type": "color", "$value": "color-mix(in srgb, {color.accent} 18%, transparent)", "$description": "Text selection; selected text keeps its own color. Seed: --docs-selection." },
+    "gray": {
+      "text": { "$type": "color", "$value": "#666562", "$description": "Text-safe gray (>= 4.5:1 on page, panel and gray.soft)." },
+      "solid": { "$type": "color", "$value": "#9b9a97", "$description": "Gray tile or fill." },
+      "on-solid": { "$type": "color", "$value": "{color.text.ink}", "$description": "Glyph on gray.solid. Light: ink, 5.86:1. Dark: white, 5.30:1." },
+      "soft": { "$type": "color", "$value": "#ebeced", "$description": "Opaque pale gray tint." },
+      "line": { "$type": "color", "$value": "color-mix(in srgb, {color.gray.solid} 45%, {color.surface.panel})", "$description": "Gray hairline over a panel." }
+    },
+    "blue": {
+      "text": { "$type": "color", "$value": "#0b6e99", "$description": "Text-safe blue." },
+      "solid": { "$type": "color", "$value": "#0b6e99", "$description": "Blue tile or fill." },
+      "on-solid": { "$type": "color", "$value": "{color.text.on-solid}", "$description": "Glyph on blue.solid. Light: white, 5.67:1. Dark: near-black, 6.11:1." },
+      "soft": { "$type": "color", "$value": "#ddebf1", "$description": "Opaque pale blue tint." },
+      "line": { "$type": "color", "$value": "color-mix(in srgb, {color.blue.solid} 45%, {color.surface.panel})", "$description": "Blue hairline over a panel." }
+    },
+    "teal": {
+      "text": { "$type": "color", "$value": "#0d7164", "$description": "Text-safe teal." },
+      "solid": { "$type": "color", "$value": "#0f7b6c", "$description": "Teal tile or fill." },
+      "on-solid": { "$type": "color", "$value": "{color.text.on-solid}", "$description": "Glyph on teal.solid. Light: white, 5.16:1. Dark: near-black, 9.07:1." },
+      "soft": { "$type": "color", "$value": "#ddedea", "$description": "Opaque pale teal tint." },
+      "line": { "$type": "color", "$value": "color-mix(in srgb, {color.teal.solid} 45%, {color.surface.panel})", "$description": "Teal hairline over a panel." }
+    },
+    "green": {
+      "text": { "$type": "color", "$value": "#26744f", "$description": "Text-safe green." },
+      "solid": { "$type": "color", "$value": "#287c55", "$description": "Green tile or fill." },
+      "on-solid": { "$type": "color", "$value": "{color.text.on-solid}", "$description": "Glyph on green.solid. Light: white, 5.12:1. Dark: near-black, 7.45:1." },
+      "soft": { "$type": "color", "$value": "#e2efe6", "$description": "Opaque pale green tint." },
+      "line": { "$type": "color", "$value": "color-mix(in srgb, {color.green.solid} 45%, {color.surface.panel})", "$description": "Green hairline over a panel." }
+    },
+    "yellow": {
+      "text": { "$type": "color", "$value": "#805f01", "$description": "Text-safe yellow (reads olive at body size; warnings use amber.text)." },
+      "solid": { "$type": "color", "$value": "#dfab01", "$description": "Yellow tile or fill." },
+      "on-solid": { "$type": "color", "$value": "{color.text.ink}", "$description": "Glyph on yellow.solid. Light: ink, 7.82:1. Dark: near-black, 7.50:1." },
+      "soft": { "$type": "color", "$value": "#fbf3db", "$description": "Opaque pale yellow tint." },
+      "line": { "$type": "color", "$value": "color-mix(in srgb, {color.yellow.solid} 45%, {color.surface.panel})", "$description": "Yellow hairline over a panel." }
+    },
+    "orange": {
+      "text": { "$type": "color", "$value": "#9d530d", "$description": "Text-safe orange." },
+      "solid": { "$type": "color", "$value": "#d9730d", "$description": "Orange tile or fill." },
+      "on-solid": { "$type": "color", "$value": "{color.text.ink}", "$description": "Glyph on orange.solid. Light: ink, 5.03:1. Dark: near-black, 5.61:1." },
+      "soft": { "$type": "color", "$value": "#faebdd", "$description": "Opaque pale orange tint." },
+      "line": { "$type": "color", "$value": "color-mix(in srgb, {color.orange.solid} 45%, {color.surface.panel})", "$description": "Orange hairline over a panel." }
+    },
+    "red": {
+      "text": { "$type": "color", "$value": "#c62121", "$description": "Text-safe red." },
+      "solid": { "$type": "color", "$value": "#e03e3e", "$description": "Red tile or fill." },
+      "on-solid": { "$type": "color", "$value": "{color.text.on-solid}", "$description": "Glyph on red.solid. Light: white, 4.26:1, the better glyph (ink is 3.87:1) but under AA for small text, so icons and large text only. Dark: near-black, 5.65:1." },
+      "soft": { "$type": "color", "$value": "#fbe4e4", "$description": "Opaque pale red tint." },
+      "line": { "$type": "color", "$value": "color-mix(in srgb, {color.red.solid} 45%, {color.surface.panel})", "$description": "Red hairline over a panel." }
+    },
+    "violet": {
+      "text": { "$type": "color", "$value": "#6940a5", "$description": "Text-safe violet." },
+      "solid": { "$type": "color", "$value": "#6940a5", "$description": "Violet tile or fill." },
+      "on-solid": { "$type": "color", "$value": "{color.text.on-solid}", "$description": "Glyph on violet.solid. Light: white, 7.30:1. Dark: near-black, 6.33:1." },
+      "soft": { "$type": "color", "$value": "#eae4f2", "$description": "Opaque pale violet tint." },
+      "line": { "$type": "color", "$value": "color-mix(in srgb, {color.violet.solid} 45%, {color.surface.panel})", "$description": "Violet hairline over a panel." }
+    },
+    "pink": {
+      "text": { "$type": "color", "$value": "#ad1a72", "$description": "Text-safe pink." },
+      "solid": { "$type": "color", "$value": "#ad1a72", "$description": "Pink tile or fill." },
+      "on-solid": { "$type": "color", "$value": "{color.text.on-solid}", "$description": "Glyph on pink.solid. Light: white, 6.63:1. Dark: near-black, 5.63:1." },
+      "soft": { "$type": "color", "$value": "#f4dfeb", "$description": "Opaque pale pink tint." },
+      "line": { "$type": "color", "$value": "color-mix(in srgb, {color.pink.solid} 45%, {color.surface.panel})", "$description": "Pink hairline over a panel." }
+    },
+    "amber": {
+      "text": { "$type": "color", "$value": "#9a5b00", "$description": "Warning text: a clear amber (5.3:1 on the page) where yellow.text reads olive. Seed: --palette-amber." }
+    },
+    "status": {
+      "info": {
+        "text": { "$type": "color", "$value": "{color.blue.text}", "$description": "Info text, icon and rail." },
+        "solid": { "$type": "color", "$value": "{color.blue.solid}", "$description": "Info tile." },
+        "on-solid": { "$type": "color", "$value": "{color.blue.on-solid}", "$description": "Glyph on the info tile." },
+        "soft": { "$type": "color", "$value": "{color.blue.soft}", "$description": "Info fill." },
+        "line": { "$type": "color", "$value": "{color.blue.line}", "$description": "Info border." }
+      },
+      "success": {
+        "text": { "$type": "color", "$value": "{color.green.text}", "$description": "Success text, icon and rail." },
+        "solid": { "$type": "color", "$value": "{color.green.solid}", "$description": "Success tile." },
+        "on-solid": { "$type": "color", "$value": "{color.green.on-solid}", "$description": "Glyph on the success tile." },
+        "soft": { "$type": "color", "$value": "{color.green.soft}", "$description": "Success fill." },
+        "line": { "$type": "color", "$value": "{color.green.line}", "$description": "Success border." }
+      },
+      "warning": {
+        "text": { "$type": "color", "$value": "{color.amber.text}", "$description": "Warning text, icon and rail (amber, not olive yellow)." },
+        "solid": { "$type": "color", "$value": "{color.yellow.solid}", "$description": "Warning tile." },
+        "on-solid": { "$type": "color", "$value": "{color.yellow.on-solid}", "$description": "Glyph on the warning tile." },
+        "soft": { "$type": "color", "$value": "{color.yellow.soft}", "$description": "Warning fill." },
+        "line": { "$type": "color", "$value": "{color.yellow.line}", "$description": "Warning border." }
+      },
+      "danger": {
+        "text": { "$type": "color", "$value": "{color.red.text}", "$description": "Danger and error text, icon and rail." },
+        "solid": { "$type": "color", "$value": "{color.red.solid}", "$description": "Danger tile." },
+        "on-solid": { "$type": "color", "$value": "{color.red.on-solid}", "$description": "Glyph on the danger tile." },
+        "soft": { "$type": "color", "$value": "{color.red.soft}", "$description": "Danger fill." },
+        "line": { "$type": "color", "$value": "{color.red.line}", "$description": "Danger border." }
+      },
+      "neutral": {
+        "text": { "$type": "color", "$value": "{color.gray.text}", "$description": "Neutral status text." },
+        "solid": { "$type": "color", "$value": "{color.gray.solid}", "$description": "Neutral tile." },
+        "on-solid": { "$type": "color", "$value": "{color.gray.on-solid}", "$description": "Glyph on the neutral tile." },
+        "soft": { "$type": "color", "$value": "{color.gray.soft}", "$description": "Neutral fill." },
+        "line": { "$type": "color", "$value": "{color.gray.line}", "$description": "Neutral border." }
+      }
+    },
+    "category": {
+      "$description": "Categorical roster for series, tags and depth cycles, in this order.",
+      "1": {
+        "text": { "$type": "color", "$value": "{color.blue.text}", "$description": "Category 1 (blue)." },
+        "soft": { "$type": "color", "$value": "{color.blue.soft}", "$description": "Category 1 fill." }
+      },
+      "2": {
+        "text": { "$type": "color", "$value": "{color.teal.text}", "$description": "Category 2 (teal)." },
+        "soft": { "$type": "color", "$value": "{color.teal.soft}", "$description": "Category 2 fill." }
+      },
+      "3": {
+        "text": { "$type": "color", "$value": "{color.green.text}", "$description": "Category 3 (green)." },
+        "soft": { "$type": "color", "$value": "{color.green.soft}", "$description": "Category 3 fill." }
+      },
+      "4": {
+        "text": { "$type": "color", "$value": "{color.yellow.text}", "$description": "Category 4 (yellow)." },
+        "soft": { "$type": "color", "$value": "{color.yellow.soft}", "$description": "Category 4 fill." }
+      },
+      "5": {
+        "text": { "$type": "color", "$value": "{color.violet.text}", "$description": "Category 5 (violet)." },
+        "soft": { "$type": "color", "$value": "{color.violet.soft}", "$description": "Category 5 fill." }
+      },
+      "6": {
+        "text": { "$type": "color", "$value": "{color.pink.text}", "$description": "Category 6 (pink)." },
+        "soft": { "$type": "color", "$value": "{color.pink.soft}", "$description": "Category 6 fill." }
+      }
+    },
+    "diff": {
+      "add": { "$type": "color", "$value": "{color.green.text}", "$description": "Added: sign, name and marker." },
+      "add-bg": { "$type": "color", "$value": "color-mix(in srgb, {color.green.solid} 8%, {color.surface.panel})", "$description": "Added row tint (opaque; muted and syntax text keep 4.5:1 on it)." },
+      "del": { "$type": "color", "$value": "{color.red.text}", "$description": "Removed: sign, name and marker." },
+      "del-bg": { "$type": "color", "$value": "color-mix(in srgb, {color.red.solid} 8%, {color.surface.panel})", "$description": "Removed row tint." },
+      "mod": { "$type": "color", "$value": "{color.yellow.text}", "$description": "Modified or renamed: sign, name and marker." },
+      "mod-bg": { "$type": "color", "$value": "color-mix(in srgb, {color.yellow.solid} 9%, {color.surface.panel})", "$description": "Modified row tint." }
+    },
+    "syntax": {
+      "$description": "Code token colors inside code panels: VS Code Light+ in light, Dark+ in dark.",
+      "punctuation": { "$type": "color", "$value": "#000000", "$description": "Punctuation and plain code text." },
+      "keyword": { "$type": "color", "$value": "#0000ff", "$description": "Declaration keywords (const, function, class)." },
+      "control": { "$type": "color", "$value": "#af00db", "$description": "Control-flow keywords (if, return, import, await)." },
+      "function": { "$type": "color", "$value": "#795e26", "$description": "Function and method names." },
+      "type": { "$type": "color", "$value": "#267f99", "$description": "Types and classes." },
+      "key": { "$type": "color", "$value": "#001080", "$description": "Properties, object keys, variables." },
+      "string": { "$type": "color", "$value": "#a31515", "$description": "Strings." },
+      "number": { "$type": "color", "$value": "#098658", "$description": "Numbers." },
+      "boolean": { "$type": "color", "$value": "#0000ff", "$description": "true / false." },
+      "null": { "$type": "color", "$value": "#0000ff", "$description": "null / undefined / None." },
+      "comment": { "$type": "color", "$value": "#008000", "$description": "Comments." },
+      "regex": { "$type": "color", "$value": "#811f3f", "$description": "Regular expressions." },
+      "tag": { "$type": "color", "$value": "#800000", "$description": "Markup tag names." },
+      "constant": { "$type": "color", "$value": "#0070c1", "$description": "UPPER_CASE constants and entities." },
+      "selector": { "$type": "color", "$value": "#800000", "$description": "CSS selectors." }
+    },
+    "code": {
+      "bg": { "$type": "color", "$value": "color-mix(in srgb, {color.gray.soft} 30%, transparent)", "$description": "Code panel background when code panels follow the light page." },
+      "border": { "$type": "color", "$value": "{color.border.default}", "$description": "Code panel frame." },
+      "header-fg": { "$type": "color", "$value": "{color.text.muted}", "$description": "Code panel header strip text (language label)." },
+      "gutter-fg": { "$type": "color", "$value": "color-mix(in srgb, {color.text.faint} 65%, {color.text.muted})", "$description": "Line numbers (>= 3:1)." },
+      "gutter-bg": { "$type": "color", "$value": "color-mix(in srgb, {color.gray.soft} 30%, {color.surface.page})", "$description": "Opaque sticky gutter, equal to the panel composited over the page." },
+      "chip": {
+        "ink": { "$type": "color", "$value": "{color.text.ink}", "$description": "Inline code chip text." },
+        "string": { "$type": "color", "$value": "{color.syntax.string}", "$description": "Typed chip: paths and strings." },
+        "type": { "$type": "color", "$value": "#22728a", "$description": "Typed chip: types (Light+ type darkened 10% for 4.5:1 on the chip fill)." },
+        "call": { "$type": "color", "$value": "{color.syntax.function}", "$description": "Typed chip: calls." },
+        "literal": { "$type": "color", "$value": "#08794f", "$description": "Typed chip: number literals (Light+ number darkened 10% for 4.5:1 on the chip fill)." },
+        "keyword": { "$type": "color", "$value": "{color.syntax.keyword}", "$description": "Typed chip: keyword literals." },
+        "prop": { "$type": "color", "$value": "{color.syntax.key}", "$description": "Typed chip: properties." }
+      }
+    },
+    "annotation": {
+      "$description": "The annotate / AI layer keeps its own violet identity, distinct from the app accent.",
+      "accent": { "$type": "color", "$value": "#7862b8", "$description": "Targeting ring, composer accent, AI panel tabs." },
+      "accent-lit": { "$type": "color", "$value": "#5b4699", "$description": "Active AI tab label." },
+      "accent-dim": { "$type": "color", "$value": "#9488bd", "$description": "Inactive annotation marks." },
+      "active-bg": { "$type": "color", "$value": "rgba(120, 98, 184, 0.1)", "$description": "Active annotation wash." },
+      "surface": { "$type": "color", "$value": "#ffffff", "$description": "Annotation popover surface." },
+      "text": { "$type": "color", "$value": "#18181b", "$description": "Annotation popover text." },
+      "muted": { "$type": "color", "$value": "#71717a", "$description": "Annotation popover secondary text." },
+      "border": { "$type": "color", "$value": "rgba(120, 98, 184, 0.38)", "$description": "Annotation panel and popover edge." },
+      "danger": { "$type": "color", "$value": "#dc2626", "$description": "Destructive annotation actions." },
+      "wash": { "$type": "color", "$value": "color-mix(in srgb, {color.annotation.accent} 8%, transparent)", "$description": "Ambient annotate-mode wash." },
+      "add": { "$type": "color", "$value": "{color.notion.text.green}", "$description": "Staged addition." },
+      "add-bg": { "$type": "color", "$value": "color-mix(in srgb, {color.notion.text.green} 14%, transparent)", "$description": "Staged addition wash." },
+      "del": { "$type": "color", "$value": "{color.notion.text.red}", "$description": "Staged deletion." },
+      "del-bg": { "$type": "color", "$value": "color-mix(in srgb, {color.notion.text.red} 14%, transparent)", "$description": "Staged deletion wash." }
+    },
+    "glass": {
+      "bg": { "$type": "color", "$value": "rgba(255, 255, 255, 0.85)", "$description": "Glass panel fill (blurred backdrop shows through)." },
+      "border": { "$type": "color", "$value": "rgba(28, 22, 54, 0.14)", "$description": "Glass panel edge: violet-tinted so it separates from the warm page." },
+      "zone-border": { "$type": "color", "$value": "rgba(28, 22, 54, 0.09)", "$description": "Dividers between zones inside a glass panel." }
+    },
+    "backdrop": { "$type": "color", "$value": "#00000066", "$description": "Modal dialog backdrop." },
+    "notion": {
+      "$description": "Compat: the Notion palette (--color-* in docs-system). Feeds docs-system's style-rail accent families and a few legacy consumers. New UI uses the hue and role tokens.",
+      "text": {
+        "default": { "$type": "color", "$value": "{color.text.body}", "$description": "Seed: --color-text-default." },
+        "navigation": { "$type": "color", "$value": "{color.link}", "$description": "Seed: --color-text-navigation." },
+        "gray": { "$type": "color", "$value": "#9b9a97", "$description": "Seed: --color-text-gray." },
+        "brown": { "$type": "color", "$value": "#64473a", "$description": "Seed: --color-text-brown." },
+        "orange": { "$type": "color", "$value": "#d9730d", "$description": "Seed: --color-text-orange." },
+        "yellow": { "$type": "color", "$value": "#dfab01", "$description": "Seed: --color-text-yellow." },
+        "green": { "$type": "color", "$value": "#0f7b6c", "$description": "Seed: --color-text-green." },
+        "blue": { "$type": "color", "$value": "#0b6e99", "$description": "Seed: --color-text-blue (highlight, drag-select and drop-line color)." },
+        "purple": { "$type": "color", "$value": "#6940a5", "$description": "Seed: --color-text-purple." },
+        "pink": { "$type": "color", "$value": "#ad1a72", "$description": "Seed: --color-text-pink." },
+        "red": { "$type": "color", "$value": "#e03e3e", "$description": "Seed: --color-text-red." }
+      },
+      "bg": {
+        "default": { "$type": "color", "$value": "{color.surface.page}", "$description": "Seed: --color-bg-default." },
+        "sidebar": { "$type": "color", "$value": "{color.surface.sidebar}", "$description": "Seed: --color-bg-sidebar." },
+        "gray": { "$type": "color", "$value": "#ebeced", "$description": "Seed: --color-bg-gray." },
+        "brown": { "$type": "color", "$value": "#e9e5e3", "$description": "Seed: --color-bg-brown." },
+        "orange": { "$type": "color", "$value": "#faebdd", "$description": "Seed: --color-bg-orange." },
+        "yellow": { "$type": "color", "$value": "#fbf3db", "$description": "Seed: --color-bg-yellow." },
+        "green": { "$type": "color", "$value": "#ddedea", "$description": "Seed: --color-bg-green." },
+        "blue": { "$type": "color", "$value": "#ddebf1", "$description": "Seed: --color-bg-blue (block highlight and changed-flash fill)." },
+        "purple": { "$type": "color", "$value": "#eae4f2", "$description": "Seed: --color-bg-purple." },
+        "pink": { "$type": "color", "$value": "#f4dfeb", "$description": "Seed: --color-bg-pink." },
+        "red": { "$type": "color", "$value": "#fbe4e4", "$description": "Seed: --color-bg-red." }
+      },
+      "pill": {
+        "default": { "$type": "color", "$value": "rgba(206, 205, 202, 0.5)", "$description": "Seed: --color-pill-default (style-rail border-strength base)." },
+        "gray": { "$type": "color", "$value": "#9b9a9766", "$description": "Seed: --color-pill-gray, rgba(155,154,151,0.4)." },
+        "brown": { "$type": "color", "$value": "#8c2e0033", "$description": "Seed: --color-pill-brown, rgba(140,46,0,0.2)." },
+        "orange": { "$type": "color", "$value": "#f55d0033", "$description": "Seed: --color-pill-orange, rgba(245,93,0,0.2) (quote border)." },
+        "yellow": { "$type": "color", "$value": "#e9a80033", "$description": "Seed: --color-pill-yellow, rgba(233,168,0,0.2)." },
+        "green": { "$type": "color", "$value": "#00876b33", "$description": "Seed: --color-pill-green, rgba(0,135,107,0.2)." },
+        "blue": { "$type": "color", "$value": "#0078df33", "$description": "Seed: --color-pill-blue, rgba(0,120,223,0.2)." },
+        "purple": { "$type": "color", "$value": "#6724de33", "$description": "Seed: --color-pill-purple, rgba(103,36,222,0.2)." },
+        "pink": { "$type": "color", "$value": "#dd008133", "$description": "Seed: --color-pill-pink, rgba(221,0,129,0.2)." },
+        "red": { "$type": "color", "$value": "#ff001a33", "$description": "Seed: --color-pill-red, rgba(255,0,26,0.2)." }
+      },
+      "accent": {
+        "blue": { "$type": "color", "$value": "{color.accent}", "$description": "Seed: --color-accent-blue, rgb(0,120,223)." }
+      }
+    }
+  },
+  "shadow": {
+    "glass": { "$type": "shadow", "$value": "0 10px 32px rgba(30, 22, 60, 0.12), 0 1px 3px rgba(0, 0, 0, 0.07)", "$description": "Glass panel lift: separates the panel from the warm page. Seed: --docs-lab-panel-shadow." },
+    "dialog": { "$type": "shadow", "$value": "0 20px 80px #00000044", "$description": "Modal dialog lift. Seed: export dialog box-shadow #0004." }
+  }
+}

@@ -1,0 +1,83 @@
+scan-literals  /Users/Ford/workspace/codecaine/core/docs-system/packages
+files: 620 scanned, 81 with literals | skipped: 135 test/fixture, 15 generated/minified, 0 too large, 0 submodule dirs, 0 symlinks, 0 excluded
+
+HARD-CODED LITERALS                         count  distinct
+  hex colors                                 723       187
+  rgb()/rgba()                                38        38
+  hsl()/hsla()                                 0         0
+  oklch()/oklab()                              0         0
+  lab()/lch()/hwb()/color()                    0         0
+  Tailwind arbitrary values                  271       167
+  px font sizes                              119        21
+  border-radius declarations                  19         6
+  font-family declarations                     5         2
+  TOTAL                                     1175
+  color literals: 408 in variable definitions, 220 as var() fallbacks, 133 inline
+
+SOFT SIGNALS (token-adjacent, review)
+  named colors (white, black, red ...)         1         1
+  Tailwind default-palette classes            13         6
+  Tailwind arbitrary var() values            346       190
+  px padding/margin/gap                      229       117
+  rem/em/pt font sizes                        17        14
+  TOTAL                                      606
+
+DISTINCT VALUES
+  radius:        9999px x9, 2px x6, 10px, 3px, 7px, 999px
+  font families: system-ui x4, inter
+  px font sizes: 12px x31, 11px x15, 11.5px x14, 13px x12, 12.5px x8, 13.5px x8, 14px x6, 16px x4, 20px x4, 15px x3, 10.5px x2, 22px x2, 30px x2, 10px, +7 more
+  top hex:       #ffffff x41, #1f1f1f x35, #666562 x34, #f8f8f7 x26, #e6e5e3 x25, #569cd6 x18, #805f01 x12, #151b23 x11, #26744f x11, #2a2a2a x11, +177 more
+  tw arbitrary:  text-[12px] x25, text-[11px] x17, text-[10px] x16, leading-[1.4] x6, text-[13px] x5, [overflow-wrap:anywhere] x4, ring-[3px] x4, tracking-[0.14em] x4, +159 more
+
+TOP FILES (by hard total; then soft signals, color definitions, var() fallbacks)
+   hard  hex  rgb  hsl  okl  oth tw[]  fpx  rad  fam   soft  defs   fb  file
+    162  141   21    .    .    .    .    .    .    .      0   162    0  docs-workbench/web/src/theme/notion-palette.css
+    122   45    .    .    .    .    .   77    .    .    118    14    0  docs-style/src/report/assets.ts
+     93   80   13    .    .    .    .    .    .    .      0    93    0  docs-workbench/web/src/theme/semantic.css
+     59   56    .    .    .    .    .    2    1    .      7    12   44  docs-viewer/src/components/outline-rows/tree-rows.tsx
+     50   50    .    .    .    .    .    .    .    .      0     0    0  docs-model/src/code-theme/code-theme.ts
+     45   13    1    .    .    .   31    .    .    .     43     0   14  docs-viewer/src/lab/annotate/PanelQueue.tsx
+     44    7    .    .    .    .   37    .    .    .     35     0    7  docs-viewer/src/render/block-classes.ts
+     43   26    .    .    .    .   12    4    1    .     17     0   26  docs-viewer/src/components/state-shape/StateShapeDocsBlock.tsx
+     42   41    .    .    .    .    .    1    .    .     13    12   29  docs-viewer/src/components/interaction-surface/InteractionSurfaceDocsBlock.tsx
+     37    .    .    .    .    .   37    .    .    .     49     0    0  docs-viewer/src/components/code/classes.ts
+     32   28    .    .    .    .    .    2    2    .      6    12   14  docs-viewer/src/components/process-outline/ProcessOutlineDocsBlock.tsx
+     27   14    .    .    .    .    .   10    2    1     16     0    0  docs-mcp/src/background/home.ts
+     26   26    .    .    .    .    .    .    .    .      0    26    0  docs-viewer/src/components/outline-rows/OutlineRows.tsx
+     24   23    .    .    .    .    .    .    1    .      0    22    1  docs-publish/src/editor.css
+     23   15    .    .    .    .    .    7    1    .     11    15    0  docs-viewer/src/components/stack/StackDocsBlock.tsx
+     23   23    .    .    .    .    .    .    .    .      2     0   23  docs-viewer/src/styles/code.css
+     22   18    .    .    .    .    4    .    .    .     10    16    2  docs-viewer/src/components/rich-text/CalloutDocsBlock.tsx
+     21    8    .    .    .    .   13    .    .    .     27     0    8  docs-viewer/src/lab/annotate/InlineReviewBars.tsx
+     21   11    .    .    .    .   10    .    .    .     21     0   11  docs-viewer/src/lab/changeset/ChangeSetCard.tsx
+     21   21    .    .    .    .    .    .    .    .      0    17    4  docs-viewer/src/components/file-tree/FileTreeDocsBlock.tsx
+     17    .    .    .    .    .   17    .    .    .     23     0    0  docs-viewer/src/components/linked-panels/classes.ts
+     16   16    .    .    .    .    .    .    .    .      0     0    7  docs-viewer/src/components/typed-chip.ts
+     12    .    .    .    .    .   12    .    .    .     24     0    0  docs-viewer/src/components/structured-table/table-classes.ts
+     10    3    .    .    .    .    .    6    .    1     15     0    0  docs-workbench/web/src/shell/export-dialog.css
+     10    1    .    .    .    .    9    .    .    .      3     0    1  docs-viewer/src/lab/glass/zones.tsx
+      9    .    .    .    .    .    9    .    .    .     15     0    0  docs-viewer/src/components/rich-text/media-panel.tsx
+      9    1    .    .    .    .    .    1    7    .      8     0    0  docs-workbench/web/src/theme/style-rail.css
+      9    3    .    .    .    .    6    .    .    .      1     0    3  docs-viewer/src/lab/glass/GlassPanel.tsx
+      8    6    .    .    .    .    .    2    .    .      4     0    6  docs-viewer/src/styles/image-grid.css
+      8    5    2    .    .    .    .    .    1    .      2     0    5  docs-viewer/src/components/described-name.tsx
+      7    2    .    .    .    .    5    .    .    .     13     0    2  docs-viewer/src/lab/annotate/InlineComposer.tsx
+      7    7    .    .    .    .    .    .    .    .      7     0    0  docs-workbench/web/src/lib/pdf-document.tsx
+      7    .    .    .    .    .    7    .    .    .      2     0    0  docs-viewer/src/editor/menus/SlashMenu.tsx
+      7    7    .    .    .    .    .    .    .    .      0     7    0  docs-workbench/web/src/pages/sequence-embed.css
+      5    .    .    .    .    .    5    .    .    .     17     0    0  docs-viewer/src/components/rich-text/VideoDocsBlock.tsx
+      5    .    .    .    .    .    5    .    .    .      4     0    0  docs-viewer/src/components/structured-table/editor/AddButtons.tsx
+      5    .    .    .    .    .    5    .    .    .      4     0    0  docs-viewer/src/editor/menus/reference-node.tsx
+      5    3    .    .    .    .    .    1    .    1      4     0    0  docs-workbench/web/src/playground/main.tsx
+      5    1    .    .    .    .    2    1    .    1      3     0    1  docs-viewer/src/components/rich-text/html.tsx
+      5    4    .    .    .    .    .    1    .    .      1     0    0  docs-publish/src/styles.css
+  ... 41 more files with literals (--top 0 lists all)
+
+BY TOP-LEVEL DIRECTORY
+     633 hard    402 soft    55 files  docs-viewer
+     314 hard     65 soft    19 files  docs-workbench
+     122 hard    118 soft     1 files  docs-style
+      50 hard      0 soft     1 files  docs-model
+      29 hard      5 soft     4 files  docs-publish
+      27 hard     16 soft     1 files  docs-mcp
+

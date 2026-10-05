@@ -1,0 +1,6 @@
+node_modules/
+.DS_Store
+# Screenshot baselines: large, and reproducible with verification/docs-system/snapshot.ts.
+verification/**/*.png
+# Frozen copies of the docs corpora and theme state: large, and they hold private docs. Rebuild with verification/docs-system/freeze.ts.
+verification/**/fixtures/*.tar.gz
