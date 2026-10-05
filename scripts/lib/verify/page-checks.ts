@@ -4,7 +4,8 @@
  * Everything here takes a Playwright Page that already shows the verify route; starting the app and
  * guarding its requests is the runner's job (scripts/lib/app-runner.ts).
  */
-import type { AppEntry, PassId, RouteSpec, VerifySpec } from "../registry";
+import { runSteps } from "../capture";
+import type { AppEntry, PassId, VerifySpec } from "../registry";
 import { type Assertion, fail, pass, type ResponseLog } from "./assertions";
 import { fontAssertions, readFonts } from "./fonts";
 import { checkSidebar } from "./sidebar";
@@ -21,45 +22,6 @@ export async function settle(page: any): Promise<void> {
     })
     .catch(() => undefined);
   await sleep(150);
-}
-
-/**
- * A navigation/view-only step from the registry (never submit, save or send). Same semantics as the
- * screenshot harness (scripts/lib/capture.ts): wait with a target waits for it to be visible, else sleeps
- * `value` ms; press with a target presses `value` on it; scroll without a target scrolls the window.
- */
-export async function runStep(page: any, step: NonNullable<RouteSpec["steps"]>[number]): Promise<void> {
-  const need = () => {
-    if (!step.target) throw new Error(`step ${step.action} needs a target: ${JSON.stringify(step)}`);
-    return step.target;
-  };
-  switch (step.action) {
-    case "click":
-      await page.locator(need()).first().click({ timeout: 15_000 });
-      break;
-    case "hover":
-      await page.locator(need()).first().hover({ timeout: 15_000 });
-      break;
-    case "press":
-      if (step.target && step.value !== undefined) await page.locator(step.target).first().press(String(step.value), { timeout: 15_000 });
-      else await page.keyboard.press(String(step.value ?? step.target));
-      break;
-    case "scroll":
-      if (step.target) {
-        await page.locator(step.target).first().evaluate((element: HTMLElement, top: number) => {
-          element.scrollTop = top;
-        }, Number(step.value ?? 0));
-      } else {
-        await page.evaluate((top: number) => window.scrollTo(0, top), Number(step.value ?? 0));
-      }
-      break;
-    case "wait":
-      if (step.target) await page.locator(step.target).first().waitFor({ state: "visible", timeout: 30_000 });
-      else await sleep(Number(step.value ?? 0));
-      break;
-    default:
-      throw new Error(`unknown step ${JSON.stringify(step)}`);
-  }
 }
 
 // -- token probes ---------------------------------------------------------------
@@ -160,7 +122,7 @@ export async function switchToDark(page: any, darkSwitch: VerifySpec["darkSwitch
       return true;
     }
     case "steps":
-      for (const step of darkSwitch.steps) await runStep(page, step);
+      await runSteps(page, darkSwitch.steps);
       return false;
   }
 }

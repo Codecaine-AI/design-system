@@ -4,10 +4,10 @@
  * check the bound URL, the served files and the blocked requests, and stop only what this run started.
  */
 import { fileURLToPath } from "node:url";
+import { runSteps } from "../capture";
 import { guardedContext, OWNER_PORTS, type RunningApp, servedFromRoot, splitBlocked, startApp } from "../app-runner";
 import type { AppEntry, RouteSpec } from "../registry";
 import { type Assertion, fail, pass, type ResponseLog, trackResponses, warn } from "./assertions";
-import { runStep } from "./page-checks";
 
 export interface Session {
   browser: any;
@@ -43,7 +43,7 @@ export function verifyRoute(app: AppEntry): RouteSpec | undefined {
 function routePreparer(route: RouteSpec | undefined) {
   return async (page: any) => {
     if (route?.waitFor) await page.locator(route.waitFor).first().waitFor({ state: "visible", timeout: 30_000 });
-    for (const step of route?.steps ?? []) await runStep(page, step);
+    if (route?.steps?.length) await runSteps(page, route.steps);
   };
 }
 
