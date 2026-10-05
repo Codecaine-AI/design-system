@@ -37,8 +37,11 @@ import { CONTEXT_OPTIONS, DETERMINISM_CSS, installStyleInitScript } from "./capt
 import { loadPlaywright, playwrightAnchor } from "./playwright";
 import { DESIGN_SYSTEM_ROOT, resolvePath, type AppEntry } from "./registry";
 
-/** The owner's ports. No run binds them, whatever its profile says. */
-export const OWNER_PORTS: readonly number[] = [3998, 3999, 4318, 4800, 4801, 4820, 4830, 4840, 4888, 5173, 5174, 9222];
+/**
+ * The owner's ports. No run binds them, whatever its profile says, and the guard always blocks them.
+ * 4800-4805 are docs-system's own dev services (docs-system/Makefile; canvas studio calls :4803).
+ */
+export const OWNER_PORTS: readonly number[] = [3998, 3999, 4318, 4800, 4801, 4802, 4803, 4804, 4805, 4820, 4830, 4840, 4888, 5173, 5174, 9222];
 /** Run profiles use 47000-47999; tool tests use 46900-46999. */
 export const RUN_PORT_RANGE = { min: 46900, max: 47999 } as const;
 
