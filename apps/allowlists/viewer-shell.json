@@ -1,0 +1,11 @@
+{
+  "literals": [
+    {
+      "file": "codecaine/core/agent-kernel/packages/viewer-shell/src/style/StyleOverlay.tsx",
+      "match": "^#(f{6}|808080)$",
+      "category": "hex",
+      "reason": "SVG filter constants of the grain overlay (flood/lighting colors used as filter math, not paint) (2 hits)"
+    }
+  ],
+  "twClasses": []
+}

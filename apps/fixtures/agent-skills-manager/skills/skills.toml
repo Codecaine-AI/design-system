@@ -1,0 +1,16 @@
+# Synthetic skills catalog for the agent-skills-manager run profile (no real skills, no real agent dirs).
+[library]
+path = "library"
+
+[agents]
+# HOME is the run's temp dir, so these resolve inside it and show as not connected.
+claude = "~/.claude/skills"
+codex  = "~/.codex/skills"
+
+[[skill]]
+name = "beta"
+source = "my-skills"
+
+[[skill]]
+name = "alpha"
+source = "example"

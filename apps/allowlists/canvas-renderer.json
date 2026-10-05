@@ -1,0 +1,14 @@
+{
+  "literals": [
+    {
+      "file": "codecaine/core/canvas/packages/canvas/src/theme/palette.ts",
+      "reason": "the FigJam role table and its 10 categorical inks (ink, fill, wash per pick) are canvas-owned data colors (audit 'Not included') (80 hits)"
+    },
+    {
+      "file": "codecaine/core/canvas/packages/canvas/src/theme/canvas-style.ts",
+      "match": "^(#(f5f5f5|d9d9d9|000000|5c5c5c|757575|d5322f|eb7500|e8a302|019142|369e94|1a5cdf|9747ff|b74d85|757980|ffffff)|rgba\\(0,)",
+      "reason": "FIGJAM_PRESET (canvas-style.ts 219-280) stays canvas-owned (audit 'Not included'): 20 hits. #ffffff also appears in the schematic presets, which migrate; the literal floor caps the total at the FigJam count"
+    }
+  ],
+  "twClasses": []
+}

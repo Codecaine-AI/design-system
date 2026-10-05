@@ -1,0 +1,10 @@
+{
+  "literals": [
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/**",
+      "kind": "fallback",
+      "reason": "audit: keep literal var() fallbacks, the viewer must render without the host stylesheet; definitions that move behind var(--ds-*, <fallback>) land here too"
+    }
+  ],
+  "twClasses": []
+}

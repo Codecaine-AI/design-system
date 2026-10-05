@@ -1,0 +1,10 @@
+{
+  "literals": [
+    {
+      "file": "apps/pen-plotter/apps/desktop/src/renderer/src/PensPanel.tsx",
+      "category": "hex",
+      "reason": "the PensPanel ink PALETTE is ink data (the real pen colors), not UI color; audit: keep it (8 hits)"
+    }
+  ],
+  "twClasses": []
+}
