@@ -137,7 +137,7 @@ function defaultTheme(app: AppEntry): Theme {
   return app.theme?.rule === "dark-first" ? "dark" : "light";
 }
 
-type Network = ReturnType<typeof trackNetwork>;
+export type Network = ReturnType<typeof trackNetwork>;
 
 /** Tracks in-flight requests so "network quiet" ignores long-lived streams (SSE, websockets). */
 function trackNetwork(page: any) {
@@ -262,7 +262,7 @@ function deadline<T>(work: Promise<T>, ms: number, what: string, onTimeout: () =
   return Promise.race([work, expired]).finally(() => clearTimeout(timer));
 }
 
-type Step = NonNullable<RouteSpec["steps"]>[number];
+export type Step = NonNullable<RouteSpec["steps"]>[number];
 
 async function runStep(page: any, step: Step, network: ReturnType<typeof trackNetwork>) {
   const need = () => {
@@ -297,6 +297,16 @@ async function runStep(page: any, step: Step, network: ReturnType<typeof trackNe
       throw new Error(`unknown step ${JSON.stringify(step)}`);
   }
   await network.quiet();
+}
+
+/**
+ * Runs registry route steps (navigation and view actions only: click, press, hover, scroll, wait) on a
+ * page, waiting for network quiet after each. Locators are strict: a target must match one element.
+ * Pass `network` to reuse a tracker attached before the page loaded; otherwise one is attached now.
+ */
+export async function runSteps(page: any, steps: Step[], opts: { network?: Network } = {}): Promise<void> {
+  const network = opts.network ?? trackNetwork(page);
+  for (const step of steps) await runStep(page, step, network);
 }
 
 /** Boxes of every element a mask selector matches, clipped to the viewport and rounded outward. */

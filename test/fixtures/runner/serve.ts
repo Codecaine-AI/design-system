@@ -10,7 +10,7 @@
 const port = Number(process.env.FIXTURE_PORT);
 const helperPort = Number(process.env.FIXTURE_HELPER_PORT);
 const strayPort = Number(process.env.FIXTURE_STRAY_PORT);
-const deadPort = Number(process.env.FIXTURE_DEAD_PORT ?? 46998);
+const deadPort = Number(process.env.FIXTURE_DEAD_PORT ?? 46938);
 
 await Bun.write(`${process.env.HOME}/env.json`, JSON.stringify(process.env));
 
