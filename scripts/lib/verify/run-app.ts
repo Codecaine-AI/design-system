@@ -4,7 +4,7 @@
  * check the bound URL, the served files and the blocked requests, and stop only what this run started.
  */
 import { fileURLToPath } from "node:url";
-import { guardedContext, type RunningApp, servedFromRoot, startApp, stopAllApps } from "../app-runner";
+import { guardedContext, type RunningApp, servedFromRoot, splitBlocked, startApp, stopAllApps } from "../app-runner";
 import type { AppEntry, RouteSpec } from "../registry";
 import { type Assertion, fail, pass, type ResponseLog, runStep, trackResponses } from "./page-checks";
 import { onInterrupt } from "./propagate";
@@ -80,33 +80,6 @@ async function servedEntries(page: any, responses: ResponseLog, running: Running
   return [...new Set([...entries, ...(running.servedFiles?.() ?? [])])].sort();
 }
 
-const LOOPBACK = (host: string) => host === "localhost" || host.endsWith(".localhost") || host === "[::1]" || host === "0.0.0.0" || /^127\./.test(host);
-
-/**
- * Splits the guard's blocked requests ("GET http://...", "WS ws://..."): a request to one of the profile's
- * named ports that the run did not bind (a dead-service URL the profile points at on purpose) is
- * expected-blocked; one to an allowed local port is dropped; every other is unexpected.
- */
-function classifyBlocked(entries: string[], app: AppEntry, startedPorts: number[]): { unexpected: string[]; expected: string[] } {
-  const named = new Set(Object.values(app.runProfile.ports ?? {}));
-  const allowed = new Set(app.runProfile.allowedLocalPorts ?? []);
-  const unexpected: string[] = [];
-  const expected: string[] = [];
-  for (const entry of entries) {
-    let port: number | null = null;
-    try {
-      const url = new URL(entry.replace(/^\S+\s+/, ""));
-      if (LOOPBACK(url.hostname)) port = Number(url.port || (url.protocol === "https:" || url.protocol === "wss:" ? 443 : 80));
-    } catch {
-      // not a URL: unexpected
-    }
-    if (port !== null && allowed.has(port)) continue;
-    if (port !== null && named.has(port) && !startedPorts.includes(port)) expected.push(entry);
-    else unexpected.push(entry);
-  }
-  return { unexpected, expected };
-}
-
 /**
  * Starts the app, shows its verify route and runs `check` on the page. Every failure to start or load
  * becomes a failed assertion; the app is always stopped.
@@ -177,7 +150,8 @@ export async function inRunningApp(
             }),
     );
 
-    const { unexpected, expected } = classifyBlocked(blocked(), app, running.startedPorts);
+    // Expected: blocks to a named profile port the run never bound (a dead-service URL the profile sets on purpose).
+    const { unexpected, expected } = splitBlocked(running, blocked());
     report.blockedRequests = unexpected;
     report.expectedBlocked = expected;
     const expectedNote = expected.length ? `; ${expected.length} expected-blocked to the profile's unbound named port(s): ${[...new Set(expected)].slice(0, 3).join(", ")}` : "";
