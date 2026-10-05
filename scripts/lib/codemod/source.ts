@@ -63,7 +63,10 @@ function cssTemplates(src: string, inStr: Uint8Array): Array<[number, number]> {
     const runEnd = inStr[i] === 1 && (i + 1 === src.length || inStr[i + 1] === 0);
     if (runStart && open === -1 && src[i - 1] === "`") open = i;
     if (runEnd && open !== -1 && src[i + 1] === "`") {
-      if (CSS_RULE.test(src.slice(open, i + 1))) out.push([open, i + 1]);
+      // ${...} interpolations (outside the string) read as a plain word, so their braces do not count.
+      let body = "";
+      for (let k = open; k <= i; k++) body += inStr[k] === 1 ? src[k] : "x";
+      if (CSS_RULE.test(body)) out.push([open, i + 1]);
       open = -1;
     }
   }
