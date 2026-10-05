@@ -15,6 +15,7 @@
  */
 
 import { dirname, join } from "node:path";
+import { lexJs } from "../../scan-literals";
 import { resolvePath } from "../registry";
 import type { Load } from "./loads";
 import type { AppContext, CheckOutput, Finding } from "./types";
@@ -46,10 +47,24 @@ function findTailwindConfig(start: string, stop: string): string | null {
   }
 }
 
+function checkPreset(ctx: AppContext): Finding[] {
+  const { app, appRoot } = ctx;
+  const repoRoot = resolvePath(ctx.root, app.repo);
+  const config = findTailwindConfig(appRoot, isInside(appRoot, repoRoot) ? repoRoot : appRoot);
+  if (!config) return [{ file: app.root, line: 0, message: "Tailwind v3 app has no tailwind.config.* in the app root or above it in the repo" }];
+  const raw = readText(config) ?? "";
+  const text = lexJs(raw).text; // comments blanked: a commented-out preset does not count
+  if (text.includes(PRESET) && /\bpresets\b/.test(text)) return [];
+  return [{ file: ctx.rel(config), line: lineOf(raw, "presets"), message: `does not use the preset: add presets: [require("${PRESET}")]` }];
+}
+
 export function checkWiring(ctx: AppContext): CheckOutput {
   const { app } = ctx;
   const violations: Finding[] = [];
   const warnings: Finding[] = [];
+
+  // Tailwind v3 reads its preset from the config, whatever the entry stylesheet does.
+  if ((app.stack?.tailwind ?? "none") === "v3") violations.push(...checkPreset(ctx));
 
   if (!app.entryStylesheet) {
     violations.push({ file: app.root, line: 0, message: "apps.json gives no entryStylesheet to check" });
@@ -121,17 +136,6 @@ export function checkWiring(ctx: AppContext): CheckOutput {
     }
     if (strict && base && !before(base, strict)) {
       violations.push({ ...at(strict), message: `tailwind-strict.css loads before "tailwindcss" (${ctx.rel(base.from)}:${base.line}); Tailwind's defaults would come back` });
-    }
-  } else if (tw === "v3") {
-    const appRoot = ctx.appRoot;
-    const repoRoot = resolvePath(ctx.root, app.repo);
-    const config = findTailwindConfig(appRoot, isInside(appRoot, repoRoot) ? repoRoot : appRoot);
-    if (!config) violations.push({ file: app.root, line: 0, message: "Tailwind v3 app has no tailwind.config.* in the app root or above it in the repo" });
-    else {
-      const text = readText(config) ?? "";
-      if (!text.includes(PRESET) || !/\bpresets\b/.test(text)) {
-        violations.push({ file: ctx.rel(config), line: lineOf(text, "presets"), message: `does not use the preset: add presets: [require("${PRESET}")]` });
-      }
     }
   }
 

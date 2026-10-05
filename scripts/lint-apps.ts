@@ -31,7 +31,8 @@ const USAGE = `Usage: bun run lint:apps [--root <dir>] [--pass <1|2|3>] [--json]
   --registry <path>   apps.json to read (default: ${REGISTRY_PATH}); allowlists resolve beside it
   app...              app ids (default: every app in the registry)
 
-Exit: 0 when every required check passes, 1 when one fails, 2 on a usage error.
+Exit: 0 when every required check passes, 1 when one fails, 2 on a usage error
+(bad flags, unknown app, unreadable registry, no design-system build).
 `;
 
 interface Args {
@@ -102,7 +103,13 @@ function main() {
   }
   for (const p of validateRegistry(registry)) process.stderr.write(`lint:apps: registry: ${p}\n`);
 
-  const ds = loadDesignSystem();
+  let ds;
+  try {
+    ds = loadDesignSystem();
+  } catch (err) {
+    process.stderr.write(`lint:apps: ${(err as Error).message}\n`);
+    process.exit(2);
+  }
   const report = lintApps({ root, registry, registryDir: registryDirOf(args.registry), ds, pass: args.pass, apps: args.apps });
   const json = JSON.stringify(report, null, 2) + "\n";
   if (args.outDir) {

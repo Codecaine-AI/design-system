@@ -40,6 +40,8 @@ export interface Load {
   line: number;
   /** Real path of the resolved file; null when it does not resolve (or for `tailwindcss`). */
   path: string | null;
+  /** A local file recognized as a copy of a design-system file by its header, not loaded from the package. */
+  copied: boolean;
 }
 
 export interface Unresolved {
@@ -102,22 +104,24 @@ const COPIED: Record<string, DsKind> = {
 const COPY_HEADER = /^\s*\/\*[\s*]*@codecaine-ai\/design-system\b/;
 
 /** What a stylesheet specifier loads, or null for an ordinary file the walk follows. */
-export function classify(spec: string, real: string | null): LoadKind | null {
+export function classify(spec: string, real: string | null): { kind: LoadKind; copied: boolean } | null {
+  const pkgKind = (kind: LoadKind | null | undefined) => (kind ? { kind, copied: false } : null);
   const clean = spec.replace(/[?#].*$/, "");
-  if (clean === "tailwindcss" || clean.startsWith("tailwindcss/")) return "tailwindcss";
+  if (clean === "tailwindcss" || clean.startsWith("tailwindcss/")) return pkgKind("tailwindcss");
   const parsed = splitSpecifier(clean);
-  if (parsed?.name === PACKAGE_NAME) return DS_SUBPATHS[parsed.subpath] ?? "ds-other";
-  if (parsed?.name === "@codecaine-ai/text-measure" && parsed.subpath === "fonts.css") return "fonts";
+  if (parsed?.name === PACKAGE_NAME) return pkgKind(DS_SUBPATHS[parsed.subpath] ?? "ds-other");
+  if (parsed?.name === "@codecaine-ai/text-measure" && parsed.subpath === "fonts.css") return pkgKind("fonts");
   if (!real) return null;
   const pkg = owningPackage(real);
-  if (pkg?.name === PACKAGE_NAME) return DS_FILES[toPosix(relative(pkg.dir, real))] ?? (CSS_EXT.test(real) ? "ds-other" : null);
-  if (pkg?.name === "@codecaine-ai/text-measure" && basename(real) === "fonts.css") return "fonts";
+  if (pkg?.name === PACKAGE_NAME) return pkgKind(DS_FILES[toPosix(relative(pkg.dir, real))] ?? (CSS_EXT.test(real) ? "ds-other" : null));
+  if (pkg?.name === "@codecaine-ai/text-measure" && basename(real) === "fonts.css") return pkgKind("fonts");
   const copied = COPIED[basename(real)];
   if (copied) {
-    // The package's own header: the file opens with a comment whose first word is the package name.
-    // A local wrapper that merely mentions the package (and @imports it) is followed instead.
+    // The package's own header: the file opens with a comment whose first word is the package name,
+    // and holds no @import outside comments. A local wrapper that mentions the package and
+    // @imports it is followed instead.
     const text = readText(real) ?? "";
-    if (COPY_HEADER.test(text.slice(0, 200)) && !/@import\b/.test(text)) return copied;
+    if (COPY_HEADER.test(text.slice(0, 200)) && !/@import\b/.test(stripCss(text, false))) return { kind: copied, copied: true };
   }
   return null;
 }
@@ -125,8 +129,10 @@ export function classify(spec: string, real: string | null): LoadKind | null {
 interface Ref {
   spec: string;
   index: number;
-  /** css: a stylesheet reference; js: a module import (followed when local); script: an HTML <script src>. */
+  /** css: a stylesheet reference; js: a module import (followed when local) or an HTML <script src>. */
   as: "css" | "js";
+  /** An HTML href/src or a CSS @import: a URL, document-relative before it is a package. */
+  url?: boolean;
 }
 
 const CSS_IMPORT = /@import\s+(?:url\(\s*)?(["'])([^"'\n]+)\1/g;
@@ -136,8 +142,8 @@ const ATTR = (name: string) => new RegExp(`\\b${name}\\s*=\\s*(?:"([^"]*)"|'([^'
 
 function cssRefs(text: string, offset = 0): Ref[] {
   const refs: Ref[] = [];
-  for (const m of text.matchAll(CSS_IMPORT)) refs.push({ spec: m[2], index: offset + m.index!, as: "css" });
-  for (const m of text.matchAll(CSS_IMPORT_BARE_URL)) refs.push({ spec: m[1], index: offset + m.index!, as: "css" });
+  for (const m of text.matchAll(CSS_IMPORT)) refs.push({ spec: m[2], index: offset + m.index!, as: "css", url: true });
+  for (const m of text.matchAll(CSS_IMPORT_BARE_URL)) refs.push({ spec: m[1], index: offset + m.index!, as: "css", url: true });
   return refs;
 }
 
@@ -149,7 +155,7 @@ function linkRefs(text: string, offset = 0): Ref[] {
     if (!rel || !/stylesheet/i.test(rel[1] ?? rel[2] ?? rel[3] ?? "")) continue;
     const href = tag.match(ATTR("href"));
     const v = href && (href[1] ?? href[2] ?? href[3]);
-    if (v && !v.includes("${")) refs.push({ spec: v, index: offset + m.index!, as: "css" });
+    if (v && !v.includes("${")) refs.push({ spec: v, index: offset + m.index!, as: "css", url: true });
   }
   return refs;
 }
@@ -174,10 +180,11 @@ function htmlRefs(src: string): Ref[] {
   const text = stripHtml(src);
   const refs: Ref[] = [...linkRefs(text)];
   for (const m of text.matchAll(/(<style\b[^>]*>)([\s\S]*?)<\/style>/gi)) refs.push(...cssRefs(m[2], m.index! + m[1].length));
-  for (const m of text.matchAll(/<script\b[^>]*>/gi)) {
-    const src = m[0].match(ATTR("src"));
+  for (const m of text.matchAll(/(<script\b[^>]*>)([\s\S]*?)<\/script>/gi)) {
+    const src = m[1].match(ATTR("src"));
     const v = src && (src[1] ?? src[2] ?? src[3]);
-    if (v) refs.push({ spec: v, index: m.index!, as: "js" });
+    if (v) refs.push({ spec: v, index: m.index!, as: "js", url: true });
+    else for (const r of jsRefs(m[2])) refs.push({ ...r, index: r.index + m.index! + m[1].length });
   }
   return refs.sort((a, b) => a.index - b.index);
 }
@@ -209,12 +216,13 @@ export function buildLoadGraph(entry: string | null): LoadGraph {
     if (src === null) return;
     for (const ref of refsOf(file, src)) {
       const line = lineAt(src, ref.index);
-      const resolved = resolveSpecifier(ref.spec, file);
+      const resolved = resolveSpecifier(ref.spec, file, ref.url === true);
       const target = resolved ? realpathOrNull(resolved) : null;
       const isCss = ref.as === "css" || (target !== null && CSS_EXT.test(target));
-      const kind = isCss ? classify(ref.spec, target) : null;
-      if (kind) {
-        graph.loads.push({ kind, spec: ref.spec, from: file, line, path: kind === "tailwindcss" ? null : target });
+      const cls = isCss ? classify(ref.spec, target) : null;
+      const kind = cls?.kind;
+      if (cls && kind) {
+        graph.loads.push({ kind, spec: ref.spec, from: file, line, path: kind === "tailwindcss" ? null : target, copied: cls.copied });
         if (kind !== "tailwindcss" && !target) graph.unresolved.push({ spec: ref.spec, from: file, line });
         continue;
       }

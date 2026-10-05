@@ -127,6 +127,17 @@ export const APPS: AppEntry[] = [
     shell: false,
     folderStandard: false,
   }),
+  appEntry({ id: "templated-unused", root: "apps/templated-unused" }),
+  // Resolution: where each design-system file comes from.
+  appEntry({ id: "stale-copy", root: "apps/stale-copy", entryStylesheet: "apps/stale-copy/src/index.css" }),
+  appEntry({ id: "nested-pkg", root: "apps/nested-pkg", entryStylesheet: "apps/nested-pkg/src/index.css" }),
+  appEntry({ id: "second-checkout", root: "apps/second-checkout", consume: { via: "link", detail: "link: to a second checkout" }, entryStylesheet: "apps/second-checkout/src/index.css" }),
+  appEntry({ id: "relimp", root: "apps/relimp", consume: { via: "relative-import", detail: "packed copy by path" }, entryStylesheet: "apps/relimp/src/index.css" }),
+  appEntry({ id: "relimp-ok", root: "apps/relimp-ok", consume: { via: "relative-import", detail: "the root checkout by path" }, entryStylesheet: "apps/relimp-ok/src/index.css" }),
+  appEntry({ id: "names-order", root: "apps/names-order" }),
+  appEntry({ id: "tw3-commented", root: "apps/tw3-commented", stack: { summary: "Tailwind v3 (fixture)", tailwind: "v3", packageManager: "bun" } }),
+  appEntry({ id: "tw3", root: "apps/tw3", stack: { summary: "Tailwind v3 (fixture)", tailwind: "v3", packageManager: "bun" } }),
+  appEntry({ id: "html-entry", root: "apps/html-entry", scan: { paths: ["apps/html-entry"], exclude: [] }, entryStylesheet: "apps/html-entry/index.html" }),
   appEntry({ id: "vendored", root: "apps/vendored", consume: { via: "vendor-tgz", detail: "file:vendor/design-system.tgz" } }),
   appEntry({ id: "vendored-stale", root: "apps/vendored-stale", consume: { via: "vendor-tgz", detail: "file:vendor/design-system.tgz" } }),
   appEntry({ id: "copied", root: "apps/copied", consume: { via: "copy", detail: "ds/tokens.css" }, entryStylesheet: "apps/copied/src/index.css" }),
@@ -152,11 +163,13 @@ const write = (path: string, text: string) => {
 /** `n` lines of plain TypeScript with no literals. */
 const linesOfCode = (n: number) => Array.from({ length: n }, (_, i) => `export const line${i + 1} = ${i + 1};\n`).join("");
 
-function copyAppShell(appDir: string) {
+function copyAppShell(appDir: string, rendered = true) {
   cpSync(APPSHELL_TEMPLATE, join(appDir, "src/_components/AppShell"), {
     recursive: true,
     filter: (src) => !/\.(test|spec)\.[jt]sx?$/.test(src),
   });
+  // The app renders its copy, as the template's App.tsx does.
+  if (rendered) write(join(appDir, "src/App.tsx"), 'import { AppShell } from "./_components/AppShell";\n\nexport function App() {\n  return <AppShell appName="Fixture" sections={[]} title="Home">home</AppShell>;\n}\n');
 }
 
 function vendoredApp(appDir: string, tmp: string, tgzTokens: string) {
@@ -197,6 +210,15 @@ export function materialize(): Workspace {
   copyAppShell(join(root, "apps/templated"));
   copyAppShell(join(root, "apps/templated-no-topbar"));
   unlinkSync(join(root, "apps/templated-no-topbar/src/_components/AppShell/_components/Topbar/index.tsx"));
+  copyAppShell(join(root, "apps/templated-unused"), false);
+
+  // A stale local copy of tokens.css in a workspace app; a nested link to a second checkout;
+  // an app linked to that checkout.
+  copiedApp(join(root, "apps/stale-copy"), readFileSync(REAL_TOKENS_CSS, "utf8"));
+  mkdirSync(join(root, "apps/nested-pkg/src/theme/node_modules/@codecaine-ai"), { recursive: true });
+  symlinkSync("../../../../../../other-ds", join(root, "apps/nested-pkg/src/theme/node_modules/@codecaine-ai/design-system"));
+  mkdirSync(join(root, "apps/second-checkout/node_modules/@codecaine-ai"), { recursive: true });
+  symlinkSync("../../../../other-ds", join(root, "apps/second-checkout/node_modules/@codecaine-ai/design-system"));
 
   const realTokens = readFileSync(REAL_TOKENS_CSS, "utf8");
   vendoredApp(join(root, "apps/vendored"), root, realTokens);

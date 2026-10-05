@@ -1,0 +1,7 @@
+{
+  "name": "second-checkout",
+  "private": true,
+  "dependencies": {
+    "@codecaine-ai/design-system": "link:@codecaine-ai/design-system"
+  }
+}

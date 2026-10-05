@@ -4,13 +4,15 @@
  * - The app's package.json declares @codecaine-ai/design-system the way
  *   `consume.via` says (workspace:, link:, file:, file:vendor/<name>.tgz).
  * - The package resolves from the app root, and its real path is inside the root.
- *   A live link (workspace, link, npm-file) must reach a source checkout (one
- *   with tokens/), not a packed copy.
+ *   A live link (workspace, link, npm-file, relative-import) must reach the root's
+ *   design-system checkout (any source checkout with tokens/ when the root has none),
+ *   never a packed copy or a second checkout.
+ * - Every design-system file the entry stylesheet loads is inside the root and comes
+ *   from the package the app resolves; a local copy of a design-system file (by its
+ *   header) is allowed only for consume.via copy.
  * - vendor-tgz: the tgz and the installed copy each carry a dist/css/tokens.css
  *   whose sha256 equals the current build's.
  * - copy: the copied tokens file the entry stylesheet loads has the build's hash.
- * - relative-import: every design-system file the entry stylesheet loads resolves
- *   inside the root.
  * - Every library the app uses that itself depends on the package (workspace
  *   packages, followed through their own dependencies, and installed packages
  *   one level deep) resolves inside the root, and so does its copy of the package.
@@ -23,7 +25,7 @@ import { join } from "node:path";
 import { buildFile, fileSha256, sha256 } from "./design-system";
 import type { AppContext, CheckOutput, Finding } from "./types";
 import { PACKAGE_NAME } from "./types";
-import { findPackageDir, isDir, isInside, lineOf, readJson, readText, realpathOrNull } from "./workspace";
+import { findPackageDir, isDir, isInside, lineOf, owningPackage, readJson, readText, realpathOrNull } from "./workspace";
 
 const DEP_FIELDS = ["dependencies", "peerDependencies", "devDependencies", "optionalDependencies"] as const;
 
@@ -76,6 +78,15 @@ export function checkResolution(ctx: AppContext): CheckOutput {
   }
   const depLine = lineOf(pkgText, `"${PACKAGE_NAME}"`);
 
+  // Where a live link must lead: the root's design-system checkout when the root has one,
+  // else any source checkout (a directory with tokens/), never a packed copy.
+  const rootCheckout = realpathOrNull(join(root, "design-system"));
+  const canonical = rootCheckout && readJson(join(rootCheckout, "package.json"))?.name === PACKAGE_NAME ? rootCheckout : null;
+  const notLive = (dir: string): string | null => {
+    if (canonical) return dir === canonical ? null : `reaches ${ctx.rel(dir)}, not the root's design-system checkout (${ctx.rel(canonical)})`;
+    return isDir(join(dir, "tokens")) ? null : `reaches ${ctx.rel(dir)}, a packed copy, not a source checkout`;
+  };
+
   // The package itself.
   let dsReal: string | null = null;
   if (via !== "relative-import" && via !== "copy") {
@@ -83,8 +94,9 @@ export function checkResolution(ctx: AppContext): CheckOutput {
     dsReal = found ? realpathOrNull(found) : null;
     if (!dsReal) violations.push({ file: pkgRel, line: depLine, message: `${PACKAGE_NAME} does not resolve from ${ctx.rel(appRoot)} (not installed?)` });
     else if (!isInside(dsReal, root)) violations.push({ file: pkgRel, line: depLine, message: `${PACKAGE_NAME} resolves to ${dsReal}, outside the root ${root}` });
-    else if (LIVE.includes(via) && !isDir(join(dsReal, "tokens"))) {
-      violations.push({ file: pkgRel, line: depLine, message: `${PACKAGE_NAME} resolves to ${ctx.rel(dsReal)}, a packed copy; consume.via ${via} needs a live checkout` });
+    else if (LIVE.includes(via)) {
+      const problem = notLive(dsReal);
+      if (problem) violations.push({ file: pkgRel, line: depLine, message: `${PACKAGE_NAME} ${problem}; consume.via ${via} needs a live link` });
     }
   }
 
@@ -118,30 +130,48 @@ export function checkResolution(ctx: AppContext): CheckOutput {
     }
   }
 
-  const graph = via === "copy" || via === "relative-import" ? ctx.loads() : null;
-  if (graph) {
-    const dsLoads = graph.loads.filter((l) => l.kind !== "tailwindcss");
+  // Every design-system file the entry stylesheet loads comes from where consume.via says.
+  const graph = ctx.loads();
+  const dsLoads = graph.loads.filter((l) => l.kind !== "tailwindcss");
+  if (via === "copy" || via === "relative-import") {
     if (!graph.entryExists) {
       violations.push({ file: app.entryStylesheet ?? ctx.rel(appRoot), line: 0, message: `consume.via ${via}: the entry stylesheet is missing, so the design-system files cannot be found` });
     } else if (!dsLoads.length) {
       violations.push({ file: ctx.rel(graph.entry!), line: 1, message: `consume.via ${via}: the entry stylesheet loads no design-system file` });
     }
-    for (const l of dsLoads) {
-      if (!l.path) continue; // reported by the wiring check
-      if (!isInside(l.path, root)) violations.push({ file: ctx.rel(l.from), line: l.line, message: `${l.spec} resolves to ${l.path}, outside the root ${root}` });
+  }
+  for (const l of dsLoads) {
+    if (!l.path) continue; // reported by the wiring check
+    const at = { file: ctx.rel(l.from), line: l.line };
+    if (!isInside(l.path, root)) {
+      violations.push({ ...at, message: `${l.spec} resolves to ${l.path}, outside the root ${root}` });
+      continue;
     }
-    if (via === "copy") {
-      const tokens = dsLoads.find((l) => l.kind === "tokens" || l.kind === "tokens-dark-first");
-      if (!tokens?.path) {
-        if (graph.entryExists) violations.push({ file: ctx.rel(graph.entry!), line: 1, message: "consume.via copy: no copied tokens.css is loaded from the entry stylesheet" });
-      } else {
-        const member = tokens.kind === "tokens-dark-first" ? "dist/css/tokens-dark-first.css" : "dist/css/tokens.css";
-        const want = buildSha(member);
-        const got = fileSha256(tokens.path);
-        if (!want) violations.push({ file: ctx.rel(tokens.path), line: 0, message: `the current build has no ${member} to compare with` });
-        else if (got !== want) {
-          violations.push({ file: ctx.rel(tokens.path), line: 0, message: `copied tokens (sha256 ${got?.slice(0, 12)}) differ from the current build's ${member} (${want.slice(0, 12)}); copy it again` });
-        }
+    if (l.copied) {
+      if (via !== "copy") violations.push({ ...at, message: `${l.spec} is a copy of a design-system file (${ctx.rel(l.path)}); consume.via ${via} loads it from the package` });
+      continue;
+    }
+    const owner = owningPackage(l.path);
+    if (owner?.name !== PACKAGE_NAME) continue; // text-measure's fonts.css
+    const ownerReal = realpathOrNull(owner.dir) ?? owner.dir;
+    if (dsReal && ownerReal !== dsReal) {
+      violations.push({ ...at, message: `${l.spec} loads ${ctx.rel(l.path)}, not the package the app resolves (${ctx.rel(dsReal)})` });
+    } else if (via === "relative-import") {
+      const problem = notLive(ownerReal);
+      if (problem) violations.push({ ...at, message: `${l.spec} ${problem}` });
+    }
+  }
+  if (via === "copy") {
+    const tokens = dsLoads.find((l) => l.copied && (l.kind === "tokens" || l.kind === "tokens-dark-first"));
+    if (!tokens?.path) {
+      if (graph.entryExists) violations.push({ file: ctx.rel(graph.entry!), line: 1, message: "consume.via copy: no copied tokens.css is loaded from the entry stylesheet" });
+    } else {
+      const member = tokens.kind === "tokens-dark-first" ? "dist/css/tokens-dark-first.css" : "dist/css/tokens.css";
+      const want = buildSha(member);
+      const got = fileSha256(tokens.path);
+      if (!want) violations.push({ file: ctx.rel(tokens.path), line: 0, message: `the current build has no ${member} to compare with` });
+      else if (got !== want) {
+        violations.push({ file: ctx.rel(tokens.path), line: 0, message: `copied tokens (sha256 ${got?.slice(0, 12)}) differ from the current build's ${member} (${want.slice(0, 12)}); copy it again` });
       }
     }
   }

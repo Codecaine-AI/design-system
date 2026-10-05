@@ -93,7 +93,9 @@ export function lintApp(app: AppEntry, opts: Omit<LintOptions, "registry" | "app
       return { id, status, violations: out.violations, warnings: out.warnings };
     } catch (err) {
       const e = err as Error;
-      return { id, status: "fail", violations: [{ file: app.root, line: 0, message: `check crashed: ${e.stack ?? e.message}` }], warnings: [] };
+      process.stderr.write(`lint:apps: ${app.id} ${id} crashed: ${e.stack ?? e.message}\n`);
+      const message = `check crashed: ${String(e.message ?? e).split("\n")[0]}`;
+      return { id, status: "fail", violations: [{ file: app.root ?? app.id, line: 0, message }], warnings: [] };
     }
   });
   let hard: number | null = null;

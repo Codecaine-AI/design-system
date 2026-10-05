@@ -320,11 +320,17 @@ function withExtensions(base: string): string | null {
 /**
  * Resolves an import specifier from a file. Relative and root-absolute ("/src/main.tsx" from an
  * HTML page) specifiers resolve against the importing file; bare ones through node_modules.
+ * `relativeFirst` (HTML and CSS references) tries a bare-looking path against the file first.
  */
-export function resolveSpecifier(spec: string, fromFile: string): string | null {
+export function resolveSpecifier(spec: string, fromFile: string, relativeFirst = false): string | null {
   const clean = spec.replace(/[?#].*$/, "");
   if (!clean || /^(?:https?:|data:|\/\/)/i.test(clean)) return null;
   if (clean.startsWith(".")) return withExtensions(resolve(dirname(fromFile), clean));
+  // HTML href/src and CSS @import are URLs: "src/main.tsx" is document-relative before it is a package.
+  if (relativeFirst && !clean.startsWith("/")) {
+    const local = withExtensions(resolve(dirname(fromFile), clean));
+    if (local) return local;
+  }
   if (clean.startsWith("/")) return withExtensions(join(dirname(fromFile), clean)) ?? withExtensions(clean);
   const parsed = splitSpecifier(clean);
   if (!parsed) return null;

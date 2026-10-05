@@ -1,0 +1,7 @@
+{
+  "name": "@codecaine-ai/design-system",
+  "private": true,
+  "exports": {
+    "./tokens.css": { "style": "./dist/css/tokens.css", "default": "./dist/css/tokens.css" }
+  }
+}

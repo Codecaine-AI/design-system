@@ -43,7 +43,8 @@ const esc = (s: string) => s.replace(/[$]/g, "\\$");
 function parseBindings(text: string, inStr: Uint8Array): Bindings | null {
   const b: Bindings = { fns: [], trees: [], flats: [], groups: [], namespaces: [] };
   let any = false;
-  const re = /(?<![\w$.])import\s+(?!type\b)([\s\S]*?)\s+from\s+(["'])(@codecaine-ai\/design-system(?:\/[^"']*)?)\2/g;
+  // The clause is limited to import-clause characters, so a match never spans an earlier import.
+  const re = /(?<![\w$.])import\s+(?!type\b)([\w$*{}\s,]*?)\s+from\s+(["'])(@codecaine-ai\/design-system(?:\/[^"']*)?)\2/g;
   for (const m of text.matchAll(re)) {
     if (inStr[m.index!]) continue;
     const clause = m[1].trim();

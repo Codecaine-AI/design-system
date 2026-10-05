@@ -81,6 +81,25 @@ describe("resolution", () => {
     ]);
   });
 
+  test("design-system files must come from the package the app resolves, and a live link from the root's checkout", () => {
+    expect(check("stale-copy", "resolution").violations).toEqual([
+      at("apps/stale-copy/src/index.css", 1, "is a copy of a design-system file (apps/stale-copy/ds/tokens.css); consume.via workspace loads it from the package"),
+    ]);
+    expect(check("nested-pkg", "resolution").violations).toEqual([
+      at("apps/nested-pkg/src/theme/ds.css", 1, "loads other-ds/dist/css/tokens.css, not the package the app resolves (design-system)"),
+    ]);
+    expect(check("second-checkout", "resolution").violations).toEqual([
+      at("apps/second-checkout/package.json", 5, "reaches other-ds, not the root's design-system checkout (design-system)"),
+    ]);
+  });
+
+  test("relative-import passes into the root's checkout and fails into a packed copy", () => {
+    expect(check("relimp-ok", "resolution")).toMatchObject({ status: "pass", violations: [] });
+    expect(check("relimp", "resolution").violations).toEqual([
+      at("apps/relimp/src/index.css", 1, "reaches packed-ds, not the root's design-system checkout (design-system)"),
+    ]);
+  });
+
   test("copied tokens pass when they match the build and fail with their hash when edited", () => {
     expect(check("copied", "resolution")).toMatchObject({ status: "pass", violations: [] });
     const stale = sha256(readFileSync(REAL_TOKENS_CSS, "utf8") + STALE_SUFFIX).slice(0, 12);
@@ -108,6 +127,15 @@ describe("wiring", () => {
     expect(check("dark-first-as-light-dark", "wiring").violations).toContainEqual(
       at("apps/wiring/dark-first.css", 3, "loads tokens-dark-first.css, which is for dark-first surfaces"),
     );
+  });
+
+  test("an HTML entry's href and a CSS @import resolve document-relative before node_modules", () => {
+    expect(check("html-entry", "wiring")).toMatchObject({ status: "pass", violations: [] });
+  });
+
+  test("Tailwind v3 needs the preset in tailwind.config.*; a commented-out preset does not count", () => {
+    expect(messages(check("tw3", "wiring").violations).filter((m) => m.includes("preset"))).toEqual([]);
+    expect(check("tw3-commented", "wiring").violations).toContainEqual(at("apps/tw3-commented/tailwind.config.js", 2, "does not use the preset"));
   });
 
   test("host-contract.css sits between the tokens and layout.css, in the tokens' variant", () => {
@@ -167,6 +195,13 @@ describe("names", () => {
     ]);
   });
 
+  test("token paths are checked even when another import comes before the design-system one", () => {
+    expectExactly(check("names-order", "names").violations, [
+      at("apps/names-order/src/tokens-use.ts", 4, "tokens.light.color.surface.nope does not exist"),
+      at("apps/names-order/src/tokens-use.ts", 5, 'token path "color.surface.page" is not in flat.base'),
+    ]);
+  });
+
   test("the docs-system repo may use notion names", () => {
     expectExactly(check("unconnected-docs-system", "names").violations, [
       at("apps/unconnected/src/Widget.tsx", 7, '"color.nope"'),
@@ -199,6 +234,12 @@ describe("shell", () => {
 
   // shell.ts: "Either of these passes". A hand-written _components/AppShell is not a template copy,
   // but it renders the complete .ds-shell markup.
+  test("a template copy that no app file imports fails", () => {
+    expect(check("templated-unused", "shell").violations).toEqual([
+      at("apps/templated-unused/src/_components/AppShell", 0, "AppShell copy is not imported by any other app file"),
+    ]);
+  });
+
   test("a hand-written AppShell folder that renders the complete .ds-shell markup passes", () => {
     const { status, violations } = check("own-shell", "shell");
     expect({ status, first: violations[0]?.message }).toEqual({ status: "pass", first: undefined });
