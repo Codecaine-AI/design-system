@@ -1,0 +1,59 @@
+/* Codemod fixture: CSS roles, definitions, nearest color and dark theme. */
+:root {
+  --background: #f5f3ef;
+  --muted-foreground: #62666d;
+  --border: #e6e5e3;
+  --ring: #aeb8c6;
+  --destructive: #e03e3e;
+  --primary: 222 47% 11%;
+}
+
+.row:hover {
+  background: #f6f4f0;
+}
+
+.sidebar {
+  background: #f9f9f9;
+}
+
+.error-text {
+  color: #c62121;
+}
+
+a.doc-link {
+  color: #245a81;
+}
+
+.heading {
+  color: #0078df;
+  font-size: 11px;
+  font-family: "SF Mono", Menlo, monospace;
+}
+
+.badge {
+  border-radius: 999px;
+  font-size: 16px;
+}
+
+.card {
+  border-radius: 6px;
+  box-shadow: 0 8px 30px rgb(0 0 0 / 8%);
+  background: var(--card-bg, #f8f8f7);
+}
+
+.input:focus-visible {
+  box-shadow: 0 0 0 2px rgb(174 184 198 / 35%);
+}
+
+pre code {
+  font-size: 13px;
+  font-family: "Press Start 2P", monospace;
+}
+
+[data-theme="dark"] .panel {
+  background: #151b23;
+}
+
+.tile {
+  background: #151b23;
+}
