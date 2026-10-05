@@ -1,0 +1,19 @@
+{
+  "literals": [
+    {
+      "file": "codecaine/core/canvas/packages/studio/src/index.css",
+      "match": "^#(f{3}|f{6}|d4d4d4)$",
+      "category": "hex",
+      "kind": "inline",
+      "reason": "the swatch checkerboard (index.css 300-305) is transparency art behind color swatches, not a surface color (5 hits; the floor caps any other white)"
+    },
+    {
+      "file": "codecaine/core/canvas/packages/studio/src/style/StyleRail.tsx",
+      "match": "^#0{3}(0{3})?$",
+      "category": "hex",
+      "kind": "inline",
+      "reason": "color-input fallback in the Style rail's color controls; owner decision: style engines hide color controls but keep the code, and <input type=color> needs a hex value"
+    }
+  ],
+  "twClasses": []
+}

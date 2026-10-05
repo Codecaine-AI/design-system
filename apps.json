@@ -90,7 +90,8 @@
         "mode": "static",
         "cwd": "codecaine/core/sequence",
         "start": "bun {ds}/apps/fixtures/sequence-renderer/serve.ts {flags}",
-        "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
+        "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)",
+        "staticDir": "{tmp}/sequence-renderer-site"
       },
       "commands": {
         "cwd": "codecaine/core/sequence",
@@ -213,7 +214,7 @@
         "via": "workspace",
         "detail": "Core workspace member: add `@codecaine-ai/design-system` as `workspace:*`, then @import fonts.css, tokens.css and layout.css in src/index.css; add the package dir to server.fs.allow in vite.config.ts."
       },
-      "entryStylesheet": "codecaine/core/sequence/packages/studio/src/index.css",
+      "entryStylesheet": "codecaine/core/sequence/packages/studio/src/main.tsx",
       "theme": {
         "rule": "light-dark"
       },
@@ -405,7 +406,7 @@
         "via": "workspace",
         "detail": "Already wired: `workspace:*` through Core; web/src/theme/tokens.css imports the package tokens.css. Add the package path to spaSourceRoots in src/spa.ts or `serve` keeps a stale build. A standalone docs-system install cannot resolve it (not in its workspaces)."
       },
-      "entryStylesheet": "codecaine/core/docs-system/packages/docs-workbench/web/src/index.css",
+      "entryStylesheet": "codecaine/core/docs-system/packages/docs-workbench/web/src/main.tsx",
       "theme": {
         "rule": "light-dark",
         "storageKey": "docs-viewer-theme"
@@ -466,7 +467,8 @@
         "mode": "browser",
         "cwd": "codecaine/core/docs-system",
         "start": "bun {ds}/apps/fixtures/docs-workbench/serve.ts {flags}",
-        "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
+        "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)",
+        "serveRoot": "codecaine/core/docs-system/packages/docs-workbench/web"
       },
       "commands": {
         "cwd": "codecaine/core/docs-system",
@@ -679,8 +681,4532 @@
           "reason": "the app takes dark from the server's global theme at boot, after load, so a data-theme attribute is overwritten; the click PUTs the global theme into {tmp}/docs-state only. If pass 1 hides the Colors pane (owner decision on color controls), keep Dark mode reachable and update these steps"
         },
         {
+          "what": "baseline test failures",
+          "reason": "at the mirror's owner HEAD the safe suite has 54 failing tests of 425 (workbench shell, useDocLabSession and others time out at about 1000 ms), and the same tests fail under the normal environment; the tests gate compares against this baseline"
+        },
+        {
           "what": "literal floor 14",
           "reason": "allowlisted: the PDF export stylesheet and page-number color (export output), the hidden color-control code in style-rail-panes.tsx, the grain mask gradient, and the legacy stock-metrics constant"
+        }
+      ]
+    },
+    {
+      "id": "canvas-studio",
+      "name": "Canvas studio",
+      "wave": 1,
+      "kind": "app",
+      "repo": "codecaine/core/canvas",
+      "root": "codecaine/core/canvas/packages/studio",
+      "scan": {
+        "paths": [
+          "codecaine/core/canvas/packages/studio/src",
+          "codecaine/core/canvas/packages/studio/index.html"
+        ],
+        "exclude": []
+      },
+      "stack": {
+        "summary": "React 19.2, Vite 7.3, Tailwind 4.3 (@tailwindcss/postcss), shadcn token names, cva, radix; Electron 43; bun",
+        "tailwind": "v4",
+        "packageManager": "bun"
+      },
+      "consume": {
+        "via": "workspace",
+        "detail": "Core workspace member (`workspace:*`). Replace the :root and @theme block in src/index.css with tailwind-strict.css + tailwind.css; add fs.allow, optimizeDeps and dedupe to vite.config.ts; the Electron build must bundle the package CSS and fonts."
+      },
+      "entryStylesheet": "codecaine/core/canvas/packages/studio/src/main.tsx",
+      "theme": {
+        "rule": "light-dark"
+      },
+      "literalFloor": 6,
+      "allowlist": "apps/allowlists/canvas-studio.json",
+      "shell": true,
+      "folderStandard": true,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": true
+        },
+        "3": {
+          "required": true
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": true
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": true
+        },
+        "structure": {
+          "required": true
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": true
+        },
+        "snapshot": {
+          "required": true
+        },
+        "pixelDiff": {
+          "required": true
+        },
+        "tests": {
+          "required": true
+        }
+      },
+      "run": {
+        "mode": "browser",
+        "cwd": "codecaine/core/canvas/packages/studio",
+        "start": "mkdir -p {tmp}/canvases && cp -R ../../canvases/. {tmp}/canvases/ && exec bun x --bun vite {flags}",
+        "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
+      },
+      "commands": {
+        "cwd": "codecaine/core/canvas/packages/studio",
+        "typecheck": "bun x --bun tsc -p tsconfig.json --noEmit",
+        "build": "bun x --bun vite build --outDir {tmp}/canvas-studio-dist --emptyOutDir"
+      },
+      "tests": {
+        "safe": [
+          {
+            "cmd": "bun test packages/studio",
+            "cwd": "codecaine/core/canvas"
+          }
+        ],
+        "unsafe": [
+          {
+            "cmd": "bun run studio",
+            "reason": "builds and launches Electron; the Electron binary is not installed in the mirror (a run would download it) and the packaged app uses the owner's userData/canvases"
+          },
+          {
+            "cmd": "make studio-web",
+            "reason": "also starts the canvas-agent harness on the owner's :4820"
+          }
+        ]
+      },
+      "routes": [
+        {
+          "id": "boards",
+          "path": "/",
+          "waitFor": "h2:text-is(\"Canvas files\")"
+        },
+        {
+          "id": "gallery",
+          "path": "/gallery",
+          "waitFor": "article.bg-card >> nth=0"
+        },
+        {
+          "id": "evals",
+          "path": "/evals",
+          "waitFor": "main"
+        },
+        {
+          "id": "editor",
+          "path": "/canvas/v2-flow",
+          "waitFor": "[data-canvas-stage=\"true\"]"
+        },
+        {
+          "id": "editor-style",
+          "path": "/canvas/v2-flow",
+          "steps": [
+            {
+              "action": "click",
+              "target": "button[title=\"Toggle style settings\"]"
+            }
+          ],
+          "waitFor": "aside[aria-label=\"Style\"]"
+        },
+        {
+          "id": "viewer",
+          "path": "/view/v2-flow",
+          "waitFor": "[data-canvas-stage=\"true\"]"
+        }
+      ],
+      "runProfile": {
+        "env": {
+          "NO_COLOR": "1",
+          "CANVAS_DIR": "{tmp}/canvases"
+        },
+        "unsetEnv": [
+          "DOCS_SHARED_API_URL",
+          "DOCS_SHARED_API_TOKEN",
+          "DOCS_SHARED_PROJECT_ID",
+          "DOCS_STATIC",
+          "DOCS_API",
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN",
+          "CANVAS_AGENT_PORT",
+          "CANVAS_AGENT_CANVASES_DIR",
+          "VITE_STUDIO_DEV_PAGES"
+        ],
+        "tempHome": true,
+        "fixtures": [],
+        "flags": [
+          "--port",
+          "{port:ui}",
+          "--strictPort",
+          "--host",
+          "127.0.0.1"
+        ],
+        "ports": {
+          "ui": 47030
+        },
+        "proof": {
+          "status": "proven",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. All 6 routes rendered light and dark (12 captures); the guard blocked 4 requests to localhost:4803 (the owner's docs-system dev API, asked for linked boards by the boards route only; rendering did not need them, and the verify route gallery makes none); 86 connections seen, all inbound to :47030; no connection to :4820 or any other port; the canvas repo stayed clean (CANVAS_DIR copy in {tmp}).",
+          "date": "2026-10-05"
+        }
+      },
+      "verify": {
+        "route": "gallery",
+        "probes": [
+          {
+            "selector": "body",
+            "property": "background-color",
+            "token": "color.surface.page"
+          },
+          {
+            "selector": "header.border-b",
+            "property": "border-bottom-color",
+            "token": "color.border.default"
+          },
+          {
+            "selector": "header.border-b h1",
+            "property": "color",
+            "token": "color.text.body"
+          }
+        ],
+        "darkSwitch": {
+          "kind": "attribute",
+          "target": "html"
+        },
+        "sidebar": {
+          "toggle": ".ds-sidebar-toggle",
+          "storageKey": "canvas-studio.sidebar"
+        }
+      },
+      "exceptions": [
+        {
+          "what": "boards come from a temp copy of the repo's canvases/",
+          "reason": "CANVAS_DIR points the file API at {tmp}/canvases (copied at start), so the Style rail and any autosave write only the copy; the evals page reads packages/eval-suite/runs read-only"
+        },
+        {
+          "what": "the boards list page fetches http://localhost:4803/api/canvases",
+          "reason": "4803 is the owner's docs-system self-docs dev API (docs-system/Makefile:23-45: make dev, dev-web, docs). The origin is DEFAULT_PROJECT_SERVER_ORIGIN in packages/studio/src/project/docs-server.ts:18, read in ProjectBoardsSection.tsx:33; the only override is localStorage studio.project-server-origin (docs-server.ts:20), with no env var, flag or config. The guard blocks it (2 requests per capture of the boards route) and the linked-boards section stays quiet, so rendering does not need it; verify runs on the gallery route, which makes no such request. A dev-only override (or a route storage seed) would let the boards route point it at a dead port in this block"
+        },
+        {
+          "what": "no route opens the AI panel",
+          "reason": "the agent panel talks to /api/agent/*, which the dev server proxies to the owner's harness on :4820 (hard-coded in server/agent-proxy.ts); routes stay off it"
+        },
+        {
+          "what": "baseline test failures",
+          "reason": "at the mirror's owner HEAD `bun test packages/studio` has 2 failing tests (withRootPageFrame), the same under the profile env and the normal env; the tests gate compares against this baseline"
+        },
+        {
+          "what": "allowlist",
+          "reason": "the swatch checkerboard (transparency art) and the Style rail's theme-card previews of the canvas presets (board data, color-control code kept per owner decision)"
+        }
+      ]
+    },
+    {
+      "id": "canvas-renderer",
+      "name": "Canvas renderer theme and editor chrome",
+      "wave": 1,
+      "kind": "library",
+      "repo": "codecaine/core/canvas",
+      "root": "codecaine/core/canvas/packages/canvas",
+      "scan": {
+        "paths": [
+          "codecaine/core/canvas/packages/canvas/src/theme",
+          "codecaine/core/canvas/packages/canvas/src/stage",
+          "codecaine/core/canvas/packages/canvas/src/ui",
+          "codecaine/core/canvas/packages/canvas/src/objects",
+          "codecaine/core/canvas/packages/canvas/src/connectors"
+        ],
+        "exclude": []
+      },
+      "stack": {
+        "summary": "TypeScript library: DOM and SVG with inline styles; static SVG renderer runs in Node and is rasterized with resvg",
+        "tailwind": "none",
+        "packageManager": "bun"
+      },
+      "consume": {
+        "via": "workspace",
+        "detail": "Core workspace member: JS tokens with resolved hex per mode from the package's Node-safe dist/js (normalizeColor takes only #RRGGBB or rgba(), never var()); UI primitives use the host's shadcn utilities."
+      },
+      "entryStylesheet": null,
+      "theme": {
+        "rule": "light-dark"
+      },
+      "literalFloor": 100,
+      "allowlist": "apps/allowlists/canvas-renderer.json",
+      "shell": false,
+      "folderStandard": false,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": false,
+          "reason": "renders inside a host's shell (STATE decision 2): no shell of its own"
+        },
+        "3": {
+          "required": false,
+          "reason": "library: no pass 3 (owner decision; the linter reports files over 400 lines as warnings)"
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": false,
+          "reason": "ships no stylesheet: chrome classes compile in the host, colors come from JS tokens"
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": false,
+          "reason": "renders inside a host's shell (STATE decision 2): no shell of its own"
+        },
+        "structure": {
+          "required": true
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": true
+        },
+        "snapshot": {
+          "required": true
+        },
+        "pixelDiff": {
+          "required": false,
+          "reason": "no pass 3: pass 1 changes colors by design, so review uses before/after sheets instead of a 0-pixel diff"
+        },
+        "tests": {
+          "required": true
+        }
+      },
+      "run": {
+        "mode": "browser",
+        "cwd": "codecaine/core/canvas/packages/studio",
+        "start": "mkdir -p {tmp}/canvases && cp -R ../../canvases/. {tmp}/canvases/ && exec bun x --bun vite {flags}",
+        "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
+      },
+      "commands": {
+        "cwd": "codecaine/core/canvas",
+        "typecheck": "bun run typecheck:canvas"
+      },
+      "tests": {
+        "safe": [
+          {
+            "cmd": "bun test packages/canvas/src",
+            "cwd": "codecaine/core/canvas"
+          }
+        ],
+        "unsafe": [
+          {
+            "cmd": "bun packages/canvas/zz-dom-capture.ts",
+            "reason": "rewrites the 4 MB DOM golden baselines in the repo; run only deliberately, when the migration changes the renderer, and review the diff"
+          },
+          {
+            "cmd": "bun tools/dev-icons/generate.ts --vendor",
+            "reason": "fetches npm tarballs over the network and rewrites the generated glyph files"
+          }
+        ]
+      },
+      "routes": [
+        {
+          "id": "gallery",
+          "path": "/gallery",
+          "waitFor": "article.bg-card >> nth=0"
+        },
+        {
+          "id": "editor",
+          "path": "/canvas/v2-flow",
+          "waitFor": "[data-canvas-stage=\"true\"]"
+        },
+        {
+          "id": "editor-inspector",
+          "path": "/canvas/v2-flow",
+          "steps": [
+            {
+              "action": "click",
+              "target": "button[title^=\"Toggle the inspector\"]"
+            }
+          ],
+          "waitFor": "aside[aria-label=\"Inspector\"]"
+        },
+        {
+          "id": "viewer",
+          "path": "/view/v2-flow",
+          "waitFor": "[data-canvas-stage=\"true\"]"
+        }
+      ],
+      "runProfile": {
+        "env": {
+          "NO_COLOR": "1",
+          "CANVAS_DIR": "{tmp}/canvases"
+        },
+        "unsetEnv": [
+          "DOCS_SHARED_API_URL",
+          "DOCS_SHARED_API_TOKEN",
+          "DOCS_SHARED_PROJECT_ID",
+          "DOCS_STATIC",
+          "DOCS_API",
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN",
+          "CANVAS_AGENT_PORT",
+          "CANVAS_AGENT_CANVASES_DIR",
+          "VITE_STUDIO_DEV_PAGES"
+        ],
+        "tempHome": true,
+        "fixtures": [],
+        "flags": [
+          "--port",
+          "{port:ui}",
+          "--strictPort",
+          "--host",
+          "127.0.0.1"
+        ],
+        "ports": {
+          "ui": 47040
+        },
+        "proof": {
+          "status": "proven",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. All 4 routes rendered light and dark through the studio host (8 captures); 0 blocked requests; 58 connections seen, all inbound to :47040; no foreign connection; the canvas repo stayed clean.",
+          "date": "2026-10-05"
+        }
+      },
+      "verify": {
+        "route": "editor",
+        "probes": [
+          {
+            "selector": "[data-canvas-stage=\"true\"]",
+            "property": "background-color",
+            "token": "color.surface.page"
+          },
+          {
+            "selector": "[aria-label=\"Zoom controls\"]",
+            "property": "background-color",
+            "token": "color.surface.panel"
+          }
+        ],
+        "darkSwitch": {
+          "kind": "attribute",
+          "target": "html"
+        }
+      },
+      "exceptions": [
+        {
+          "what": "baseline test failures",
+          "reason": "at the mirror's owner HEAD `bun test packages/canvas/src` has 13 failing tests and 9 errors (import boundaries, outline-anchor baseline, AnchorDots cursor, connector color flyout ...), the same under the profile env and the normal env; the tests gate compares against this baseline"
+        },
+        {
+          "what": "rendered through canvas studio's dev server",
+          "reason": "a library: its gallery, editor and viewer render in the studio host, with boards from a temp copy of canvases/"
+        },
+        {
+          "what": "verify probes: the schematic-light board and the floating chrome only",
+          "reason": "board colors are canvas theme data (figjam, schematic-light, schematic-dark); the audit migrates the schematic neutrals and the chrome, and the FigJam preset and its 10 inks stay canvas-owned. The chrome's text and borders come from the host's shadcn utilities with alpha (bg-background/95, border/70), so canvas-studio's probes cover them"
+        },
+        {
+          "what": "allowlist",
+          "reason": "theme/palette.ts (the FigJam role table and its 10 categorical inks) and the FIGJAM_PRESET values in theme/canvas-style.ts stay canvas-owned (audit 'Not included')"
+        },
+        {
+          "what": "boards come from a temp copy of the repo's canvases/",
+          "reason": "CANVAS_DIR points the file API at {tmp}/canvases (copied at start), so the Style rail and any autosave write only the copy; the evals page reads packages/eval-suite/runs read-only"
+        },
+        {
+          "what": "the boards list page fetches http://localhost:4803/api/canvases",
+          "reason": "4803 is the owner's docs-system self-docs dev API (docs-system/Makefile:23-45: make dev, dev-web, docs). The origin is DEFAULT_PROJECT_SERVER_ORIGIN in packages/studio/src/project/docs-server.ts:18, read in ProjectBoardsSection.tsx:33; the only override is localStorage studio.project-server-origin (docs-server.ts:20), with no env var, flag or config. The guard blocks it (2 requests per capture of the boards route) and the linked-boards section stays quiet, so rendering does not need it; verify runs on the gallery route, which makes no such request. A dev-only override (or a route storage seed) would let the boards route point it at a dead port in this block"
+        },
+        {
+          "what": "no route opens the AI panel",
+          "reason": "the agent panel talks to /api/agent/*, which the dev server proxies to the owner's harness on :4820 (hard-coded in server/agent-proxy.ts); routes stay off it"
+        }
+      ]
+    },
+    {
+      "id": "canvas-agent",
+      "name": "Canvas-agent viewer",
+      "wave": 1,
+      "kind": "app",
+      "repo": "codecaine/core/canvas",
+      "root": "codecaine/core/canvas/packages/canvas-agent",
+      "scan": {
+        "paths": [
+          "codecaine/core/canvas/packages/canvas-agent/src/viewer",
+          "codecaine/core/canvas/packages/canvas-agent/src/viewer-extension"
+        ],
+        "exclude": []
+      },
+      "stack": {
+        "summary": "React 19, Vite 7.3, Tailwind 4.3 (postcss); hosts viewer-shell and viewer-ui; bun (Core)",
+        "tailwind": "v4",
+        "packageManager": "bun"
+      },
+      "consume": {
+        "via": "workspace",
+        "detail": "Core workspace member (`workspace:*`) plus @source; the agent-viewer host contract comes from the package's host-contract.css."
+      },
+      "entryStylesheet": "codecaine/core/canvas/packages/canvas-agent/src/viewer/main.tsx",
+      "theme": {
+        "rule": "light-dark",
+        "storageKey": "canvasAgentViewerStyle.v1"
+      },
+      "literalFloor": 0,
+      "allowlist": null,
+      "shell": true,
+      "folderStandard": true,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": true
+        },
+        "3": {
+          "required": true
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": true
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": true
+        },
+        "structure": {
+          "required": true
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": false,
+          "reason": "run mode none: the viewer's dev server proxies /api to the owner's :4820; verified statically only"
+        },
+        "snapshot": {
+          "required": false,
+          "reason": "run mode none: the viewer's dev server proxies /api to the owner's :4820; verified statically only"
+        },
+        "pixelDiff": {
+          "required": false,
+          "reason": "run mode none: the viewer's dev server proxies /api to the owner's :4820; verified statically only"
+        },
+        "tests": {
+          "required": true
+        }
+      },
+      "run": {
+        "mode": "none",
+        "reason": "the viewer's Vite proxy sends /api to the owner's :4820 through `const HARNESS_TARGET = \"http://127.0.0.1:4820\"` (packages/canvas-agent/src/viewer/vite.config.ts:41; no env var, flag or config reads around it), and the traces page fetches /api on load, so every run would reach the owner's service. Runnable once the target reads an env var (for example CANVAS_AGENT_HARNESS_URL, falling back to 4820): a dev-only override the pass-1 worker can decide on",
+        "cwd": "codecaine/core/canvas/packages/canvas-agent",
+        "start": "bun x vite --config src/viewer/vite.config.ts {flags}",
+        "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)",
+        "serveRoot": "codecaine/core/canvas/packages/canvas-agent/src/viewer"
+      },
+      "commands": {
+        "cwd": "codecaine/core/canvas",
+        "typecheck": "bun run typecheck:canvas-agent"
+      },
+      "tests": {
+        "safe": [
+          {
+            "cmd": "bun test test/viewer-extension.test.ts",
+            "cwd": "codecaine/core/canvas/packages/canvas-agent"
+          }
+        ],
+        "unsafe": [
+          {
+            "cmd": "bun test (the whole canvas-agent suite)",
+            "reason": "test/session-contact-sheet.test.ts writes a fixed /tmp/contact-sheet.png outside a temp dir, and harness tests spawn processes"
+          },
+          {
+            "cmd": "bun run harness / make traces",
+            "reason": "starts the harness on :4820 (an owner port), writes canvas/.agent-kernel and calls LLMs"
+          }
+        ]
+      },
+      "routes": [
+        {
+          "id": "traces",
+          "path": "/traces",
+          "waitFor": "aside.w-56"
+        },
+        {
+          "id": "config",
+          "path": "/config",
+          "waitFor": "aside.w-56"
+        }
+      ],
+      "runProfile": {
+        "env": {
+          "NO_COLOR": "1"
+        },
+        "unsetEnv": [
+          "DOCS_SHARED_API_URL",
+          "DOCS_SHARED_API_TOKEN",
+          "DOCS_SHARED_PROJECT_ID",
+          "DOCS_STATIC",
+          "DOCS_API",
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN",
+          "CANVAS_AGENT_PORT",
+          "CANVAS_AGENT_CANVASES_DIR",
+          "CANVAS_AGENT_THINKING",
+          "CANVAS_AGENT_TOOL_CALL_CAP",
+          "CANVAS_AGENT_PROMPT_EDITOR_MODEL"
+        ],
+        "tempHome": true,
+        "fixtures": [],
+        "flags": [
+          "--host",
+          "127.0.0.1",
+          "--port",
+          "{port:ui}",
+          "--strictPort"
+        ],
+        "ports": {
+          "ui": 47050,
+          "deadApi": 47051
+        },
+        "proof": {
+          "status": "unproven",
+          "method": ""
+        }
+      },
+      "verify": {
+        "route": "traces",
+        "probes": [
+          {
+            "selector": ".research-style-shell",
+            "property": "background-color",
+            "token": "color.surface.page"
+          },
+          {
+            "selector": "aside.w-56",
+            "property": "background-color",
+            "token": "color.surface.sidebar"
+          },
+          {
+            "selector": "aside.w-56",
+            "property": "border-right-color",
+            "token": "color.border.default"
+          }
+        ],
+        "darkSwitch": {
+          "kind": "storage",
+          "key": "canvasAgentViewerStyle.v1",
+          "value": "{\"theme\":\"dark\"}"
+        },
+        "sidebar": {
+          "toggle": ".ds-sidebar-toggle",
+          "storageKey": "canvas-agent.sidebar"
+        }
+      },
+      "exceptions": [
+        {
+          "what": "dark by default",
+          "reason": "the audit calls the viewer's dark default deliberate; verify needs it to boot light first (or click Light) once it is runnable, because the dark switch must change the probes"
+        },
+        {
+          "what": "typecheck may fail in the mirror",
+          "reason": "tsconfig pins React types to ./node_modules/@types/react, which the mirror's canvas-agent/node_modules does not hold"
+        }
+      ]
+    },
+    {
+      "id": "docs-mcp-home",
+      "name": "docs-mcp home page",
+      "wave": 1,
+      "kind": "app",
+      "repo": "codecaine/core/docs-system",
+      "root": "codecaine/core/docs-system/packages/docs-mcp",
+      "scan": {
+        "paths": [
+          "codecaine/core/docs-system/packages/docs-mcp/src/background/home.ts"
+        ],
+        "exclude": []
+      },
+      "stack": {
+        "summary": "Inline HTML and CSS in a TS template (directoryHtml), served by the docs service at /",
+        "tailwind": "none",
+        "packageManager": "bun"
+      },
+      "consume": {
+        "via": "workspace",
+        "detail": "Core workspace member: the page must load the package's fonts.css and tokens-dark-first.css (inlined or served by the docs service) before its own inline styles."
+      },
+      "entryStylesheet": "codecaine/core/docs-system/packages/docs-mcp/src/background/home.ts",
+      "theme": {
+        "rule": "dark-first"
+      },
+      "literalFloor": 0,
+      "allowlist": null,
+      "shell": false,
+      "folderStandard": false,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": false,
+          "reason": "a single directory page served by the docs service, not an app you click around in (STATE decision 2)"
+        },
+        "3": {
+          "required": false,
+          "reason": "one 28-line file with no components; the audit sets structure N/A"
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": true
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": false,
+          "reason": "a single directory page served by the docs service (STATE decision 2)"
+        },
+        "structure": {
+          "required": false,
+          "reason": "one 28-line file with no components; the audit sets structure N/A"
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": true
+        },
+        "snapshot": {
+          "required": true
+        },
+        "pixelDiff": {
+          "required": false,
+          "reason": "no pass 3: pass 1 changes colors by design, so review uses before/after sheets instead of a 0-pixel diff"
+        },
+        "tests": {
+          "required": true
+        }
+      },
+      "run": {
+        "mode": "static",
+        "cwd": "codecaine/core/docs-system/packages/docs-mcp",
+        "start": "bun {ds}/apps/fixtures/docs-mcp-home/serve.ts {flags}",
+        "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)",
+        "staticDir": "{tmp}/docs-mcp-home-site"
+      },
+      "commands": {
+        "cwd": "codecaine/core/docs-system/packages/docs-mcp",
+        "typecheck": "bun run typecheck"
+      },
+      "tests": {
+        "safe": [
+          {
+            "cmd": "bun test src/__tests__/device-discovery.test.ts",
+            "cwd": "codecaine/core/docs-system/packages/docs-mcp"
+          }
+        ],
+        "unsafe": [
+          {
+            "cmd": "bun test src (the whole docs-mcp suite)",
+            "reason": "text-measure-host.test.ts and review.test.ts spawn the docs daemon and bind localhost ports"
+          },
+          {
+            "cmd": "bun src/cli.ts (dev, daemon)",
+            "reason": "the supervisor reads ~/.local/state/codecaine-docs/background.json, writes its registry and token, and binds the owner's :4820"
+          }
+        ]
+      },
+      "routes": [
+        {
+          "id": "home",
+          "path": "/",
+          "waitFor": "#projects > a.project >> nth=0"
+        }
+      ],
+      "runProfile": {
+        "env": {
+          "NO_COLOR": "1"
+        },
+        "unsetEnv": [
+          "DOCS_SHARED_API_URL",
+          "DOCS_SHARED_API_TOKEN",
+          "DOCS_SHARED_PROJECT_ID",
+          "DOCS_STATIC",
+          "DOCS_API",
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN",
+          "CODECAINE_DOCS_BACKGROUND_CONFIG",
+          "CODECAINE_ENV_FILE",
+          "CODECAINE_DOCS_STATE_DIR",
+          "CODECAINE_DOCS_REGISTRY"
+        ],
+        "tempHome": true,
+        "fixtures": [],
+        "flags": [
+          "--root",
+          "{root}",
+          "--tmp",
+          "{tmp}",
+          "--port",
+          "{port:http}"
+        ],
+        "ports": {
+          "http": 47060
+        },
+        "proof": {
+          "status": "proven",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. The fixture server rendered the real directoryHtml; the home route rendered in dark (the only theme of a dark-first surface); 0 blocked requests (the page's /api polls hit the fixture); 5 connections seen, all inbound to :47060; no foreign connection.",
+          "date": "2026-10-05"
+        }
+      },
+      "verify": {
+        "route": "home",
+        "probes": [
+          {
+            "selector": "body",
+            "property": "background-color",
+            "token": "color.surface.page"
+          },
+          {
+            "selector": "#search",
+            "property": "background-color",
+            "token": "color.surface.panel"
+          },
+          {
+            "selector": "h1",
+            "property": "color",
+            "token": "color.text.ink"
+          },
+          {
+            "selector": "#search",
+            "property": "border-top-color",
+            "token": "color.border.default"
+          }
+        ],
+        "darkSwitch": {
+          "kind": "attribute",
+          "target": "html"
+        }
+      },
+      "exceptions": [
+        {
+          "what": "the run is a fixture server, not the docs service",
+          "reason": "apps/fixtures/docs-mcp-home/serve.ts renders the real directoryHtml with 4 synthetic projects and answers the page's /api/projects, /api/discovery and /api/status polls in memory; the supervisor (which reads ~/.local/state and binds :4820) is never imported"
+        }
+      ]
+    },
+    {
+      "id": "docs-viewer",
+      "name": "docs-viewer (library)",
+      "wave": 1,
+      "kind": "library",
+      "repo": "codecaine/core/docs-system",
+      "root": "codecaine/core/docs-system/packages/docs-viewer",
+      "scan": {
+        "paths": [
+          "codecaine/core/docs-system/packages/docs-viewer/src"
+        ],
+        "exclude": [
+          "vendor"
+        ]
+      },
+      "stack": {
+        "summary": "React 19 peer library, TipTap 3.27, radix, cva; no build: hosts bundle it and compile its classes through @source",
+        "tailwind": "v4",
+        "packageManager": "bun"
+      },
+      "consume": {
+        "via": "host-css",
+        "detail": "Host CSS only (docs-workbench, docs-publish). Keeps literal var() fallbacks: the viewer must render without the host stylesheet."
+      },
+      "entryStylesheet": null,
+      "theme": {
+        "rule": "light-dark"
+      },
+      "literalFloor": 307,
+      "allowlist": "apps/allowlists/docs-viewer.json",
+      "shell": false,
+      "folderStandard": false,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": false,
+          "reason": "renders inside a host's shell (STATE decision 2): no shell of its own"
+        },
+        "3": {
+          "required": false,
+          "reason": "library: no pass 3 (owner decision; the linter reports files over 400 lines as warnings)"
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": false,
+          "reason": "host-css library: no JS dependency on the package; its hosts load tokens.css"
+        },
+        "wiring": {
+          "required": false,
+          "reason": "host-css library: ships no entry stylesheet of its own; the host loads fonts.css and tokens.css"
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": false,
+          "reason": "renders inside a host's shell (STATE decision 2): no shell of its own"
+        },
+        "structure": {
+          "required": true
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": true
+        },
+        "snapshot": {
+          "required": true
+        },
+        "pixelDiff": {
+          "required": false,
+          "reason": "no pass 3: pass 1 changes colors by design, so review uses before/after sheets instead of a 0-pixel diff"
+        },
+        "tests": {
+          "required": true
+        }
+      },
+      "run": {
+        "mode": "browser",
+        "cwd": "codecaine/core/docs-system",
+        "start": "bun {ds}/apps/fixtures/docs-workbench/serve.ts {flags}",
+        "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)",
+        "serveRoot": "codecaine/core/docs-system/packages/docs-workbench/web"
+      },
+      "commands": {
+        "cwd": "codecaine/core/docs-system",
+        "typecheck": "bunx --bun tsc --noEmit"
+      },
+      "tests": {
+        "safe": [
+          {
+            "cmd": "bun test src/components src/editor src/lab src/peek src/transitions",
+            "cwd": "codecaine/core/docs-system/packages/docs-viewer"
+          }
+        ],
+        "unsafe": [
+          {
+            "cmd": "bun test (whole suite) / bun test src/__tests__",
+            "reason": "running src/__tests__ as a set opened TLS connections to 162.159.128.61:443 and 172.66.147.243:443 (Cloudflare) in two profile runs; no single file reproduces it alone, so the source is not yet pinned. The other 30 test files made no outside connection"
+          }
+        ]
+      },
+      "routes": [
+        {
+          "id": "callout",
+          "path": "/playground.html?doc=10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout&type=callout&theme=light",
+          "waitFor": "[data-docs-block-type=\"callout\"] >> nth=0"
+        },
+        {
+          "id": "file-tree",
+          "path": "/playground.html?doc=10-system-design/40-block-vocabulary/30-trees-and-paths/10-file-tree&type=file-tree&theme=light",
+          "waitFor": "[data-doc-root]"
+        },
+        {
+          "id": "process-outline",
+          "path": "/playground.html?doc=10-system-design/40-block-vocabulary/50-flow-and-diagrams/10-process-outline&type=process-outline&theme=light",
+          "waitFor": "[data-doc-root]"
+        },
+        {
+          "id": "interaction-surface",
+          "path": "/playground.html?doc=10-system-design/40-block-vocabulary/40-structured-reference/20-interaction-surface&type=interaction-surface&theme=light",
+          "waitFor": "[data-doc-root]"
+        },
+        {
+          "id": "call-stack",
+          "path": "/playground.html?doc=10-system-design/40-block-vocabulary/30-trees-and-paths/30-call-stack&type=call-stack&theme=light",
+          "waitFor": "[data-doc-root]"
+        },
+        {
+          "id": "stack",
+          "path": "/playground.html?doc=10-system-design/40-block-vocabulary/50-flow-and-diagrams/30-stack&type=stack&theme=light",
+          "waitFor": "[data-doc-root]"
+        }
+      ],
+      "runProfile": {
+        "env": {
+          "NO_COLOR": "1",
+          "CODECAINE_DOCS_STATE_DIR": "{tmp}/docs-state",
+          "CODECAINE_DOCS_GLOBAL_THEMES": "{tmp}/docs-state/themes",
+          "CODECAINE_DOCS_CODE_THEMES": "{tmp}/docs-state/code-themes",
+          "CANVAS_STUDIO_URL": "http://localhost:3999",
+          "SEQUENCE_STUDIO_URL": "http://localhost:3998"
+        },
+        "unsetEnv": [
+          "DOCS_SHARED_API_URL",
+          "DOCS_SHARED_API_TOKEN",
+          "DOCS_SHARED_PROJECT_ID",
+          "DOCS_STATIC",
+          "DOCS_API",
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN",
+          "DOCS_SMOKE_ROOT",
+          "CODECAINE_DOCS_BACKGROUND_CONFIG",
+          "CODECAINE_ENV_FILE"
+        ],
+        "tempHome": true,
+        "fixtures": [],
+        "flags": [
+          "--root",
+          "{root}",
+          "--tmp",
+          "{tmp}",
+          "--api-port",
+          "{port:api}",
+          "--ui-port",
+          "{port:ui}",
+          "--dead-kernel-port",
+          "{port:deadKernel}"
+        ],
+        "ports": {
+          "api": 47070,
+          "ui": 47071,
+          "deadKernel": 47072
+        },
+        "proof": {
+          "status": "proven",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. Same isolation recipe as docs-workbench (fixture launcher, corpus copied into {tmp}, --standalone --dev, dead kernel port). All 6 playground routes rendered with ?theme=light and ?theme=dark (12 captures); 0 blocked requests; 91 connections seen, all inbound to :47071 or vite->api on :47070; no foreign connection; verify probes matched the light and dark token values.",
+          "date": "2026-10-05"
+        }
+      },
+      "verify": {
+        "route": "callout",
+        "probes": [
+          {
+            "selector": "body",
+            "property": "background-color",
+            "token": "color.surface.page"
+          },
+          {
+            "selector": "[data-doc-root]",
+            "property": "color",
+            "token": "color.text.body"
+          }
+        ],
+        "darkSwitch": {
+          "kind": "query",
+          "param": "theme",
+          "value": "dark"
+        }
+      },
+      "exceptions": [
+        {
+          "what": "verify probes: page and text only",
+          "reason": "the viewer's panels are the dark code-surface island (color.code.*, dark in both themes) and its callout rails are hue colors; snapshot sheets cover them"
+        },
+        {
+          "what": "rendered through docs-workbench's playground",
+          "reason": "a library with no page of its own: the playground (web/playground.html) renders real blocks from the copied docs-system corpus; ?theme=light|dark renders one themed frame instead of the split view"
+        },
+        {
+          "what": "literal floor 307",
+          "reason": "audit: keep literal var() fallbacks so the viewer renders without the host stylesheet. 197 fallbacks today plus the 110 color definitions, which may move behind var(--ds-*, <literal>); every literal left must be a fallback (allowlist kind fallback)"
+        }
+      ]
+    },
+    {
+      "id": "docs-publish",
+      "name": "docs-publish",
+      "wave": 1,
+      "kind": "library",
+      "repo": "codecaine/core/docs-system",
+      "root": "codecaine/core/docs-system/packages/docs-publish",
+      "scan": {
+        "paths": [
+          "codecaine/core/docs-system/packages/docs-publish/src"
+        ],
+        "exclude": []
+      },
+      "stack": {
+        "summary": "React 19 server render plus Bun.build bundles; CSS built by Vite 7.3 + Tailwind 4.3 borrowed from docs-workbench; packed as a tgz that personal-site vendors",
+        "tailwind": "v4",
+        "packageManager": "bun"
+      },
+      "consume": {
+        "via": "relative-import",
+        "detail": "Build-time @import: src/styles.css imports docs-workbench's theme/index.css (which imports the package tokens.css) by relative path, so dist/styles/docs.css carries the tokens; src/editor.css imports theme/tokens.css."
+      },
+      "entryStylesheet": "codecaine/core/docs-system/packages/docs-publish/src/styles.css",
+      "theme": {
+        "rule": "light-dark"
+      },
+      "literalFloor": 22,
+      "allowlist": "apps/allowlists/docs-publish.json",
+      "shell": false,
+      "folderStandard": false,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": false,
+          "reason": "a publishing library: the host page (personal-site's blog) owns the layout"
+        },
+        "3": {
+          "required": false,
+          "reason": "library: no pass 3 (owner decision; the linter reports files over 400 lines as warnings)"
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": true
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": false,
+          "reason": "a publishing library: the host page owns the layout"
+        },
+        "structure": {
+          "required": true
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": false,
+          "reason": "run mode none: no fixture yet: its CSS exists only after build.ts writes the package's dist/; verified statically only"
+        },
+        "snapshot": {
+          "required": false,
+          "reason": "run mode none: no fixture yet: its CSS exists only after build.ts writes the package's dist/; verified statically only"
+        },
+        "pixelDiff": {
+          "required": false,
+          "reason": "run mode none: no fixture yet: its CSS exists only after build.ts writes the package's dist/; verified statically only"
+        },
+        "tests": {
+          "required": true
+        }
+      },
+      "run": {
+        "mode": "none",
+        "reason": "its stylesheet exists only after `bun build.ts`, which always writes packages/docs-publish/dist inside the repo (the output dir is hard-coded); a fixture that publishes the docs-system corpus into {tmp} is follow-up work. Its output is seen through personal-site's blog pages"
+      },
+      "commands": {
+        "cwd": "codecaine/core/docs-system/packages/docs-publish",
+        "build": "bun build.ts"
+      },
+      "tests": {
+        "safe": [
+          {
+            "cmd": "bun test src",
+            "cwd": "codecaine/core/docs-system/packages/docs-publish"
+          }
+        ]
+      },
+      "routes": [],
+      "runProfile": {
+        "env": {},
+        "unsetEnv": [
+          "DOCS_SHARED_API_URL",
+          "DOCS_SHARED_API_TOKEN",
+          "DOCS_SHARED_PROJECT_ID",
+          "DOCS_STATIC",
+          "DOCS_API",
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN"
+        ],
+        "tempHome": true,
+        "fixtures": [],
+        "flags": [],
+        "ports": {
+          "http": 47080
+        },
+        "proof": {
+          "status": "unproven",
+          "method": ""
+        }
+      },
+      "exceptions": [
+        {
+          "what": "allowlist",
+          "reason": "src/editor.css keeps its neutral var() fallbacks for the host's --color-* and --site-* names on purpose (comment at editor.css:63-65)"
+        },
+        {
+          "what": "commands.build writes the package's own dist/",
+          "reason": "the publish build output (gitignored); every token change needs a rebuild, npm pack and a version bump in personal-site"
+        }
+      ]
+    },
+    {
+      "id": "viewer-shell",
+      "name": "agent-kernel viewer-shell (library)",
+      "wave": 1,
+      "kind": "library",
+      "repo": "codecaine/core/agent-kernel",
+      "root": "codecaine/core/agent-kernel/packages/viewer-shell",
+      "scan": {
+        "paths": [
+          "codecaine/core/agent-kernel/packages/viewer-shell/src"
+        ],
+        "exclude": []
+      },
+      "stack": {
+        "summary": "React 19 library shipped as TS source; style-system.css plus runtime styleVars(); host Tailwind",
+        "tailwind": "none",
+        "packageManager": "bun"
+      },
+      "consume": {
+        "via": "host-css",
+        "detail": "A CSS-variable contract with no JS dependency (prerequisite 3); the style engine seeds from the --ds-* values its host loads."
+      },
+      "entryStylesheet": null,
+      "theme": {
+        "rule": "light-dark"
+      },
+      "literalFloor": 2,
+      "allowlist": "apps/allowlists/viewer-shell.json",
+      "shell": false,
+      "folderStandard": false,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": false,
+          "reason": "embeddable library; its right style rail maps to the inspector slot in its hosts' shell work (STATE decision 2)"
+        },
+        "3": {
+          "required": false,
+          "reason": "library: no pass 3 (owner decision; the linter reports files over 400 lines as warnings)"
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": false,
+          "reason": "host-css library: no JS dependency on the package; its hosts load tokens.css"
+        },
+        "wiring": {
+          "required": false,
+          "reason": "host-css library: ships no entry stylesheet of its own; the host loads fonts.css and tokens.css"
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": false,
+          "reason": "renders inside a host's shell (STATE decision 2): no shell of its own"
+        },
+        "structure": {
+          "required": true
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": true
+        },
+        "snapshot": {
+          "required": true
+        },
+        "pixelDiff": {
+          "required": false,
+          "reason": "no pass 3: pass 1 changes colors by design, so review uses before/after sheets instead of a 0-pixel diff"
+        },
+        "tests": {
+          "required": true
+        }
+      },
+      "run": {
+        "mode": "browser",
+        "cwd": "codecaine/core/agent-kernel/examples/simple-research-kernel",
+        "start": "bun x vite {flags}",
+        "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
+      },
+      "commands": {
+        "cwd": "codecaine/core/agent-kernel",
+        "typecheck": "bun run typecheck:viewer-shell"
+      },
+      "tests": {
+        "safe": [
+          {
+            "cmd": "bun test ./packages/viewer-shell/src",
+            "cwd": "codecaine/core/agent-kernel"
+          }
+        ]
+      },
+      "routes": [
+        {
+          "id": "research-rail",
+          "path": "/research?style=open",
+          "waitFor": "aside.style-settings-rail"
+        },
+        {
+          "id": "traces",
+          "path": "/traces",
+          "waitFor": "main.research-style-shell"
+        }
+      ],
+      "runProfile": {
+        "env": {
+          "NO_COLOR": "1",
+          "FRONTEND_PORT": "{port:ui}",
+          "API_TARGET": "http://127.0.0.1:{port:deadApi}"
+        },
+        "unsetEnv": [
+          "DOCS_SHARED_API_URL",
+          "DOCS_SHARED_API_TOKEN",
+          "DOCS_SHARED_PROJECT_ID",
+          "DOCS_STATIC",
+          "DOCS_API",
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN",
+          "SIMPLE_RESEARCH_KERNEL_PORT",
+          "PORT",
+          "AGENT_KERNEL_APP_BASE_URL",
+          "AGENT_KERNEL_RESEARCH_MODEL",
+          "AGENT_KERNEL_PI_AGENT_DIR"
+        ],
+        "tempHome": true,
+        "fixtures": [],
+        "flags": [
+          "--host",
+          "127.0.0.1",
+          "--port",
+          "{port:ui}",
+          "--strictPort"
+        ],
+        "ports": {
+          "ui": 47090,
+          "deadApi": 47091
+        },
+        "proof": {
+          "status": "proven",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. Through simple-research-kernel's Vite 5 frontend with API_TARGET at the dead port :47091 (own block, never bound). Both routes rendered light and dark (4 captures; the console errors are the failed API calls); 0 blocked browser requests; 30 connections seen, all inbound to :47090; no connection outside the run's own ports; the agent-kernel repo stayed clean.",
+          "date": "2026-10-05"
+        }
+      },
+      "verify": {
+        "route": "research-rail",
+        "probes": [
+          {
+            "selector": "main.research-style-shell",
+            "property": "background-color",
+            "token": "color.surface.page"
+          },
+          {
+            "selector": "aside.style-settings-rail h2",
+            "property": "color",
+            "token": "color.text.body"
+          },
+          {
+            "selector": "aside.style-settings-rail",
+            "property": "border-left-color",
+            "token": "color.border.default"
+          }
+        ],
+        "darkSwitch": {
+          "kind": "storage",
+          "key": "simpleResearchStyleSettings.v1",
+          "value": "{\"theme\":\"dark\"}"
+        }
+      },
+      "exceptions": [
+        {
+          "what": "rendered through simple-research-kernel's frontend",
+          "reason": "a library: its shell, style rail and grain render in that host without the host's API (API_TARGET points at a dead port in this app's block)"
+        },
+        {
+          "what": "allowlist",
+          "reason": "the grain overlay's SVG filter constants (#ffffff/#808080 in StyleOverlay.tsx) are filter math, not colors"
+        }
+      ]
+    },
+    {
+      "id": "viewer-ui",
+      "name": "agent-kernel viewer-ui (library)",
+      "wave": 1,
+      "kind": "library",
+      "repo": "codecaine/core/agent-kernel",
+      "root": "codecaine/core/agent-kernel/packages/viewer-ui",
+      "scan": {
+        "paths": [
+          "codecaine/core/agent-kernel/packages/viewer-ui/src"
+        ],
+        "exclude": [
+          "nucleo-src"
+        ]
+      },
+      "stack": {
+        "summary": "React 19 library; host Tailwind (v3 config or v4 @theme inline + @source) and trace-viewer.css",
+        "tailwind": "none",
+        "packageManager": "bun"
+      },
+      "consume": {
+        "via": "host-css",
+        "detail": "Keeps its host contract (about 60 variables, mostly RGB triplets); the package ships the alias sheet host-contract.css (prerequisite 3)."
+      },
+      "entryStylesheet": null,
+      "theme": {
+        "rule": "light-dark"
+      },
+      "literalFloor": 5,
+      "allowlist": "apps/allowlists/viewer-ui.json",
+      "shell": false,
+      "folderStandard": false,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": false,
+          "reason": "renders inside a host's shell (STATE decision 2): no shell of its own"
+        },
+        "3": {
+          "required": false,
+          "reason": "library: no pass 3 (owner decision; the linter reports files over 400 lines as warnings)"
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": false,
+          "reason": "host-css library: no JS dependency on the package; its hosts load tokens.css"
+        },
+        "wiring": {
+          "required": false,
+          "reason": "host-css library: ships no entry stylesheet of its own; the host loads fonts.css and tokens.css"
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": false,
+          "reason": "renders inside a host's shell (STATE decision 2): no shell of its own"
+        },
+        "structure": {
+          "required": true
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": false,
+          "reason": "run mode none: its views need kernel trace data; verified statically only"
+        },
+        "snapshot": {
+          "required": false,
+          "reason": "run mode none: its views need kernel trace data; verified statically only"
+        },
+        "pixelDiff": {
+          "required": false,
+          "reason": "run mode none: its views need kernel trace data; verified statically only"
+        },
+        "tests": {
+          "required": true
+        }
+      },
+      "run": {
+        "mode": "none",
+        "reason": "its trace, detail and prompt-lab views render only with kernel trace data; the only source is an agent-kernel API, which writes .agent-kernel/ into its repo and calls LLMs on run (simple-research-kernel's server.ts has no temp-dir flag). A fixture API serving canned traces is follow-up work"
+      },
+      "commands": {
+        "cwd": "codecaine/core/agent-kernel",
+        "typecheck": "bun run typecheck:viewer-ui"
+      },
+      "tests": {
+        "safe": [
+          {
+            "cmd": "bun test src",
+            "cwd": "codecaine/core/agent-kernel/packages/viewer-ui"
+          }
+        ],
+        "unsafe": []
+      },
+      "routes": [],
+      "runProfile": {
+        "env": {},
+        "unsetEnv": [
+          "DOCS_SHARED_API_URL",
+          "DOCS_SHARED_API_TOKEN",
+          "DOCS_SHARED_PROJECT_ID",
+          "DOCS_STATIC",
+          "DOCS_API",
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN"
+        ],
+        "tempHome": true,
+        "fixtures": [],
+        "flags": [],
+        "ports": {
+          "ui": 47100,
+          "deadApi": 47101
+        },
+        "proof": {
+          "status": "unproven",
+          "method": ""
+        }
+      },
+      "exceptions": [
+        {
+          "what": "allowlist",
+          "reason": "trace-viewer.css keeps hex var() fallbacks for the prompt-editor surface (hosts without the contract still render)"
+        },
+        {
+          "what": "three safe tests read real trace data when it exists",
+          "reason": "state-tab-postures, DetailShell.overflow and hierarchy-live-review read canvas/.agent-kernel/trace.db read-only and skip when it is absent, as it is in the mirror; keep it out of the mirror"
+        }
+      ]
+    },
+    {
+      "id": "simple-research-kernel",
+      "name": "simple-research-kernel example",
+      "wave": 1,
+      "kind": "app",
+      "repo": "codecaine/core/agent-kernel",
+      "root": "codecaine/core/agent-kernel/examples/simple-research-kernel",
+      "scan": {
+        "paths": [
+          "codecaine/core/agent-kernel/examples/simple-research-kernel/src",
+          "codecaine/core/agent-kernel/examples/simple-research-kernel/tailwind.config.cjs"
+        ],
+        "exclude": [
+          "agent-catalog",
+          "server.ts",
+          "simple-research-kernel-store.ts"
+        ]
+      },
+      "stack": {
+        "summary": "React 19, Vite 5.4, Tailwind 3.4; bun (Core)",
+        "tailwind": "v3",
+        "packageManager": "bun"
+      },
+      "consume": {
+        "via": "workspace",
+        "detail": "Core workspace member (`workspace:*`) plus the design-system Tailwind v3 preset in tailwind.config.cjs (decision 3); budget's kernel view spreads this config."
+      },
+      "entryStylesheet": "codecaine/core/agent-kernel/examples/simple-research-kernel/src/main.tsx",
+      "theme": {
+        "rule": "light-dark",
+        "storageKey": "simpleResearchStyleSettings.v1"
+      },
+      "literalFloor": 0,
+      "allowlist": null,
+      "shell": true,
+      "folderStandard": true,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": true
+        },
+        "3": {
+          "required": true
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": true
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": true
+        },
+        "structure": {
+          "required": true
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": true
+        },
+        "snapshot": {
+          "required": true
+        },
+        "pixelDiff": {
+          "required": true
+        },
+        "tests": {
+          "required": true
+        }
+      },
+      "run": {
+        "mode": "browser",
+        "cwd": "codecaine/core/agent-kernel/examples/simple-research-kernel",
+        "start": "bun x vite {flags}",
+        "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
+      },
+      "commands": {
+        "cwd": "codecaine/core/agent-kernel/examples/simple-research-kernel",
+        "typecheck": "bun run typecheck"
+      },
+      "tests": {
+        "safe": [
+          {
+            "cmd": "bun test ./examples/simple-research-kernel/src",
+            "cwd": "codecaine/core/agent-kernel"
+          }
+        ],
+        "unsafe": [
+          {
+            "cmd": "bun run dev / bun run api",
+            "reason": "the API writes .agent-kernel/, .pi-agent and research-memory/ into the example folder (no temp-dir flag) and POST /api/run calls an LLM"
+          }
+        ]
+      },
+      "routes": [
+        {
+          "id": "research",
+          "path": "/research",
+          "waitFor": "main.research-style-shell"
+        },
+        {
+          "id": "traces",
+          "path": "/traces",
+          "waitFor": "main.research-style-shell"
+        },
+        {
+          "id": "agents",
+          "path": "/agents",
+          "waitFor": "main.research-style-shell"
+        },
+        {
+          "id": "research-rail",
+          "path": "/research?style=open",
+          "waitFor": "aside.style-settings-rail"
+        }
+      ],
+      "runProfile": {
+        "env": {
+          "NO_COLOR": "1",
+          "FRONTEND_PORT": "{port:ui}",
+          "API_TARGET": "http://127.0.0.1:{port:deadApi}"
+        },
+        "unsetEnv": [
+          "DOCS_SHARED_API_URL",
+          "DOCS_SHARED_API_TOKEN",
+          "DOCS_SHARED_PROJECT_ID",
+          "DOCS_STATIC",
+          "DOCS_API",
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN",
+          "SIMPLE_RESEARCH_KERNEL_PORT",
+          "PORT",
+          "AGENT_KERNEL_APP_BASE_URL",
+          "AGENT_KERNEL_RESEARCH_MODEL",
+          "AGENT_KERNEL_PI_AGENT_DIR"
+        ],
+        "tempHome": true,
+        "fixtures": [],
+        "flags": [
+          "--host",
+          "127.0.0.1",
+          "--port",
+          "{port:ui}",
+          "--strictPort"
+        ],
+        "ports": {
+          "ui": 47110,
+          "deadApi": 47111
+        },
+        "proof": {
+          "status": "proven",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. UI only, API_TARGET at the dead port :47111 (own block, never bound), so the API that writes .agent-kernel/ never starts. All 4 routes rendered light and dark (8 captures; console errors are the failed API calls); 0 blocked browser requests; 61 connections seen, all inbound to :47110; no connection outside the run's own ports.",
+          "date": "2026-10-05"
+        }
+      },
+      "verify": {
+        "route": "research",
+        "probes": [
+          {
+            "selector": "main.research-style-shell",
+            "property": "background-color",
+            "token": "color.surface.page"
+          },
+          {
+            "selector": "section.rounded-lg.border",
+            "property": "background-color",
+            "token": "color.surface.panel"
+          },
+          {
+            "selector": "main.research-style-shell",
+            "property": "color",
+            "token": "color.text.body"
+          },
+          {
+            "selector": "section.rounded-lg.border",
+            "property": "border-top-color",
+            "token": "color.border.default"
+          }
+        ],
+        "darkSwitch": {
+          "kind": "storage",
+          "key": "simpleResearchStyleSettings.v1",
+          "value": "{\"theme\":\"dark\"}"
+        },
+        "sidebar": {
+          "toggle": ".ds-sidebar-toggle",
+          "storageKey": "simple-research-kernel.sidebar"
+        }
+      },
+      "exceptions": [
+        {
+          "what": "the API is not started",
+          "reason": "API_TARGET points the Vite proxy at a dead port in this app's block; pages render their layout, sidebar and rail with the API error state"
+        }
+      ]
+    },
+    {
+      "id": "prompt-kit-ui",
+      "name": "prompt-kit UI (library)",
+      "wave": 1,
+      "kind": "library",
+      "repo": "codecaine/core/prompt-kit",
+      "root": "codecaine/core/prompt-kit/packages/prompt-kit",
+      "scan": {
+        "paths": [
+          "codecaine/core/prompt-kit/packages/prompt-kit/src/ui"
+        ],
+        "exclude": []
+      },
+      "stack": {
+        "summary": "React 19 library; host Tailwind, about 112 inline style sites and injected <style> blocks; editor-surface rules ship in viewer-ui",
+        "tailwind": "none",
+        "packageManager": "bun"
+      },
+      "consume": {
+        "via": "host-css",
+        "detail": "var(--ds-*) with fallbacks; hosts compile its classes."
+      },
+      "entryStylesheet": null,
+      "theme": {
+        "rule": "light-dark",
+        "storageKey": "agentKernel.promptEditorStyle.v2"
+      },
+      "literalFloor": 56,
+      "allowlist": "apps/allowlists/prompt-kit-ui.json",
+      "shell": false,
+      "folderStandard": false,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": false,
+          "reason": "the lab draws its own header and right rail inside its host (library)"
+        },
+        "3": {
+          "required": false,
+          "reason": "library: no pass 3 (owner decision; the linter reports files over 400 lines as warnings)"
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": false,
+          "reason": "host-css library: no JS dependency on the package; its hosts load tokens.css"
+        },
+        "wiring": {
+          "required": false,
+          "reason": "host-css library: ships no entry stylesheet of its own; the host loads fonts.css and tokens.css"
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": false,
+          "reason": "renders inside a host's shell (STATE decision 2): no shell of its own"
+        },
+        "structure": {
+          "required": true
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": false,
+          "reason": "run mode none: it renders only inside a host with an agent catalog API; verified statically only"
+        },
+        "snapshot": {
+          "required": false,
+          "reason": "run mode none: it renders only inside a host with an agent catalog API; verified statically only"
+        },
+        "pixelDiff": {
+          "required": false,
+          "reason": "run mode none: it renders only inside a host with an agent catalog API; verified statically only"
+        },
+        "tests": {
+          "required": true
+        }
+      },
+      "run": {
+        "mode": "none",
+        "reason": "it renders only inside a host's prompt lab, which needs an agent catalog API (simple-research-kernel, observatory or gamecube servers); those write into their repos or need a live harness, and typing in the editor autosaves through the host"
+      },
+      "commands": {
+        "cwd": "codecaine/core/prompt-kit/packages/prompt-kit",
+        "typecheck": "bun run typecheck"
+      },
+      "tests": {
+        "safe": [
+          {
+            "cmd": "bun test tests",
+            "cwd": "codecaine/core/prompt-kit/packages/prompt-kit"
+          }
+        ]
+      },
+      "routes": [],
+      "runProfile": {
+        "env": {},
+        "unsetEnv": [
+          "DOCS_SHARED_API_URL",
+          "DOCS_SHARED_API_TOKEN",
+          "DOCS_SHARED_PROJECT_ID",
+          "DOCS_STATIC",
+          "DOCS_API",
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN"
+        ],
+        "tempHome": true,
+        "fixtures": [],
+        "flags": [],
+        "ports": {
+          "ui": 47120
+        },
+        "proof": {
+          "status": "unproven",
+          "method": ""
+        }
+      },
+      "exceptions": [
+        {
+          "what": "allowlist",
+          "reason": "var() fallbacks stay (hosts without the tokens still render). The editor defaults and syntax palette in style/prompt-style-settings.ts are not exempt: they seed from the tokens (color.syntax.*), and only the color controls are hidden"
+        },
+        {
+          "what": "needs a light editor palette designed first",
+          "reason": "audit: migrate last; the editor is effectively dark-only today"
+        }
+      ]
+    },
+    {
+      "id": "system-view",
+      "name": "system-view",
+      "wave": 1,
+      "kind": "app",
+      "repo": "system-view",
+      "root": "system-view",
+      "scan": {
+        "paths": [
+          "system-view/src/renderer"
+        ],
+        "exclude": []
+      },
+      "stack": {
+        "summary": "Electron 37, electron-vite 5, Vite 7, React 19, one plain CSS file; bun",
+        "tailwind": "none",
+        "packageManager": "bun"
+      },
+      "consume": {
+        "via": "workspace",
+        "detail": "Single bun package: add \"workspaces\": [\"../design-system\"] to package.json and depend on `workspace:*` (a live symlink), then import the CSS in src/renderer/src/main.tsx; update THEME_TOKEN_NAMES when docs-workbench moves to --ds-*."
+      },
+      "entryStylesheet": "system-view/src/renderer/src/main.tsx",
+      "theme": {
+        "rule": "light-dark"
+      },
+      "literalFloor": 0,
+      "allowlist": null,
+      "shell": true,
+      "folderStandard": true,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": true
+        },
+        "3": {
+          "required": true
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": true
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": true
+        },
+        "structure": {
+          "required": true
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": false,
+          "reason": "run mode none: the app reaches the owner's docs service on a hard-coded :4820; verified statically only"
+        },
+        "snapshot": {
+          "required": false,
+          "reason": "run mode none: the app reaches the owner's docs service on a hard-coded :4820; verified statically only"
+        },
+        "pixelDiff": {
+          "required": false,
+          "reason": "run mode none: the app reaches the owner's docs service on a hard-coded :4820; verified statically only"
+        },
+        "tests": {
+          "required": false,
+          "reason": "system-view has no tests"
+        }
+      },
+      "run": {
+        "mode": "none",
+        "reason": "the docs origin is hard-coded: `export const SERVICE_ORIGIN = 'http://127.0.0.1:4820'` (src/main/tree-model.ts:5), which src/main/docs-service.ts polls every 5 s (GET /api/projects, /projects/<id>/docs/api/tree), and the renderer builds viewer URLs from a literal http://127.0.0.1:4820 (src/renderer/src/App.tsx:114). SYSTEM_VIEW_OPEN_URL (src/main/dev-hooks.ts:8) only opens one URL at startup; polling still targets 4820. No env var, setting or flag redirects it, and a second instance hands focus to the owner's running app (single-instance lock). Runnable once SERVICE_ORIGIN and App.tsx:114 read one env var that a profile points at a run-started docs-workbench fixture",
+        "cwd": "system-view",
+        "electron": {
+          "build": "bun run build",
+          "main": "system-view/out/main/index.js"
+        }
+      },
+      "commands": {
+        "cwd": "system-view",
+        "typecheck": "bun run typecheck",
+        "build": "bun run build"
+      },
+      "tests": {
+        "safe": [],
+        "unsafe": [
+          {
+            "cmd": "bun run dev",
+            "reason": "launches Electron against the owner's docs service on :4820 with the default userData"
+          },
+          {
+            "cmd": "bun run install:launcher / scripts/dev-launch.sh",
+            "reason": "write ~/Applications, ~/Desktop and ~/.local/state/system-view"
+          }
+        ]
+      },
+      "routes": [
+        {
+          "id": "tree",
+          "path": "main",
+          "waitFor": ".sidebar"
+        }
+      ],
+      "runProfile": {
+        "env": {
+          "SYSTEM_VIEW_NO_HIDE_APPS": "1"
+        },
+        "unsetEnv": [
+          "DOCS_SHARED_API_URL",
+          "DOCS_SHARED_API_TOKEN",
+          "DOCS_SHARED_PROJECT_ID",
+          "DOCS_STATIC",
+          "DOCS_API",
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN",
+          "SYSTEM_VIEW_OPEN_URL",
+          "SYSTEM_VIEW_CAPTURE_DIR",
+          "SYSTEM_VIEW_LOCKIN",
+          "SYSTEM_VIEW_DEBUG"
+        ],
+        "tempHome": true,
+        "fixtures": [],
+        "flags": [],
+        "ports": {
+          "docs": 47130
+        },
+        "proof": {
+          "status": "unproven",
+          "method": ""
+        }
+      },
+      "verify": {
+        "route": "tree",
+        "probes": [
+          {
+            "selector": ".app-shell",
+            "property": "background-color",
+            "token": "color.surface.page"
+          },
+          {
+            "selector": ".sidebar",
+            "property": "background-color",
+            "token": "color.surface.sidebar"
+          },
+          {
+            "selector": ".sidebar-title",
+            "property": "color",
+            "token": "color.text.body"
+          },
+          {
+            "selector": ".sidebar",
+            "property": "border-right-color",
+            "token": "color.border.default"
+          }
+        ],
+        "darkSwitch": {
+          "kind": "attribute",
+          "target": ".app-shell"
+        },
+        "sidebar": {
+          "toggle": ".ds-sidebar-toggle",
+          "storageKey": "system-view.sidebar"
+        }
+      },
+      "exceptions": [
+        {
+          "what": "waits for docs-workbench to be fully done",
+          "reason": "STATE decision 3: the shell pass can rename the --docs-sidebar-* variables its theme bridge reads"
+        },
+        {
+          "what": "native window colors in src/main/index.ts",
+          "reason": "outside the scan path (main process BrowserWindow backgroundColor); keep them in step with the tokens by hand"
+        }
+      ]
+    },
+    {
+      "id": "personal-site",
+      "name": "personal-site content pages",
+      "wave": 2,
+      "kind": "site",
+      "repo": "lascari-ai/personal-site",
+      "root": "lascari-ai/personal-site",
+      "scan": {
+        "paths": [
+          "lascari-ai/personal-site/src/site",
+          "lascari-ai/personal-site/index.html",
+          "lascari-ai/personal-site/about",
+          "lascari-ai/personal-site/services",
+          "lascari-ai/personal-site/resume",
+          "lascari-ai/personal-site/testimonials",
+          "lascari-ai/personal-site/scripts/site-pages.mjs",
+          "lascari-ai/personal-site/scripts/resume-pages.mjs",
+          "lascari-ai/personal-site/scripts/blog-pages.mjs"
+        ],
+        "exclude": []
+      },
+      "stack": {
+        "summary": "Vanilla TS and static HTML; Vite 7.3 multi-page with custom plugins; plain CSS (Tailwind 4.3 only on the landing); npm; Docker on Railway",
+        "tailwind": "none",
+        "packageManager": "npm"
+      },
+      "consume": {
+        "via": "vendor-tgz",
+        "detail": "Owner decision: a packed copy through file:vendor/<name>.tgz that carries its fonts (prerequisite 4), the same way it consumes docs-publish; the Railway Docker context cannot see ../../design-system. Delete src/site/palette.css (a copy of docs-system's notion palette)."
+      },
+      "entryStylesheet": "lascari-ai/personal-site/about/index.html",
+      "theme": {
+        "rule": "light-dark",
+        "storageKey": "personal-site:theme"
+      },
+      "literalFloor": 0,
+      "allowlist": null,
+      "shell": false,
+      "folderStandard": true,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": false,
+          "reason": "a site: layout.md exempts marketing and content sites from the app shell"
+        },
+        "3": {
+          "required": true
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": true
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": false,
+          "reason": "a site: layout.md exempts it"
+        },
+        "structure": {
+          "required": true
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": true
+        },
+        "snapshot": {
+          "required": true
+        },
+        "pixelDiff": {
+          "required": true
+        },
+        "tests": {
+          "required": true
+        }
+      },
+      "run": {
+        "mode": "browser",
+        "cwd": "lascari-ai/personal-site",
+        "start": "./node_modules/.bin/vite {flags}",
+        "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
+      },
+      "commands": {
+        "cwd": "lascari-ai/personal-site",
+        "typecheck": "./node_modules/.bin/tsc -b"
+      },
+      "tests": {
+        "safe": [],
+        "unsafe": [
+          {
+            "cmd": "npm test (vitest run)",
+            "reason": "loading vite.config.ts regenerates blog/, public/blog/, sitemap.xml, robots.txt and the tracked public/resume/ford-lascari-resume.md in the repo before any test runs"
+          },
+          {
+            "cmd": "npm run build",
+            "reason": "same generated writes, plus dist/; fails when the resume hash is stale"
+          },
+          {
+            "cmd": "npm run verify:render / verify:publishing",
+            "reason": "launch Chromium against the owner's dev port :5173"
+          },
+          {
+            "cmd": "npm run docs-theme:sync",
+            "reason": "copies from the owner's ~/.local/state/codecaine-docs/themes"
+          }
+        ]
+      },
+      "routes": [
+        {
+          "id": "about",
+          "path": "/about/",
+          "waitFor": ".site-header"
+        },
+        {
+          "id": "about-overview",
+          "path": "/about/overview/",
+          "waitFor": ".site-header"
+        },
+        {
+          "id": "about-open-source",
+          "path": "/about/open-source/",
+          "waitFor": ".site-header"
+        },
+        {
+          "id": "services",
+          "path": "/services/",
+          "waitFor": ".site-header"
+        },
+        {
+          "id": "resume",
+          "path": "/resume/",
+          "waitFor": ".site-header"
+        },
+        {
+          "id": "blog",
+          "path": "/blog/",
+          "waitFor": ".site-header"
+        }
+      ],
+      "runProfile": {
+        "env": {
+          "NO_COLOR": "1"
+        },
+        "unsetEnv": [
+          "DOCS_SHARED_API_URL",
+          "DOCS_SHARED_API_TOKEN",
+          "DOCS_SHARED_PROJECT_ID",
+          "DOCS_STATIC",
+          "DOCS_API",
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN",
+          "PUBLIC_SITE_URL",
+          "VITE_APP_MODE",
+          "VITE_CONFIG_ENABLED",
+          "VITE_SITE_CONTENT_URL",
+          "PORT",
+          "HOST"
+        ],
+        "tempHome": true,
+        "fixtures": [],
+        "flags": [
+          "--host",
+          "127.0.0.1",
+          "--port",
+          "{port:ui}",
+          "--strictPort"
+        ],
+        "ports": {
+          "ui": 47140
+        },
+        "proof": {
+          "status": "proven",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. All 6 routes rendered light and dark (12 captures); 0 blocked requests; 81 connections seen, all inbound to :47140; no foreign connection (no route touches /blog/drafts, the only :4820 proxy); git status of the repo was clean after the run, so the tracked resume markdown regenerated byte-identical; verify probes matched the light and dark token values.",
+          "date": "2026-10-05"
+        }
+      },
+      "verify": {
+        "route": "about",
+        "probes": [
+          {
+            "selector": "html",
+            "property": "background-color",
+            "token": "color.surface.page"
+          },
+          {
+            "selector": ".site-header",
+            "property": "background-color",
+            "token": "color.surface.sidebar"
+          },
+          {
+            "selector": "h1",
+            "property": "color",
+            "token": "color.text.body"
+          },
+          {
+            "selector": ".site-header",
+            "property": "border-bottom-color",
+            "token": "color.border.default"
+          }
+        ],
+        "darkSwitch": {
+          "kind": "storage",
+          "key": "personal-site:theme",
+          "value": "dark"
+        }
+      },
+      "exceptions": [
+        {
+          "what": "vite.config.ts writes generated files into the repo at load",
+          "reason": "generateBlog() and resumePages() regenerate blog/, public/blog/, public/sitemap.xml, robots.txt, legacy-redirects.json (gitignored) and the tracked public/resume/ford-lascari-resume.md from repo sources; the proof checks the tracked file is unchanged afterwards"
+        },
+        {
+          "what": "routes skip the landing (/), /logo-lab and /blog/drafts/",
+          "reason": "the landing and logo lab are CircleSnakes product art (audit Skip); /blog/drafts/__docs/api proxies to the owner's docs service on :4820"
+        },
+        {
+          "what": "entryStylesheet is about/index.html",
+          "reason": "every content page links src/site/styles.css (which imports palette.css and layout.css) from its own HTML; the linter starts at one page, and the others link the same sheet"
+        },
+        {
+          "what": "pass 3 on vanilla partials",
+          "reason": "the ledger plans slices (1h) for its _components partials; the linter's 400-line rule applies, the index.tsx rule does not fit vanilla HTML partials"
+        }
+      ]
+    },
+    {
+      "id": "agent-skills-manager",
+      "name": "agent-skills manager",
+      "wave": 2,
+      "kind": "app",
+      "repo": "lascari-ai/agent-skills",
+      "root": "lascari-ai/agent-skills/manager",
+      "scan": {
+        "paths": [
+          "lascari-ai/agent-skills/manager/web"
+        ],
+        "exclude": [
+          "vendor"
+        ]
+      },
+      "stack": {
+        "summary": "Vanilla JS, one dense CSS file and static HTML; Python 3.11 stdlib server with a fixed route whitelist; no package manager",
+        "tailwind": "none",
+        "packageManager": "none"
+      },
+      "consume": {
+        "via": "copy",
+        "detail": "Copy the built tokens.css (and fonts.css with its fonts) into web/vendor/ and add each route to the whitelist in server.py; checked by the hash of tokens.css."
+      },
+      "entryStylesheet": "lascari-ai/agent-skills/manager/web/index.html",
+      "theme": {
+        "rule": "light-dark",
+        "storageKey": "skill-theme"
+      },
+      "literalFloor": 0,
+      "allowlist": null,
+      "shell": true,
+      "folderStandard": false,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": true
+        },
+        "3": {
+          "required": false,
+          "reason": "vanilla JS in 4 dense files; the audit sets slices N/A"
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": true
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": true
+        },
+        "structure": {
+          "required": false,
+          "reason": "vanilla JS in 4 dense files; the audit sets slices N/A"
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": true
+        },
+        "snapshot": {
+          "required": true
+        },
+        "pixelDiff": {
+          "required": false,
+          "reason": "no pass 3: passes 1 and 2 change pixels by design, so review uses before/after sheets"
+        },
+        "tests": {
+          "required": true
+        }
+      },
+      "run": {
+        "mode": "browser",
+        "cwd": "lascari-ai/agent-skills",
+        "start": "python3 manager/server.py {flags}",
+        "readyPattern": "Skill manager: (http://127\\.0\\.0\\.1:\\d+)",
+        "serveRoot": "lascari-ai/agent-skills/manager/web"
+      },
+      "commands": {
+        "cwd": "lascari-ai/agent-skills"
+      },
+      "tests": {
+        "safe": [
+          {
+            "cmd": "PYTHONDONTWRITEBYTECODE=1 python3 manager/test_server.py",
+            "cwd": "lascari-ai/agent-skills"
+          }
+        ]
+      },
+      "routes": [
+        {
+          "id": "all",
+          "path": "/",
+          "waitFor": ".skill-row >> nth=0"
+        },
+        {
+          "id": "active",
+          "path": "/",
+          "steps": [
+            {
+              "action": "click",
+              "target": "#views button[data-view=\"active\"]"
+            }
+          ],
+          "waitFor": ".skill-row >> nth=0"
+        },
+        {
+          "id": "agents",
+          "path": "/",
+          "steps": [
+            {
+              "action": "click",
+              "target": "#views button[data-view=\"agents\"]"
+            }
+          ],
+          "waitFor": "main"
+        },
+        {
+          "id": "history",
+          "path": "/",
+          "steps": [
+            {
+              "action": "click",
+              "target": "#views button[data-view=\"history\"]"
+            }
+          ],
+          "waitFor": "main"
+        },
+        {
+          "id": "reader",
+          "path": "/",
+          "steps": [
+            {
+              "action": "click",
+              "target": ".skill-row >> nth=0"
+            }
+          ],
+          "waitFor": "#close-detail"
+        }
+      ],
+      "runProfile": {
+        "env": {
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "unsetEnv": [
+          "DOCS_SHARED_API_URL",
+          "DOCS_SHARED_API_TOKEN",
+          "DOCS_SHARED_PROJECT_ID",
+          "DOCS_STATIC",
+          "DOCS_API",
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN"
+        ],
+        "tempHome": true,
+        "fixtures": [
+          "apps/fixtures/agent-skills-manager/skills"
+        ],
+        "flags": [
+          "--port",
+          "{port:ui}",
+          "--root",
+          "{tmp}/skills"
+        ],
+        "ports": {
+          "ui": 47150
+        },
+        "proof": {
+          "status": "proven",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. python3 manager/server.py --root {tmp}/skills (synthetic catalog copied from apps/fixtures; HOME and the agent links inside {tmp}). All 5 routes rendered light and dark (10 captures, no console errors once the runner applied its determinism CSS under the CSP); 0 blocked requests; no foreign connection; the agent-skills repo stayed clean.",
+          "date": "2026-10-05"
+        }
+      },
+      "verify": {
+        "route": "all",
+        "probes": [
+          {
+            "selector": "body",
+            "property": "background-color",
+            "token": "color.surface.page"
+          },
+          {
+            "selector": ".sidebar",
+            "property": "background-color",
+            "token": "color.surface.sidebar"
+          },
+          {
+            "selector": ".topbar",
+            "property": "border-bottom-color",
+            "token": "color.border.default"
+          }
+        ],
+        "darkSwitch": {
+          "kind": "storage",
+          "key": "skill-theme",
+          "value": "dark"
+        },
+        "sidebar": {
+          "toggle": ".ds-sidebar-toggle",
+          "storageKey": "agent-skills-manager.sidebar"
+        }
+      },
+      "exceptions": [
+        {
+          "what": "synthetic skills catalog",
+          "reason": "apps/fixtures/agent-skills-manager/skills (3 invented skills, agents under the temp HOME) replaces the repo's real catalog and the owner's ~/.claude, ~/.codex skill links; writes happen only on POST /api/apply, which no route triggers"
+        }
+      ]
+    },
+    {
+      "id": "skitzo",
+      "name": "skitzo",
+      "wave": 3,
+      "kind": "app",
+      "repo": "apps/skitzo",
+      "root": "apps/skitzo/apps/frontend",
+      "scan": {
+        "paths": [
+          "apps/skitzo/apps/frontend/src/app",
+          "apps/skitzo/apps/frontend/src/components"
+        ],
+        "exclude": []
+      },
+      "stack": {
+        "summary": "Next 16.1 (Turbopack), React 19.2, Tailwind 4.1 (@theme inline), Clerk 6; npm and bun lockfiles; Docker",
+        "tailwind": "v4",
+        "packageManager": "npm"
+      },
+      "consume": {
+        "via": "vendor-tgz",
+        "detail": "Owner decision: a packed copy through file:vendor/<name>.tgz that carries its fonts; the Docker context is apps/frontend. Add a Clerk appearance bridge to the tokens."
+      },
+      "entryStylesheet": "apps/skitzo/apps/frontend/src/app/layout.tsx",
+      "theme": {
+        "rule": "dark-first"
+      },
+      "literalFloor": 129,
+      "allowlist": "apps/allowlists/skitzo.json",
+      "shell": true,
+      "folderStandard": true,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": true
+        },
+        "3": {
+          "required": true
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": true
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": true
+        },
+        "structure": {
+          "required": true
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": false,
+          "reason": "run mode none: every screen needs Clerk keys and app screens need Postgres; verified statically only"
+        },
+        "snapshot": {
+          "required": false,
+          "reason": "run mode none: every screen needs Clerk keys and app screens need Postgres; verified statically only"
+        },
+        "pixelDiff": {
+          "required": false,
+          "reason": "run mode none: every screen needs Clerk keys and app screens need Postgres; verified statically only"
+        },
+        "tests": {
+          "required": false,
+          "reason": "the frontend has no tests"
+        }
+      },
+      "run": {
+        "mode": "none",
+        "reason": "no screen renders without Clerk: src/middleware.ts runs clerkMiddleware on every route and calls auth.protect() on everything but /, /sign-in, /sign-up and /api/webhooks, and the landing ((guest)/page.tsx) calls auth(). Without keys Clerk's keyless mode calls Clerk's API and writes .clerk/ into the repo; with keys it needs the owner's credentials. Postgres: /templates, /templates/[id], /contexts, /interviews and /interview/* read or write through getAuthUser and src/db (their actions.ts); /dashboard is static but still behind auth.protect(). A profile needs a Clerk test stub (or a dev-only auth bypass) and a fixture database",
+        "cwd": "apps/skitzo/apps/frontend"
+      },
+      "commands": {
+        "cwd": "apps/skitzo/apps/frontend",
+        "typecheck": "./node_modules/.bin/tsc --noEmit"
+      },
+      "tests": {
+        "safe": [],
+        "unsafe": [
+          {
+            "cmd": "npm run dev / npm run build",
+            "reason": "Clerk keyless mode calls Clerk's API and writes .clerk/; app pages need Postgres on :4300 and the FastAPI backend on :4200 with LLM keys"
+          }
+        ]
+      },
+      "routes": [
+        {
+          "id": "landing",
+          "path": "/",
+          "waitFor": "h1"
+        },
+        {
+          "id": "dashboard",
+          "path": "/dashboard",
+          "waitFor": "aside"
+        },
+        {
+          "id": "templates",
+          "path": "/templates",
+          "waitFor": "aside"
+        },
+        {
+          "id": "contexts",
+          "path": "/contexts",
+          "waitFor": "aside"
+        },
+        {
+          "id": "interviews",
+          "path": "/interviews",
+          "waitFor": "aside"
+        }
+      ],
+      "runProfile": {
+        "env": {
+          "NEXT_TELEMETRY_DISABLED": "1"
+        },
+        "unsetEnv": [
+          "DOCS_SHARED_API_URL",
+          "DOCS_SHARED_API_TOKEN",
+          "DOCS_SHARED_PROJECT_ID",
+          "DOCS_STATIC",
+          "DOCS_API",
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN",
+          "DATABASE_URL",
+          "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+          "CLERK_SECRET_KEY",
+          "BACKEND_INTERNAL_URL"
+        ],
+        "tempHome": true,
+        "fixtures": [],
+        "flags": [],
+        "ports": {
+          "ui": 47160
+        },
+        "proof": {
+          "status": "unproven",
+          "method": ""
+        }
+      },
+      "verify": {
+        "route": "dashboard",
+        "probes": [
+          {
+            "selector": "body",
+            "property": "background-color",
+            "token": "color.surface.page"
+          },
+          {
+            "selector": "aside",
+            "property": "background-color",
+            "token": "color.surface.sidebar"
+          }
+        ],
+        "darkSwitch": {
+          "kind": "attribute",
+          "target": "html"
+        },
+        "sidebar": {
+          "toggle": ".ds-sidebar-toggle",
+          "storageKey": "skitzo.sidebar"
+        }
+      },
+      "exceptions": [
+        {
+          "what": "allowlist",
+          "reason": "owner decision: the landing hero (src/app/(guest)/page.tsx) and the serif display face (Cormorant Garamond) are brand and stay"
+        },
+        {
+          "what": "dormant since 2026-04-08",
+          "reason": "audit risk; MDXEditor overrides target hashed class names (globals.css)"
+        }
+      ]
+    },
+    {
+      "id": "annotations",
+      "name": "annotations (library)",
+      "wave": 1,
+      "kind": "library",
+      "repo": "codecaine/core/annotations",
+      "root": "codecaine/core/annotations",
+      "scan": {
+        "paths": [
+          "codecaine/core/annotations/src/react"
+        ],
+        "exclude": []
+      },
+      "stack": {
+        "summary": "React 19 peer library; the load-bearing CSS is an injected TARGETING_CSS string; host Tailwind compiles the utilities",
+        "tailwind": "none",
+        "packageManager": "bun"
+      },
+      "consume": {
+        "via": "host-css",
+        "detail": "--ds-* names inside the TARGETING_CSS fallback chains; no JS dependency, because the repo must typecheck on its own. Switch dark from prefers-color-scheme to .dark/[data-theme]."
+      },
+      "entryStylesheet": null,
+      "theme": {
+        "rule": "light-dark"
+      },
+      "literalFloor": 11,
+      "allowlist": "apps/allowlists/annotations.json",
+      "shell": false,
+      "folderStandard": false,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": false,
+          "reason": "renders inside a host's shell (STATE decision 2): no shell of its own"
+        },
+        "3": {
+          "required": false,
+          "reason": "library: no pass 3 (owner decision; the linter reports files over 400 lines as warnings)"
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": false,
+          "reason": "host-css library: no JS dependency on the package; its hosts load tokens.css"
+        },
+        "wiring": {
+          "required": false,
+          "reason": "host-css library: ships no entry stylesheet of its own; the host loads fonts.css and tokens.css"
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": false,
+          "reason": "renders inside a host's shell (STATE decision 2): no shell of its own"
+        },
+        "structure": {
+          "required": true
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "snapshot": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "pixelDiff": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "tests": {
+          "required": true
+        }
+      },
+      "run": {
+        "mode": "none",
+        "reason": "blocked by uncommitted owner work; profile unproven"
+      },
+      "commands": {
+        "cwd": "codecaine/core/annotations",
+        "typecheck": "bun run typecheck"
+      },
+      "tests": {
+        "safe": [
+          {
+            "cmd": "bun test src",
+            "cwd": "codecaine/core/annotations"
+          }
+        ]
+      },
+      "routes": [],
+      "runProfile": {
+        "env": {},
+        "unsetEnv": [
+          "DOCS_SHARED_API_URL",
+          "DOCS_SHARED_API_TOKEN",
+          "DOCS_SHARED_PROJECT_ID",
+          "DOCS_STATIC",
+          "DOCS_API",
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN"
+        ],
+        "tempHome": true,
+        "fixtures": [],
+        "flags": [],
+        "ports": {
+          "ui": 47170
+        },
+        "proof": {
+          "status": "unproven",
+          "method": ""
+        }
+      },
+      "exceptions": [
+        {
+          "what": "blocked",
+          "reason": "uncommitted package.json (version 0.1.0 -> 0.0.1) in the owner's tree; ledger: commit or revert it"
+        },
+        {
+          "what": "allowlist keeps the TARGETING_CSS fallback chains",
+          "reason": "the injected CSS must render in hosts without tokens.css; the --annotation-* fallbacks stay as var() fallbacks"
+        },
+        {
+          "what": "two copies",
+          "reason": "the Core copy and docs-system/external/annotations (same src at the recorded commits); migrate the Core copy and bump the submodule"
+        },
+        {
+          "what": "run mode none when unblocked too",
+          "reason": "no standalone page: it renders inside docs-viewer and prompt-kit hosts; a host-based route (docs-workbench lab-annotate) can prove it later"
+        }
+      ]
+    },
+    {
+      "id": "observatory",
+      "name": "observatory",
+      "wave": 1,
+      "kind": "app",
+      "repo": "codecaine/core/observatory",
+      "root": "codecaine/core/observatory",
+      "scan": {
+        "paths": [
+          "codecaine/core/observatory/src/ui"
+        ],
+        "exclude": [
+          "readability"
+        ]
+      },
+      "stack": {
+        "summary": "React 19, Vite 7.3, Tailwind 4.3 (postcss); own bun lockfile; link: deps through a repo-local .bun-links registry",
+        "tailwind": "v4",
+        "packageManager": "bun"
+      },
+      "consume": {
+        "via": "link",
+        "detail": "link: through its repo-local .bun-links registry (a live symlink, the way it takes prompt-kit), plus @source; never a bun file: dependency."
+      },
+      "entryStylesheet": "codecaine/core/observatory/src/ui/main.tsx",
+      "theme": {
+        "rule": "light-dark",
+        "storageKey": "observatory.viewerStyle.v1"
+      },
+      "literalFloor": 0,
+      "allowlist": null,
+      "shell": true,
+      "folderStandard": true,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": true
+        },
+        "3": {
+          "required": true
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": true
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": true
+        },
+        "structure": {
+          "required": true
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "snapshot": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "pixelDiff": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "tests": {
+          "required": false,
+          "reason": "blocked; when unblocked: test/server.test.ts is safe, launcher tests spawn processes and registry.test.ts reads the real registry.json"
+        }
+      },
+      "run": {
+        "mode": "none",
+        "reason": "blocked by uncommitted owner work; profile unproven",
+        "cwd": "codecaine/core/observatory",
+        "start": "bun x --bun vite --config src/ui/vite.config.ts {flags}",
+        "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)",
+        "serveRoot": "codecaine/core/observatory/src/ui"
+      },
+      "commands": {
+        "cwd": "codecaine/core/observatory",
+        "typecheck": "bun run typecheck"
+      },
+      "tests": {
+        "safe": [],
+        "unsafe": [
+          {
+            "cmd": "bun test",
+            "reason": "launcher tests spawn child processes; registry.test.ts reads the real ./registry.json and sibling kernel.json files; nothing runs without bun install"
+          },
+          {
+            "cmd": "bun run dev / bun run api",
+            "reason": "the API auto-launches every registry project with autoLaunch:true (harnesses on 4820, 4840, 8788 ...) and probes them"
+          }
+        ]
+      },
+      "routes": [
+        {
+          "id": "project",
+          "path": "/",
+          "waitFor": "aside"
+        }
+      ],
+      "runProfile": {
+        "env": {
+          "NO_COLOR": "1",
+          "FRONTEND_PORT": "{port:ui}",
+          "API_TARGET": "http://127.0.0.1:{port:deadApi}"
+        },
+        "unsetEnv": [
+          "DOCS_SHARED_API_URL",
+          "DOCS_SHARED_API_TOKEN",
+          "DOCS_SHARED_PROJECT_ID",
+          "DOCS_STATIC",
+          "DOCS_API",
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN",
+          "OBSERVATORY_API_PORT",
+          "OBSERVATORY_REGISTRY_PATH",
+          "PORT"
+        ],
+        "tempHome": true,
+        "fixtures": [],
+        "flags": [
+          "--port",
+          "{port:ui}",
+          "--strictPort"
+        ],
+        "ports": {
+          "ui": 47180,
+          "deadApi": 47181
+        },
+        "proof": {
+          "status": "unproven",
+          "method": ""
+        }
+      },
+      "verify": {
+        "route": "project",
+        "probes": [
+          {
+            "selector": "div.research-style-shell",
+            "property": "background-color",
+            "token": "color.surface.page"
+          }
+        ],
+        "darkSwitch": {
+          "kind": "attribute",
+          "target": "html"
+        },
+        "sidebar": {
+          "toggle": ".ds-sidebar-toggle",
+          "storageKey": "observatory.sidebar"
+        }
+      },
+      "exceptions": [
+        {
+          "what": "blocked",
+          "reason": "uncommitted package.json, src/ui/{App.tsx,index.css,router.ts,pages/AgentPage.tsx}, untracked light-theme.css, readability/ and router.test.ts in the owner's tree"
+        },
+        {
+          "what": "planned profile",
+          "reason": "UI only with API_TARGET at a dead port (renders the chrome and 'Harness not running'); needs bun install and the .bun-links registrations recreated in the mirror first (STATE decision 4)"
+        },
+        {
+          "what": "theme rule light-dark",
+          "reason": "the chrome is forced dark today; the audit adds a light chrome (tokens 8.5h), and observatory is not on the owner's dark-first list"
+        }
+      ]
+    },
+    {
+      "id": "variator",
+      "name": "variator",
+      "wave": 1,
+      "kind": "app",
+      "repo": "codecaine/tools/variator",
+      "root": "codecaine/tools/variator",
+      "scan": {
+        "paths": [
+          "codecaine/tools/variator/src/web",
+          "codecaine/tools/variator/src/preview"
+        ],
+        "exclude": []
+      },
+      "stack": {
+        "summary": "React 19.3, Bun.build, plain CSS; bun; Tailwind 4.3 only compiles the preview renderers",
+        "tailwind": "none",
+        "packageManager": "bun"
+      },
+      "consume": {
+        "via": "relative-import",
+        "detail": "Point the relative @import in src/web/docs-light.css at the package (read by path, so it stays live), or add a workspaces entry or bun link; never a bun file: dependency."
+      },
+      "entryStylesheet": "codecaine/tools/variator/src/web/main.tsx",
+      "theme": {
+        "rule": "light-dark"
+      },
+      "literalFloor": 2,
+      "allowlist": "apps/allowlists/variator.json",
+      "shell": true,
+      "folderStandard": true,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": true
+        },
+        "3": {
+          "required": true
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": true
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": true
+        },
+        "structure": {
+          "required": true
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "snapshot": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "pixelDiff": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "tests": {
+          "required": true
+        }
+      },
+      "run": {
+        "mode": "none",
+        "reason": "blocked by uncommitted owner work; profile unproven",
+        "cwd": "codecaine/tools/variator",
+        "start": "bun src/server/index.ts",
+        "readyPattern": "Variator (http://127\\.0\\.0\\.1:\\d+)",
+        "serveRoot": "codecaine/tools/variator/src/web"
+      },
+      "commands": {
+        "cwd": "codecaine/tools/variator",
+        "typecheck": "bun run typecheck"
+      },
+      "tests": {
+        "safe": [
+          {
+            "cmd": "bun test src",
+            "cwd": "codecaine/tools/variator"
+          }
+        ],
+        "unsafe": [
+          {
+            "cmd": "bun run test:e2e",
+            "reason": "real LLM calls, launches Chromium and copies Core docs-system to tmp"
+          }
+        ]
+      },
+      "routes": [
+        {
+          "id": "capture",
+          "path": "/",
+          "waitFor": "section.capture.panel"
+        },
+        {
+          "id": "brief",
+          "path": "/",
+          "steps": [
+            {
+              "action": "click",
+              "target": "button[aria-label=\"Brief\"]"
+            }
+          ],
+          "waitFor": "main"
+        },
+        {
+          "id": "history",
+          "path": "/",
+          "steps": [
+            {
+              "action": "click",
+              "target": "button[aria-label=\"History\"]"
+            }
+          ],
+          "waitFor": "main"
+        }
+      ],
+      "runProfile": {
+        "env": {
+          "NO_COLOR": "1",
+          "PORT": "{port:ui}",
+          "VARIATOR_DATA_ROOT": "{tmp}/variator-data",
+          "VARIATOR_PI_AGENT_DIR": "{tmp}/pi-agent",
+          "VARIATOR_MODEL": "none"
+        },
+        "unsetEnv": [
+          "DOCS_SHARED_API_URL",
+          "DOCS_SHARED_API_TOKEN",
+          "DOCS_SHARED_PROJECT_ID",
+          "DOCS_STATIC",
+          "DOCS_API",
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN",
+          "VARIATOR_SOURCE_ROOT",
+          "CODECAINE_CORE_ROOT",
+          "E2E_ROOT"
+        ],
+        "tempHome": true,
+        "fixtures": [],
+        "flags": [],
+        "ports": {
+          "ui": 47190
+        },
+        "proof": {
+          "status": "unproven",
+          "method": ""
+        }
+      },
+      "verify": {
+        "route": "capture",
+        "probes": [
+          {
+            "selector": "body",
+            "property": "background-color",
+            "token": "color.surface.page"
+          },
+          {
+            "selector": ".capture.panel",
+            "property": "background-color",
+            "token": "color.surface.panel"
+          },
+          {
+            "selector": ".topbar",
+            "property": "border-bottom-color",
+            "token": "color.border.default"
+          }
+        ],
+        "darkSwitch": {
+          "kind": "attribute",
+          "target": "html"
+        },
+        "sidebar": {
+          "toggle": ".ds-sidebar-toggle",
+          "storageKey": "variator.sidebar"
+        }
+      },
+      "exceptions": [
+        {
+          "what": "blocked",
+          "reason": "uncommitted src/web/{docs-light.css,index.html,main.tsx,tuning.tsx} and src/preview/* in the owner's tree"
+        },
+        {
+          "what": "planned profile",
+          "reason": "VARIATOR_DATA_ROOT and VARIATOR_PI_AGENT_DIR in {tmp} (no credentials), so capture/Apply cannot call an LLM; routes never submit; needs bun install (postinstall symlinks Core packages) first. Apply writes into the docs-system source tree: never trigger it"
+        },
+        {
+          "what": "allowlist",
+          "reason": "the .brand wordmark in Space Grotesk and the color-picker fallback #808080 (color-control code kept per owner decision)"
+        },
+        {
+          "what": "theme rule light-dark",
+          "reason": "pinned light today; not on the owner's dark-first list, so it gains a dark theme with the tokens"
+        }
+      ]
+    },
+    {
+      "id": "slidev-template",
+      "name": "Slidev template",
+      "wave": 2,
+      "kind": "site",
+      "repo": "learning/lascari-ai-learning/presentations/SlidevTemplate",
+      "root": "learning/lascari-ai-learning/presentations/SlidevTemplate",
+      "scan": {
+        "paths": [
+          "learning/lascari-ai-learning/presentations/SlidevTemplate/styles",
+          "learning/lascari-ai-learning/presentations/SlidevTemplate/setup",
+          "learning/lascari-ai-learning/presentations/SlidevTemplate/components",
+          "learning/lascari-ai-learning/presentations/SlidevTemplate/slide-templates",
+          "learning/lascari-ai-learning/presentations/SlidevTemplate/index.md"
+        ],
+        "exclude": [],
+        "ext": "+md"
+      },
+      "stack": {
+        "summary": "Slidev 51, Vue 3.5, UnoCSS (Windi-compatible); npm (pnpm lock also present)",
+        "tailwind": "none",
+        "packageManager": "npm"
+      },
+      "consume": {
+        "via": "relative-import",
+        "detail": "A shared Slidev theme whose layout.css maps --background, --foreground and --primary to --ds-*, imported from styles/index.ts, plus an Uno preset; template and new decks only."
+      },
+      "entryStylesheet": "learning/lascari-ai-learning/presentations/SlidevTemplate/styles/index.ts",
+      "theme": {
+        "rule": "light-dark"
+      },
+      "literalFloor": 6,
+      "allowlist": "apps/allowlists/slidev-template.json",
+      "shell": false,
+      "folderStandard": false,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": false,
+          "reason": "slides: no app shell"
+        },
+        "3": {
+          "required": false,
+          "reason": "the audit sets shell and structure N/A for the template"
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": true
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": false,
+          "reason": "slides: no app shell"
+        },
+        "structure": {
+          "required": false,
+          "reason": "the audit sets structure N/A for the template"
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "snapshot": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "pixelDiff": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "tests": {
+          "required": false,
+          "reason": "the template has no tests"
+        }
+      },
+      "run": {
+        "mode": "none",
+        "reason": "blocked by uncommitted owner work; profile unproven",
+        "cwd": "learning/lascari-ai-learning/presentations/SlidevTemplate",
+        "start": "./node_modules/.bin/slidev ./index.md {flags}",
+        "readyPattern": "(http://localhost:\\d+/?)"
+      },
+      "commands": {
+        "cwd": "learning/lascari-ai-learning/presentations/SlidevTemplate",
+        "build": "npm run build"
+      },
+      "tests": {
+        "safe": [],
+        "unsafe": [
+          {
+            "cmd": "npm run dev",
+            "reason": "--open launches a browser; slides 1 and 15 load QR images from api.qrserver.com"
+          },
+          {
+            "cmd": "npm run export",
+            "reason": "needs playwright-chromium and writes PDFs"
+          }
+        ]
+      },
+      "routes": [
+        {
+          "id": "slide-1",
+          "path": "/1",
+          "waitFor": "#slide-content"
+        },
+        {
+          "id": "slide-2",
+          "path": "/2?clicks=3",
+          "waitFor": "#slide-content"
+        }
+      ],
+      "runProfile": {
+        "env": {
+          "NO_COLOR": "1"
+        },
+        "unsetEnv": [
+          "DOCS_SHARED_API_URL",
+          "DOCS_SHARED_API_TOKEN",
+          "DOCS_SHARED_PROJECT_ID",
+          "DOCS_STATIC",
+          "DOCS_API",
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN"
+        ],
+        "tempHome": true,
+        "fixtures": [],
+        "flags": [
+          "--port",
+          "{port:ui}"
+        ],
+        "ports": {
+          "ui": 47200
+        },
+        "proof": {
+          "status": "unproven",
+          "method": ""
+        }
+      },
+      "verify": {
+        "route": "slide-1",
+        "probes": [
+          {
+            "selector": "#slide-content",
+            "property": "background-color",
+            "token": "color.surface.page"
+          }
+        ],
+        "darkSwitch": {
+          "kind": "attribute",
+          "target": "html"
+        }
+      },
+      "exceptions": [
+        {
+          "what": "blocked",
+          "reason": "uncommitted components/MotionCanvas.vue and slide-templates/motion-canvas/description.md in the owner's tree (inside the scan paths)"
+        },
+        {
+          "what": "allowlist",
+          "reason": "Styrene (trial license) and Fira Code font faces, and the chart data colors in components/Chart.vue"
+        },
+        {
+          "what": "theme rule light-dark",
+          "reason": "light only today ('Scientific'); not on the owner's dark-first list. The 9 delivered decks are archival and out of scope"
+        },
+        {
+          "what": "planned profile",
+          "reason": "needs npm install; QR images come from api.qrserver.com (the guard blocks them; replace with local images or mask), and slidev has no strictPort"
+        }
+      ]
+    },
+    {
+      "id": "budget",
+      "name": "budget web",
+      "wave": 2,
+      "kind": "app",
+      "repo": "life/budget",
+      "root": "life/budget/apps/web",
+      "scan": {
+        "paths": [
+          "life/budget/apps/web/src"
+        ],
+        "exclude": [
+          "category-icons",
+          "payment-icons"
+        ]
+      },
+      "stack": {
+        "summary": "React 19.2, react-router 7, Vite 8.1; 31 plain CSS files; Tailwind 3.4 only for the embedded kernel view (#kernel-view, preflight off); ECharts; bun (stale package-lock.json)",
+        "tailwind": "v3",
+        "packageManager": "bun"
+      },
+      "consume": {
+        "via": "workspace",
+        "detail": "Add ../../design-system to the root workspaces in life/budget/package.json and depend on `workspace:*` from apps/web (a live symlink, the same wiring Core uses); @import in src/styles.css; the kernel view takes the v3 preset."
+      },
+      "entryStylesheet": "life/budget/apps/web/src/main.tsx",
+      "theme": {
+        "rule": "light-dark"
+      },
+      "literalFloor": 0,
+      "allowlist": null,
+      "shell": true,
+      "folderStandard": true,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": true
+        },
+        "3": {
+          "required": true
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": true
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": true
+        },
+        "structure": {
+          "required": true
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "snapshot": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "pixelDiff": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "tests": {
+          "required": true
+        }
+      },
+      "run": {
+        "mode": "none",
+        "reason": "blocked by uncommitted owner work; profile unproven",
+        "cwd": "life/budget/apps/web",
+        "start": "bun x vite {flags}",
+        "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
+      },
+      "commands": {
+        "cwd": "life/budget/apps/web",
+        "typecheck": "bun run typecheck"
+      },
+      "tests": {
+        "safe": [
+          {
+            "cmd": "bun test apps/web/tests",
+            "cwd": "life/budget"
+          }
+        ],
+        "unsafe": [
+          {
+            "cmd": "node scripts/dev.mjs / npm run dev:api",
+            "reason": "the API reads .env by walking up from cwd and calls Mercury and SimpleFIN with real bank credentials; never run it"
+          },
+          {
+            "cmd": "bun scripts/classification/report.ts",
+            "reason": "reads whichever real export it is given and writes tmp/ in the repo"
+          }
+        ]
+      },
+      "routes": [
+        {
+          "id": "overview",
+          "path": "/overview",
+          "waitFor": "aside.main-sidebar"
+        },
+        {
+          "id": "net-worth",
+          "path": "/net-worth",
+          "waitFor": "aside.main-sidebar"
+        },
+        {
+          "id": "spending",
+          "path": "/spending",
+          "waitFor": "aside.main-sidebar"
+        },
+        {
+          "id": "accounts",
+          "path": "/accounts",
+          "waitFor": "aside.main-sidebar"
+        },
+        {
+          "id": "review",
+          "path": "/review",
+          "waitFor": "aside.main-sidebar"
+        }
+      ],
+      "runProfile": {
+        "env": {
+          "NO_COLOR": "1"
+        },
+        "unsetEnv": [
+          "DOCS_SHARED_API_URL",
+          "DOCS_SHARED_API_TOKEN",
+          "DOCS_SHARED_PROJECT_ID",
+          "DOCS_STATIC",
+          "DOCS_API",
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN",
+          "MERCURY_PERSONAL_API_TOKEN",
+          "MERCURY_BUSINESS_API_TOKEN",
+          "MERCURY_AUTH_MODE",
+          "SIMPLEFIN_ACCESS_URL",
+          "SIMPLEFIN_LOOKBACK_DAYS",
+          "CORS_ORIGIN",
+          "PORT"
+        ],
+        "tempHome": true,
+        "fixtures": [],
+        "flags": [
+          "--host",
+          "127.0.0.1",
+          "--port",
+          "{port:ui}",
+          "--strictPort"
+        ],
+        "ports": {
+          "ui": 47210,
+          "deadApi": 47211
+        },
+        "proof": {
+          "status": "unproven",
+          "method": ""
+        }
+      },
+      "verify": {
+        "route": "overview",
+        "probes": [
+          {
+            "selector": "html",
+            "property": "background-color",
+            "token": "color.surface.page"
+          },
+          {
+            "selector": "aside.main-sidebar",
+            "property": "background-color",
+            "token": "color.surface.sidebar"
+          },
+          {
+            "selector": "aside.main-sidebar",
+            "property": "border-right-color",
+            "token": "color.border.default"
+          }
+        ],
+        "darkSwitch": {
+          "kind": "attribute",
+          "target": "html"
+        },
+        "sidebar": {
+          "toggle": ".ds-sidebar-toggle",
+          "storageKey": "budget.sidebar"
+        }
+      },
+      "exceptions": [
+        {
+          "what": "blocked",
+          "reason": "83 uncommitted or untracked files in apps/web/src and staged submodules in the owner's tree (audit: commit first); the mirror holds 44 of the audit's 146 files"
+        },
+        {
+          "what": "planned profile needs a fixture API",
+          "reason": "the web app reads one endpoint (/api/snapshot); the real API calls banks with real credentials, and real account data is hard-coded in manual-accounts.ts and closed-accounts.ts. Profile: Vite with /api pointed at a fixture server returning a synthetic household; never the real API"
+        },
+        {
+          "what": "no allowlist",
+          "reason": "the ECharts palettes (WorthSankey.tsx, FlowChart.tsx) move to the data-viz tokens that prerequisite 6 adds for budget, and the category colors (shared/budget-types.ts) to the categorical hue tokens; nothing stays literal"
+        },
+        {
+          "what": "theme rule light-dark",
+          "reason": "light only today; the audit adds dark mode (6.5h QA)"
+        }
+      ]
+    },
+    {
+      "id": "pen-plotter",
+      "name": "pen-plotter desktop",
+      "wave": 2,
+      "kind": "app",
+      "repo": "apps/pen-plotter",
+      "root": "apps/pen-plotter/apps/desktop",
+      "scan": {
+        "paths": [
+          "apps/pen-plotter/apps/desktop/src/renderer"
+        ],
+        "exclude": []
+      },
+      "stack": {
+        "summary": "Electron 44.5, electron-vite 5, Vite 7.3, React 19.3; one plain CSS file and canvas 2D; bun workspace",
+        "tailwind": "none",
+        "packageManager": "bun"
+      },
+      "consume": {
+        "via": "workspace",
+        "detail": "Add ../../design-system to the root workspaces in apps/pen-plotter/package.json and depend on `workspace:*` from apps/desktop, then @import; the CSP (default-src 'self') needs the package's local fonts."
+      },
+      "entryStylesheet": "apps/pen-plotter/apps/desktop/src/renderer/src/main.tsx",
+      "theme": {
+        "rule": "light-dark"
+      },
+      "literalFloor": 8,
+      "allowlist": "apps/allowlists/pen-plotter.json",
+      "shell": true,
+      "folderStandard": true,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": true
+        },
+        "3": {
+          "required": true
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": true
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": true
+        },
+        "structure": {
+          "required": true
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "snapshot": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "pixelDiff": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "tests": {
+          "required": true
+        }
+      },
+      "run": {
+        "mode": "none",
+        "reason": "blocked by uncommitted owner work; profile unproven",
+        "cwd": "apps/pen-plotter/apps/desktop",
+        "electron": {
+          "build": "bun run build",
+          "main": "apps/pen-plotter/apps/desktop/out/main/index.js"
+        }
+      },
+      "commands": {
+        "cwd": "apps/pen-plotter/apps/desktop",
+        "typecheck": "bun run typecheck",
+        "build": "bun run build"
+      },
+      "tests": {
+        "safe": [
+          {
+            "cmd": "bun test packages apps/desktop/tests",
+            "cwd": "apps/pen-plotter"
+          }
+        ],
+        "unsafe": [
+          {
+            "cmd": "make plot / make probe",
+            "reason": "talk to the real plotter board"
+          },
+          {
+            "cmd": "make test-page",
+            "reason": "reads the app's real saved settings and writes out/"
+          },
+          {
+            "cmd": "bun run dev without PEN_PLOTTER_NO_HARDWARE=1",
+            "reason": "may open a serial connection to a real board; never QA during a live plot"
+          }
+        ]
+      },
+      "routes": [
+        {
+          "id": "main",
+          "path": "main",
+          "waitFor": "aside.sidebar.left"
+        }
+      ],
+      "runProfile": {
+        "env": {
+          "PEN_PLOTTER_NO_HARDWARE": "1",
+          "PEN_PLOTTER_USER_DATA": "{tmp}/pen-plotter-user-data",
+          "PEN_PLOTTER_CONTROL_PORT": "{port:control}"
+        },
+        "unsetEnv": [
+          "DOCS_SHARED_API_URL",
+          "DOCS_SHARED_API_TOKEN",
+          "DOCS_SHARED_PROJECT_ID",
+          "DOCS_STATIC",
+          "DOCS_API",
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN",
+          "PEN_PLOTTER_CAPTURE",
+          "ELECTRON_RUN_AS_NODE"
+        ],
+        "tempHome": true,
+        "fixtures": [],
+        "flags": [],
+        "ports": {
+          "control": 47220
+        },
+        "proof": {
+          "status": "unproven",
+          "method": ""
+        }
+      },
+      "verify": {
+        "route": "main",
+        "probes": [
+          {
+            "selector": "aside.sidebar.left",
+            "property": "border-right-color",
+            "token": "color.border.default"
+          },
+          {
+            "selector": "section.panel:first-of-type",
+            "property": "background-color",
+            "token": "color.surface.panel"
+          }
+        ],
+        "darkSwitch": {
+          "kind": "attribute",
+          "target": "html"
+        },
+        "sidebar": {
+          "toggle": ".ds-sidebar-toggle",
+          "storageKey": "pen-plotter.sidebar"
+        }
+      },
+      "exceptions": [
+        {
+          "what": "blocked",
+          "reason": "uncommitted SetupPanel.tsx and plotter-service.ts in the owner's tree; audit: wait until the open worktrees merge (12 besides main)"
+        },
+        {
+          "what": "planned profile",
+          "reason": "PEN_PLOTTER_NO_HARDWARE=1 refuses every serial connection (Simulator only), userData and the control API port in {tmp}/its own block; startup still enumerates serial ports read-only. Needs bun install and Electron first"
+        },
+        {
+          "what": "allowlist",
+          "reason": "the PensPanel ink PALETTE (ink data) and the machine-state canvas colors in Preview.tsx (they encode machine state)"
+        },
+        {
+          "what": "theme rule light-dark",
+          "reason": "light only today; not on the owner's dark-first list"
+        }
+      ]
+    },
+    {
+      "id": "mainmenu",
+      "name": "MainMenu authoring app",
+      "wave": 3,
+      "kind": "app",
+      "repo": "apps/MainMenu",
+      "root": "apps/MainMenu/apps/scene-engine",
+      "scan": {
+        "paths": [
+          "apps/MainMenu/apps/scene-engine/app/_components",
+          "apps/MainMenu/apps/scene-engine/app/editor",
+          "apps/MainMenu/apps/scene-engine/app/projects",
+          "apps/MainMenu/apps/scene-engine/app/asset-library",
+          "apps/MainMenu/apps/scene-engine/app/upload",
+          "apps/MainMenu/apps/scene-engine/app/scenes",
+          "apps/MainMenu/apps/scene-engine/app/page.tsx",
+          "apps/MainMenu/apps/scene-engine/app/layout.tsx",
+          "apps/MainMenu/apps/scene-engine/app/globals.css",
+          "apps/MainMenu/apps/scene-engine/app/extraction-helper.css"
+        ],
+        "exclude": []
+      },
+      "stack": {
+        "summary": "Next 15.5 (App Router, standalone), React 19.2, Zustand, Tailwind 4.2 (no @theme); npm; browser and Electron 30.5",
+        "tailwind": "v4",
+        "packageManager": "npm"
+      },
+      "consume": {
+        "via": "npm-file",
+        "detail": "npm file:../../../../design-system (npm links a directory, so it stays live) plus @import in app/globals.css; the package CSS and fonts must survive prepare-next-runtime.mjs for Electron."
+      },
+      "entryStylesheet": "apps/MainMenu/apps/scene-engine/app/layout.tsx",
+      "theme": {
+        "rule": "dark-first"
+      },
+      "literalFloor": 0,
+      "allowlist": null,
+      "shell": true,
+      "folderStandard": true,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": true
+        },
+        "3": {
+          "required": true
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": true
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": true
+        },
+        "structure": {
+          "required": true
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "snapshot": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "pixelDiff": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "tests": {
+          "required": true
+        }
+      },
+      "run": {
+        "mode": "none",
+        "reason": "blocked by uncommitted owner work; profile unproven",
+        "cwd": "apps/MainMenu/apps/scene-engine",
+        "start": "./node_modules/.bin/next dev {flags}",
+        "readyPattern": "Local:\\s+(http://\\S+)"
+      },
+      "commands": {
+        "cwd": "apps/MainMenu/apps/scene-engine",
+        "typecheck": "./node_modules/.bin/tsc --noEmit"
+      },
+      "tests": {
+        "safe": [
+          {
+            "cmd": "uv run pytest tools/asset-extraction-pipeline/tests/test_extraction.py",
+            "cwd": "apps/MainMenu/apps/scene-engine"
+          }
+        ],
+        "unsafe": [
+          {
+            "cmd": "npm run desktop:dev / desktop:pack:mac",
+            "reason": "compile into desktop/dist, start Electron with the owner's userData and agent sessions"
+          },
+          {
+            "cmd": "asset extraction without ASSET_PIPELINE_IMAGE_MODE=placeholder",
+            "reason": "calls OpenAI image edits and Anthropic messages"
+          }
+        ]
+      },
+      "routes": [
+        {
+          "id": "home",
+          "path": "/",
+          "waitFor": "aside.unity-sidebar"
+        },
+        {
+          "id": "asset-library",
+          "path": "/asset-library",
+          "waitFor": "aside.unity-sidebar"
+        },
+        {
+          "id": "upload",
+          "path": "/upload",
+          "waitFor": "aside.unity-sidebar"
+        }
+      ],
+      "runProfile": {
+        "env": {
+          "NEXT_TELEMETRY_DISABLED": "1",
+          "SCENE_ENGINE_WORKSPACE_CATALOG": "{tmp}/workspace.catalog.json",
+          "ASSET_PIPELINE_IMAGE_MODE": "placeholder"
+        },
+        "unsetEnv": [
+          "DOCS_SHARED_API_URL",
+          "DOCS_SHARED_API_TOKEN",
+          "DOCS_SHARED_PROJECT_ID",
+          "DOCS_STATIC",
+          "DOCS_API",
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN",
+          "SCENE_ENGINE_ALLOW_REMOTE_DEPLOY",
+          "MAIN_MENU_DEV_SERVER_URL"
+        ],
+        "tempHome": true,
+        "fixtures": [],
+        "flags": [
+          "-H",
+          "127.0.0.1",
+          "-p",
+          "{port:ui}"
+        ],
+        "ports": {
+          "ui": 47230
+        },
+        "proof": {
+          "status": "unproven",
+          "method": ""
+        }
+      },
+      "verify": {
+        "route": "home",
+        "probes": [
+          {
+            "selector": ".unity-app-main",
+            "property": "background-color",
+            "token": "color.surface.page"
+          },
+          {
+            "selector": "aside.unity-sidebar",
+            "property": "background-color",
+            "token": "color.surface.sidebar"
+          },
+          {
+            "selector": "aside.unity-sidebar",
+            "property": "border-right-color",
+            "token": "color.border.default"
+          }
+        ],
+        "darkSwitch": {
+          "kind": "attribute",
+          "target": "html"
+        },
+        "sidebar": {
+          "toggle": ".ds-sidebar-toggle",
+          "storageKey": "mainmenu.sidebar"
+        }
+      },
+      "exceptions": [
+        {
+          "what": "blocked",
+          "reason": "uncommitted editor work in app/editor/_components/* and app/_engine (glyph bake) in the owner's tree"
+        },
+        {
+          "what": "scan excludes the product runtime",
+          "reason": "owner decision: MainMenu rendered scenes and exports stay; the scan covers the authoring chrome only (_engine/renderer, _engine/export and api are not scanned)"
+        },
+        {
+          "what": "planned profile",
+          "reason": "a temp workspace catalog with a synthetic project (the real catalog is not read); placeholder image mode so asset extraction never calls OpenAI; needs npm install"
+        }
+      ]
+    },
+    {
+      "id": "gamecube",
+      "name": "gamecube-decomp-harness frontend",
+      "wave": 3,
+      "kind": "app",
+      "repo": "harnesses/gamecube-decomp-harness",
+      "root": "harnesses/gamecube-decomp-harness/apps/frontend",
+      "scan": {
+        "paths": [
+          "harnesses/gamecube-decomp-harness/apps/frontend/src"
+        ],
+        "exclude": [
+          "assets"
+        ]
+      },
+      "stack": {
+        "summary": "React 19.2, Vite 8, Tailwind 4.3 (@tailwindcss/vite); bun workspaces; links Core agent-kernel and prompt-kit through link:",
+        "tailwind": "v4",
+        "packageManager": "bun"
+      },
+      "consume": {
+        "via": "link",
+        "detail": "Add ../../design-system to the root workspaces and depend on `workspace:*`, or link:@codecaine-ai/design-system the way it takes prompt-kit; then @import and @source. Never a bun file: dependency."
+      },
+      "entryStylesheet": "harnesses/gamecube-decomp-harness/apps/frontend/src/main.tsx",
+      "theme": {
+        "rule": "dark-first",
+        "storageKey": "styleSettings.v1"
+      },
+      "literalFloor": 0,
+      "allowlist": "apps/allowlists/gamecube.json",
+      "shell": true,
+      "folderStandard": true,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": true
+        },
+        "3": {
+          "required": true
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": true
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": true
+        },
+        "structure": {
+          "required": true
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "snapshot": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "pixelDiff": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "tests": {
+          "required": true
+        }
+      },
+      "run": {
+        "mode": "none",
+        "reason": "blocked by uncommitted owner work; profile unproven",
+        "cwd": "harnesses/gamecube-decomp-harness",
+        "start": "bun apps/server/src/server.ts",
+        "readyPattern": "listening on (http://localhost:\\d+)"
+      },
+      "commands": {
+        "cwd": "harnesses/gamecube-decomp-harness",
+        "typecheck": "bun run ui:check",
+        "build": "bun run ui:build"
+      },
+      "tests": {
+        "safe": [
+          {
+            "cmd": "bun test ./apps/frontend/src",
+            "cwd": "harnesses/gamecube-decomp-harness"
+          }
+        ],
+        "unsafe": [
+          {
+            "cmd": "bun test ./apps ./toolpacks",
+            "reason": "223 server and toolpack suites include git, process-control, sandbox and Daytona tests; review per file before running"
+          },
+          {
+            "cmd": "bun run ui / ui:dev",
+            "reason": "the server opens SQLite state under runtime/state, reconciles harnesses every 2.5 s and can auto-start a harness run (agents call LLMs); it binds all interfaces on :8787"
+          }
+        ]
+      },
+      "routes": [
+        {
+          "id": "dashboard",
+          "path": "/?gameId=melee",
+          "waitFor": "main.app-shell"
+        },
+        {
+          "id": "standards",
+          "path": "/standards?gameId=melee",
+          "waitFor": "main.app-shell"
+        },
+        {
+          "id": "agents",
+          "path": "/agents?gameId=melee",
+          "waitFor": "main.app-shell"
+        }
+      ],
+      "runProfile": {
+        "env": {
+          "NO_COLOR": "1",
+          "ORCH_UI_PORT": "{port:ui}",
+          "ORCH_AGENT_KERNEL_DB_PATH": "{tmp}/agent-kernel.sqlite",
+          "ORCH_UI_TX02_FONT_DIR": "{tmp}/no-fonts"
+        },
+        "unsetEnv": [
+          "DOCS_SHARED_API_URL",
+          "DOCS_SHARED_API_TOKEN",
+          "DOCS_SHARED_PROJECT_ID",
+          "DOCS_STATIC",
+          "DOCS_API",
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN",
+          "DAYTONA_API_KEY",
+          "PROVIDER",
+          "MODEL",
+          "ORCH_UI_HOT_RELOAD"
+        ],
+        "tempHome": true,
+        "fixtures": [],
+        "flags": [],
+        "ports": {
+          "ui": 47240
+        },
+        "proof": {
+          "status": "unproven",
+          "method": ""
+        }
+      },
+      "verify": {
+        "route": "dashboard",
+        "probes": [
+          {
+            "selector": "main.app-shell",
+            "property": "background-color",
+            "token": "color.surface.page"
+          }
+        ],
+        "darkSwitch": {
+          "kind": "attribute",
+          "target": "html"
+        },
+        "sidebar": {
+          "toggle": ".ds-sidebar-toggle",
+          "storageKey": "gamecube.sidebar"
+        }
+      },
+      "exceptions": [
+        {
+          "what": "blocked",
+          "reason": "uncommitted apps/frontend/src/styles.css, apps/frontend/vite.config.ts and root package.json in the owner's tree"
+        },
+        {
+          "what": "planned profile needs server isolation",
+          "reason": "the UI is served by the orchestrator server, which writes runtime/state SQLite in the repo and reconciles harnesses; a profile needs its state root in {tmp} and harness auto-start off, plus the link: registrations recreated (STATE decision 4)"
+        },
+        {
+          "what": "allowlist",
+          "reason": "TX-02 is licensed and part of the app's identity (@font-face blocks and --font-mono in styles.css); the kb-lab palette in knowledge/browser.css is a separate product surface"
+        },
+        {
+          "what": "style engine",
+          "reason": "owner decision: keep its effect knobs, hide color controls, bump styleSettings.v1"
+        }
+      ]
+    },
+    {
+      "id": "circlesnakes-panels",
+      "name": "CircleSnakesWeb playground panels",
+      "wave": 3,
+      "kind": "app",
+      "repo": "apps/circle-snakes/CircleSnakesWeb",
+      "root": "apps/circle-snakes/CircleSnakesWeb",
+      "scan": {
+        "paths": [
+          "apps/circle-snakes/CircleSnakesWeb/src/ui",
+          "apps/circle-snakes/CircleSnakesWeb/src/app"
+        ],
+        "exclude": [
+          "landing",
+          "logo-lab",
+          "loading.css",
+          "loading-screen.ts"
+        ]
+      },
+      "stack": {
+        "summary": "TS 6, Three.js 0.184, Vite 7.3, Tailwind 4.3 (class strings in src/ui/shared/styles.ts); npm; Railway",
+        "tailwind": "v4",
+        "packageManager": "npm"
+      },
+      "consume": {
+        "via": "vendor-tgz",
+        "detail": "Owner decision: a packed copy through file:vendor/<name>.tgz that carries its fonts; Railway builds only this repo."
+      },
+      "entryStylesheet": "apps/circle-snakes/CircleSnakesWeb/src/app/main.ts",
+      "theme": {
+        "rule": "dark-first"
+      },
+      "literalFloor": 0,
+      "allowlist": null,
+      "shell": false,
+      "folderStandard": true,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": false,
+          "reason": "full-bleed WebGL scene: layout.md exempts it from the app shell"
+        },
+        "3": {
+          "required": true
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": true
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": false,
+          "reason": "full-bleed WebGL scene: layout.md exempts it"
+        },
+        "structure": {
+          "required": true
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "snapshot": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "pixelDiff": {
+          "required": false,
+          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+        },
+        "tests": {
+          "required": true
+        }
+      },
+      "run": {
+        "mode": "none",
+        "reason": "blocked by uncommitted owner work; profile unproven",
+        "cwd": "apps/circle-snakes/CircleSnakesWeb",
+        "start": "./node_modules/.bin/vite {flags}",
+        "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
+      },
+      "commands": {
+        "cwd": "apps/circle-snakes/CircleSnakesWeb",
+        "typecheck": "./node_modules/.bin/tsc -b"
+      },
+      "tests": {
+        "safe": [
+          {
+            "cmd": "./node_modules/.bin/vitest run",
+            "cwd": "apps/circle-snakes/CircleSnakesWeb"
+          }
+        ],
+        "unsafe": [
+          {
+            "cmd": "npm run verify:render",
+            "reason": "Playwright against the owner's :5173; writes test-results/"
+          },
+          {
+            "cmd": "npm run textures:previews",
+            "reason": "writes PNGs into the repo"
+          }
+        ]
+      },
+      "routes": [
+        {
+          "id": "playground",
+          "path": "/",
+          "waitFor": "#control-panel"
+        }
+      ],
+      "runProfile": {
+        "env": {
+          "NO_COLOR": "1"
+        },
+        "unsetEnv": [
+          "DOCS_SHARED_API_URL",
+          "DOCS_SHARED_API_TOKEN",
+          "DOCS_SHARED_PROJECT_ID",
+          "DOCS_STATIC",
+          "DOCS_API",
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN",
+          "PORT",
+          "HOST"
+        ],
+        "tempHome": true,
+        "fixtures": [],
+        "flags": [
+          "--host",
+          "127.0.0.1",
+          "--port",
+          "{port:ui}",
+          "--strictPort"
+        ],
+        "ports": {
+          "ui": 47250
+        },
+        "proof": {
+          "status": "unproven",
+          "method": ""
+        }
+      },
+      "verify": {
+        "route": "playground",
+        "probes": [
+          {
+            "selector": "#control-panel",
+            "property": "background-color",
+            "token": "color.surface.panel"
+          },
+          {
+            "selector": "#control-panel h1",
+            "property": "color",
+            "token": "color.text.body"
+          }
+        ],
+        "darkSwitch": {
+          "kind": "attribute",
+          "target": "html"
+        }
+      },
+      "exceptions": [
+        {
+          "what": "blocked",
+          "reason": "42 uncommitted entries in src/ui/*, src/app/* and vite.config.ts in the owner's tree; the mirror's panels are the older light ones and landing/, logo-lab/ and loading* are absent"
+        },
+        {
+          "what": "scan excludes the landing",
+          "reason": "owner decision: the CircleSnakes landing (also personal-site's landing) is product art"
+        },
+        {
+          "what": "planned profile",
+          "reason": "vite dev on its own port with a WebGL scene; mask the canvas in diffs (the scene animates); needs npm install"
         }
       ]
     }

@@ -1,0 +1,17 @@
+{
+  "literals": [
+    {
+      "file": "codecaine/tools/variator/src/web/style.css",
+      "match": "^space grotesk$",
+      "category": "fontFamily",
+      "reason": "the .brand wordmark in Space Grotesk is the tool's brand mark"
+    },
+    {
+      "file": "codecaine/tools/variator/src/web/tuning.tsx",
+      "match": "^#808080$",
+      "category": "hex",
+      "reason": "color-picker fallback in the tuning controls; owner decision keeps color-control code, and <input type=color> needs a hex value"
+    }
+  ],
+  "twClasses": []
+}

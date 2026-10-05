@@ -1,0 +1,15 @@
+{
+  "literals": [
+    {
+      "file": "apps/skitzo/apps/frontend/src/app/(guest)/page.tsx",
+      "reason": "owner decision and audit wave 3: skitzo migrates its app screens only; the landing (hero, serif display, brass accent) is brand and stays (129 hits)"
+    }
+  ],
+  "twClasses": [
+    {
+      "file": "apps/skitzo/apps/frontend/src/app/(guest)/page.tsx",
+      "className": ".*",
+      "reason": "the brand landing keeps its classes (owner decision: landing heroes stay)"
+    }
+  ]
+}

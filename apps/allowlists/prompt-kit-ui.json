@@ -1,0 +1,10 @@
+{
+  "literals": [
+    {
+      "file": "codecaine/core/prompt-kit/packages/prompt-kit/src/ui/**",
+      "kind": "fallback",
+      "reason": "audit consume rule: var(--ds-*) with fallbacks, so hosts that do not load tokens.css still render (56 hits)"
+    }
+  ],
+  "twClasses": []
+}

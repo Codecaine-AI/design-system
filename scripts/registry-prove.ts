@@ -66,15 +66,16 @@ export function parseLsof(output: string): Connection[] {
 }
 
 /**
- * Connections that leave the run: a non-loopback remote, or a loopback remote on a port the run
- * did not start. Inbound connections to a started port and the run's own listeners pass.
+ * Connections that leave the run: a non-loopback remote, or a loopback remote on a port outside
+ * `ownPorts` (the ports the run started plus the app's named profile ports, which sit in its own
+ * block, so a dead-port target such as deadApi reaches nobody). Inbound connections and listeners pass.
  */
-export function foreignConnections(conns: Connection[], startedPorts: ReadonlySet<number>): Connection[] {
+export function foreignConnections(conns: Connection[], ownPorts: ReadonlySet<number>): Connection[] {
   return conns.filter((c) => {
     if (!c.remote) return false; // a listener or an unconnected socket
     if (!LOOPBACK.has(c.remote.host)) return true;
-    if (startedPorts.has(c.local.port)) return false; // inbound to one of the run's ports
-    return !startedPorts.has(c.remote.port);
+    if (ownPorts.has(c.local.port)) return false; // inbound to one of the run's ports
+    return !ownPorts.has(c.remote.port);
   });
 }
 
@@ -208,7 +209,8 @@ async function prove(app: AppEntry, opts: { root: string; outDir: string }): Pro
     }
   }
   result.connectionsSeen = seen.size;
-  result.foreign = foreignConnections([...seen.values()], new Set(result.startedPorts)).map((c) => c.raw);
+  const ownPorts = new Set([...result.startedPorts, ...Object.values(app.runProfile.ports ?? {})]);
+  result.foreign = foreignConnections([...seen.values()], ownPorts).map((c) => c.raw);
   // Blocked requests are recorded, not fatal: every route still rendered, so rendering needed none of them.
   result.proven = result.routes.length > 0 && result.routes.every((r) => r.ok) && result.foreign.length === 0 && result.stoppedClean;
   result.blockedTargets = summarizeBlocked(result.blockedRequests);

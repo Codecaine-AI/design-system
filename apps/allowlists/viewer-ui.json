@@ -1,0 +1,10 @@
+{
+  "literals": [
+    {
+      "file": "codecaine/core/agent-kernel/packages/viewer-ui/src/**",
+      "kind": "fallback",
+      "reason": "var() fallbacks behind the host contract (trace-viewer.css prompt-editor surface, DocFigure): hosts without the contract still render (5 hits)"
+    }
+  ],
+  "twClasses": []
+}

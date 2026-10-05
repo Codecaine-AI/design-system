@@ -1,0 +1,15 @@
+{
+  "literals": [
+    {
+      "file": "codecaine/core/annotations/src/react/targeting/useTargeting.tsx",
+      "kind": "definition",
+      "reason": "the TARGETING_CSS --_annotation-* layer (useTargeting.tsx 148-164) is var(--annotation-*, <literal>): the injected CSS must render in hosts without tokens.css; it gains --ds-* names in the chain (11 hits)"
+    },
+    {
+      "file": "codecaine/core/annotations/src/react/**",
+      "kind": "fallback",
+      "reason": "var() fallbacks of the injected CSS, for hosts without tokens.css"
+    }
+  ],
+  "twClasses": []
+}
