@@ -4,9 +4,9 @@
  * check the bound URL, the served files and the blocked requests, and stop only what this run started.
  */
 import { fileURLToPath } from "node:url";
-import { guardedContext, type RunningApp, servedFromRoot, splitBlocked, startApp } from "../app-runner";
+import { guardedContext, OWNER_PORTS, type RunningApp, servedFromRoot, splitBlocked, startApp } from "../app-runner";
 import type { AppEntry, RouteSpec } from "../registry";
-import { type Assertion, fail, pass, type ResponseLog, trackResponses } from "./assertions";
+import { type Assertion, fail, pass, type ResponseLog, trackResponses, warn } from "./assertions";
 import { runStep } from "./page-checks";
 
 export interface Session {
@@ -24,7 +24,7 @@ export interface RuntimeReport {
   blockedRequests: string[];
   /** Blocked requests to the profile's own named ports that the run did not bind: reported, not failures. */
   expectedBlocked: string[];
-  servedFiles?: { checked: number; ok: boolean; outside: string[] };
+  servedFiles?: { checked: number; ok: boolean; outside: string[]; unresolved: string[] };
   consoleErrors: string[];
 }
 
@@ -58,26 +58,56 @@ function boundUrlAssertion(running: RunningApp): Assertion {
     : fail("bound-url", `${running.baseUrl} is not on a port this run bound (${running.startedPorts.join(", ") || "none"})`, detail);
 }
 
-/** URLs and paths the app served: same-origin responses, file: URLs, and the runner's static server log. */
+/** Resource types that are files (modules, styles, fonts, images); page routes and API calls are not. */
+const FILE_TYPES = new Set(["script", "stylesheet", "font", "image", "media"]);
+
+/**
+ * Files the app served: successful same-origin script, stylesheet, font, image and media responses,
+ * file: URLs (Electron), and the runner's static-server log.
+ */
 async function servedEntries(page: any, responses: ResponseLog, running: RunningApp): Promise<string[]> {
-  const urls = new Set(responses.keys());
-  const extra: string[] = await page
-    .evaluate(() => [location.href, ...performance.getEntriesByType("resource").map((entry) => entry.name)])
-    .catch(() => []);
-  for (const url of extra) urls.add(url);
   const origin = running.baseUrl ? new URL(running.baseUrl).origin : null;
   const entries: string[] = [];
-  for (const raw of urls) {
-    let url: URL;
-    try {
-      url = new URL(raw);
-    } catch {
-      continue;
-    }
+  for (const [raw, { status, type }] of responses) {
+    if (!FILE_TYPES.has(type) || !((status >= 200 && status < 300) || status === 304)) continue;
+    const url = new URL(raw);
     if (url.protocol === "file:") entries.push(fileURLToPath(url));
     else if (origin && url.origin === origin) entries.push(`${url.origin}${url.pathname}`);
   }
+  // Electron may load file: resources without response events.
+  const fileUrls: string[] = await page
+    .evaluate(() => [location.href, ...performance.getEntriesByType("resource").map((entry) => entry.name)].filter((u) => u.startsWith("file:")))
+    .catch(() => []);
+  for (const url of fileUrls) entries.push(fileURLToPath(url));
   return [...new Set([...entries, ...(running.servedFiles?.() ?? [])])].sort();
+}
+
+/** The loopback port a guard entry ("GET http://...", "WS ws://...") targets, or null. */
+function loopbackPort(entry: string): number | null {
+  try {
+    const url = new URL(entry.slice(entry.indexOf(" ") + 1));
+    if (!["localhost", "[::1]", "0.0.0.0"].includes(url.hostname) && !/^127(\.\d{1,3}){3}$/.test(url.hostname)) return null;
+    return Number(url.port || (url.protocol === "https:" || url.protocol === "wss:" ? 443 : 80));
+  } catch {
+    return null;
+  }
+}
+
+/** served-from-root: outside files fail; unresolved ones fail, except a warning for a static fixture server that builds into {tmp}. */
+function servedAssertion(app: AppEntry, root: string, served: string[], result: { outside: string[]; unresolved: string[] }): Assertion[] {
+  const out: Assertion[] = [];
+  if (served.length === 0) return [fail("served-from-root", "no served file was recorded")];
+  out.push(
+    result.outside.length === 0
+      ? pass("served-from-root", `${served.length} served file(s), all inside ${root}`)
+      : fail("served-from-root", `${result.outside.length} served file(s) outside the root: ${result.outside.slice(0, 3).join(", ")}`, { outside: result.outside }),
+  );
+  if (result.unresolved.length) {
+    const message = `${result.unresolved.length} served URL(s) map to no file: ${result.unresolved.slice(0, 3).join(", ")}`;
+    const fixtureServer = app.run.mode === "static" && Boolean(app.run.start) && !app.run.staticDir;
+    out.push(fixtureServer ? warn("served-unresolved", `${message} (static fixture server without a staticDir)`, { unresolved: result.unresolved }) : fail("served-unresolved", message, { unresolved: result.unresolved }));
+  }
+  return out;
 }
 
 /**
@@ -137,19 +167,15 @@ export async function inRunningApp(
 
     const served = await servedEntries(page, responses, running);
     const fromRoot = servedFromRoot(running, served);
-    report.servedFiles = { checked: served.length, ok: fromRoot.ok, outside: fromRoot.outside };
-    report.assertions.push(
-      served.length === 0
-        ? fail("served-from-root", "no served file was recorded")
-        : fromRoot.ok
-          ? pass("served-from-root", `${served.length} served file(s), all inside ${session.root}`)
-          : fail("served-from-root", `${fromRoot.outside.length} served file(s) outside the root: ${fromRoot.outside.slice(0, 3).join(", ")}`, {
-              outside: fromRoot.outside,
-            }),
-    );
+    report.servedFiles = { checked: served.length, ok: fromRoot.ok, outside: fromRoot.outside, unresolved: fromRoot.unresolved };
+    report.assertions.push(...servedAssertion(app, session.root, served, fromRoot));
 
     // Expected: blocks to a named profile port the run never bound (a dead-service URL the profile sets on purpose).
-    const { unexpected, expected } = splitBlocked(running, blocked());
+    // An owner port is never expected, whatever the profile says.
+    const split = splitBlocked(running, blocked());
+    const owner = [...split.unexpected, ...split.expected].filter((entry) => OWNER_PORTS.includes(loopbackPort(entry) ?? -1));
+    const expected = split.expected.filter((entry) => !owner.includes(entry));
+    const unexpected = [...split.unexpected.filter((entry) => !owner.includes(entry)), ...owner];
     report.blockedRequests = unexpected;
     report.expectedBlocked = expected;
     const expectedNote = expected.length ? `; ${expected.length} expected-blocked to the profile's unbound named port(s): ${[...new Set(expected)].slice(0, 3).join(", ")}` : "";
@@ -161,11 +187,13 @@ export async function inRunningApp(
             expectedBlocked: expected,
           }),
     );
+    if (owner.length) report.assertions.push(fail("requests.owner-port", `the app tried to reach the owner's services: ${[...new Set(owner)].join(", ")}`));
   } catch (error) {
     report.assertions.push(fail("session", (error as Error).message.split("\n")[0]));
   } finally {
     await context?.close().catch(() => undefined);
     report.startedPorts = [...running.startedPorts];
+    for (const violation of running.violations ?? []) report.assertions.push(fail("owner-port-bound", violation));
     try {
       await running.stop();
     } catch (error) {

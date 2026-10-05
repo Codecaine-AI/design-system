@@ -73,7 +73,7 @@ export async function readFonts(page: any, families: readonly string[] = FONT_FA
 function fetched(url: string, responses: ResponseLog): boolean {
   if (url.startsWith("data:")) return true;
   if (url.startsWith("file:")) return existsSync(fileURLToPath(url));
-  const status = responses.get(url);
+  const status = responses.get(url)?.status;
   return status !== undefined && ((status >= 200 && status < 300) || status === 304);
 }
 
