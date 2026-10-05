@@ -1,0 +1,85 @@
+/**
+ * verify:apps page assertions, on static fixture pages in Chromium: a page wired to the tokens passes
+ * every check, an unconnected page fails each check for its own reason, dark-first surfaces are judged
+ * in dark without a switch, and a missing shell is n/a only at --pass 1.
+ */
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { CONTEXT_OPTIONS, LAUNCH_OPTIONS } from "../scripts/lib/capture.ts";
+import { loadPlaywright } from "../scripts/lib/playwright.ts";
+import { type AppEntry, DESIGN_SYSTEM_ROOT, type PassId } from "../scripts/lib/registry.ts";
+import { type Assertion, checkPage, trackResponses } from "../scripts/lib/verify/page-checks.ts";
+import { loadBuildValues } from "../scripts/lib/verify/tokens.ts";
+import { browserSkip, fixtureApp, fixtureResponse, MIRROR, PROBES } from "./verify-support.ts";
+
+const PORT = 46961;
+const values = loadBuildValues(DESIGN_SYSTEM_ROOT);
+
+describe.skipIf(Boolean(browserSkip))("checkPage", () => {
+  let server: ReturnType<typeof Bun.serve>;
+  let browser: any;
+
+  beforeAll(async () => {
+    server = Bun.serve({ hostname: "127.0.0.1", port: PORT, fetch: (request) => fixtureResponse(new URL(request.url).pathname) });
+    browser = await loadPlaywright(MIRROR).chromium.launch(LAUNCH_OPTIONS);
+  });
+  afterAll(async () => {
+    await browser?.close();
+    server?.stop(true);
+  });
+
+  async function check(page: string, app: AppEntry, pass?: PassId): Promise<Assertion[]> {
+    const context = await browser.newContext(CONTEXT_OPTIONS);
+    try {
+      const tab = await context.newPage();
+      const responses = trackResponses(tab);
+      await tab.goto(`http://127.0.0.1:${PORT}/${page}.html`);
+      return await checkPage(tab, { app, values, responses, pass });
+    } finally {
+      await context.close();
+    }
+  }
+
+  const byId = (assertions: Assertion[]) => Object.fromEntries(assertions.map((a) => [a.id, a]));
+
+  test("a page wired to tokens.css, web fonts and a persisted shell passes every assertion", async () => {
+    const assertions = await check("good", fixtureApp());
+    const probeIds = PROBES.flatMap((p) => ["light", "dark"].map((theme) => `token.${theme}: ${p.selector} ${p.property}`));
+    expect(Object.keys(byId(assertions)).sort()).toEqual(
+      [...probeIds, "font: Inter", "font: IBM Plex Mono", "theme.switch", "sidebar.stored", "sidebar.reload"].sort(),
+    );
+    expect(assertions.filter((a) => a.status !== "pass").map((a) => `${a.id}: ${a.message}`)).toEqual([]);
+  }, 30_000);
+
+  test("an unconnected page fails each check for its own reason", async () => {
+    const found = byId(await check("bad", fixtureApp()));
+    const expected: Array<[string, RegExp]> = [
+      // Right value, hard-coded: tokens.css is not loaded.
+      ["token.light: body background-color", /not defined there/],
+      ["token.light: .panel background-color", /computes to rgb\(255, 255, 255\); the build's color\.surface\.panel/],
+      // Right value, hard-coded, next to a stale copy of the token.
+      ["token.light: .panel border-top-color", /stale tokens\.css/],
+      ["token.light: body font-family", /the build's font\.family\.sans/],
+      ["font: Inter", /local\(\)|none loaded/],
+      ["font: IBM Plex Mono", /no @font-face/],
+      ["token.dark: body background-color", /the build's color\.surface\.page \(dark\)/],
+      ["theme.switch", /changed none/],
+      ["sidebar.stored", /fixture\.sidebar is null/],
+      ["sidebar.reload", /after a reload data-sidebar is expanded \(was collapsed\)/],
+    ];
+    for (const [id, message] of expected) {
+      expect([id, found[id]?.status, found[id]?.message]).toEqual([id, "fail", expect.stringMatching(message)]);
+    }
+  }, 30_000);
+
+  test("a dark-first surface is judged in dark without a switch; a missing shell is n/a only at --pass 1", async () => {
+    const app = fixtureApp({ theme: { rule: "dark-first" } });
+    const pass1 = byId(await check("dark-first", app, "1"));
+    const darkIds = PROBES.map((p) => `token.dark (default): ${p.selector} ${p.property}`);
+    for (const id of darkIds) expect([id, pass1[id]?.status]).toEqual([id, "pass"]);
+    expect(pass1["theme.switch"]).toBeUndefined();
+    expect(pass1.sidebar).toMatchObject({ status: "n/a", message: expect.stringMatching(/pass 1/) });
+
+    const final = byId(await check("dark-first", app));
+    expect(final.sidebar).toMatchObject({ status: "fail", message: expect.stringMatching(/no \.ds-shell/) });
+  }, 30_000);
+});

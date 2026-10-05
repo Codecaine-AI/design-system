@@ -1,0 +1,32 @@
+<!doctype html>
+<!-- verify:apps fixture: an app wired the design-system way (tokens.css, web fonts, the shell with a persisted sidebar). -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>good</title>
+    <link rel="stylesheet" href="/tokens.css" />
+    <style>
+      @font-face { font-family: "Inter"; font-weight: 400; src: url("/fonts/Inter-Regular.woff2") format("woff2"); }
+      @font-face { font-family: "IBM Plex Mono"; font-weight: 400; src: url("/fonts/IBMPlexMono-Regular.woff2") format("woff2"); }
+      body { margin: 0; background: var(--ds-color-surface-page); color: var(--ds-color-text-body); font-family: var(--ds-font-family-sans); }
+      .panel { background: var(--ds-color-surface-panel); border: 1px solid var(--ds-color-border-default); }
+      code { font-family: var(--ds-font-family-mono); }
+    </style>
+  </head>
+  <body>
+    <div class="ds-shell" data-sidebar="expanded">
+      <button class="ds-sidebar-toggle" type="button">Toggle sidebar</button>
+      <div class="panel">Panel <code>mono</code></div>
+    </div>
+    <script>
+      const shell = document.querySelector(".ds-shell");
+      shell.dataset.sidebar = localStorage.getItem("fixture.sidebar") ?? "expanded";
+      document.querySelector(".ds-sidebar-toggle").addEventListener("click", () => {
+        const next = shell.dataset.sidebar === "collapsed" ? "expanded" : "collapsed";
+        shell.dataset.sidebar = next;
+        localStorage.setItem("fixture.sidebar", next);
+      });
+      if (location.search.includes("stray")) fetch(`http://127.0.0.1:${new URLSearchParams(location.search).get("stray")}/`).catch(() => {});
+    </script>
+  </body>
+</html>
