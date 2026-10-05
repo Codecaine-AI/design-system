@@ -148,6 +148,7 @@ describe("guardVerdict", () => {
     ["the run's own port", "http://127.0.0.1:47010/src/main.tsx", "ok"],
     ["an owner port, even when allowed", "http://127.0.0.1:4820/api", "owner-port"],
     ["an owner port over websocket", "ws://localhost:4840/", "owner-port"],
+    ["a docs-system dev service canvas studio calls", "http://localhost:4803/api/docs", "owner-port"],
     ["a local port the run did not start", "http://127.0.0.1:47099/", "local-port"],
     ["a public host that starts with 127.", "http://127.0.0.1.nip.io:47010/", "external"],
     ["a public host", "https://fonts.googleapis.com/css", "external"],
