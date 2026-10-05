@@ -120,6 +120,17 @@ export type ThemeTokenPath =
   | "color.category.5.text"
   | "color.category.6.soft"
   | "color.category.6.text"
+  | "color.chart.diverging.midpoint"
+  | "color.chart.diverging.negative"
+  | "color.chart.diverging.positive"
+  | "color.chart.series.1"
+  | "color.chart.series.2"
+  | "color.chart.series.3"
+  | "color.chart.series.4"
+  | "color.chart.series.5"
+  | "color.chart.series.6"
+  | "color.chart.series.7"
+  | "color.chart.series.8"
   | "color.code.bg"
   | "color.code.border"
   | "color.code.chip.call"
@@ -470,6 +481,23 @@ export declare const tokens: {
           readonly "text": "#ad1a72";
         };
       };
+      readonly "chart": {
+        readonly "diverging": {
+          readonly "midpoint": "color-mix(in srgb, #9b9a97 45%, #f8f8f7)";
+          readonly "negative": "#d44e48";
+          readonly "positive": "#088bd9";
+        };
+        readonly "series": {
+          readonly "1": "#088bd9";
+          readonly "2": "#dd6d07";
+          readonly "3": "#c84e90";
+          readonly "4": "#b48509";
+          readonly "5": "#0d9c97";
+          readonly "6": "#d44e48";
+          readonly "7": "#976bde";
+          readonly "8": "#09a253";
+        };
+      };
       readonly "code": {
         readonly "bg": "color-mix(in srgb, #ebeced 30%, transparent)";
         readonly "border": "#e6e5e3";
@@ -742,6 +770,23 @@ export declare const tokens: {
         readonly "6": {
           readonly "soft": "color-mix(in srgb, #db61a2 13%, #151b23)";
           readonly "text": "#dd69a6";
+        };
+      };
+      readonly "chart": {
+        readonly "diverging": {
+          readonly "midpoint": "color-mix(in srgb, #656c76 50%, #151b23)";
+          readonly "negative": "#d44e48";
+          readonly "positive": "#0891e3";
+        };
+        readonly "series": {
+          readonly "1": "#0891e3";
+          readonly "2": "#dd6d07";
+          readonly "3": "#c84e90";
+          readonly "4": "#b48509";
+          readonly "5": "#0ea29d";
+          readonly "6": "#d44e48";
+          readonly "7": "#976bde";
+          readonly "8": "#09a655";
         };
       };
       readonly "code": {
@@ -1080,6 +1125,17 @@ export declare const flat: {
     readonly "color.category.5.text": "#6940a5";
     readonly "color.category.6.soft": "#f4dfeb";
     readonly "color.category.6.text": "#ad1a72";
+    readonly "color.chart.diverging.midpoint": "color-mix(in srgb, #9b9a97 45%, #f8f8f7)";
+    readonly "color.chart.diverging.negative": "#d44e48";
+    readonly "color.chart.diverging.positive": "#088bd9";
+    readonly "color.chart.series.1": "#088bd9";
+    readonly "color.chart.series.2": "#dd6d07";
+    readonly "color.chart.series.3": "#c84e90";
+    readonly "color.chart.series.4": "#b48509";
+    readonly "color.chart.series.5": "#0d9c97";
+    readonly "color.chart.series.6": "#d44e48";
+    readonly "color.chart.series.7": "#976bde";
+    readonly "color.chart.series.8": "#09a253";
     readonly "color.code.bg": "color-mix(in srgb, #ebeced 30%, transparent)";
     readonly "color.code.border": "#e6e5e3";
     readonly "color.code.chip.call": "#795e26";
@@ -1274,6 +1330,17 @@ export declare const flat: {
     readonly "color.category.5.text": "#ab7df8";
     readonly "color.category.6.soft": "color-mix(in srgb, #db61a2 13%, #151b23)";
     readonly "color.category.6.text": "#dd69a6";
+    readonly "color.chart.diverging.midpoint": "color-mix(in srgb, #656c76 50%, #151b23)";
+    readonly "color.chart.diverging.negative": "#d44e48";
+    readonly "color.chart.diverging.positive": "#0891e3";
+    readonly "color.chart.series.1": "#0891e3";
+    readonly "color.chart.series.2": "#dd6d07";
+    readonly "color.chart.series.3": "#c84e90";
+    readonly "color.chart.series.4": "#b48509";
+    readonly "color.chart.series.5": "#0ea29d";
+    readonly "color.chart.series.6": "#d44e48";
+    readonly "color.chart.series.7": "#976bde";
+    readonly "color.chart.series.8": "#09a655";
     readonly "color.code.bg": "#1e1e1e";
     readonly "color.code.border": "#3c3c3c";
     readonly "color.code.chip.call": "#dcdcaa";
