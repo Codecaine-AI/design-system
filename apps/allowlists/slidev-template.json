@@ -2,8 +2,8 @@
   "literals": [
     {
       "file": "learning/lascari-ai-learning/presentations/SlidevTemplate/components/Chart.vue",
-      "match": "^(#|rgb)",
-      "reason": "chart series colors (Chart.vue 36-41) are data colors; move them to the data-viz tokens once prerequisite 6 ships (6 hits)"
+      "match": "^(#3b82f6|#10b981|#8b5cf6|#9ca3af|rgba\\(128, 128, 128, 0\\.1\\))$",
+      "reason": "chart series colors (Chart.vue 36-41) are data colors; move them to the data-viz tokens once prerequisite 6 ships (6 hits; the tooltip background at :100 is chrome and migrates)"
     }
   ],
   "twClasses": []

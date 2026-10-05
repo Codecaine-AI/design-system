@@ -2,7 +2,7 @@
   "literals": [
     {
       "file": "codecaine/tools/variator/src/web/style.css",
-      "match": "space grotesk",
+      "match": "^space grotesk$",
       "category": "fontFamily",
       "reason": "the .brand wordmark in Space Grotesk is the tool's brand mark"
     },

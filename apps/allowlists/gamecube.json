@@ -2,7 +2,7 @@
   "literals": [
     {
       "file": "harnesses/gamecube-decomp-harness/apps/frontend/src/styles.css",
-      "match": "tx-02",
+      "match": "^.*tx-02.*$",
       "category": "fontFamily",
       "reason": "TX-02 is licensed and part of the app's identity (audit risk); its @font-face blocks and --font-mono stay. Re-measure when the app unblocks"
     }

@@ -214,7 +214,7 @@
         "via": "workspace",
         "detail": "Core workspace member: add `@codecaine-ai/design-system` as `workspace:*`, then @import fonts.css, tokens.css and layout.css in src/index.css; add the package dir to server.fs.allow in vite.config.ts."
       },
-      "entryStylesheet": "codecaine/core/sequence/packages/studio/src/index.css",
+      "entryStylesheet": "codecaine/core/sequence/packages/studio/src/main.tsx",
       "theme": {
         "rule": "light-dark"
       },
@@ -406,7 +406,7 @@
         "via": "workspace",
         "detail": "Already wired: `workspace:*` through Core; web/src/theme/tokens.css imports the package tokens.css. Add the package path to spaSourceRoots in src/spa.ts or `serve` keeps a stale build. A standalone docs-system install cannot resolve it (not in its workspaces)."
       },
-      "entryStylesheet": "codecaine/core/docs-system/packages/docs-workbench/web/src/index.css",
+      "entryStylesheet": "codecaine/core/docs-system/packages/docs-workbench/web/src/main.tsx",
       "theme": {
         "rule": "light-dark",
         "storageKey": "docs-viewer-theme"
@@ -681,6 +681,10 @@
           "reason": "the app takes dark from the server's global theme at boot, after load, so a data-theme attribute is overwritten; the click PUTs the global theme into {tmp}/docs-state only. If pass 1 hides the Colors pane (owner decision on color controls), keep Dark mode reachable and update these steps"
         },
         {
+          "what": "baseline test failures",
+          "reason": "at the mirror's owner HEAD the safe suite has 54 failing tests of 425 (workbench shell, useDocLabSession and others time out at about 1000 ms), and the same tests fail under the normal environment; the tests gate compares against this baseline"
+        },
+        {
           "what": "literal floor 14",
           "reason": "allowlisted: the PDF export stylesheet and page-number color (export output), the hidden color-control code in style-rail-panes.tsx, the grain mask gradient, and the legacy stock-metrics constant"
         }
@@ -709,7 +713,7 @@
         "via": "workspace",
         "detail": "Core workspace member (`workspace:*`). Replace the :root and @theme block in src/index.css with tailwind-strict.css + tailwind.css; add fs.allow, optimizeDeps and dedupe to vite.config.ts; the Electron build must bundle the package CSS and fonts."
       },
-      "entryStylesheet": "codecaine/core/canvas/packages/studio/src/index.css",
+      "entryStylesheet": "codecaine/core/canvas/packages/studio/src/main.tsx",
       "theme": {
         "rule": "light-dark"
       },
@@ -865,12 +869,12 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. All 6 routes rendered light and dark (12 captures); the guard blocked 4 optional requests to localhost:4803 (the linked docs-server lookup; rendering did not need them); 86 connections seen, all inbound to :47030; no connection to :4820 or any other port; the canvas repo stayed clean (CANVAS_DIR copy in {tmp}).",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. All 6 routes rendered light and dark (12 captures); the guard blocked 4 requests to localhost:4803 (the owner's docs-system dev API, asked for linked boards by the boards route only; rendering did not need them, and the verify route gallery makes none); 86 connections seen, all inbound to :47030; no connection to :4820 or any other port; the canvas repo stayed clean (CANVAS_DIR copy in {tmp}).",
           "date": "2026-10-05"
         }
       },
       "verify": {
-        "route": "boards",
+        "route": "gallery",
         "probes": [
           {
             "selector": "body",
@@ -903,12 +907,16 @@
           "reason": "CANVAS_DIR points the file API at {tmp}/canvases (copied at start), so the Style rail and any autosave write only the copy; the evals page reads packages/eval-suite/runs read-only"
         },
         {
-          "what": "the list page asks localhost:4803 for linked docs boards",
-          "reason": "an optional cross-origin docs-server lookup; the browser guard blocks it and the section stays quiet, so rendering does not need it"
+          "what": "the boards list page fetches http://localhost:4803/api/canvases",
+          "reason": "4803 is the owner's docs-system self-docs dev API (docs-system/Makefile:23-45: make dev, dev-web, docs). The origin is DEFAULT_PROJECT_SERVER_ORIGIN in packages/studio/src/project/docs-server.ts:18, read in ProjectBoardsSection.tsx:33; the only override is localStorage studio.project-server-origin (docs-server.ts:20), with no env var, flag or config. The guard blocks it (2 requests per capture of the boards route) and the linked-boards section stays quiet, so rendering does not need it; verify runs on the gallery route, which makes no such request. A dev-only override (or a route storage seed) would let the boards route point it at a dead port in this block"
         },
         {
           "what": "no route opens the AI panel",
           "reason": "the agent panel talks to /api/agent/*, which the dev server proxies to the owner's harness on :4820 (hard-coded in server/agent-proxy.ts); routes stay off it"
+        },
+        {
+          "what": "baseline test failures",
+          "reason": "at the mirror's owner HEAD `bun test packages/studio` has 2 failing tests (withRootPageFrame), the same under the profile env and the normal env; the tests gate compares against this baseline"
         },
         {
           "what": "allowlist",
@@ -1117,6 +1125,10 @@
       },
       "exceptions": [
         {
+          "what": "baseline test failures",
+          "reason": "at the mirror's owner HEAD `bun test packages/canvas/src` has 13 failing tests and 9 errors (import boundaries, outline-anchor baseline, AnchorDots cursor, connector color flyout ...), the same under the profile env and the normal env; the tests gate compares against this baseline"
+        },
+        {
           "what": "rendered through canvas studio's dev server",
           "reason": "a library: its gallery, editor and viewer render in the studio host, with boards from a temp copy of canvases/"
         },
@@ -1133,8 +1145,8 @@
           "reason": "CANVAS_DIR points the file API at {tmp}/canvases (copied at start), so the Style rail and any autosave write only the copy; the evals page reads packages/eval-suite/runs read-only"
         },
         {
-          "what": "the list page asks localhost:4803 for linked docs boards",
-          "reason": "an optional cross-origin docs-server lookup; the browser guard blocks it and the section stays quiet, so rendering does not need it"
+          "what": "the boards list page fetches http://localhost:4803/api/canvases",
+          "reason": "4803 is the owner's docs-system self-docs dev API (docs-system/Makefile:23-45: make dev, dev-web, docs). The origin is DEFAULT_PROJECT_SERVER_ORIGIN in packages/studio/src/project/docs-server.ts:18, read in ProjectBoardsSection.tsx:33; the only override is localStorage studio.project-server-origin (docs-server.ts:20), with no env var, flag or config. The guard blocks it (2 requests per capture of the boards route) and the linked-boards section stays quiet, so rendering does not need it; verify runs on the gallery route, which makes no such request. A dev-only override (or a route storage seed) would let the boards route point it at a dead port in this block"
         },
         {
           "what": "no route opens the AI panel",
@@ -1165,7 +1177,7 @@
         "via": "workspace",
         "detail": "Core workspace member (`workspace:*`) plus @source; the agent-viewer host contract comes from the package's host-contract.css."
       },
-      "entryStylesheet": "codecaine/core/canvas/packages/canvas-agent/src/viewer/index.css",
+      "entryStylesheet": "codecaine/core/canvas/packages/canvas-agent/src/viewer/main.tsx",
       "theme": {
         "rule": "light-dark",
         "storageKey": "canvasAgentViewerStyle.v1"
@@ -1638,8 +1650,14 @@
       "tests": {
         "safe": [
           {
-            "cmd": "bun test",
+            "cmd": "bun test src/components src/editor src/lab src/peek src/transitions",
             "cwd": "codecaine/core/docs-system/packages/docs-viewer"
+          }
+        ],
+        "unsafe": [
+          {
+            "cmd": "bun test (whole suite) / bun test src/__tests__",
+            "reason": "running src/__tests__ as a set opened TLS connections to 162.159.128.61:443 and 172.66.147.243:443 (Cloudflare) in two profile runs; no single file reproduces it alone, so the source is not yet pinned. The other 30 test files made no outside connection"
           }
         ]
       },
@@ -2254,7 +2272,7 @@
         "via": "workspace",
         "detail": "Core workspace member (`workspace:*`) plus the design-system Tailwind v3 preset in tailwind.config.cjs (decision 3); budget's kernel view spreads this config."
       },
-      "entryStylesheet": "codecaine/core/agent-kernel/examples/simple-research-kernel/src/styles.css",
+      "entryStylesheet": "codecaine/core/agent-kernel/examples/simple-research-kernel/src/main.tsx",
       "theme": {
         "rule": "light-dark",
         "storageKey": "simpleResearchStyleSettings.v1"
@@ -2600,7 +2618,7 @@
         "via": "workspace",
         "detail": "Single bun package: add \"workspaces\": [\"../design-system\"] to package.json and depend on `workspace:*` (a live symlink), then import the CSS in src/renderer/src/main.tsx; update THEME_TOKEN_NAMES when docs-workbench moves to --ds-*."
       },
-      "entryStylesheet": "system-view/src/renderer/src/styles.css",
+      "entryStylesheet": "system-view/src/renderer/src/main.tsx",
       "theme": {
         "rule": "light-dark"
       },
@@ -2798,7 +2816,7 @@
         "via": "vendor-tgz",
         "detail": "Owner decision: a packed copy through file:vendor/<name>.tgz that carries its fonts (prerequisite 4), the same way it consumes docs-publish; the Railway Docker context cannot see ../../design-system. Delete src/site/palette.css (a copy of docs-system's notion palette)."
       },
-      "entryStylesheet": "lascari-ai/personal-site/src/site/styles.css",
+      "entryStylesheet": "lascari-ai/personal-site/about/index.html",
       "theme": {
         "rule": "light-dark",
         "storageKey": "personal-site:theme"
@@ -2999,6 +3017,10 @@
           "reason": "the landing and logo lab are CircleSnakes product art (audit Skip); /blog/drafts/__docs/api proxies to the owner's docs service on :4820"
         },
         {
+          "what": "entryStylesheet is about/index.html",
+          "reason": "every content page links src/site/styles.css (which imports palette.css and layout.css) from its own HTML; the linter starts at one page, and the others link the same sheet"
+        },
+        {
           "what": "pass 3 on vanilla partials",
           "reason": "the ledger plans slices (1h) for its _components partials; the linter's 400-line rule applies, the index.tsx rule does not fit vanilla HTML partials"
         }
@@ -3028,7 +3050,7 @@
         "via": "copy",
         "detail": "Copy the built tokens.css (and fonts.css with its fonts) into web/vendor/ and add each route to the whitelist in server.py; checked by the hash of tokens.css."
       },
-      "entryStylesheet": "lascari-ai/agent-skills/manager/web/style.css",
+      "entryStylesheet": "lascari-ai/agent-skills/manager/web/index.html",
       "theme": {
         "rule": "light-dark",
         "storageKey": "skill-theme"
@@ -3250,7 +3272,7 @@
         "via": "vendor-tgz",
         "detail": "Owner decision: a packed copy through file:vendor/<name>.tgz that carries its fonts; the Docker context is apps/frontend. Add a Clerk appearance bridge to the tokens."
       },
-      "entryStylesheet": "apps/skitzo/apps/frontend/src/app/globals.css",
+      "entryStylesheet": "apps/skitzo/apps/frontend/src/app/layout.tsx",
       "theme": {
         "rule": "dark-first"
       },
@@ -3589,7 +3611,7 @@
         "via": "link",
         "detail": "link: through its repo-local .bun-links registry (a live symlink, the way it takes prompt-kit), plus @source; never a bun file: dependency."
       },
-      "entryStylesheet": "codecaine/core/observatory/src/ui/index.css",
+      "entryStylesheet": "codecaine/core/observatory/src/ui/main.tsx",
       "theme": {
         "rule": "light-dark",
         "storageKey": "observatory.viewerStyle.v1"
@@ -3774,7 +3796,7 @@
         "via": "relative-import",
         "detail": "Point the relative @import in src/web/docs-light.css at the package (read by path, so it stays live), or add a workspaces entry or bun link; never a bun file: dependency."
       },
-      "entryStylesheet": "codecaine/tools/variator/src/web/docs-light.css",
+      "entryStylesheet": "codecaine/tools/variator/src/web/main.tsx",
       "theme": {
         "rule": "light-dark"
       },
@@ -3999,7 +4021,7 @@
       "theme": {
         "rule": "light-dark"
       },
-      "literalFloor": 7,
+      "literalFloor": 6,
       "allowlist": "apps/allowlists/slidev-template.json",
       "shell": false,
       "folderStandard": false,
@@ -4182,7 +4204,7 @@
         "via": "workspace",
         "detail": "Add ../../design-system to the root workspaces in life/budget/package.json and depend on `workspace:*` from apps/web (a live symlink, the same wiring Core uses); @import in src/styles.css; the kernel view takes the v3 preset."
       },
-      "entryStylesheet": "life/budget/apps/web/src/styles.css",
+      "entryStylesheet": "life/budget/apps/web/src/main.tsx",
       "theme": {
         "rule": "light-dark"
       },
@@ -4406,7 +4428,7 @@
         "via": "workspace",
         "detail": "Add ../../design-system to the root workspaces in apps/pen-plotter/package.json and depend on `workspace:*` from apps/desktop, then @import; the CSP (default-src 'self') needs the package's local fonts."
       },
-      "entryStylesheet": "apps/pen-plotter/apps/desktop/src/renderer/src/styles.css",
+      "entryStylesheet": "apps/pen-plotter/apps/desktop/src/renderer/src/main.tsx",
       "theme": {
         "rule": "light-dark"
       },
@@ -4611,7 +4633,7 @@
         "via": "npm-file",
         "detail": "npm file:../../../../design-system (npm links a directory, so it stays live) plus @import in app/globals.css; the package CSS and fonts must survive prepare-next-runtime.mjs for Electron."
       },
-      "entryStylesheet": "apps/MainMenu/apps/scene-engine/app/globals.css",
+      "entryStylesheet": "apps/MainMenu/apps/scene-engine/app/layout.tsx",
       "theme": {
         "rule": "dark-first"
       },
@@ -4818,7 +4840,7 @@
         "via": "link",
         "detail": "Add ../../design-system to the root workspaces and depend on `workspace:*`, or link:@codecaine-ai/design-system the way it takes prompt-kit; then @import and @source. Never a bun file: dependency."
       },
-      "entryStylesheet": "harnesses/gamecube-decomp-harness/apps/frontend/src/styles.css",
+      "entryStylesheet": "harnesses/gamecube-decomp-harness/apps/frontend/src/main.tsx",
       "theme": {
         "rule": "dark-first",
         "storageKey": "styleSettings.v1"
@@ -5023,7 +5045,7 @@
         "via": "vendor-tgz",
         "detail": "Owner decision: a packed copy through file:vendor/<name>.tgz that carries its fonts; Railway builds only this repo."
       },
-      "entryStylesheet": "apps/circle-snakes/CircleSnakesWeb/src/app/styles.css",
+      "entryStylesheet": "apps/circle-snakes/CircleSnakesWeb/src/app/main.ts",
       "theme": {
         "rule": "dark-first"
       },
