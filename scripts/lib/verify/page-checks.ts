@@ -356,8 +356,25 @@ export async function checkPage(page: any, opts: PageCheckOptions): Promise<Asse
   out.push(...fontAssertions(await readFonts(page), opts.responses));
 
   if (!darkFirst) {
+    // Probes whose token differs between the themes; the switch may apply asynchronously (a saved setting, a re-render).
+    const watch = firstReadings
+      .filter((r) => r.found && r.buildValue !== buildValue(opts.values, r.token, "dark"))
+      .map((r) => ({ selector: r.selector, property: r.property, before: r.actual! }));
     const reloaded = await switchToDark(page, verify.darkSwitch);
     if (reloaded && opts.prepare) await opts.prepare(page);
+    if (watch.length) {
+      await page
+        .waitForFunction(
+          (items: typeof watch) =>
+            items.some((item) => {
+              const element = document.querySelector(item.selector);
+              return element !== null && getComputedStyle(element).getPropertyValue(item.property).trim() !== item.before;
+            }),
+          watch,
+          { timeout: 3_000 },
+        )
+        .catch(() => undefined); // nothing changed: the dark assertions report it
+    }
     await settle(page);
     const darkReadings = await readProbes(page, verify.probes, opts.values, "dark");
     const markers = await themeMarkers(page);
