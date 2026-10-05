@@ -1,7 +1,21 @@
 /**
- * Deterministic capture settings, copied from verification/docs-system/lib/capture.ts.
- * Every rollout tool that opens a browser on an app uses them (snapshot, verify:apps).
+ * Deterministic capture of registry routes, generalized from verification/docs-system/lib/capture.ts.
+ *
+ * The settings (CONTEXT_OPTIONS, LAUNCH_OPTIONS, SCREENSHOT_OPTIONS, DETERMINISM_CSS) are copied from
+ * the docs-system harness; every rollout tool that opens a browser on an app uses them.
+ *
+ * captureRoute shoots one route in one theme. Browser and static apps get a fresh guarded context per
+ * shot (app-runner guardedContext: requests to ports the run did not start and to non-loopback hosts
+ * are aborted and recorded). It waits for the page, network quiet, fonts and images, runs the route's
+ * navigation-only steps, then shoots until two frames 250 ms apart are byte-identical (up to 12).
+ *
+ * Theme: the registry's `verify.darkSwitch` switches away from the app's default theme (light, or dark
+ * on dark-first surfaces); the context's prefers-color-scheme always matches the theme. Without a
+ * darkSwitch, prefers-color-scheme is the only switch.
  */
+import type { AppEntry, RouteSpec } from "./registry";
+import { guardedContext, type RunningApp } from "./app-runner";
+import type { Box, Theme } from "./snapshot-set";
 
 export const CONTEXT_OPTIONS = {
   viewport: { width: 1440, height: 900 },
@@ -69,4 +83,387 @@ export function installStyleInitScript(css: string) {
   };
   if (doc.documentElement) install();
   else doc.addEventListener("DOMContentLoaded", install, { once: true });
+}
+
+// -- capture ------------------------------------------------------------------
+
+export type { Box, Theme };
+
+export interface CaptureResult {
+  png: Buffer;
+  url: string;
+  viewport: { width: number; height: number };
+  /** Frames shot until two consecutive ones matched. */
+  frames: number;
+  stable: boolean;
+  durationMs: number;
+  /** How the theme was applied: "default", "attribute", "storage", "click", "query" or "prefers-color-scheme". */
+  themeMethod: string;
+  /** Mask selectors and the boxes they covered (CSS px, clipped to the viewport). */
+  masks: Array<{ selector: string; boxes: Box[] }>;
+  blocked: string[];
+  consoleErrors: string[];
+  /** Page loads after the first (a Vite reload mid-capture). */
+  reloads: number;
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+export const DEFAULT_VIEWPORT = CONTEXT_OPTIONS.viewport;
+
+/** Themes a route is captured in: its own list, else light+dark (dark only on a dark-first surface). */
+export function routeThemes(app: AppEntry, route: RouteSpec): Theme[] {
+  return route.themes ?? (app.theme?.rule === "dark-first" ? ["dark"] : ["light", "dark"]);
+}
+
+/** The shot key: `<route>-<theme>`. */
+export function shotKey(route: RouteSpec, theme: Theme): string {
+  return `${route.id}-${theme}`;
+}
+
+function defaultTheme(app: AppEntry): Theme {
+  return app.theme?.rule === "dark-first" ? "dark" : "light";
+}
+
+/** Tracks in-flight requests so "network quiet" ignores long-lived streams (SSE, websockets). */
+function trackNetwork(page: any) {
+  const inflight = new Set<any>();
+  let lastChange = Date.now();
+  const ignore = (request: any) => {
+    const type = request.resourceType();
+    return type === "websocket" || type === "eventsource" || /\/(events|sse|stream)(\?|$)/.test(request.url());
+  };
+  page.on("request", (request: any) => {
+    if (ignore(request)) return;
+    inflight.add(request);
+    lastChange = Date.now();
+  });
+  const done = (request: any) => {
+    if (inflight.delete(request)) lastChange = Date.now();
+  };
+  page.on("requestfinished", done);
+  page.on("requestfailed", done);
+  return {
+    async quiet(quietMs = 500, timeoutMs = 30_000) {
+      const deadline = Date.now() + timeoutMs;
+      while (Date.now() < deadline) {
+        if (inflight.size === 0 && Date.now() - lastChange >= quietMs) return;
+        await sleep(50);
+      }
+      const pending = [...inflight].map((request) => request.url()).slice(0, 5);
+      throw new Error(`network did not go quiet within ${timeoutMs} ms; pending: ${pending.join(", ")}`);
+    },
+  };
+}
+
+/**
+ * The bundled faces (Inter 400-700, IBM Plex Mono 400-600). Loading every declared one explicitly means
+ * "fonts ready" never depends on which faces the visible text happened to request first.
+ */
+const BUNDLED_FACES = [
+  "400 16px Inter",
+  "500 16px Inter",
+  "600 16px Inter",
+  "700 16px Inter",
+  '400 16px "IBM Plex Mono"',
+  '500 16px "IBM Plex Mono"',
+  '600 16px "IBM Plex Mono"',
+];
+
+/** Fonts settled and visible images decoded, in every frame (15 s cap per frame, never a hang). */
+async function waitForAssets(page: any) {
+  for (const frame of page.frames().filter((f: any) => !f.isDetached())) {
+    await frame
+      .evaluate(async (faces: string[]) => {
+        const doc = (globalThis as any).document;
+        const settle = async () => {
+          const declared = new Set(Array.from(doc.fonts as Iterable<any>).map((face: any) => face.family.replace(/["']/g, "")));
+          await Promise.all(
+            faces
+              .filter((face) => declared.has(face.replace(/^\d+ 16px /, "").replace(/"/g, "")))
+              .map((face) => doc.fonts.load(face).catch(() => undefined)),
+          );
+          await doc.fonts.ready;
+          const pending = Array.from(doc.fonts as Iterable<any>).filter((face: any) => face.status === "loading");
+          await Promise.all(pending.map((face: any) => face.loaded.catch(() => undefined)));
+          const win = globalThis as any;
+          const visible = Array.from(doc.images as Iterable<any>).filter((img: any) => {
+            const rect = img.getBoundingClientRect();
+            return rect.bottom > 0 && rect.top < win.innerHeight && rect.right > 0 && rect.left < win.innerWidth && rect.width > 0;
+          });
+          await Promise.all(
+            visible.map(async (img: any) => {
+              if (!img.complete) {
+                await new Promise((resolve) => {
+                  img.addEventListener("load", resolve, { once: true });
+                  img.addEventListener("error", resolve, { once: true });
+                });
+              }
+              await img.decode().catch(() => undefined);
+            }),
+          );
+        };
+        await Promise.race([settle(), new Promise((resolve) => setTimeout(resolve, 15_000))]);
+      }, BUNDLED_FACES)
+      .catch(() => undefined); // a frame that navigated away mid-check
+  }
+}
+
+async function nextFrames(page: any, count = 2) {
+  await page.evaluate(
+    (n: number) =>
+      new Promise<void>((resolve) => {
+        const raf = (globalThis as any).requestAnimationFrame;
+        const tick = (left: number) => (left <= 0 ? resolve() : raf(() => tick(left - 1)));
+        tick(n);
+      }),
+    count,
+  );
+}
+
+type Step = NonNullable<RouteSpec["steps"]>[number];
+
+async function runStep(page: any, step: Step, network: ReturnType<typeof trackNetwork>) {
+  const need = () => {
+    if (!step.target) throw new Error(`step ${step.action} needs a target: ${JSON.stringify(step)}`);
+    return step.target;
+  };
+  switch (step.action) {
+    case "click":
+      await page.locator(need()).click({ timeout: 15_000 });
+      break;
+    case "hover":
+      await page.locator(need()).hover({ timeout: 15_000 });
+      break;
+    case "press":
+      if (step.target && step.value !== undefined) await page.locator(step.target).press(String(step.value), { timeout: 15_000 });
+      else await page.keyboard.press(String(step.value ?? step.target));
+      break;
+    case "scroll":
+      if (step.target) {
+        await page.locator(step.target).evaluate((element: any, top: number) => {
+          element.scrollTop = top;
+        }, Number(step.value ?? 0));
+      } else {
+        await page.evaluate((top: number) => (globalThis as any).scrollTo(0, top), Number(step.value ?? 0));
+      }
+      break;
+    case "wait":
+      if (step.target) await page.locator(step.target).first().waitFor({ state: "visible", timeout: 30_000 });
+      else await sleep(Number(step.value ?? 0));
+      break;
+    default:
+      throw new Error(`unknown step ${JSON.stringify(step)}`);
+  }
+  await network.quiet();
+}
+
+/** Boxes of every element a mask selector matches, clipped to the viewport and rounded outward. */
+async function maskBoxes(page: any, selectors: string[], viewport: { width: number; height: number }) {
+  const out: Array<{ selector: string; boxes: Box[] }> = [];
+  for (const selector of selectors) {
+    const boxes: Box[] = [];
+    for (const handle of await page.locator(selector).all()) {
+      const box = await handle.boundingBox().catch(() => null);
+      if (!box) continue;
+      const x0 = Math.max(0, Math.floor(box.x));
+      const y0 = Math.max(0, Math.floor(box.y));
+      const x1 = Math.min(viewport.width, Math.ceil(box.x + box.width));
+      const y1 = Math.min(viewport.height, Math.ceil(box.y + box.height));
+      if (x1 > x0 && y1 > y0) boxes.push({ x: x0, y: y0, width: x1 - x0, height: y1 - y0 });
+    }
+    out.push({ selector, boxes });
+  }
+  return out;
+}
+
+/** Shoots until two consecutive frames 250 ms apart are byte-identical, up to 12 frames. */
+async function stableShot(page: any, masks: string[]) {
+  const mask = masks.map((selector) => page.locator(selector));
+  const shoot = () => page.screenshot({ ...SCREENSHOT_OPTIONS, mask, maskColor: "#FF00FF" }) as Promise<Buffer>;
+  let previous = await shoot();
+  let frames = 1;
+  while (frames < 12) {
+    await sleep(250);
+    const current = await shoot();
+    frames += 1;
+    if (current.equals(previous)) return { png: previous, frames, stable: true };
+    previous = current;
+  }
+  return { png: previous, frames, stable: false };
+}
+
+/** Waits, runs the steps, applies post-load theme switches, then takes the stable shot. */
+async function settleAndShoot(page: any, network: ReturnType<typeof trackNetwork>, route: RouteSpec, viewport: { width: number; height: number }, afterLoad: () => Promise<void>, verifyTheme: () => Promise<void>) {
+  await network.quiet();
+  if (route.waitFor) await page.locator(route.waitFor).first().waitFor({ state: "visible", timeout: 30_000 });
+  await network.quiet();
+  await waitForAssets(page);
+  await afterLoad();
+  for (const step of route.steps ?? []) await runStep(page, step, network);
+  // A neutral pointer: steps that click or hover leave it over a control otherwise.
+  await page.mouse.move(0, 0);
+  await network.quiet();
+  await waitForAssets(page);
+  await sleep(400);
+  await nextFrames(page);
+  await verifyTheme();
+  const shot = await stableShot(page, route.masks ?? []);
+  const masks = await maskBoxes(page, route.masks ?? [], viewport);
+  return { ...shot, masks };
+}
+
+interface ThemePlan {
+  method: string;
+  url: (url: string) => string;
+  init?: { storage: Record<string, string> };
+  afterLoad: (page: any) => Promise<void>;
+  verify: (page: any) => Promise<void>;
+}
+
+/** How to put the app in `theme`. Only the non-default theme is switched; the default is left as the app boots. */
+export function themePlan(app: AppEntry, theme: Theme): ThemePlan {
+  const none: ThemePlan = { method: "default", url: (url) => url, afterLoad: async () => undefined, verify: async () => undefined };
+  if (theme === defaultTheme(app)) return none;
+  const sw = app.verify?.darkSwitch;
+  if (!sw) return { ...none, method: "prefers-color-scheme" };
+  if (theme !== "dark") return { ...none, method: "prefers-color-scheme" }; // darkSwitch only knows how to reach dark
+  switch (sw.kind) {
+    case "attribute": {
+      const target = sw.target ?? "html";
+      const set = (page: any) =>
+        page.locator(target).first().evaluate((element: any, value: string) => element.setAttribute("data-theme", value), theme);
+      return {
+        ...none,
+        method: "attribute",
+        afterLoad: set,
+        verify: async (page) => {
+          const actual = await page.locator(target).first().getAttribute("data-theme");
+          if (actual !== theme) throw new Error(`theme check failed: ${target}[data-theme]=${actual}, expected ${theme}`);
+        },
+      };
+    }
+    case "storage":
+      return { ...none, method: "storage", init: { storage: { [sw.key]: sw.value } } };
+    case "click":
+      return { ...none, method: "click", afterLoad: (page) => page.locator(sw.selector).click({ timeout: 15_000 }) };
+    case "query":
+      return {
+        ...none,
+        method: "query",
+        url: (raw) => {
+          const url = new URL(raw);
+          url.searchParams.set(sw.param, sw.value);
+          return url.href;
+        },
+      };
+  }
+}
+
+function storageInitScript(entries: Record<string, string>) {
+  try {
+    for (const [key, value] of Object.entries(entries)) (globalThis as any).localStorage.setItem(key, value);
+  } catch {
+    // opaque-origin frames have no storage
+  }
+}
+
+/** One route in one theme. Browser and static apps: a fresh guarded context. Electron: the app's first window. */
+export async function captureRoute(browser: any, running: RunningApp, route: RouteSpec, theme: Theme): Promise<CaptureResult> {
+  const started = Date.now();
+  const viewport = route.viewport ?? DEFAULT_VIEWPORT;
+  const plan = themePlan(running.app, theme);
+  const consoleErrors: string[] = [];
+  const watch = (page: any) => {
+    page.on("console", (message: any) => {
+      if (message.type() === "error") consoleErrors.push(message.text().slice(0, 300));
+    });
+    page.on("pageerror", (error: any) => consoleErrors.push(`pageerror: ${String(error?.message ?? error).slice(0, 300)}`));
+  };
+
+  if (running.electron) {
+    const page = await electronPage(running, route);
+    await page.setViewportSize(viewport);
+    await page.addStyleTag({ content: DETERMINISM_CSS });
+    watch(page);
+    if (plan.init) {
+      await page.evaluate(storageInitScript, plan.init.storage);
+      await page.reload({ waitUntil: "load" });
+      await page.addStyleTag({ content: DETERMINISM_CSS });
+    }
+    const network = trackNetwork(page);
+    const before = running.blocked?.().length ?? 0;
+    const shot = await settleAndShoot(page, network, route, viewport, () => plan.afterLoad(page), () => plan.verify(page));
+    return {
+      ...shot,
+      url: page.url(),
+      viewport,
+      durationMs: Date.now() - started,
+      themeMethod: plan.method,
+      blocked: (running.blocked?.() ?? []).slice(before),
+      consoleErrors: [...new Set(consoleErrors)],
+      reloads: 0,
+    };
+  }
+
+  if (!running.baseUrl) throw new Error(`${running.app.id}: no baseUrl to capture`);
+  const { context, blocked } = await guardedContext(browser, running, { colorScheme: theme, viewport });
+  try {
+    if (plan.init) await context.addInitScript(storageInitScript, plan.init.storage);
+    const page = await context.newPage();
+    watch(page);
+    const network = trackNetwork(page);
+    let loads = 0;
+    page.on("load", () => {
+      loads += 1;
+    });
+    const url = plan.url(`${running.baseUrl}${route.path || "/"}`);
+    await page.goto(url, { waitUntil: "load", timeout: 60_000 });
+    const shot = await settleAndShoot(page, network, route, viewport, () => plan.afterLoad(page), () => plan.verify(page));
+    return {
+      ...shot,
+      url,
+      viewport,
+      durationMs: Date.now() - started,
+      themeMethod: plan.method,
+      blocked: blocked(),
+      consoleErrors: [...new Set(consoleErrors)],
+      reloads: Math.max(0, loads - 1),
+    };
+  } finally {
+    await context.close();
+  }
+}
+
+/** Electron: the window whose title or URL contains route.path; "", "/" or "main" is the first window. */
+async function electronPage(running: RunningApp, route: RouteSpec): Promise<any> {
+  const first = await running.electron!.window();
+  const wanted = route.path;
+  if (!wanted || wanted === "/" || wanted === "main") return first;
+  if (wanted.startsWith("#")) {
+    await first.evaluate((hash: string) => ((globalThis as any).location.hash = hash), wanted);
+    return first;
+  }
+  for (const page of running.electron!.app.windows()) {
+    const title = await page.title().catch(() => "");
+    if (title.includes(wanted) || page.url().includes(wanted)) return page;
+  }
+  throw new Error(`${running.app.id}: no electron window matches route ${route.id} (${wanted})`);
+}
+
+/** Loads each distinct route URL once, so Vite transforms and dependency pre-bundling settle before capture. */
+export async function warmUp(browser: any, running: RunningApp, routes: RouteSpec[]) {
+  if (running.electron || !running.baseUrl) return;
+  const { context } = await guardedContext(browser, running);
+  try {
+    const page = await context.newPage();
+    const network = trackNetwork(page);
+    for (const path of [...new Set(routes.map((route) => route.path || "/"))]) {
+      await page.goto(`${running.baseUrl}${path}`, { waitUntil: "load", timeout: 120_000 });
+      await network.quiet(1500, 120_000);
+      await waitForAssets(page);
+    }
+  } finally {
+    await context.close();
+  }
 }

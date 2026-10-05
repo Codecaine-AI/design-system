@@ -230,7 +230,7 @@ describe("guardedContext", () => {
         const { context, blocked } = await guardedContext(browser, running);
         const page = await context.newPage();
         await page.goto(`${running.baseUrl}/`);
-        const results = await page.evaluate(() => (window as any).results);
+        const results = await page.evaluate(() => (globalThis as any).results);
         expect(results).toEqual({ own: "ok", helper: "ok", stray: "failed", external: "failed" });
         expect(blocked().sort()).toEqual(["GET http://127.0.0.1:46998/", "GET http://example.invalid/"]);
       } finally {
