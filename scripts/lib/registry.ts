@@ -146,7 +146,9 @@ export interface VerifySpec {
     | { kind: "attribute"; target?: string }
     | { kind: "storage"; key: string; value: string }
     | { kind: "click"; selector: string }
-    | { kind: "query"; param: string; value: string };
+    | { kind: "query"; param: string; value: string }
+    /** Navigation/view-only steps (for example open the style rail, click its dark-mode toggle). Writes may land only in the run's temp state. */
+    | { kind: "steps"; steps: NonNullable<RouteSpec["steps"]> };
   /** Shell apps: the sidebar toggle (default ".ds-sidebar-toggle") and the storage key (default "<app>.sidebar"). */
   sidebar?: { toggle?: string; storageKey?: string };
 }
