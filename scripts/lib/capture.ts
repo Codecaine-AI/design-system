@@ -223,6 +223,7 @@ async function waitForAssets(page: any) {
   }
 }
 
+/** Two animation frames, or 5 s (a page with requestAnimationFrame throttled never ticks). */
 async function nextFrames(page: any, count = 2) {
   await page.evaluate(
     (n: number) =>
@@ -230,9 +231,35 @@ async function nextFrames(page: any, count = 2) {
         const raf = (globalThis as any).requestAnimationFrame;
         const tick = (left: number) => (left <= 0 ? resolve() : raf(() => tick(left - 1)));
         tick(n);
+        setTimeout(resolve, 5_000);
       }),
     count,
   );
+}
+
+/** Overall cap on one capture; the context is closed when it fires, which ends any pending step. */
+export const CAPTURE_DEADLINE_MS = 180_000;
+
+/** Error from captureRoute. `blocked` holds what the guard blocked before the failure. */
+export class CaptureError extends Error {
+  constructor(
+    message: string,
+    readonly blocked: string[],
+    readonly expectedBlocked: string[],
+  ) {
+    super(message);
+  }
+}
+
+function deadline<T>(work: Promise<T>, ms: number, what: string, onTimeout: () => Promise<unknown>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const expired = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      void onTimeout();
+      reject(new Error(`${what} did not finish within ${ms} ms`));
+    }, ms);
+  });
+  return Promise.race([work, expired]).finally(() => clearTimeout(timer));
 }
 
 type Step = NonNullable<RouteSpec["steps"]>[number];
@@ -410,6 +437,17 @@ export async function captureRoute(browser: any, running: RunningApp, route: Rou
   };
 
   if (running.electron) {
+    const before = running.blocked?.().length ?? 0;
+    const blockedSince = () => splitBlocked(running, (running.blocked?.() ?? []).slice(before));
+    try {
+      return await deadline(captureElectron(), CAPTURE_DEADLINE_MS, `capture of ${route.id} (${theme})`, async () => undefined);
+    } catch (error) {
+      const { unexpected, expected } = blockedSince();
+      throw new CaptureError(error instanceof Error ? error.message : String(error), unexpected, expected);
+    }
+  }
+
+  async function captureElectron(): Promise<CaptureResult> {
     const page = await electronPage(running, route);
     await page.setViewportSize(viewport);
     await page.addStyleTag({ content: DETERMINISM_CSS });
@@ -439,6 +477,15 @@ export async function captureRoute(browser: any, running: RunningApp, route: Rou
   if (!running.baseUrl) throw new Error(`${running.app.id}: no baseUrl to capture`);
   const { context, blocked } = await guardedContext(browser, running, { colorScheme: theme, viewport });
   try {
+    return await deadline(captureInContext(), CAPTURE_DEADLINE_MS, `capture of ${route.id} (${theme})`, () => context.close().catch(() => undefined));
+  } catch (error) {
+    const { unexpected, expected } = splitBlocked(running, blocked());
+    throw new CaptureError(error instanceof Error ? error.message : String(error), unexpected, expected);
+  } finally {
+    await context.close().catch(() => undefined);
+  }
+
+  async function captureInContext(): Promise<CaptureResult> {
     if (plan.init) await context.addInitScript(storageInitScript, plan.init.storage);
     const page = await context.newPage();
     watch(page);
@@ -462,8 +509,6 @@ export async function captureRoute(browser: any, running: RunningApp, route: Rou
       consoleErrors: [...new Set(consoleErrors)],
       reloads: Math.max(0, loads - 1),
     };
-  } finally {
-    await context.close();
   }
 }
 
@@ -483,10 +528,13 @@ async function electronPage(running: RunningApp, route: RouteSpec): Promise<any>
   throw new Error(`${running.app.id}: no electron window matches route ${route.id} (${wanted})`);
 }
 
-/** Loads each distinct route URL once, so Vite transforms and dependency pre-bundling settle before capture. */
-export async function warmUp(browser: any, running: RunningApp, routes: RouteSpec[]) {
-  if (running.electron || !running.baseUrl) return;
-  const { context } = await guardedContext(browser, running);
+/**
+ * Loads each distinct route URL once, so Vite transforms and dependency pre-bundling settle before capture.
+ * Returns what the guard blocked meanwhile.
+ */
+export async function warmUp(browser: any, running: RunningApp, routes: RouteSpec[]): Promise<{ blocked: string[]; expectedBlocked: string[] }> {
+  if (running.electron || !running.baseUrl) return { blocked: [], expectedBlocked: [] };
+  const { context, blocked } = await guardedContext(browser, running);
   try {
     const page = await context.newPage();
     const network = trackNetwork(page);
@@ -498,4 +546,6 @@ export async function warmUp(browser: any, running: RunningApp, routes: RouteSpe
   } finally {
     await context.close();
   }
+  const { unexpected, expected } = splitBlocked(running, blocked());
+  return { blocked: unexpected, expectedBlocked: expected };
 }

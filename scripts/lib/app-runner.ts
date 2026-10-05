@@ -12,7 +12,9 @@
  *   browser   spawn `run.start`, read the bound URL from its output with `run.readyPattern`
  *   static    `run.start` set: same as browser (a fixture server that builds into {tmp});
  *             otherwise run `commands.build`, then serve `run.staticDir` on the app's port
- *   electron  run `run.electron.build`, then Playwright `_electron.launch` against `run.electron.main`
+ *   electron  run `run.electron.build`, then Playwright `_electron.launch` against `run.electron.main`;
+ *             the app's `ready` event waits until the request guard is on electronApp.context(). The guard
+ *             covers renderer (Chromium) traffic only; main-process Node network calls are not guarded.
  *   none      throws: the app has no screenshots and no runtime checks
  *
  * Placeholders `{tmp}`, `{root}`, `{ds}` (DESIGN_SYSTEM_ROOT, the design-system checkout the tool runs from)
@@ -28,16 +30,19 @@ import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
-import { basename, isAbsolute, join, resolve, sep } from "node:path";
+import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
 
 import { CONTEXT_OPTIONS, DETERMINISM_CSS, installStyleInitScript } from "./capture";
-import { loadPlaywright } from "./playwright";
+import { loadPlaywright, playwrightAnchor } from "./playwright";
 import { DESIGN_SYSTEM_ROOT, resolvePath, type AppEntry } from "./registry";
 
 /** The owner's ports. No run binds them, whatever its profile says. */
 export const OWNER_PORTS: readonly number[] = [3998, 3999, 4318, 4800, 4801, 4820, 4830, 4840, 4888, 5173, 5174, 9222];
 /** Run profiles use 47000-47999; tool tests use 46900-46999. */
 export const RUN_PORT_RANGE = { min: 46900, max: 47999 } as const;
+
+/** app-runner's Electron preload (see electron-loader.cjs). */
+const ELECTRON_LOADER = join(import.meta.dir, "electron-loader.cjs");
 
 /** Inherited variables a run keeps (plus every BUN_INSTALL* from run.env). Nothing else crosses over. */
 const ENV_ALLOWLIST = new Set(["PATH", "LANG", "TERM", "TMPDIR"]);
@@ -69,6 +74,8 @@ export interface RunningApp {
   servedFiles?: () => string[];
   /** Set when the run used allowUnproven: its results must not count for a gate. */
   unproven?: true;
+  /** Owner ports a run process was found listening on. startApp refuses to return such a run. */
+  violations?: string[];
 }
 
 export interface StartOptions {
@@ -141,6 +148,9 @@ function checkProfilePorts(app: AppEntry) {
     if (!Number.isInteger(port) || port < RUN_PORT_RANGE.min || port > RUN_PORT_RANGE.max)
       throw new Error(`${app.id}: port ${name}=${port} is outside ${RUN_PORT_RANGE.min}-${RUN_PORT_RANGE.max}`);
   }
+  for (const port of app.runProfile.allowedLocalPorts ?? []) {
+    if (OWNER_PORTS.includes(port)) throw new Error(`${app.id}: allowedLocalPorts lists owner port ${port}`);
+  }
 }
 
 // -- processes ----------------------------------------------------------------
@@ -149,6 +159,12 @@ interface ProcInfo {
   pid: number;
   ppid: number;
   pgid: number;
+}
+
+/** A process the run started: its pid and its start time, so a reused pid is never mistaken for it. */
+export interface RootProc {
+  pid: number;
+  started: string;
 }
 
 function processTable(): ProcInfo[] {
@@ -160,11 +176,29 @@ function processTable(): ProcInfo[] {
     .map(([pid, ppid, pgid]) => ({ pid: pid!, ppid: ppid!, pgid: pgid! }));
 }
 
+/** `ps -o lstart=` of a pid, or "" when it is gone. */
+function startTime(pid: number): string {
+  return (spawnSync("ps", ["-o", "lstart=", "-p", String(pid)], { encoding: "utf8" }).stdout ?? "").trim();
+}
+
+export function rootProc(pid: number): RootProc {
+  return { pid, started: startTime(pid) };
+}
+
 const OWN_PGID = (() => processTable().find((p) => p.pid === process.pid)?.pgid ?? process.pid)();
 
-/** The run's processes: descendants of its root pids, plus every member of their process groups. */
-function runProcesses(rootPids: number[]): ProcInfo[] {
+/**
+ * The run's processes: descendants of its roots, plus every member of their process groups. A root whose
+ * pid now belongs to a different process (start time changed) is dropped with its group: the pid was reused.
+ */
+function runProcesses(roots: RootProc[]): ProcInfo[] {
   const table = processTable();
+  const rootPids = roots
+    .filter((root) => {
+      if (!table.some((proc) => proc.pid === root.pid)) return true; // exited; its group may live on
+      return startTime(root.pid) === root.started;
+    })
+    .map((root) => root.pid);
   const groups = new Set(rootPids);
   const found = new Map<number, ProcInfo>();
   const queue = [...rootPids];
@@ -223,9 +257,12 @@ function signal(target: number, sig: NodeJS.Signals) {
 
 const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
 
-/** SIGTERM, wait, SIGKILL: only the given processes and their own groups (never this process's group). */
-async function killRun(rootPids: number[], graceMs = 8_000) {
-  const procs = runProcesses(rootPids);
+/**
+ * Stops a run's processes: SIGTERM, wait, SIGKILL, to the roots' descendants and process groups only.
+ * Never signals this process or its own process group.
+ */
+export async function killRun(roots: RootProc[], graceMs = 8_000) {
+  const procs = runProcesses(roots).filter((proc) => proc.pid !== process.pid);
   if (procs.length === 0) return;
   const groups = new Set(procs.map((proc) => proc.pgid).filter((pgid) => pgid > 1 && pgid !== OWN_PGID));
   for (const pgid of groups) signal(-pgid, "SIGTERM");
@@ -274,13 +311,23 @@ function spawnLogged(cmd: string, cwd: string, env: Record<string, string>, logP
   return { child, output: () => text, exited: () => code };
 }
 
-/** Runs one command to completion in its own process group; kills strays it left behind. */
-async function runToExit(cmd: string, cwd: string, env: Record<string, string>, logPath: string, timeoutMs: number): Promise<number> {
+/**
+ * Runs one command to completion in its own process group; kills strays it left behind. While it runs,
+ * its root is in `roots`, so a stop() (Ctrl-C) during a build stops the build too.
+ */
+async function runToExit(cmd: string, cwd: string, env: Record<string, string>, logPath: string, timeoutMs: number, roots: RootProc[]): Promise<number> {
   const proc = spawnLogged(cmd, cwd, env, logPath);
   const pid = proc.child.pid;
-  const deadline = Date.now() + timeoutMs;
-  while (proc.exited() === null && Date.now() < deadline) await sleep(100);
-  if (pid) await killRun([pid], 2_000);
+  if (!pid) throw new Error(`failed to spawn ${cmd}`);
+  const root = rootProc(pid);
+  roots.push(root);
+  try {
+    const deadline = Date.now() + timeoutMs;
+    while (proc.exited() === null && Date.now() < deadline) await sleep(100);
+    await killRun([root], 2_000);
+  } finally {
+    roots.splice(roots.indexOf(root), 1);
+  }
   const code = proc.exited();
   if (code === null) throw new Error(`timed out after ${timeoutMs} ms: ${cmd} (see ${logPath})`);
   return code;
@@ -306,7 +353,7 @@ export function readyUrl(output: string, pattern: string): { baseUrl: string; po
 // -- start / stop -------------------------------------------------------------
 
 interface Internal {
-  rootPids: number[];
+  roots: RootProc[];
 }
 const internals = new WeakMap<RunningApp, Internal>();
 const live = new Set<RunningApp>();
@@ -346,12 +393,23 @@ export function installSignalHandlers(cleanup?: () => unknown): () => void {
   };
 }
 
-/** Re-reads the ports the run's processes listen on into running.startedPorts. */
+/**
+ * Re-reads the ports the run's processes listen on into running.startedPorts. An owner port is never
+ * added (so the guard can never allow it); it is recorded in running.violations instead.
+ */
 export function refreshStartedPorts(running: RunningApp): number[] {
   const internal = internals.get(running);
   if (!internal) return running.startedPorts;
-  const now = listeningPorts(runProcesses(internal.rootPids).map((proc) => proc.pid));
-  for (const port of now) if (!running.startedPorts.includes(port)) running.startedPorts.push(port);
+  const now = listeningPorts(runProcesses(internal.roots).map((proc) => proc.pid));
+  for (const port of now) {
+    if (OWNER_PORTS.includes(port)) {
+      const violation = `a run process listens on owner port ${port}`;
+      running.violations ??= [];
+      if (!running.violations.includes(violation)) running.violations.push(violation);
+    } else if (!running.startedPorts.includes(port)) {
+      running.startedPorts.push(port);
+    }
+  }
   running.startedPorts.sort((a, b) => a - b);
   return running.startedPorts;
 }
@@ -372,6 +430,23 @@ function appCwd(app: AppEntry, root: string, cwd: string | undefined): string {
   return resolvePath(root, cwd ?? app.commands?.cwd ?? app.root);
 }
 
+/** A served URL the run may contact while it starts: loopback, one of the app's profile ports, never an owner port. */
+function checkReadyUrl(app: AppEntry, ready: { baseUrl: string; port: number }, ports: Record<string, number>) {
+  const url = new URL(ready.baseUrl);
+  if (!isLoopbackHost(url.hostname)) throw new Error(`${app.id}: the ready URL ${ready.baseUrl} is not a loopback address; check run.readyPattern`);
+  if (OWNER_PORTS.includes(ready.port)) throw new Error(`${app.id}: the ready URL ${ready.baseUrl} is on owner port ${ready.port}`);
+  if (!Object.values(ports).includes(ready.port))
+    throw new Error(`${app.id}: the ready URL ${ready.baseUrl} is not on one of its profile ports (${JSON.stringify(ports)}); check run.readyPattern`);
+}
+
+/** The Playwright loader app-runner's electron preload wraps (from the playwright-core that Playwright uses). */
+function playwrightElectronLoader(root: string): string {
+  const playwrightPkg = createRequire(playwrightAnchor(root)).resolve("playwright/package.json");
+  return join(dirname(createRequire(playwrightPkg).resolve("playwright-core/package.json")), "lib/server/electron/loader.js");
+}
+
+const SIGNALS = ["SIGINT", "SIGTERM", "SIGHUP"] as const;
+
 export async function startApp(app: AppEntry, opts: StartOptions): Promise<RunningApp> {
   const mode = app.run?.mode;
   if (!mode || mode === "none")
@@ -388,10 +463,10 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
     if (holders.length) throw new Error(`${app.id}: port ${name}=${port} is in use (pid ${holders.join(", ")}); a previous run may still be up`);
   }
 
-  const tmp = mkdtempSync(join(realTmpRoot(), `ds-run-${app.id}-`));
   const logDir = join(resolve(opts.outDir), app.id, "logs");
   mkdirSync(logDir, { recursive: true });
   const logPath = join(logDir, `${stamp()}-${mode}.log`);
+  const tmp = mkdtempSync(join(realTmpRoot(), `ds-run-${app.id}-`));
   appendFileSync(logPath, `# ${app.id} run mode ${mode}, root ${root}, tmp ${tmp}\n`);
   if (unproven) {
     const warning = `!!! ${app.id}: RUNNING AN UNPROVEN PROFILE (allowUnproven). Use only to prove the profile; never for gates.`;
@@ -402,12 +477,31 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
   const ports = { ...(app.runProfile.ports ?? {}) };
   const ctx: PlaceholderContext = { root, tmp, ports };
   const expand = (text: string) => expandPlaceholders(text, ctx);
-  const flags = (app.runProfile.flags ?? []).map(expand);
-  const rootPids: number[] = [];
+  const roots: RootProc[] = [];
   let server: ReturnType<typeof Bun.serve> | undefined;
   let electronApp: any;
   const served = new Set<string>();
-  let stopped = false;
+  let stopping: Promise<void> | undefined;
+
+  const doStop = async () => {
+    live.delete(running);
+    if (electronApp) await Promise.race([electronApp.close().catch(() => undefined), sleep(10_000)]);
+    server?.stop(true);
+    await killRun(roots);
+    const check = [...new Set([...running.startedPorts, ...Object.values(ports)])];
+    let busy: string[] = [];
+    for (let i = 0; i < 20; i++) {
+      busy = check.flatMap((port) => {
+        const holders = portListeners(port);
+        return holders.length ? [`:${port} (pid ${holders.join(", ")})`] : [];
+      });
+      if (busy.length === 0) break;
+      await sleep(100);
+    }
+    rmSync(tmp, { recursive: true, force: true });
+    appendFileSync(logPath, `\n# stopped${busy.length ? `; still bound: ${busy.join(", ")}` : "; ports free"}\n`);
+    if (busy.length) throw new Error(`${app.id}: ports still bound after stop, not by this run's processes: ${busy.join(", ")}`);
+  };
 
   const running: RunningApp = {
     app,
@@ -417,35 +511,19 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
     tmp,
     env: {},
     logPath,
-    async stop() {
-      if (stopped) return;
-      stopped = true;
-      live.delete(running);
-      if (electronApp) {
-        await Promise.race([electronApp.close().catch(() => undefined), sleep(10_000)]);
-      }
-      server?.stop(true);
-      await killRun(rootPids);
-      const check = [...new Set([...running.startedPorts, ...Object.values(ports)])];
-      let busy: string[] = [];
-      for (let i = 0; i < 20; i++) {
-        busy = check.flatMap((port) => {
-          const holders = portListeners(port);
-          return holders.length ? [`:${port} (pid ${holders.join(", ")})`] : [];
-        });
-        if (busy.length === 0) break;
-        await sleep(100);
-      }
-      rmSync(tmp, { recursive: true, force: true });
-      appendFileSync(logPath, `\n# stopped${busy.length ? `; still bound: ${busy.join(", ")}` : "; ports free"}\n`);
-      if (busy.length) throw new Error(`${app.id}: ports still bound after stop, not by this run's processes: ${busy.join(", ")}`);
-    },
+    // Memoized: a second caller (a signal handler during a failed start) waits for the same stop.
+    stop: () => (stopping ??= doStop()),
   };
   if (unproven) running.unproven = true;
-  internals.set(running, { rootPids });
+  internals.set(running, { roots });
   live.add(running);
+  /** After every await: a stop() that ran meanwhile (Ctrl-C) aborts the start before it creates more. */
+  const stillStarting = () => {
+    if (stopping) throw new Error(`${app.id}: stopped while starting`);
+  };
 
   try {
+    const flags = (app.runProfile.flags ?? []).map(expand);
     copyFixtures(app, tmp);
     running.env = profileEnv(app, { root, tmp });
     const env = running.env;
@@ -457,17 +535,20 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
       const flagText = flags.map(shellQuote).join(" ");
       cmd = cmd.includes("{flags}") ? cmd.replaceAll("{flags}", flagText) : flagText ? `${cmd} ${flagText}` : cmd;
       const cwd = appCwd(app, root, app.run.cwd);
-      running.serveRoot = cwd;
+      running.serveRoot = app.run.staticDir ? resolvePath(root, expand(app.run.staticDir)) : cwd;
       const proc = spawnLogged(cmd, cwd, env, logPath);
       if (!proc.child.pid) throw new Error(`${app.id}: failed to spawn ${cmd}`);
-      rootPids.push(proc.child.pid);
+      roots.push(rootProc(proc.child.pid));
       const deadline = Date.now() + timeoutMs;
       let ready: ReturnType<typeof readyUrl> = null;
       while (!(ready = readyUrl(proc.output(), app.run.readyPattern))) {
         if (proc.exited() !== null) throw new Error(`${app.id}: start command exited (code ${proc.exited()}) before it printed a ready URL; see ${logPath}`);
         if (Date.now() > deadline) throw new Error(`${app.id}: no output matched readyPattern ${app.run.readyPattern} within ${timeoutMs} ms; see ${logPath}`);
         await sleep(100);
+        stillStarting();
       }
+      // Before the first request: the URL must be the app's own loopback profile port.
+      checkReadyUrl(app, ready, ports);
       running.baseUrl = ready.baseUrl;
       while (true) {
         if (proc.exited() !== null) throw new Error(`${app.id}: start command exited (code ${proc.exited()}); see ${logPath}`);
@@ -476,20 +557,20 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
           () => true,
           () => false,
         );
+        stillStarting();
         if (answered) break;
         await sleep(200);
       }
       refreshStartedPorts(running);
       if (!running.startedPorts.includes(ready.port))
         throw new Error(`${app.id}: ${ready.baseUrl} is not served by this run's processes (they listen on ${running.startedPorts.join(", ") || "nothing"})`);
-      if (!Object.values(ports).includes(ready.port))
-        throw new Error(`${app.id}: the app serves on :${ready.port}, which is not one of its profile ports (${JSON.stringify(ports)})`);
     } else if (mode === "static") {
       if (!app.run.staticDir) throw new Error(`${app.id}: run mode static needs run.staticDir (or run.start)`);
       if (!app.commands?.build) throw new Error(`${app.id}: run mode static needs commands.build`);
-      const code = await runToExit(expand(app.commands.build), appCwd(app, root, app.commands.cwd), env, logPath, timeoutMs);
+      const code = await runToExit(expand(app.commands.build), appCwd(app, root, app.commands.cwd), env, logPath, timeoutMs, roots);
+      stillStarting();
       if (code !== 0) throw new Error(`${app.id}: build exited ${code}; see ${logPath}`);
-      const dir = resolvePath(root, app.run.staticDir);
+      const dir = resolvePath(root, expand(app.run.staticDir));
       if (!existsSync(dir)) throw new Error(`${app.id}: staticDir ${dir} does not exist after the build`);
       const port = ports.http ?? ports.ui ?? ports.web ?? Object.values(ports)[0];
       if (port === undefined) throw new Error(`${app.id}: run mode static needs a profile port`);
@@ -502,7 +583,8 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
     } else if (mode === "electron") {
       if (!app.run.electron) throw new Error(`${app.id}: run mode electron needs run.electron`);
       const cwd = appCwd(app, root, app.run.cwd);
-      const code = await runToExit(expand(app.run.electron.build), cwd, env, logPath, timeoutMs);
+      const code = await runToExit(expand(app.run.electron.build), cwd, env, logPath, timeoutMs, roots);
+      stillStarting();
       if (code !== 0) throw new Error(`${app.id}: electron build exited ${code}; see ${logPath}`);
       const main = resolvePath(root, app.run.electron.main);
       if (!existsSync(main)) throw new Error(`${app.id}: electron main ${main} does not exist after the build`);
@@ -513,31 +595,38 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
         throw new Error(`${app.id}: the electron package does not resolve from ${app.root}: ${String(error).split("\n")[0]}`);
       }
       const { _electron } = loadPlaywright(root);
+      const listenersBefore = new Map(SIGNALS.map((sig) => [sig, new Set(process.listeners(sig))]));
       electronApp = await _electron.launch({
         executablePath,
-        args: [main, ...flags],
+        // Playwright adds its loader only without executablePath; ours loads it and holds `ready` (below).
+        args: ["-r", ELECTRON_LOADER, main, ...flags],
         cwd,
-        env,
+        env: { ...env, DS_PW_ELECTRON_LOADER: playwrightElectronLoader(root) },
         timeout: timeoutMs,
-        // Playwright's handlers would exit before stopAllApps runs; see installSignalHandlers.
         handleSIGINT: false,
         handleSIGTERM: false,
         handleSIGHUP: false,
       });
+      // Playwright's Electron launcher installs its own signal handlers regardless of the options above;
+      // they exit before stopAllApps runs. Remove exactly the ones the launch added.
+      for (const sig of SIGNALS) for (const fn of process.listeners(sig)) if (!listenersBefore.get(sig)!.has(fn)) process.off(sig, fn as any);
       const pid = electronApp.process()?.pid;
-      if (pid) rootPids.push(pid);
+      if (pid) roots.push(rootProc(pid));
+      stillStarting();
       electronApp.process()?.stdout?.on("data", (chunk: Buffer) => appendFileSync(logPath, chunk));
       electronApp.process()?.stderr?.on("data", (chunk: Buffer) => appendFileSync(logPath, chunk));
       running.serveRoot = cwd;
       running.electron = { app: electronApp, window: () => electronApp.firstWindow({ timeout: timeoutMs }) };
       running.blocked = await installGuard(electronApp.context(), running);
+      // Only now may the app emit `ready` and open windows: their first loads go through the guard.
+      await electronApp.evaluate(() => (globalThis as any).__ds_release());
       refreshStartedPorts(running);
     } else {
       throw new Error(`${app.id}: unknown run mode ${String(mode)}`);
     }
 
-    const owner = running.startedPorts.filter((port) => OWNER_PORTS.includes(port));
-    if (owner.length) throw new Error(`${app.id}: the app bound owner port(s) ${owner.join(", ")}`);
+    refreshStartedPorts(running);
+    if (running.violations?.length) throw new Error(`${app.id}: ${running.violations.join("; ")}`);
     appendFileSync(logPath, `# ready${running.baseUrl ? ` at ${running.baseUrl}` : ""}; listening on ${running.startedPorts.join(", ")}\n`);
     return running;
   } catch (error) {
@@ -568,13 +657,17 @@ function serveStatic(dir: string, request: Request, served: Set<string>): Respon
 
 // -- served files ---------------------------------------------------------------
 
-/** Maps a served URL or path to a disk path, or null for a virtual module (/@vite/client, /@id/...). */
-function toDiskPath(entry: string, serveRoot: string): string | null {
+/**
+ * Maps a served URL or path to a disk path, or null for a virtual module (/@vite/client, /@id/...).
+ * A URL under the run's base path (baseUrl /app) maps relative to it.
+ */
+function toDiskPath(entry: string, serveRoot: string, basePath: string): string | null {
   let path = entry;
   let fromUrl = false;
   if (/^https?:\/\//.test(entry)) {
     path = decodeURIComponent(new URL(entry).pathname);
     fromUrl = true;
+    if (basePath && (path === basePath || path.startsWith(`${basePath}/`))) path = path.slice(basePath.length) || "/";
   } else {
     path = entry.split(/[?#]/)[0]!;
   }
@@ -590,32 +683,46 @@ function toDiskPath(entry: string, serveRoot: string): string | null {
 
 /**
  * Checks that served module/file URLs (Vite `/@fs/...`, `/src/...`, static files) or absolute disk paths
- * resolve inside `running.root`. Symlinks are resolved, so a linked package outside the root is reported.
+ * resolve inside `running.root` (or the run's own temp dir, where fixture servers build). Symlinks are
+ * resolved, so a linked package outside the root is reported in `outside`. A path that maps to no file
+ * is reported in `unresolved` (pass only module and file URLs: scripts, styles, fonts, images, not page
+ * routes). ok means both lists are empty.
  */
-export function servedFromRoot(running: RunningApp, filePaths: string[]): { ok: boolean; outside: string[] } {
+export function servedFromRoot(running: RunningApp, filePaths: string[]): { ok: boolean; outside: string[]; unresolved: string[] } {
   const rootReal = realpathSync(running.root);
+  const tmpReal = existsSync(running.tmp ?? "") ? realpathSync(running.tmp) : undefined;
   const serveRoot = running.serveRoot ?? appCwd(running.app, running.root, running.app.run?.cwd);
+  const basePath = running.baseUrl ? new URL(running.baseUrl).pathname.replace(/\/+$/, "") : "";
   const outside: string[] = [];
+  const unresolved: string[] = [];
   for (const entry of filePaths) {
-    const disk = toDiskPath(entry, serveRoot);
+    const disk = toDiskPath(entry, serveRoot, basePath);
     if (disk === null) continue;
-    const real = existsSync(disk) ? realpathSync(disk) : resolve(disk);
-    if (!isInside(real, rootReal)) outside.push(entry === real ? real : `${entry} -> ${real}`);
+    if (!existsSync(disk)) {
+      unresolved.push(entry === disk ? disk : `${entry} -> ${disk}`);
+      continue;
+    }
+    const real = realpathSync(disk);
+    if (!isInside(real, rootReal) && !(tmpReal && isInside(real, tmpReal))) outside.push(entry === real ? real : `${entry} -> ${real}`);
   }
-  return { ok: outside.length === 0, outside: [...new Set(outside)] };
+  return { ok: outside.length === 0 && unresolved.length === 0, outside: [...new Set(outside)], unresolved: [...new Set(unresolved)] };
 }
 
 // -- request guard --------------------------------------------------------------
 
 function isLoopbackHost(host: string): boolean {
-  return host === "localhost" || host.endsWith(".localhost") || host === "[::1]" || host === "0.0.0.0" || /^127\./.test(host);
+  return host === "localhost" || host.endsWith(".localhost") || host === "[::1]" || host === "0.0.0.0" || /^127(\.\d{1,3}){3}$/.test(host);
 }
 
-/** "ok", a local port the run did not start, or a non-loopback host. Non-network schemes are ok. */
-export function guardVerdict(url: URL, allowedPorts: ReadonlySet<number>): "ok" | "local-port" | "external" {
+/**
+ * "ok", an owner port (always denied, whatever the allow set says), a local port the run did not start,
+ * or a non-loopback host. Non-network schemes are ok.
+ */
+export function guardVerdict(url: URL, allowedPorts: ReadonlySet<number>): "ok" | "owner-port" | "local-port" | "external" {
   if (!["http:", "https:", "ws:", "wss:"].includes(url.protocol)) return "ok";
   if (!isLoopbackHost(url.hostname)) return "external";
   const port = url.port ? Number(url.port) : url.protocol === "https:" || url.protocol === "wss:" ? 443 : 80;
+  if (OWNER_PORTS.includes(port)) return "owner-port";
   return allowedPorts.has(port) ? "ok" : "local-port";
 }
 

@@ -1,6 +1,7 @@
 /**
- * snapshot:diff --exact is the pixel gate: it must fail on any changed pixel outside the route's masks
- * (or a missing shot) on a gating route, and pass when the change is masked or the route is non-gating.
+ * snapshot:diff --exact is the pixel gate: it must fail on any changed pixel outside the route's masks,
+ * a missing shot, or a shot whose capture failed (in either set) on a gating route, and pass when the
+ * change is masked or the route is non-gating.
  * Runs the CLI on synthetic sets in a temp out-dir.
  */
 import { afterAll, expect, test } from "bun:test";
@@ -28,6 +29,10 @@ interface Shot {
   key: string;
   gating?: boolean;
   png: Uint8Array | null;
+  /** The capture failed: the manifest records this error (and the set has no PNG for the shot). */
+  error?: string;
+  /** The capture failed in set A instead. */
+  errorInA?: string;
 }
 
 function writeSet(outDir: string, set: string, shots: Shot[]) {
@@ -43,6 +48,7 @@ function writeSet(outDir: string, set: string, shots: Shot[]) {
       theme: shot.key.endsWith("-dark") ? "dark" : "light",
       gating: shot.gating ?? true,
       ...(shot.gating === false ? { reason: "live clock" } : {}),
+      ...(shot.error ? { error: shot.error } : {}),
       masks: [MASK],
     })),
   };
@@ -51,7 +57,7 @@ function writeSet(outDir: string, set: string, shots: Shot[]) {
 
 function runDiff(b: Shot[]) {
   const outDir = mkdtempSync(join(scratch, "out-"));
-  writeSet(outDir, "a", b.map((shot) => ({ ...shot, png: png() })));
+  writeSet(outDir, "a", b.map((shot) => (shot.errorInA ? { ...shot, png: null, error: shot.errorInA } : { ...shot, png: png(), error: undefined })));
   writeSet(outDir, "b", b);
   const result = Bun.spawnSync(["bun", "scripts/snapshot-diff.ts", "--app", "demo", "--a", "a", "--b", "b", "--exact", "--out-dir", outDir], {
     cwd: join(import.meta.dir, ".."),
@@ -66,6 +72,12 @@ test.each([
   ["a change outside the masks fails", [{ key: "home-light", png: png([[20, 15]]) }], 1],
   ["a change on a non-gating route passes", [{ key: "clock-light", gating: false, png: png([[20, 15]]) }], 0],
   ["a shot missing from B fails", [{ key: "home-light", png: png() }, { key: "home-dark", png: null }], 1],
+  ["a shot whose capture failed in B fails", [{ key: "home-light", png: png() }, { key: "home-dark", png: null, error: "waitFor: Timeout" }], 1],
+  [
+    "a shot whose capture failed in both sets fails",
+    [{ key: "home-light", png: png() }, { key: "home-dark", png: null, error: "Timeout", errorInA: "Timeout" }],
+    1,
+  ],
 ] as Array<[string, Shot[], number]>)("--exact: %s", (_, shots, exitCode) => {
   expect(runDiff(shots).exitCode).toBe(exitCode);
 });
