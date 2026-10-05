@@ -3,7 +3,8 @@
  * nearest color second, writes the replacement each slot needs, and marks what it cannot map;
  * `apply` changes only approved rows whose line still holds the literal.
  *
- * Fixtures: test/fixtures/codemod/app/src (a CSS file, a TSX file, a TSX file that imports cssVar).
+ * Fixtures: test/fixtures/codemod/app/src (a CSS file, a TSX file, a TSX file that imports cssVar,
+ * and a TS file with CSS in a template literal).
  */
 import { beforeAll, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
@@ -129,6 +130,12 @@ describe("propose: nearest color", () => {
     expect(row("theme.css", 54, "#151b23")).toMatchObject({ proposed: "color.surface.panel", deltaE: 0, context: { theme: "dark" } });
     expect(row("theme.css", 58, "#151b23")).toMatchObject({ proposed: null, context: { theme: "light" } });
     expect(row("widgets.tsx", 6, "bg-[#0d1117]")).toMatchObject({ proposed: "color.surface.page", replacement: "bg-page", deltaE: 0, context: { theme: "dark" } });
+    // CSS rules inside a JS template literal read as CSS: selector chain, property and theme.
+    expect(row("styled.ts", 4, "#151b23")).toMatchObject({
+      proposed: "color.surface.panel",
+      deltaE: 0,
+      context: { property: "background", selector: ".dark .panel", theme: "dark" },
+    });
     // A sibling's dark: variant does not make this class dark.
     expect(row("widgets.tsx", 6, "bg-[#f2f2f1]").context.theme).toBe("light");
   });
@@ -146,6 +153,8 @@ describe("propose: Tailwind classes", () => {
     [5, "bg-white/95", "bg-page/95"], // same base color: the opacity modifier stays
     [5, "border-black/10", "border-rule"], // matched as rendered: the modifier goes
     [6, "bg-[#f2f2f1]", "bg-hover"], // hover: variant
+    [21, "text-[11px]", "text-ui-2xs"], // !text-[11px]: the leading ! stays outside the literal
+    [21, "bg-[#fdfdfd]!", "bg-page!"], // v4 trailing important carries over
   ])("widgets.tsx:%i %s -> %s", (line, literal, replacement) => {
     expect(row("widgets.tsx", line, literal).replacement).toBe(replacement);
   });

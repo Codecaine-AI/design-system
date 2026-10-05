@@ -127,13 +127,18 @@ function modAlpha(mod: string | undefined): number {
   return v.endsWith("%") ? Number(v.slice(0, -1)) / 100 : Number(v) > 1 ? Number(v) / 100 : Number(v);
 }
 
-/** Splits `hover:-mt-[4px]/50` style classes (variants already stripped) into root, value and modifier. */
-export function parseClass(cls: string): { neg: boolean; root: string; value: string; mod?: string; palette: boolean } | null {
-  const m = cls.match(/^!?(-?)([a-z][a-z0-9-]*?)-(\[(.+)\]|\((--[\w-]+)\))(\/(?:\d{1,3}|\[[^\]]+\]))?$/);
-  if (m) return { neg: m[1] === "-", root: m[2], value: (m[4] ?? m[5]).replace(/_/g, " "), mod: m[6], palette: false };
-  const p = cls.match(/^!?(.+?)(\/(?:\d{1,3}|\[[^\]]+\]))?$/);
+/**
+ * Splits a class (variants already stripped) into root, value, opacity modifier and the important
+ * flag (`!bg-[#fff]` or v4's `bg-[#fff]!`).
+ */
+export function parseClass(raw: string): { neg: boolean; root: string; value: string; mod?: string; palette: boolean; important: { lead: boolean; trail: boolean } } | null {
+  const important = { lead: raw.startsWith("!"), trail: raw.endsWith("!") };
+  const cls = raw.replace(/^!|!$/g, "");
+  const m = cls.match(/^(-?)([a-z][a-z0-9-]*?)-(\[(.+)\]|\((--[\w-]+)\))(\/(?:\d{1,3}|\[[^\]]+\]))?$/);
+  if (m) return { neg: m[1] === "-", root: m[2], value: (m[4] ?? m[5]).replace(/_/g, " "), mod: m[6], palette: false, important };
+  const p = cls.match(/^(.+?)(\/(?:\d{1,3}|\[[^\]]+\]))?$/);
   const hs = p?.[1].match(HUE_STEP);
-  if (p && hs) return { neg: false, root: hs[1], value: hs[2], mod: p[2], palette: true };
+  if (p && hs) return { neg: false, root: hs[1], value: hs[2], mod: p[2], palette: true, important };
   return null;
 }
 
@@ -145,6 +150,13 @@ function colorOfClass(value: string, palette: boolean, mod?: string): Rgba | nul
 }
 
 export function pickClass(data: TokenData, cls: string, ctx: Context, opts: { appId: string }): Pick & { root?: string } {
+  const pick = pickClassBody(data, cls, ctx, opts);
+  const parsed = parseClass(cls);
+  if (pick.utility && parsed) pick.utility = `${parsed.important.lead ? "!" : ""}${pick.utility}${parsed.important.trail ? "!" : ""}`;
+  return pick;
+}
+
+function pickClassBody(data: TokenData, cls: string, ctx: Context, opts: { appId: string }): Pick & { root?: string } {
   const parsed = parseClass(cls);
   if (!parsed) return none(`class ${cls}: not parsed`);
   const { root, value, mod, palette, neg } = parsed;

@@ -41,6 +41,7 @@ export interface Table {
   createdAt: string;
   designSystem: { root: string; commit: string | null };
   scan: { paths: string[]; exclude: string[]; ext?: string; categories: string[] };
+  /** role + nearest + unmapped = rows; handEdit counts mapped rows without a replacement (canvas, data objects, triplets). */
   summary: { rows: number; role: number; nearest: number; unmapped: number; handEdit: number };
   rows: Row[];
 }
@@ -50,8 +51,8 @@ export function summarize(rows: Row[]): Table["summary"] {
     rows: rows.length,
     role: rows.filter((r) => r.method === "role").length,
     nearest: rows.filter((r) => r.method === "nearest").length,
-    unmapped: rows.filter((r) => r.proposed === null).length,
-    handEdit: rows.filter((r) => r.proposed !== null && r.replacement === null).length,
+    unmapped: rows.filter((r) => r.method === null).length,
+    handEdit: rows.filter((r) => r.method !== null && r.replacement === null).length,
   };
 }
 

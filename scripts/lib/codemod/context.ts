@@ -5,7 +5,7 @@
  */
 
 import type { Span } from "./locate.ts";
-import { isCssAt, lineOf, lineRange, type SourceFile } from "./source.ts";
+import { cssRegionAt, isCssAt, lineOf, lineRange, type SourceFile } from "./source.ts";
 import type { Theme } from "./tokens.ts";
 
 export interface Context {
@@ -78,13 +78,15 @@ function declarationBefore(text: string, index: number): { start: number; decl: 
   return { start: k + 1, decl: text.slice(k + 1, index) };
 }
 
-/** Preludes of every block enclosing `index`, innermost first. */
+/** Preludes of every block enclosing `index`, innermost first. Inside a CSS region the walk stays in it. */
 function enclosingPreludes(f: SourceFile, index: number, limit = 8): string[] {
   const t = f.text;
+  const region = f.kind === "js" || f.kind === "html" ? cssRegionAt(f, index) : null;
+  const floor = region ? region[0] : 0;
   const out: string[] = [];
   let depth = 0;
-  for (let k = index - 1; k >= 0 && out.length < limit; k--) {
-    if (f.inStr && f.inStr[k] === 1 && !isCssAt(f, k)) continue;
+  for (let k = index - 1; k >= floor && out.length < limit; k--) {
+    if (f.inStr && f.inStr[k] === 1 && !region) continue;
     const ch = t[k];
     if (ch === "}") depth++;
     else if (ch === "{") {
@@ -93,7 +95,7 @@ function enclosingPreludes(f: SourceFile, index: number, limit = 8): string[] {
         continue;
       }
       let p = k - 1;
-      while (p >= 0 && !";{}".includes(t[p])) p--;
+      while (p >= floor && !";{}".includes(t[p])) p--;
       const prelude = t.slice(p + 1, k).replace(/\s+/g, " ").trim();
       out.push(prelude.length > 120 ? prelude.slice(-120) : prelude);
     }

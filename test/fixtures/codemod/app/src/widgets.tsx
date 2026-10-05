@@ -17,3 +17,5 @@ export function paint(ctx: CanvasRenderingContext2D) {
 }
 
 export const frame = { id: "root", type: "section", color: "white" };
+
+export const Important = () => <i className="!text-[11px] bg-[#fdfdfd]!" />;

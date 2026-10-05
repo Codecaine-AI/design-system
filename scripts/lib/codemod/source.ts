@@ -16,7 +16,7 @@ export interface SourceFile {
   /** JS only: 1 where the character sits inside a string or template literal. */
   inStr: Uint8Array | null;
   starts: number[];
-  /** HTML only: [start, end) of each <style> body. */
+  /** [start, end) of each region that reads as CSS: HTML <style> bodies, JS template literals holding CSS rules. */
   styles: Array<[number, number]>;
 }
 
@@ -47,7 +47,27 @@ export function prepareSource(rel: string, src: string, kind: FileKind): SourceF
       styles.push([start, start + m[2].length]);
     }
   }
+  if (inStr) styles.push(...cssTemplates(src, inStr));
   return { rel, kind, src, text, inStr, starts, styles };
+}
+
+/** A selector, a brace and a declaration: `.dark .panel { background: #151b23; }`. */
+const CSS_RULE = /[^{};]+\{[^{}]*?[-\w]+\s*:[^{}]*\}/;
+
+/** JS template literals (from the opening to the closing backtick) whose text holds a CSS rule. */
+function cssTemplates(src: string, inStr: Uint8Array): Array<[number, number]> {
+  const out: Array<[number, number]> = [];
+  let open = -1;
+  for (let i = 0; i < src.length; i++) {
+    const runStart = inStr[i] === 1 && (i === 0 || inStr[i - 1] === 0);
+    const runEnd = inStr[i] === 1 && (i + 1 === src.length || inStr[i + 1] === 0);
+    if (runStart && open === -1 && src[i - 1] === "`") open = i;
+    if (runEnd && open !== -1 && src[i + 1] === "`") {
+      if (CSS_RULE.test(src.slice(open, i + 1))) out.push([open, i + 1]);
+      open = -1;
+    }
+  }
+  return out;
 }
 
 /** [start, end) offsets of a 1-based line, without its newline. */
@@ -68,9 +88,12 @@ export function lineOf(f: SourceFile, index: number): number {
   return lo + 1;
 }
 
+/** The CSS region (an HTML <style> body or a JS CSS template) holding `index`, or null. */
+export function cssRegionAt(f: SourceFile, index: number): [number, number] | null {
+  return f.styles.find(([a, b]) => index >= a && index < b) ?? null;
+}
+
 /** True when `index` reads as CSS: a CSS file, an HTML <style> body, or CSS inside a JS template. */
 export function isCssAt(f: SourceFile, index: number): boolean {
-  if (f.kind === "css" || f.kind === "scss") return true;
-  if (f.kind === "html") return f.styles.some(([a, b]) => index >= a && index < b);
-  return false;
+  return f.kind === "css" || f.kind === "scss" || cssRegionAt(f, index) !== null;
 }
