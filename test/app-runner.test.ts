@@ -438,6 +438,12 @@ app.on("window-all-closed", () => app.quit());`,
       await window.waitForTimeout(300);
       expect(await window.title()).toBe("stand-in");
       expect(running.blocked!()).toEqual(["GET http://127.0.0.1:46937/first-load"]);
+      // Electron ignores $HOME on macOS: every profile path must be in the run's temp dir, never the owner's.
+      const paths = await running.electron!.app.evaluate(({ app }: any) =>
+        Object.fromEntries(["userData", "sessionData", "logs", "crashDumps", "appData"].map((name) => [name, app.getPath(name)])),
+      );
+      for (const [name, path] of Object.entries(paths as Record<string, string>)) expect(`${name} ${path}`).toStartWith(`${name} ${running.tmp}/`);
+      expect(await running.electron!.app.evaluate(() => process.argv.some((arg: string) => arg.startsWith("--user-data-dir")))).toBe(false);
       const pid = running.electron!.app.process().pid;
       await running.stop();
       expect(() => process.kill(pid, 0)).toThrow();
