@@ -1,0 +1,26 @@
+<!doctype html>
+<!-- verify:apps fixture: an app that is not connected (literals, a stale token, local and missing fonts, a sidebar that forgets). -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>bad</title>
+    <style>
+      :root { --ds-color-border-default: #000000; }
+      @font-face { font-family: "Inter"; src: local("Arial"); }
+      body { margin: 0; background: #fdfdfd; color: #2a2a2a; }
+      .panel { background: #ffffff; border: 1px solid #e6e5e3; }
+    </style>
+  </head>
+  <body>
+    <div class="ds-shell" data-sidebar="expanded">
+      <button class="ds-sidebar-toggle" type="button">Toggle sidebar</button>
+      <div class="panel">Panel <code>mono</code></div>
+    </div>
+    <script>
+      const shell = document.querySelector(".ds-shell");
+      document.querySelector(".ds-sidebar-toggle").addEventListener("click", () => {
+        shell.dataset.sidebar = shell.dataset.sidebar === "collapsed" ? "expanded" : "collapsed";
+      });
+    </script>
+  </body>
+</html>
