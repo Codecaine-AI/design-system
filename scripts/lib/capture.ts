@@ -9,12 +9,13 @@
  * are aborted and recorded). It waits for the page, network quiet, fonts and images, runs the route's
  * navigation-only steps, then shoots until two frames 250 ms apart are byte-identical (up to 12).
  *
- * Theme: the registry's `verify.darkSwitch` switches away from the app's default theme (light, or dark
- * on dark-first surfaces); the context's prefers-color-scheme always matches the theme. Without a
- * darkSwitch, prefers-color-scheme is the only switch.
+ * Theme: the registry's `verify.darkSwitch` (attribute, storage, click, query or navigation-only steps)
+ * switches away from the app's default theme (light, or dark on dark-first surfaces); the context's
+ * prefers-color-scheme always matches the theme. Without a darkSwitch, prefers-color-scheme is the
+ * only switch.
  */
 import type { AppEntry, RouteSpec } from "./registry";
-import { guardedContext, type RunningApp } from "./app-runner";
+import { guardedContext, splitBlocked, type RunningApp } from "./app-runner";
 import type { Box, Theme } from "./snapshot-set";
 
 export const CONTEXT_OPTIONS = {
@@ -101,7 +102,10 @@ export interface CaptureResult {
   themeMethod: string;
   /** Mask selectors and the boxes they covered (CSS px, clipped to the viewport). */
   masks: Array<{ selector: string; boxes: Box[] }>;
+  /** Requests the guard blocked that the app should not have made (a port the run did not start, a non-loopback host). */
   blocked: string[];
+  /** Blocked requests to the app's own named profile ports the run never bound (a dead kernel URL): expected. */
+  expectedBlocked: string[];
   consoleErrors: string[];
   /** Page loads after the first (a Vite reload mid-capture). */
   reloads: number;
@@ -124,6 +128,8 @@ export function shotKey(route: RouteSpec, theme: Theme): string {
 function defaultTheme(app: AppEntry): Theme {
   return app.theme?.rule === "dark-first" ? "dark" : "light";
 }
+
+type Network = ReturnType<typeof trackNetwork>;
 
 /** Tracks in-flight requests so "network quiet" ignores long-lived streams (SSE, websockets). */
 function trackNetwork(page: any) {
@@ -317,7 +323,7 @@ interface ThemePlan {
   method: string;
   url: (url: string) => string;
   init?: { storage: Record<string, string> };
-  afterLoad: (page: any) => Promise<void>;
+  afterLoad: (page: any, network: Network) => Promise<void>;
   verify: (page: any) => Promise<void>;
 }
 
@@ -347,6 +353,14 @@ export function themePlan(app: AppEntry, theme: Theme): ThemePlan {
       return { ...none, method: "storage", init: { storage: { [sw.key]: sw.value } } };
     case "click":
       return { ...none, method: "click", afterLoad: (page) => page.locator(sw.selector).click({ timeout: 15_000 }) };
+    case "steps":
+      return {
+        ...none,
+        method: "steps",
+        afterLoad: async (page, network) => {
+          for (const step of sw.steps) await runStep(page, step, network);
+        },
+      };
     case "query":
       return {
         ...none,
@@ -393,14 +407,16 @@ export async function captureRoute(browser: any, running: RunningApp, route: Rou
     }
     const network = trackNetwork(page);
     const before = running.blocked?.().length ?? 0;
-    const shot = await settleAndShoot(page, network, route, viewport, () => plan.afterLoad(page), () => plan.verify(page));
+    const shot = await settleAndShoot(page, network, route, viewport, () => plan.afterLoad(page, network), () => plan.verify(page));
+    const { unexpected, expected } = splitBlocked(running, (running.blocked?.() ?? []).slice(before));
     return {
       ...shot,
       url: page.url(),
       viewport,
       durationMs: Date.now() - started,
       themeMethod: plan.method,
-      blocked: (running.blocked?.() ?? []).slice(before),
+      blocked: unexpected,
+      expectedBlocked: expected,
       consoleErrors: [...new Set(consoleErrors)],
       reloads: 0,
     };
@@ -419,14 +435,16 @@ export async function captureRoute(browser: any, running: RunningApp, route: Rou
     });
     const url = plan.url(`${running.baseUrl}${route.path || "/"}`);
     await page.goto(url, { waitUntil: "load", timeout: 60_000 });
-    const shot = await settleAndShoot(page, network, route, viewport, () => plan.afterLoad(page), () => plan.verify(page));
+    const shot = await settleAndShoot(page, network, route, viewport, () => plan.afterLoad(page, network), () => plan.verify(page));
+    const { unexpected, expected } = splitBlocked(running, blocked());
     return {
       ...shot,
       url,
       viewport,
       durationMs: Date.now() - started,
       themeMethod: plan.method,
-      blocked: blocked(),
+      blocked: unexpected,
+      expectedBlocked: expected,
       consoleErrors: [...new Set(consoleErrors)],
       reloads: Math.max(0, loads - 1),
     };

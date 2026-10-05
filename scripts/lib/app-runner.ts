@@ -579,6 +579,28 @@ export function guardVerdict(url: URL, allowedPorts: ReadonlySet<number>): "ok" 
   return allowedPorts.has(port) ? "ok" : "local-port";
 }
 
+/**
+ * Splits guard entries ("GET http://...", "WS ws://...") into unexpected ones and expected ones: requests
+ * to one of the app's own named profile ports that the run never bound (a dead kernel URL the profile
+ * points the app at on purpose).
+ */
+export function splitBlocked(running: RunningApp, entries: string[]): { unexpected: string[]; expected: string[] } {
+  const named = new Set(Object.values(running.ports));
+  const unexpected: string[] = [];
+  const expected: string[] = [];
+  for (const entry of entries) {
+    let url: URL | undefined;
+    try {
+      url = new URL(entry.slice(entry.indexOf(" ") + 1));
+    } catch {
+      // not a URL: unexpected
+    }
+    const port = url && isLoopbackHost(url.hostname) ? Number(url.port || (url.protocol === "https:" || url.protocol === "wss:" ? 443 : 80)) : NaN;
+    (named.has(port) && !running.startedPorts.includes(port) ? expected : unexpected).push(entry);
+  }
+  return { unexpected, expected };
+}
+
 /** Installs the request guard on a context; returns the list of blocked requests. */
 export async function installGuard(context: any, running: RunningApp): Promise<() => string[]> {
   const blocked: string[] = [];

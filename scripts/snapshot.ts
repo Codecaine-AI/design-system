@@ -134,7 +134,8 @@ try {
           const flags = [
             result.stable ? "" : "UNSTABLE",
             attempt > 1 ? `retried=${attempt - 1}` : "",
-            result.blocked.length ? `blocked=${result.blocked.length}` : "",
+            result.blocked.length ? `BLOCKED=${result.blocked.length}` : "",
+            result.expectedBlocked.length ? `expected-blocked=${result.expectedBlocked.length}` : "",
             result.consoleErrors.length ? `console-errors=${result.consoleErrors.length}` : "",
           ].filter(Boolean);
           console.log(`  ${key}  (${result.durationMs} ms, ${result.frames} frames, theme ${result.themeMethod})${flags.length ? `  ${flags.join(" ")}` : ""}`);
@@ -206,7 +207,9 @@ const manifest: SetManifest = {
         ...(stopError ? { stopError } : {}),
       }
     : { mode: app.run.mode, startError },
+  // Requests the guard blocked: unexpected ones, and expected ones (the app's own named ports the run never bound).
   blockedRequests: [...new Set(shots.flatMap((shot) => (shot.blocked as string[] | undefined) ?? []))],
+  expectedBlocked: [...new Set(shots.flatMap((shot) => (shot.expectedBlocked as string[] | undefined) ?? []))],
   shots,
 };
 if (only && previous) {

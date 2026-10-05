@@ -10,7 +10,7 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync,
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { guardedContext, profileEnv, readyUrl, servedFromRoot, startApp, type RunningApp } from "../scripts/lib/app-runner.ts";
+import { guardedContext, profileEnv, readyUrl, servedFromRoot, splitBlocked, startApp, type RunningApp } from "../scripts/lib/app-runner.ts";
 import { loadPlaywright, playwrightUnavailable } from "../scripts/lib/playwright.ts";
 import type { AppEntry } from "../scripts/lib/registry.ts";
 
@@ -223,7 +223,8 @@ describe("guardedContext", () => {
   test.skipIf(Boolean(noPlaywright))(
     "aborts and records requests to local ports the run did not start and to non-loopback hosts",
     async () => {
-      const running = await start(fixtureApp({ ui: 46916, helper: 46917 }), makeRoot());
+      // 46998 is a named profile port nothing binds (like a dead kernel URL): blocked, but expected.
+      const running = await start(fixtureApp({ ui: 46916, helper: 46917, deadKernel: 46998 }), makeRoot());
       const { chromium } = loadPlaywright(process.env.DS_MIRROR ?? "/Users/Ford/workspace-ds");
       const browser = await chromium.launch({ headless: true });
       try {
@@ -232,7 +233,10 @@ describe("guardedContext", () => {
         await page.goto(`${running.baseUrl}/`);
         const results = await page.evaluate(() => (globalThis as any).results);
         expect(results).toEqual({ own: "ok", helper: "ok", stray: "failed", external: "failed" });
-        expect(blocked().sort()).toEqual(["GET http://127.0.0.1:46998/", "GET http://example.invalid/"]);
+        expect(splitBlocked(running, blocked())).toEqual({
+          unexpected: ["GET http://example.invalid/"],
+          expected: ["GET http://127.0.0.1:46998/"],
+        });
       } finally {
         await browser.close();
       }
