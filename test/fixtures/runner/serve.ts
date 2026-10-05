@@ -2,7 +2,9 @@
  * Stand-in server for the app-runner tests (not an app). It writes the environment it received to
  * $HOME/env.json, starts a helper child that listens on a second port, then prints a Vite-style
  * colored ready line. GET / returns a page that requests its own port, the helper port, a port the
- * run never started, and a non-loopback host, and records which requests succeeded.
+ * run never started, and a non-loopback host, and records which requests succeeded. GET /themed is a
+ * page that turns dark through data-theme, localStorage, ?theme=dark, a #dark button, or (with
+ * ?follow=system) prefers-color-scheme.
  */
 const port = Number(process.env.FIXTURE_PORT);
 const helperPort = Number(process.env.FIXTURE_HELPER_PORT);
@@ -30,12 +32,26 @@ const page = `<!doctype html><html><body><script>
     fetch(url).then(() => [name, "ok"], () => [name, "failed"]))).then(Object.fromEntries);
 </script></body></html>`;
 
+const themed = `<!doctype html><html><head><style>
+  html, body { margin: 0; height: 100%; background: #fff; }
+  html[data-theme="dark"] body { background: #000; }
+  @media (prefers-color-scheme: dark) { html.follow-system body { background: #000; } }
+  #dark { position: absolute; right: 0; bottom: 0; width: 8px; height: 8px; padding: 0; border: 0; }
+</style></head><body><button id="dark"></button><script>
+  const params = new URLSearchParams(location.search);
+  const root = document.documentElement;
+  if (params.get("follow") === "system") root.classList.add("follow-system");
+  if (localStorage.getItem("theme") === "dark" || params.get("theme") === "dark") root.setAttribute("data-theme", "dark");
+  document.getElementById("dark").onclick = () => root.setAttribute("data-theme", "dark");
+</script></body></html>`;
+
 Bun.serve({
   hostname: "127.0.0.1",
   port,
-  fetch: (request) =>
-    new URL(request.url).pathname === "/ping"
-      ? new Response("pong")
-      : new Response(page, { headers: { "content-type": "text/html" } }),
+  fetch: (request) => {
+    const { pathname } = new URL(request.url);
+    if (pathname === "/ping") return new Response("pong");
+    return new Response(pathname === "/themed" ? themed : page, { headers: { "content-type": "text/html" } });
+  },
 });
 console.log(`\n  \u001b[32m➜\u001b[39m  \u001b[1mLocal\u001b[22m:   \u001b[36mhttp://127.0.0.1:\u001b[1m${port}\u001b[22m/\u001b[39m`);

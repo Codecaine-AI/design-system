@@ -10,7 +10,7 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync,
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { guardedContext, profileEnv, readyUrl, servedFromRoot, startApp, type RunningApp } from "../scripts/lib/app-runner.ts";
+import { guardedContext, profileEnv, readyUrl, servedFromRoot, splitBlocked, startApp, type RunningApp } from "../scripts/lib/app-runner.ts";
 import { loadPlaywright, playwrightUnavailable } from "../scripts/lib/playwright.ts";
 import type { AppEntry } from "../scripts/lib/registry.ts";
 
@@ -92,17 +92,18 @@ describe("profileEnv", () => {
     Object.assign(process.env, planted);
     try {
       const app = fixtureApp({ api: 47011 });
-      app.runProfile.env = { DATA_DIR: "{tmp}/data", API_URL: "http://127.0.0.1:{port:api}", DROP_ME: "x" };
+      app.runProfile.env = { DATA_DIR: "{tmp}/data", API_URL: "http://127.0.0.1:{port:api}", FIXTURES: "{ds}/apps/fixtures", DROP_ME: "x" };
       app.runProfile.unsetEnv = ["DROP_ME", "LANG"];
       const env = profileEnv(app, { root: "/r", tmp: "/t/run" });
 
-      const allowed = new Set(["PATH", "TERM", "TMPDIR", "HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME", "DATA_DIR", "API_URL"]);
+      const allowed = new Set(["PATH", "TERM", "TMPDIR", "HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME", "DATA_DIR", "API_URL", "FIXTURES"]);
       expect(Object.keys(env).filter((key) => !allowed.has(key) && !key.startsWith("BUN_INSTALL"))).toEqual([]);
       expect(env.PATH).toBe(process.env.PATH!);
       expect(env.HOME).toBe("/t/run");
       for (const key of ["XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME"]) expect(env[key]!.startsWith("/t/run/")).toBe(true);
       expect(env.DATA_DIR).toBe("/t/run/data");
       expect(env.API_URL).toBe("http://127.0.0.1:47011");
+      expect(env.FIXTURES).toBe(join(import.meta.dir, "..", "apps/fixtures"));
       expect("LANG" in env).toBe(false);
     } finally {
       for (const [key, value] of Object.entries(saved)) {
@@ -222,16 +223,20 @@ describe("guardedContext", () => {
   test.skipIf(Boolean(noPlaywright))(
     "aborts and records requests to local ports the run did not start and to non-loopback hosts",
     async () => {
-      const running = await start(fixtureApp({ ui: 46916, helper: 46917 }), makeRoot());
+      // 46998 is a named profile port nothing binds (like a dead kernel URL): blocked, but expected.
+      const running = await start(fixtureApp({ ui: 46916, helper: 46917, deadKernel: 46998 }), makeRoot());
       const { chromium } = loadPlaywright(process.env.DS_MIRROR ?? "/Users/Ford/workspace-ds");
       const browser = await chromium.launch({ headless: true });
       try {
         const { context, blocked } = await guardedContext(browser, running);
         const page = await context.newPage();
         await page.goto(`${running.baseUrl}/`);
-        const results = await page.evaluate(() => (window as any).results);
+        const results = await page.evaluate(() => (globalThis as any).results);
         expect(results).toEqual({ own: "ok", helper: "ok", stray: "failed", external: "failed" });
-        expect(blocked().sort()).toEqual(["GET http://127.0.0.1:46998/", "GET http://example.invalid/"]);
+        expect(splitBlocked(running, blocked())).toEqual({
+          unexpected: ["GET http://example.invalid/"],
+          expected: ["GET http://127.0.0.1:46998/"],
+        });
       } finally {
         await browser.close();
       }

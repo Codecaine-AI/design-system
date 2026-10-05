@@ -15,7 +15,8 @@
  *   electron  run `run.electron.build`, then Playwright `_electron.launch` against `run.electron.main`
  *   none      throws: the app has no screenshots and no runtime checks
  *
- * Placeholders `{tmp}`, `{root}` and `{port:<name>}` are substituted in `run.start`, `commands.*`,
+ * Placeholders `{tmp}`, `{root}`, `{ds}` (DESIGN_SYSTEM_ROOT, the design-system checkout the tool runs from)
+ * and `{port:<name>}` are substituted in `run.start`, `commands.*`,
  * `run.electron.build`, `runProfile.flags` and `runProfile.env` values. `runProfile.flags` go where the
  * start command says `{flags}`, else at its end (browser), or after the main entry (electron).
  *
@@ -66,6 +67,8 @@ export interface RunningApp {
   serveRoot?: string;
   /** static mode without run.start: every file the built-in server sent. */
   servedFiles?: () => string[];
+  /** Set when the run used allowUnproven: its results must not count for a gate. */
+  unproven?: true;
 }
 
 export interface StartOptions {
@@ -73,6 +76,11 @@ export interface StartOptions {
   outDir: string;
   /** Per phase (build, then ready). Default 180 s. */
   timeoutMs?: number;
+  /**
+   * Run an unproven profile. Only for proving a profile (the registry worker); the run logs a loud
+   * line to stderr and to the run log. Default false: an unproven profile is refused.
+   */
+  allowUnproven?: boolean;
 }
 
 // -- placeholders, env, fixtures ---------------------------------------------
@@ -83,7 +91,7 @@ export interface PlaceholderContext {
   ports: Record<string, number>;
 }
 
-/** Substitutes {tmp}, {root} and {port:<name>}. An unknown port name throws; other braces stay as written. */
+/** Substitutes {tmp}, {root}, {ds} and {port:<name>}. An unknown port name throws; other braces stay as written. */
 export function expandPlaceholders(text: string, ctx: PlaceholderContext): string {
   return text
     .replace(/\{port:([A-Za-z0-9_-]+)\}/g, (_, name: string) => {
@@ -92,7 +100,8 @@ export function expandPlaceholders(text: string, ctx: PlaceholderContext): strin
       return String(port);
     })
     .replaceAll("{tmp}", ctx.tmp)
-    .replaceAll("{root}", ctx.root);
+    .replaceAll("{root}", ctx.root)
+    .replaceAll("{ds}", DESIGN_SYSTEM_ROOT);
 }
 
 export function profileEnv(app: AppEntry, opts: { root: string; tmp: string }): Record<string, string> {
@@ -337,8 +346,10 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
   const mode = app.run?.mode;
   if (!mode || mode === "none")
     throw new Error(`${app.id}: run mode none (${app.run?.reason ?? "no reason given"}): no screenshots and no runtime checks`);
-  if (app.runProfile?.proof?.status !== "proven")
-    throw new Error(`${app.id}: run profile is ${app.runProfile?.proof?.status ?? "missing"}; only a proven profile runs`);
+  if (!app.runProfile) throw new Error(`${app.id}: no run profile`);
+  const unproven = app.runProfile.proof?.status !== "proven";
+  if (unproven && !opts.allowUnproven)
+    throw new Error(`${app.id}: run profile is ${app.runProfile.proof?.status ?? "missing"}; only a proven profile runs`);
   const root = resolve(opts.root);
   const timeoutMs = opts.timeoutMs ?? 180_000;
   checkProfilePorts(app);
@@ -352,6 +363,11 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
   mkdirSync(logDir, { recursive: true });
   const logPath = join(logDir, `${stamp()}-${mode}.log`);
   appendFileSync(logPath, `# ${app.id} run mode ${mode}, root ${root}, tmp ${tmp}\n`);
+  if (unproven) {
+    const warning = `!!! ${app.id}: RUNNING AN UNPROVEN PROFILE (allowUnproven). Use only to prove the profile; never for gates.`;
+    console.error(warning);
+    appendFileSync(logPath, `${warning}\n`);
+  }
 
   const ports = { ...(app.runProfile.ports ?? {}) };
   const ctx: PlaceholderContext = { root, tmp, ports };
@@ -395,6 +411,7 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
       if (busy.length) throw new Error(`${app.id}: ports still bound after stop, not by this run's processes: ${busy.join(", ")}`);
     },
   };
+  if (unproven) running.unproven = true;
   internals.set(running, { rootPids });
   live.add(running);
 
@@ -560,6 +577,28 @@ export function guardVerdict(url: URL, allowedPorts: ReadonlySet<number>): "ok" 
   if (!isLoopbackHost(url.hostname)) return "external";
   const port = url.port ? Number(url.port) : url.protocol === "https:" || url.protocol === "wss:" ? 443 : 80;
   return allowedPorts.has(port) ? "ok" : "local-port";
+}
+
+/**
+ * Splits guard entries ("GET http://...", "WS ws://...") into unexpected ones and expected ones: requests
+ * to one of the app's own named profile ports that the run never bound (a dead kernel URL the profile
+ * points the app at on purpose).
+ */
+export function splitBlocked(running: RunningApp, entries: string[]): { unexpected: string[]; expected: string[] } {
+  const named = new Set(Object.values(running.ports));
+  const unexpected: string[] = [];
+  const expected: string[] = [];
+  for (const entry of entries) {
+    let url: URL | undefined;
+    try {
+      url = new URL(entry.slice(entry.indexOf(" ") + 1));
+    } catch {
+      // not a URL: unexpected
+    }
+    const port = url && isLoopbackHost(url.hostname) ? Number(url.port || (url.protocol === "https:" || url.protocol === "wss:" ? 443 : 80)) : NaN;
+    (named.has(port) && !running.startedPorts.includes(port) ? expected : unexpected).push(entry);
+  }
+  return { unexpected, expected };
 }
 
 /** Installs the request guard on a context; returns the list of blocked requests. */
