@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+.alert {
+  color: #ff0000;
+  border-radius: 6px;
+  background: var(--ds-color-surface-page);
+  border-color: var(--ds-not-a-token);
+  outline-color: var(--ds-color-notion-bg-blue);
+}

@@ -7,8 +7,9 @@
  *   `*` matches within one path segment, `**` across segments, `?` one character.
  *   A glob that names a directory also matches every file below it.
  * - `match` (literals) is a regex that must match the whole literal as scan-literals
- *   reports it (hex lowercased and shortened, rgb()/hsl() lowercased with single
- *   spaces, Tailwind arbitrary classes without `!`), case-insensitive.
+ *   reports it, case-insensitive. scan-literals lowercases hex and expands 3/4-digit hex
+ *   to 6/8 digits (write "#ff0000" for #f00), lowercases rgb()/hsl() with single
+ *   spaces, and drops `!` from Tailwind arbitrary classes.
  * - `className` (twClasses) is a regex that must match the whole class without its
  *   variant prefixes (`text-sm` for `md:hover:text-sm`), case-sensitive.
  * - `category` is a scan-literals hard category; `kind` is the color split

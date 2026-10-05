@@ -1,0 +1,10 @@
+{
+  "literals": [
+    { "file": "apps/unconnected/src/**", "match": "#ff0000", "reason": "Brand red, kept until the logo is redrawn." },
+    { "file": "apps/unconnected/src/index.css", "match": "#abcdef", "reason": "Left over from a removed banner." },
+    { "file": "apps/unconnected/src/missing.css" }
+  ],
+  "twClasses": [
+    { "file": "apps/unconnected/src/*.tsx", "className": "rounded-lg", "reason": "Matches the embedding page's corners." }
+  ]
+}

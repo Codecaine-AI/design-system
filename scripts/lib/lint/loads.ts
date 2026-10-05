@@ -20,7 +20,16 @@ import { lexJs, stripCss, stripHtml } from "../../scan-literals";
 import { PACKAGE_NAME } from "./types";
 import { lineAt, owningPackage, readText, realpathOrNull, resolveSpecifier, splitSpecifier, toPosix } from "./workspace";
 
-export type DsKind = "fonts" | "tokens" | "tokens-dark-first" | "layout" | "tw-strict" | "tw-theme" | "ds-other";
+export type DsKind =
+  | "fonts"
+  | "tokens"
+  | "tokens-dark-first"
+  | "host-contract"
+  | "host-contract-dark-first"
+  | "layout"
+  | "tw-strict"
+  | "tw-theme"
+  | "ds-other";
 export type LoadKind = DsKind | "tailwindcss";
 
 export interface Load {
@@ -58,6 +67,8 @@ const JS_EXT = /\.(?:[mc]?[jt]sx?)$/i;
 const DS_SUBPATHS: Record<string, DsKind> = {
   "tokens.css": "tokens",
   "tokens-dark-first.css": "tokens-dark-first",
+  "host-contract.css": "host-contract",
+  "host-contract-dark-first.css": "host-contract-dark-first",
   "layout.css": "layout",
   "tailwind.css": "tw-theme",
   "tailwind-strict.css": "tw-strict",
@@ -67,6 +78,8 @@ const DS_SUBPATHS: Record<string, DsKind> = {
 const DS_FILES: Record<string, DsKind> = {
   "dist/css/tokens.css": "tokens",
   "dist/css/tokens-dark-first.css": "tokens-dark-first",
+  "dist/css/host-contract.css": "host-contract",
+  "dist/css/host-contract-dark-first.css": "host-contract-dark-first",
   "css/layout.css": "layout",
   "dist/tailwind/theme.css": "tw-theme",
   "dist/tailwind/strict.css": "tw-strict",
@@ -78,11 +91,15 @@ const DS_FILES: Record<string, DsKind> = {
 const COPIED: Record<string, DsKind> = {
   "tokens.css": "tokens",
   "tokens-dark-first.css": "tokens-dark-first",
+  "host-contract.css": "host-contract",
+  "host-contract-dark-first.css": "host-contract-dark-first",
   "layout.css": "layout",
   "fonts.css": "fonts",
   "theme.css": "tw-theme",
   "strict.css": "tw-strict",
 };
+
+const COPY_HEADER = /^\s*\/\*[\s*]*@codecaine-ai\/design-system\b/;
 
 /** What a stylesheet specifier loads, or null for an ordinary file the walk follows. */
 export function classify(spec: string, real: string | null): LoadKind | null {
@@ -97,8 +114,10 @@ export function classify(spec: string, real: string | null): LoadKind | null {
   if (pkg?.name === "@codecaine-ai/text-measure" && basename(real) === "fonts.css") return "fonts";
   const copied = COPIED[basename(real)];
   if (copied) {
-    const head = (readText(real) ?? "").slice(0, 600);
-    if (head.includes(PACKAGE_NAME)) return copied;
+    // The package's own header: the file opens with a comment whose first word is the package name.
+    // A local wrapper that merely mentions the package (and @imports it) is followed instead.
+    const text = readText(real) ?? "";
+    if (COPY_HEADER.test(text.slice(0, 200)) && !/@import\b/.test(text)) return copied;
   }
   return null;
 }

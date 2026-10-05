@@ -27,6 +27,7 @@ const NOTION_PATH = /^(?:(?:base|light|dark)\.)?color\.notion(?:\.|$)/;
 const DS_NAME = /(?<![\w-])--ds-[A-Za-z0-9_-]*/g;
 const PATH_STRING =
   /^(?:color|space|font|radius|shadow|motion|z|layout|line-height|letter-spacing|border|focus|blur)\.[A-Za-z0-9][\w.-]*$/;
+const FILE_NAME = /\.(?:[cm]?[jt]sx?|css|json|md|html?|svg|png|jpe?g|webp)$/;
 const GROUPS = new Set(["base", "light", "dark"]);
 
 interface Bindings {
@@ -197,7 +198,7 @@ export function checkNames(ctx: AppContext): CheckOutput {
     // String literals shaped like token paths (typed TokenPath values).
     for (const m of src.matchAll(/(["'`])([A-Za-z][\w.-]*)\1/g)) {
       const start = m.index! + 1;
-      if (!inStr[start] || checked.has(start) || !PATH_STRING.test(m[2])) continue;
+      if (!inStr[start] || checked.has(start) || !PATH_STRING.test(m[2]) || FILE_NAME.test(m[2])) continue;
       if (!notionOk && NOTION_PATH.test(m[2])) add(rel, line(start), `token path "${m[2]}" is docs-system compat (color.notion.*); only ${NOTION_REPO} may use it`);
       else if (!ds.prefixes.has(m[2])) add(rel, line(start), `token path "${m[2]}" does not exist in the current build`);
     }

@@ -4,6 +4,9 @@
  * - fonts.css (the design system's, or @codecaine-ai/text-measure's), then
  *   tokens.css, then layout.css on shell apps. Dark-first surfaces may load
  *   tokens-dark-first.css instead of tokens.css; light-dark apps may not.
+ * - host-contract.css is optional; when loaded it sits after the tokens and before
+ *   layout.css, and its variant pairs with the tokens' (tokens-dark-first.css with
+ *   host-contract-dark-first.css).
  * - Tailwind v4: tailwind-strict.css after `tailwindcss` and before tailwind.css.
  * - Tailwind v3: tailwind.config.* (in the app root, else up to the repo root)
  *   uses the preset @codecaine-ai/design-system/tailwind-v3-preset.
@@ -24,6 +27,8 @@ const NAMES: Record<string, string> = {
   fonts: "fonts.css",
   tokens: "tokens.css",
   "tokens-dark-first": "tokens-dark-first.css",
+  "host-contract": "host-contract.css",
+  "host-contract-dark-first": "host-contract-dark-first.css",
   layout: "layout.css",
   "tw-strict": "tailwind-strict.css",
   "tw-theme": "tailwind.css",
@@ -85,6 +90,22 @@ export function checkWiring(ctx: AppContext): CheckOutput {
     if (!layout) violations.push({ file: entryRel, line: 1, message: "shell app does not load @codecaine-ai/design-system/layout.css" });
     else if (tokens && !before(tokens, layout)) {
       violations.push({ ...at(layout), message: `layout.css loads before ${NAMES[tokens.kind]} (${ctx.rel(tokens.from)}:${tokens.line}); load it after the tokens` });
+    }
+  }
+
+  const host = first("host-contract", "host-contract-dark-first");
+  if (host) {
+    const hostDark = host.kind === "host-contract-dark-first";
+    if (hostDark && !darkFirst) {
+      violations.push({ ...at(host), message: "loads host-contract-dark-first.css, which is for dark-first surfaces; this app's theme rule is light-dark (load host-contract.css)" });
+    } else if (tokens && hostDark !== (tokens.kind === "tokens-dark-first")) {
+      violations.push({ ...at(host), message: `loads ${NAMES[host.kind]} with ${NAMES[tokens.kind]}; pair the variants (tokens-dark-first.css with host-contract-dark-first.css)` });
+    }
+    if (tokens && !before(tokens, host)) {
+      violations.push({ ...at(host), message: `${NAMES[host.kind]} loads before ${NAMES[tokens.kind]} (${ctx.rel(tokens.from)}:${tokens.line}); load it after the tokens` });
+    }
+    if (layout && !before(host, layout)) {
+      violations.push({ ...at(host), message: `${NAMES[host.kind]} loads after layout.css (${ctx.rel(layout.from)}:${layout.line}); load it before layout.css` });
     }
   }
 

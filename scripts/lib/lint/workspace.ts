@@ -45,6 +45,13 @@ export function isDir(p: string): boolean {
 }
 
 const textCache = new Map<string, string | null>();
+const pkgCache = new Map<string, { dir: string; name: string } | null>();
+
+/** Drops cached file text and package lookups. lintApps calls it at the start of every run. */
+export function clearCaches(): void {
+  textCache.clear();
+  pkgCache.clear();
+}
 
 /** File text, cached for one lint run. Null when unreadable. */
 export function readText(p: string): string | null {
@@ -324,8 +331,6 @@ export function resolveSpecifier(spec: string, fromFile: string): string | null 
   const pkgDir = findPackageDir(parsed.name, dirname(fromFile));
   return pkgDir ? resolveExport(pkgDir, parsed.subpath) : null;
 }
-
-const pkgCache = new Map<string, { dir: string; name: string } | null>();
 
 /** Nearest package.json above a file: its directory and package name. */
 export function owningPackage(file: string): { dir: string; name: string } | null {

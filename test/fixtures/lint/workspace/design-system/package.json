@@ -1,0 +1,15 @@
+{
+  "name": "@codecaine-ai/design-system",
+  "private": true,
+  "exports": {
+    ".": "./dist/js/index.js",
+    "./fonts.css": { "style": "./css/fonts.css", "default": "./css/fonts.css" },
+    "./tokens.css": { "style": "./dist/css/tokens.css", "default": "./dist/css/tokens.css" },
+    "./tokens-dark-first.css": { "style": "./dist/css/tokens-dark-first.css", "default": "./dist/css/tokens-dark-first.css" },
+    "./host-contract.css": { "style": "./dist/css/host-contract.css", "default": "./dist/css/host-contract.css" },
+    "./host-contract-dark-first.css": { "style": "./dist/css/host-contract-dark-first.css", "default": "./dist/css/host-contract-dark-first.css" },
+    "./layout.css": { "style": "./css/layout.css", "default": "./css/layout.css" },
+    "./tailwind.css": { "style": "./dist/tailwind/theme.css", "default": "./dist/tailwind/theme.css" },
+    "./tailwind-strict.css": { "style": "./dist/tailwind/strict.css", "default": "./dist/tailwind/strict.css" }
+  }
+}

@@ -1,7 +1,7 @@
 /**
  * Check 5, shell: a shell app renders the design-system app shell.
  *
- * Either of these passes:
+ * Either of these passes (a hand-written AppShell folder passes through the markup):
  * - an `AppShell` copied from templates/react-app-shell: a `_components/AppShell/`
  *   folder in the scan dirs holds every non-test file of the template (by path, not
  *   by bytes; apps may add files) and still renders every ds-* class the template
@@ -64,28 +64,32 @@ export function checkShell(ctx: AppContext): CheckOutput {
   const { app } = ctx;
   if (!app.shell) return { violations: [], warnings: [], na: `${app.id} is not a shell app (shell: false in apps.json)` };
 
+  // Route 1: an AppShell copied from the template.
   const copyDirs = new Set<string>();
   for (const s of ctx.sources()) {
     const m = s.abs.match(/^(.*\/_components\/AppShell)\//);
     if (m) copyDirs.add(m[1]);
   }
-  if (copyDirs.size) {
-    const results = [...copyDirs].map((d) => checkCopy(ctx, d)).sort((a, b) => a.violations.length - b.violations.length);
-    return { violations: results[0].violations, warnings: [] };
-  }
+  const copies = [...copyDirs].map((d) => checkCopy(ctx, d)).sort((a, b) => a.violations.length - b.violations.length);
+  if (copies.length && !copies[0].violations.length) return { violations: [], warnings: [] };
 
+  // Route 2: .ds-shell markup (also how a hand-written AppShell passes).
   const found = renderedClasses(ctx);
   const root = found.get("ds-shell");
-  if (!root) {
-    const where = app.scan?.paths?.[0] ?? app.root;
-    return {
-      violations: [{ file: where, line: 0, message: "renders no .ds-shell markup and has no AppShell copied from templates/react-app-shell" }],
-      warnings: [],
-    };
+  const markup: Finding[] = [];
+  if (root) {
+    for (const c of SHELL_CLASSES.slice(1)) {
+      if (!found.has(c)) markup.push({ file: root.file, line: root.line, message: `the .ds-shell markup has no .${c}` });
+    }
+    if (!markup.length) return { violations: [], warnings: [] };
   }
-  const violations: Finding[] = [];
-  for (const c of SHELL_CLASSES.slice(1)) {
-    if (!found.has(c)) violations.push({ file: root.file, line: root.line, message: `the .ds-shell markup has no .${c}` });
-  }
-  return { violations, warnings: [] };
+
+  // Neither route passes: an AppShell folder is judged as a template copy, else the markup.
+  if (copies.length) return { violations: copies[0].violations, warnings: [] };
+  if (root) return { violations: markup, warnings: [] };
+  const where = app.scan?.paths?.[0] ?? app.root;
+  return {
+    violations: [{ file: where, line: 0, message: "renders no .ds-shell markup and has no AppShell copied from templates/react-app-shell" }],
+    warnings: [],
+  };
 }

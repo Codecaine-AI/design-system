@@ -1,0 +1,225 @@
+/**
+ * lint:apps checks (scripts/lib/lint/) against a fixture workspace: a fake design-system
+ * package, a connected app that passes every check, an unconnected app that breaks each
+ * one, and small variants (see lint-support.ts). Token names, token paths and the AppShell
+ * template come from this checkout's real build.
+ */
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { loadDesignSystem, type DesignSystemBuild } from "../scripts/lib/lint/design-system";
+import type { Finding } from "../scripts/lib/lint/types";
+import type { CheckId } from "../scripts/lib/registry";
+import { checkOf, lint, materialize, NA_REASONS, REAL_TOKENS_CSS, sha256, STALE_SUFFIX, type Workspace } from "./lint-support";
+
+let ws: Workspace;
+let ds: DesignSystemBuild;
+
+beforeAll(() => {
+  ws = materialize();
+  ds = loadDesignSystem();
+});
+afterAll(() => ws?.cleanup());
+
+const check = (app: string, id: CheckId) => checkOf(ws, ds, app, id);
+const at = (file: string, line: number, message: string) => ({ file, line, message: expect.stringContaining(message) });
+const messages = (findings: Finding[]) => findings.map((f) => f.message);
+/** The findings are exactly these, in any order. */
+function expectExactly(findings: Finding[], expected: Array<ReturnType<typeof at>>) {
+  expect(findings).toHaveLength(expected.length);
+  for (const e of expected) expect(findings).toContainEqual(e);
+}
+
+const ALL_CHECKS: CheckId[] = ["resolution", "wiring", "literals", "names", "shell", "structure"];
+
+test("a connected app passes every check at pass 3, a 400-line file included", () => {
+  const [app] = lint(ws, ds, ["connected"], 3).apps;
+  expect(app.ok).toBe(true);
+  expect(app.checks.map((c) => ({ id: c.id, status: c.status, violations: c.violations, warnings: c.warnings }))).toEqual(
+    ALL_CHECKS.map((id) => ({ id, status: "pass", violations: [], warnings: [] })),
+  );
+  expect(app.literals).toEqual({ hard: 0, floor: 0 });
+});
+
+describe("pass selection", () => {
+  test.each([
+    [1, ALL_CHECKS.slice(0, 4)],
+    [2, ALL_CHECKS.slice(0, 5)],
+    [3, ALL_CHECKS],
+    [null, ALL_CHECKS],
+  ] as const)("--pass %p runs %p", (pass, ids) => {
+    expect(lint(ws, ds, ["connected"], pass).apps[0].checks.map((c) => c.id)).toEqual([...ids]);
+  });
+
+  test("a check the registry marks n/a reports the registry's reason and does not run", () => {
+    // Without the n/a mark, wiring runs and fails: a library has no entry stylesheet.
+    expect(check("widgets-resolution-required", "wiring").status).toBe("fail");
+    expect(check("widgets", "wiring")).toEqual({ id: "wiring", status: "n/a", reason: NA_REASONS.libraryWiring, violations: [], warnings: [] });
+  });
+});
+
+describe("resolution", () => {
+  test("an app whose package.json does not declare the package fails", () => {
+    expect(check("unconnected", "resolution").violations).toEqual([
+      at("apps/unconnected/package.json", 1, "does not declare @codecaine-ai/design-system"),
+    ]);
+  });
+
+  test("a host-css library is n/a: with the registry's reason, or from consume.via when the registry requires it", () => {
+    const marked = check("widgets", "resolution");
+    expect([marked.status, marked.reason]).toEqual(["n/a", NA_REASONS.libraryResolution]);
+    const required = check("widgets-resolution-required", "resolution");
+    expect(required.status).toBe("n/a");
+    expect(required.reason).toContain("consume.via host-css");
+  });
+
+  test("a vendored tgz passes when its tokens.css matches the build and fails with both hashes when not", () => {
+    expect(check("vendored", "resolution")).toMatchObject({ status: "pass", violations: [] });
+    const stale = sha256(readFileSync(REAL_TOKENS_CSS, "utf8") + STALE_SUFFIX).slice(0, 12);
+    const build = sha256(readFileSync(REAL_TOKENS_CSS, "utf8")).slice(0, 12);
+    expect(check("vendored-stale", "resolution").violations).toEqual([
+      at("apps/vendored-stale/vendor/design-system.tgz", 0, `in the tgz (sha256 ${stale}) differs from the current build (${build})`),
+    ]);
+  });
+
+  test("copied tokens pass when they match the build and fail with their hash when edited", () => {
+    expect(check("copied", "resolution")).toMatchObject({ status: "pass", violations: [] });
+    const stale = sha256(readFileSync(REAL_TOKENS_CSS, "utf8") + STALE_SUFFIX).slice(0, 12);
+    expect(check("copied-stale", "resolution").violations).toEqual([at("apps/copied-stale/ds/tokens.css", 0, `copied tokens (sha256 ${stale}) differ`)]);
+  });
+});
+
+describe("wiring", () => {
+  test("each design-system stylesheet the entry does not load is one violation", () => {
+    const { violations } = check("unconnected", "wiring");
+    const missing = ["/fonts.css", "/tokens.css", "/layout.css", "/tailwind-strict.css", "/tailwind.css"];
+    expect(missing.map((m) => violations.filter((v) => v.message.includes(`design-system${m}`)).length)).toEqual(missing.map(() => 1));
+    expect(violations).toHaveLength(missing.length);
+  });
+
+  test("fonts after tokens and tailwind-strict.css after tailwind.css are order violations", () => {
+    expectExactly(check("misordered", "wiring").violations, [
+      at("apps/wiring/misordered.css", 3, "fonts.css loads after tokens.css (apps/wiring/misordered.css:2)"),
+      at("apps/wiring/misordered.css", 6, "tailwind-strict.css loads after tailwind.css (apps/wiring/misordered.css:5)"),
+    ]);
+  });
+
+  test("tokens-dark-first.css is allowed on a dark-first app and a violation on a light-dark app", () => {
+    expect(check("dark-first", "wiring")).toMatchObject({ status: "pass", violations: [] });
+    expect(check("dark-first-as-light-dark", "wiring").violations).toContainEqual(
+      at("apps/wiring/dark-first.css", 3, "loads tokens-dark-first.css, which is for dark-first surfaces"),
+    );
+  });
+
+  test("host-contract.css sits between the tokens and layout.css, in the tokens' variant", () => {
+    expect(check("host-contract-paired", "wiring")).toMatchObject({ status: "pass", violations: [] });
+    expectExactly(check("host-contract", "wiring").violations, [
+      at("apps/wiring/host-contract.css", 5, "loads host-contract.css with tokens-dark-first.css; pair the variants"),
+      at("apps/wiring/host-contract.css", 5, "host-contract.css loads after layout.css (apps/wiring/host-contract.css:4)"),
+    ]);
+  });
+});
+
+describe("literals", () => {
+  test("each hard literal is a violation at its file and line", () => {
+    const { violations } = check("unconnected", "literals");
+    expect(violations).toContainEqual(at("apps/unconnected/src/index.css", 4, "hard literal #ff0000 (hex, inline)"));
+    expect(violations).toContainEqual(at("apps/unconnected/src/index.css", 5, "hard literal 6px (radius)"));
+  });
+
+  test("a hard total over literalFloor is a violation; a total at the floor is not", () => {
+    expect(messages(check("unconnected", "literals").violations)).toContain("2 hard literals in the scan dirs, over the floor of 0");
+    const [atFloor] = lint(ws, ds, ["unconnected-at-floor"]).apps;
+    expect(atFloor.literals).toEqual({ hard: 2, floor: 2 });
+    expect(messages(atFloor.checks.find((c) => c.id === "literals")!.violations).filter((m) => m.includes("over the floor"))).toEqual([]);
+  });
+
+  test("allowlist entries suppress the hits they match; an entry without a reason fails and an unused one warns", () => {
+    const allowlist = "registry/allowlists/unconnected.json";
+    const { violations, warnings } = check("unconnected-allowlisted", "literals");
+    const hits = messages(violations);
+    expect(hits.some((m) => m.includes("#ff0000"))).toBe(false);
+    expect(hits.some((m) => m.includes("class rounded-lg"))).toBe(false);
+    expect(hits.some((m) => m.includes("6px"))).toBe(true);
+    expect(violations).toContainEqual(at(allowlist, 5, "literal entry for apps/unconnected/src/missing.css has no reason"));
+    expect(warnings).toContainEqual(at(allowlist, 4, "literals entry matches nothing"));
+  });
+
+  test("Tailwind default-scale classes are violations; design-system utilities and CSS easing values are not", () => {
+    const tw = check("unconnected", "literals")
+      .violations.filter((v) => v.message.startsWith("Tailwind default-scale class "))
+      .map((v) => `${v.file}:${v.line} ${v.message.split(" ")[3]}`);
+    // Widget.tsx line 6 also holds text-ui-sm, rounded-pill and font-medium; line 9 holds "opacity 150ms ease-out".
+    expect(tw.sort()).toEqual([
+      "apps/unconnected/src/Widget.tsx:10 ease-out",
+      "apps/unconnected/src/Widget.tsx:6 bg-red-500",
+      "apps/unconnected/src/Widget.tsx:6 rounded-lg",
+      "apps/unconnected/src/Widget.tsx:6 text-sm",
+    ]);
+  });
+});
+
+describe("names", () => {
+  test("unknown --ds-* names, notion names and bad token paths fail; valid ones in the same files pass", () => {
+    expectExactly(check("unconnected", "names").violations, [
+      at("apps/unconnected/src/Widget.tsx", 7, 'token path "color.nope" (cssVar) does not exist'),
+      at("apps/unconnected/src/index.css", 7, "--ds-not-a-token is not defined by the current build"),
+      at("apps/unconnected/src/index.css", 8, "--ds-color-notion-bg-blue is docs-system compat"),
+    ]);
+  });
+
+  test("the docs-system repo may use notion names", () => {
+    expectExactly(check("unconnected-docs-system", "names").violations, [
+      at("apps/unconnected/src/Widget.tsx", 7, '"color.nope"'),
+      at("apps/unconnected/src/index.css", 7, "--ds-not-a-token"),
+    ]);
+  });
+});
+
+describe("shell", () => {
+  test("an app without .ds-shell markup or an AppShell copy fails", () => {
+    expect(messages(check("unconnected", "shell").violations)).toEqual([expect.stringContaining("renders no .ds-shell markup")]);
+  });
+
+  test("an app with shell: false is n/a", () => {
+    const result = check("connected-no-shell", "shell");
+    expect(result.status).toBe("n/a");
+    expect(result.reason).toContain("shell: false");
+  });
+
+  test(".ds-shell markup without .ds-topbar names the missing class", () => {
+    expect(check("shell-no-topbar", "shell").violations).toEqual([at("apps/shell-no-topbar/App.tsx", 3, "the .ds-shell markup has no .ds-topbar")]);
+  });
+
+  test("a copy of the AppShell template passes; without Topbar/index.tsx it names the missing file", () => {
+    expect(check("templated", "shell")).toMatchObject({ status: "pass", violations: [] });
+    expect(check("templated-no-topbar", "shell").violations).toContainEqual(
+      at("apps/templated-no-topbar/src/_components/AppShell", 0, "AppShell copy is missing _components/Topbar/index.tsx"),
+    );
+  });
+
+  // shell.ts: "Either of these passes". A hand-written _components/AppShell is not a template copy,
+  // but it renders the complete .ds-shell markup.
+  test("a hand-written AppShell folder that renders the complete .ds-shell markup passes", () => {
+    const { status, violations } = check("own-shell", "shell");
+    expect({ status, first: violations[0]?.message }).toEqual({ status: "pass", first: undefined });
+  });
+});
+
+describe("structure", () => {
+  test("a flat component, a loose _components/ file and a 401-line file are violations in an app", () => {
+    expectExactly(check("unconnected", "structure").violations, [
+      at("apps/unconnected/src/Widget.tsx", 0, "component file outside _components/<Name>/index.tsx"),
+      at("apps/unconnected/src/_components/helpers.ts", 0, "loose file in _components/"),
+      at("apps/unconnected/src/big.ts", 0, "401 lines, over the 400-line limit"),
+    ]);
+  });
+
+  test("a library's 401-line file is a warning: status warn, no violations, the app stays ok", () => {
+    const [lib] = lint(ws, ds, ["widgets"]).apps;
+    const structure = lib.checks.find((c) => c.id === "structure")!;
+    expect(structure.status).toBe("warn");
+    expect(structure.violations).toEqual([]);
+    expect(structure.warnings).toEqual([at("libs/widgets/src/big.ts", 0, "401 lines, over the 400-line limit")]);
+    expect(lib.ok).toBe(true);
+  });
+});

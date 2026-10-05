@@ -22,7 +22,7 @@ import { checkStructure } from "./structure";
 import type { AppContext, AppResult, Check, CheckResult, LintReport, PassNumber } from "./types";
 import { CHECK_ORDER, PASS_OF } from "./types";
 import { checkWiring } from "./wiring";
-import { collectSources, isInside, realpathOrNull, runLiteralScan, scanSetup, toPosix, type LiteralScan, type SourceFile } from "./workspace";
+import { clearCaches, collectSources, isInside, realpathOrNull, runLiteralScan, scanSetup, toPosix, type LiteralScan, type SourceFile } from "./workspace";
 
 export const CHECKS: Record<CheckId, Check> = {
   resolution: checkResolution,
@@ -106,6 +106,7 @@ export function lintApp(app: AppEntry, opts: Omit<LintOptions, "registry" | "app
 }
 
 export function lintApps(opts: LintOptions): LintReport {
+  clearCaches();
   const ids = opts.apps.length ? opts.apps : opts.registry.apps.map((a) => a.id);
   const apps = ids.map((id) => {
     const app = opts.registry.apps.find((a) => a.id === id);

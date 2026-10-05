@@ -1,0 +1,7 @@
+{
+  "name": "connected",
+  "private": true,
+  "dependencies": {
+    "@codecaine-ai/design-system": "workspace:*"
+  }
+}
