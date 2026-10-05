@@ -1,0 +1,33 @@
+{
+  "literals": [
+    {
+      "file": "codecaine/core/docs-system/packages/docs-workbench/web/src/lib/pdf-document.tsx",
+      "category": "hex",
+      "reason": "print stylesheet of the PDF export: export output is a product look the owner keeps (7 hits)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-workbench/web/src/shell/ExportDialog.tsx",
+      "category": "rgb",
+      "reason": "pdf-lib page-number color drawn into the exported PDF (export output), not chrome"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-workbench/web/src/shell/style-rail-panes.tsx",
+      "match": "^#f{3}(f{3})?$",
+      "category": "hex",
+      "reason": "fallbacks of the Style Rail's color-resolution helper behind its color controls; owner decision: hide color controls, keep the code for now (4 hits)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-workbench/web/src/theme/grain-code-mask.ts",
+      "match": "^#0{3}(0{3})?$",
+      "category": "hex",
+      "reason": "alpha mask gradient (linear-gradient(#000 0 0)); only its alpha is used, it is not a color"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-workbench/web/src/shell/StyleRail.tsx",
+      "match": "^14(px)?$",
+      "category": "pxFontSize",
+      "reason": "LEGACY_STOCK_METRICS: the old stock size the rail migrates saved settings from; a data constant, not a style"
+    }
+  ],
+  "twClasses": []
+}
