@@ -175,15 +175,18 @@ export function restoreFromJournal(journalDir: string): RestoreResult {
 /** Steps run when the process is interrupted (Ctrl-C, SIGTERM): newest first. */
 const interruptSteps: Array<() => Promise<void> | void> = [];
 let handlersInstalled = false;
+let cleaning = false;
 
-/** Registers a cleanup step for an interrupt; returns its remover. */
+/** Registers a cleanup step for an interrupt; returns its remover. Repeated signals during cleanup are ignored. */
 export function onInterrupt(step: () => Promise<void> | void): () => void {
   interruptSteps.push(step);
   if (!handlersInstalled) {
     handlersInstalled = true;
     for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
-      process.once(signal, async () => {
-        console.error(`verify:apps: ${signal}, cleaning up`);
+      process.on(signal, async () => {
+        if (cleaning) return;
+        cleaning = true;
+        console.error(`verify:apps: ${signal}, cleaning up (further signals are ignored until done)`);
         for (const run of [...interruptSteps].reverse()) {
           try {
             await run();

@@ -184,6 +184,8 @@ async function verifyMode(args: Args, registry: Registry): Promise<number> {
   const root = realpathSync(resolve(args.root ?? join(DESIGN_SYSTEM_ROOT, "..")));
   const values = loadBuildValues(DESIGN_SYSTEM_ROOT);
   const meta = designSystemMeta(values);
+  const unknown = args.apps.filter((id) => !registry.apps.some((app) => app.id === id));
+  if (unknown.length) throw new Refusal(`apps.json has no app ${unknown.map((id) => `"${id}"`).join(", ")}`);
   const apps = args.apps.length ? args.apps.map((id) => getApp(registry, id)) : registry.apps;
   if (apps.length === 0) {
     console.error("verify:apps: apps.json lists no apps");

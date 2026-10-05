@@ -4,7 +4,7 @@
  * check the bound URL, the served files and the blocked requests, and stop only what this run started.
  */
 import { fileURLToPath } from "node:url";
-import { guardedContext, type RunningApp, servedFromRoot, startApp } from "../app-runner";
+import { guardedContext, type RunningApp, servedFromRoot, startApp, stopAllApps } from "../app-runner";
 import type { AppEntry, RouteSpec } from "../registry";
 import { type Assertion, fail, pass, type ResponseLog, trackResponses } from "./page-checks";
 import { onInterrupt } from "./propagate";
@@ -113,14 +113,16 @@ export async function inRunningApp(
   check: (page: any, ctx: PageContext) => Promise<Assertion[]>,
 ): Promise<RuntimeReport> {
   const report: RuntimeReport = { assertions: [], blockedRequests: [], consoleErrors: [] };
-  let running: RunningApp;
+  let running: RunningApp | undefined;
+  // Registered before the start, so an interrupt mid-start still stops what the runner launched.
+  const removeStep = onInterrupt(() => (running ? running.stop() : stopAllApps()));
   try {
     running = await startApp(app, { root: session.root, outDir: session.outDir });
   } catch (error) {
+    removeStep();
     report.assertions.push(fail("start", `the app did not start: ${(error as Error).message}`));
     return report;
   }
-  const removeStep = onInterrupt(() => running.stop());
   report.baseUrl = running.baseUrl;
   report.ports = running.ports;
   report.startedPorts = running.startedPorts;
