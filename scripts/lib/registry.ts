@@ -131,6 +131,26 @@ export interface Exception {
   reason: string;
 }
 
+/** How verify:apps proves the app is connected (runtime check). */
+export interface VerifySpec {
+  /** Route id to verify on; default the first route. */
+  route?: string;
+  /**
+   * Representative chrome elements and the token each CSS property must compute to
+   * in the active theme: page background, a panel, body text, a border.
+   * Example: { selector: "body", property: "background-color", token: "color.surface.page" }.
+   */
+  probes: Array<{ selector: string; property: string; token: string }>;
+  /** How to switch to dark. On dark-first surfaces dark is the default; the check confirms it instead. */
+  darkSwitch:
+    | { kind: "attribute"; target?: string }
+    | { kind: "storage"; key: string; value: string }
+    | { kind: "click"; selector: string }
+    | { kind: "query"; param: string; value: string };
+  /** Shell apps: the sidebar toggle (default ".ds-sidebar-toggle") and the storage key (default "<app>.sidebar"). */
+  sidebar?: { toggle?: string; storageKey?: string };
+}
+
 export interface AppEntry {
   id: string;
   name: string;
@@ -162,14 +182,21 @@ export interface AppEntry {
   tests: TestSpec;
   routes: RouteSpec[];
   runProfile: RunProfile;
+  /** Required when gates.verify is required and run.mode is not "none". */
+  verify?: VerifySpec;
   exceptions: Exception[];
 }
 
 /** Allowlist file shape (apps/allowlists/<id>.json). */
 export interface Allowlist {
-  /** Hard literal hits that stay, matched by workspace-relative file and the literal text. */
-  literals: Array<{ file: string; match: string; reason: string }>;
-  /** Tailwind default-scale classes that stay. */
+  /**
+   * Hard literal hits that stay. `file` is a workspace-relative glob; `match` is a regex
+   * over the hit's literal text (omit to match any); `category` is a scan-literals hard
+   * category and `kind` a color split (definition, fallback, inline). An entry matches a hit
+   * when every field it sets matches. The linter owns the exact semantics.
+   */
+  literals: Array<{ file: string; match?: string; category?: string; kind?: "definition" | "fallback" | "inline"; reason: string }>;
+  /** Tailwind default-scale classes that stay. `className` is a regex over the class. */
   twClasses: Array<{ file: string; className: string; reason: string }>;
 }
 
