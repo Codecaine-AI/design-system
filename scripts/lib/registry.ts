@@ -101,6 +101,8 @@ export interface RunSpec {
   reason?: string;
   /** Working directory for start, workspace-relative. */
   cwd?: string;
+  /** The dev server's web root (Vite `root`), workspace-relative, when it differs from cwd. Served `/src/...` URLs map under it. Default: cwd. */
+  serveRoot?: string;
   /** Command that serves the app; may use {port:<name>} and {tmp}. */
   start?: string;
   /** Regex with one capture group that reads the bound URL or port from server output. */
