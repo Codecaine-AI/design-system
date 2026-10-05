@@ -4,11 +4,10 @@
  * check the bound URL, the served files and the blocked requests, and stop only what this run started.
  */
 import { fileURLToPath } from "node:url";
-import { guardedContext, type RunningApp, servedFromRoot, splitBlocked, startApp, stopAllApps } from "../app-runner";
+import { guardedContext, type RunningApp, servedFromRoot, splitBlocked, startApp } from "../app-runner";
 import type { AppEntry, RouteSpec } from "../registry";
 import { type Assertion, fail, pass, type ResponseLog, trackResponses } from "./assertions";
 import { runStep } from "./page-checks";
-import { onInterrupt } from "./propagate";
 
 export interface Session {
   browser: any;
@@ -91,13 +90,11 @@ export async function inRunningApp(
   check: (page: any, ctx: PageContext) => Promise<Assertion[]>,
 ): Promise<RuntimeReport> {
   const report: RuntimeReport = { assertions: [], blockedRequests: [], expectedBlocked: [], consoleErrors: [] };
-  let running: RunningApp | undefined;
-  // Registered before the start, so an interrupt mid-start still stops what the runner launched.
-  const removeStep = onInterrupt(() => (running ? running.stop() : stopAllApps()));
+  // An interrupt stops this app through the runner's installSignalHandlers (stopAllApps), which the CLI installs.
+  let running: RunningApp;
   try {
     running = await startApp(app, { root: session.root, outDir: session.outDir });
   } catch (error) {
-    removeStep();
     report.assertions.push(fail("start", `the app did not start: ${(error as Error).message}`));
     return report;
   }
@@ -174,7 +171,6 @@ export async function inRunningApp(
     } catch (error) {
       report.assertions.push(fail("stop", `stopping the app failed: ${(error as Error).message}`));
     }
-    removeStep();
   }
   return report;
 }

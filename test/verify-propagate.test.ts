@@ -6,7 +6,8 @@
  */
 import { afterAll, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { connect } from "node:net";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { CONTEXT_OPTIONS, LAUNCH_OPTIONS } from "../scripts/lib/capture.ts";
@@ -24,14 +25,13 @@ import {
   withSentinel,
   writeJournal,
 } from "../scripts/lib/verify/propagate.ts";
-import { browserSkip, MIRROR } from "./verify-support.ts";
+import { browserSkip, MIRROR, makeFixtureRoot, runnableFixtureApp } from "./verify-support.ts";
 
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-verify-propagate-")));
 afterAll(() => rmSync(scratch, { recursive: true, force: true }));
 
-/** A scratch workspace root whose design-system is a freshly built copy of this package. */
-function scratchRoot() {
-  const root = mkdtempSync(join(scratch, "root-"));
+/** A scratch workspace root (or `root`) whose design-system is a freshly built copy of this package. */
+function scratchRoot(root = mkdtempSync(join(scratch, "root-"))) {
   const ds = join(root, "design-system");
   for (const path of ["package.json", "tokens", "scripts", "dist"]) cpSync(join(DESIGN_SYSTEM_ROOT, path), join(ds, path), { recursive: true });
   mkdirSync(join(ds, "guide"));
@@ -135,6 +135,69 @@ describe("withSentinel", () => {
       }
     }, 30_000);
   });
+});
+
+describe.skipIf(Boolean(browserSkip))("the CLI on a scratch tree with a live-linked app", () => {
+  const UI_PORT = 46972;
+
+  /** A root holding a fixture app whose tokens.css links the root's design-system, which lists only that app. */
+  function liveTree() {
+    const tree = scratchRoot(makeFixtureRoot(scratch));
+    rmSync(join(tree.root, "app/tokens.css"));
+    symlinkSync("../design-system/dist/css/tokens.css", join(tree.root, "app/tokens.css"));
+    writeFileSync(join(tree.ds, "apps.json"), JSON.stringify({ version: 1, apps: [{ ...runnableFixtureApp({ ui: UI_PORT }), id: "live" }] }));
+    // Playwright resolves from <root>/codecaine/core, as in the mirror.
+    mkdirSync(join(tree.root, "codecaine"));
+    symlinkSync(join(MIRROR, "codecaine/core"), join(tree.root, "codecaine/core"));
+    return tree;
+  }
+
+  const spawnCli = (tree: ReturnType<typeof liveTree>) =>
+    Bun.spawn([process.execPath, join(tree.ds, "scripts/verify-apps.ts"), "--propagate", "--root", tree.root, "--out-dir", tree.out, "live"], {
+      env: { ...process.env, DS_RUN: tree.out },
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+
+  const portOpen = (port: number) =>
+    new Promise<boolean>((done) => {
+      const socket = connect({ host: "127.0.0.1", port });
+      socket.once("connect", () => {
+        socket.destroy();
+        done(true);
+      });
+      socket.once("error", () => done(false));
+    });
+
+  test("--propagate: the sentinel reaches the app, the run passes, and the design-system comes back byte-for-byte", async () => {
+    const tree = liveTree();
+    const before = snapshot(tree.ds);
+    const run = spawnCli(tree);
+    expect(await run.exited).toBe(0);
+    const results = readdirSync(join(tree.out, "live/verify"));
+    const result = JSON.parse(readFileSync(join(tree.out, "live/verify", results[0]!), "utf8"));
+    expect(result.assertions.map((a: any) => [a.id, a.status])).toEqual(
+      expect.arrayContaining([
+        ["sentinel: body background-color", "pass"],
+        ["restore", "pass"],
+      ]),
+    );
+    expect(snapshot(tree.ds)).toEqual(before);
+  }, 60_000);
+
+  test("Ctrl-C while the app runs stops it, restores and rebuilds the design-system, and exits 130", async () => {
+    const tree = liveTree();
+    const before = snapshot(tree.ds);
+    const run = spawnCli(tree);
+    const deadline = Date.now() + 30_000;
+    while (!(await portOpen(UI_PORT)) && Date.now() < deadline) await Bun.sleep(100);
+    expect(pageValue(tree.ds, "light")).toBe("#ff00ff");
+    run.kill("SIGINT");
+    expect(await run.exited).toBe(130);
+    expect(snapshot(tree.ds)).toEqual(before);
+    expect(readJournal(tree.journal)?.restoredAt).toBeString();
+    expect(await portOpen(UI_PORT)).toBe(false);
+  }, 60_000);
 });
 
 describe("refusals", () => {

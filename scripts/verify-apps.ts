@@ -24,7 +24,6 @@ import { checkPage, sentinelAssertions } from "./lib/verify/page-checks";
 import {
   checkPropagateRoot,
   eligibleApps,
-  onInterrupt,
   readJournal,
   Refusal,
   type RestoreResult,
@@ -169,10 +168,10 @@ async function openBrowser(root: string, apps: AppEntry[]): Promise<{ browser?: 
   try {
     const { loadPlaywright, playwrightVersion } = await import("./lib/playwright");
     const { LAUNCH_OPTIONS } = await import("./lib/capture");
-    // Playwright's own signal handlers exit(130) right after closing the browser, before our cleanup
-    // (stop the apps, restore the propagate journal) runs; onInterrupt closes the browser instead.
-    const browser = await loadPlaywright(root).chromium.launch({ ...LAUNCH_OPTIONS, handleSIGINT: false, handleSIGTERM: false, handleSIGHUP: false });
-    onInterrupt(() => browser.close());
+    const { installSignalHandlers } = await import("./lib/app-runner");
+    // LAUNCH_OPTIONS keeps Playwright's own signal handlers off; the runner's handler closes the browser.
+    const browser = await loadPlaywright(root).chromium.launch(LAUNCH_OPTIONS);
+    installSignalHandlers(() => browser.close());
     return { browser, version: playwrightVersion(root) };
   } catch (error) {
     return { error: `Playwright did not start: ${(error as Error).message.split("\n")[0]}` };
@@ -312,6 +311,9 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
     console.error(`verify:apps: ${(error as Error).message}\n${USAGE}`);
     return 2;
   }
+  // Ctrl-C stops every app this process started (and runs the cleanups registered later) before exiting 130.
+  const { installSignalHandlers } = await import("./lib/app-runner");
+  installSignalHandlers();
   try {
     if (args.restore) return restoreMode(args);
     const registry = loadRegistry();

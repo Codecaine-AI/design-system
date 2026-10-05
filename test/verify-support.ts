@@ -2,7 +2,7 @@
  * Shared fixtures for the verify:apps tests: the fixture pages, the web fonts they load, the
  * Playwright root, and a registry entry whose probes cover page, panel, text, border and font.
  */
-import { existsSync, readFileSync } from "node:fs";
+import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { playwrightUnavailable } from "../scripts/lib/playwright.ts";
 import { type AppEntry, DESIGN_SYSTEM_ROOT, type VerifySpec } from "../scripts/lib/registry.ts";
@@ -58,4 +58,39 @@ export function fixtureApp(overrides: Partial<AppEntry> = {}): AppEntry {
     routes: [{ id: "home", path: "/" }],
     ...overrides,
   } as AppEntry;
+}
+
+/** A workspace root under `parent` with the stand-in server (fixtures/verify/serve.ts) serving the good page at app/. */
+export function makeFixtureRoot(parent: string): string {
+  const root = mkdtempSync(join(parent, "root-"));
+  const app = join(root, "app");
+  mkdirSync(join(app, "fonts"), { recursive: true });
+  cpSync(join(FIXTURES, "serve.ts"), join(app, "serve.ts"));
+  cpSync(join(FIXTURES, "good.html"), join(app, "index.html"));
+  writeFileSync(join(app, "tokens.css"), readFileSync(join(DESIGN_SYSTEM_ROOT, "dist/css/tokens.css")));
+  for (const file of FONT_FILES) copyFileSync(join(FONT_DIR!, file), join(app, "fonts", file));
+  return root;
+}
+
+/** A registry entry the real runner can start from a makeFixtureRoot root. */
+export function runnableFixtureApp(ports: Record<string, number>, path = "/"): AppEntry {
+  return fixtureApp({
+    // The fixture's own dark-mode button, reached through registry steps.
+    verify: { ...FIXTURE_VERIFY, darkSwitch: { kind: "steps", steps: [{ action: "click", target: ".theme-toggle" }] } },
+    root: "app",
+    commands: { cwd: "app" },
+    routes: [{ id: "home", path }],
+    gates: { verify: { required: true } } as AppEntry["gates"],
+    consume: { via: "relative-import", detail: "app/tokens.css" },
+    run: { mode: "browser", cwd: "app", start: "bun serve.ts", readyPattern: "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)" },
+    runProfile: {
+      env: { NO_COLOR: "1", FIXTURE_PORT: "{port:ui}" },
+      unsetEnv: [],
+      tempHome: true,
+      fixtures: [],
+      flags: [],
+      ports,
+      proof: { status: "proven", method: "test fixture" },
+    },
+  });
 }

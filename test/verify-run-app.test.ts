@@ -5,7 +5,7 @@
  * both fail.
  */
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { copyFileSync, cpSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { LAUNCH_OPTIONS } from "../scripts/lib/capture.ts";
@@ -15,7 +15,7 @@ import type { Assertion } from "../scripts/lib/verify/assertions.ts";
 import { checkPage } from "../scripts/lib/verify/page-checks.ts";
 import { inRunningApp } from "../scripts/lib/verify/run-app.ts";
 import { loadBuildValues } from "../scripts/lib/verify/tokens.ts";
-import { browserSkip, FIXTURE_VERIFY, FIXTURES, FONT_DIR, FONT_FILES, fixtureApp, MIRROR } from "./verify-support.ts";
+import { browserSkip, MIRROR, makeFixtureRoot, runnableFixtureApp } from "./verify-support.ts";
 
 const UI_PORT = 46963;
 const STRAY_PORT = 46969;
@@ -25,37 +25,8 @@ const values = loadBuildValues(DESIGN_SYSTEM_ROOT);
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-verify-run-")));
 afterAll(() => rmSync(scratch, { recursive: true, force: true }));
 
-/** A workspace root with the stand-in server and the good fixture page at app/. */
-function makeRoot(): string {
-  const root = mkdtempSync(join(scratch, "root-"));
-  const app = join(root, "app");
-  mkdirSync(join(app, "fonts"), { recursive: true });
-  cpSync(join(FIXTURES, "serve.ts"), join(app, "serve.ts"));
-  cpSync(join(FIXTURES, "good.html"), join(app, "index.html"));
-  writeFileSync(join(app, "tokens.css"), readFileSync(join(DESIGN_SYSTEM_ROOT, "dist/css/tokens.css")));
-  for (const file of FONT_FILES) copyFileSync(join(FONT_DIR!, file), join(app, "fonts", file));
-  return root;
-}
-
-function runnableApp(path = "/"): AppEntry {
-  return fixtureApp({
-    // The fixture's own dark-mode button, reached through registry steps.
-    verify: { ...FIXTURE_VERIFY, darkSwitch: { kind: "steps", steps: [{ action: "click", target: ".theme-toggle" }] } },
-    root: "app",
-    commands: { cwd: "app" },
-    routes: [{ id: "home", path }],
-    run: { mode: "browser", cwd: "app", start: "bun serve.ts", readyPattern: "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)" },
-    runProfile: {
-      env: { NO_COLOR: "1", FIXTURE_PORT: "{port:ui}" },
-      unsetEnv: [],
-      tempHome: true,
-      fixtures: [],
-      flags: [],
-      ports: { ui: UI_PORT, deadService: DEAD_PORT },
-      proof: { status: "proven", method: "test fixture" },
-    },
-  });
-}
+const makeRoot = () => makeFixtureRoot(scratch);
+const runnableApp = (path = "/") => runnableFixtureApp({ ui: UI_PORT, deadService: DEAD_PORT }, path);
 
 describe.skipIf(Boolean(browserSkip))("inRunningApp", () => {
   let browser: any;

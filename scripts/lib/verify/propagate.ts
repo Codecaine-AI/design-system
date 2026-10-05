@@ -10,6 +10,7 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve, sep } from "node:path";
+import { installSignalHandlers } from "../app-runner";
 import type { AppEntry, ConsumeVia, Registry } from "../registry";
 import { passesDone, readLedger } from "./ledger";
 
@@ -172,45 +173,15 @@ export function restoreFromJournal(journalDir: string): RestoreResult {
   return { dsDir: manifest.dsDir, restored, build, check, ok: build.ok && check.ok };
 }
 
-/** Steps run when the process is interrupted (Ctrl-C, SIGTERM): newest first. */
-const interruptSteps: Array<() => Promise<void> | void> = [];
-let handlersInstalled = false;
-let cleaning = false;
-
-/** Registers a cleanup step for an interrupt; returns its remover. Repeated signals during cleanup are ignored. */
-export function onInterrupt(step: () => Promise<void> | void): () => void {
-  interruptSteps.push(step);
-  if (!handlersInstalled) {
-    handlersInstalled = true;
-    for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
-      process.on(signal, async () => {
-        if (cleaning) return;
-        cleaning = true;
-        console.error(`verify:apps: ${signal}, cleaning up (further signals are ignored until done)`);
-        for (const run of [...interruptSteps].reverse()) {
-          try {
-            await run();
-          } catch (error) {
-            console.error(`verify:apps: cleanup step failed: ${(error as Error).message}`);
-          }
-        }
-        process.exit(130);
-      });
-    }
-  }
-  return () => {
-    const index = interruptSteps.indexOf(step);
-    if (index !== -1) interruptSteps.splice(index, 1);
-  };
-}
-
 /**
  * Journals the root's theme files, sets the sentinel, rebuilds, runs `check` (the apps), then restores,
- * rebuilds and runs `bun run check`, also when the build or `check` throws, or on an interrupt.
+ * rebuilds and runs `bun run check`, also when the build or `check` throws, or on an interrupt
+ * (through the app runner's installSignalHandlers).
  */
 export async function withSentinel<T>(dsDir: string, journalDir: string, check: () => Promise<T>): Promise<{ value: T; restore: RestoreResult }> {
   const manifest = writeJournal(dsDir, journalDir);
-  const removeStep = onInterrupt(() => {
+  // On Ctrl-C the runner's handler runs this, then stops every app, then exits 130.
+  const removeStep = installSignalHandlers(() => {
     const result = restoreFromJournal(journalDir);
     const what = result.restored.length ? `restored ${result.restored.join(", ")}` : "theme files already restored";
     console.error(`verify:apps: ${what} in ${result.dsDir}; build ${result.build.ok ? "ok" : "FAILED"}, check ${result.check.ok ? "ok" : "FAILED"}`);
