@@ -146,7 +146,9 @@ export interface VerifySpec {
     | { kind: "attribute"; target?: string }
     | { kind: "storage"; key: string; value: string }
     | { kind: "click"; selector: string }
-    | { kind: "query"; param: string; value: string };
+    | { kind: "query"; param: string; value: string }
+    /** Navigation/view-only steps (for example open the style rail, click its dark-mode toggle). Writes may land only in the run's temp state. */
+    | { kind: "steps"; steps: NonNullable<RouteSpec["steps"]> };
   /** Shell apps: the sidebar toggle (default ".ds-sidebar-toggle") and the storage key (default "<app>.sidebar"). */
   sidebar?: { toggle?: string; storageKey?: string };
 }
@@ -244,6 +246,42 @@ export function validateRegistry(registry: Registry): string[] {
       problems.push(`${app.id}: run mode ${app.run?.mode} needs a proven run profile`);
     for (const e of app.exceptions ?? []) if (!e.reason?.trim()) problems.push(`${app.id}: exception "${e.what}" has no reason`);
     for (const r of app.routes ?? []) if (r.gating === false && !r.reason?.trim()) problems.push(`${app.id}: route ${r.id} is non-gating without a reason`);
+    const runnable = app.run?.mode !== undefined && app.run.mode !== "none";
+    if (runnable && app.run.mode !== "electron" && !app.run.start && !app.run.staticDir)
+      problems.push(`${app.id}: run mode ${app.run.mode} needs run.start (or run.staticDir for static)`);
+    if (app.run?.start && !app.run.readyPattern) problems.push(`${app.id}: run.start needs run.readyPattern`);
+    if (app.run?.mode === "electron" && !app.run.electron) problems.push(`${app.id}: run mode electron needs run.electron`);
+    if (runnable && !app.routes?.length) problems.push(`${app.id}: run mode ${app.run.mode} needs at least one route`);
+    if (runnable && app.gates?.verify?.required && !app.verify) problems.push(`${app.id}: gates.verify is required but verify is missing`);
+    if (!runnable) {
+      for (const g of ["verify", "snapshot"] as const)
+        if (app.gates?.[g]?.required) problems.push(`${app.id}: gates.${g} is required but run mode is none`);
+    }
+    if (app.runProfile?.proof?.status === "proven" && (!app.runProfile.proof.method?.trim() || !app.runProfile.proof.date))
+      problems.push(`${app.id}: a proven run profile needs proof.method and proof.date`);
+    if (app.verify?.route && !app.routes?.some((r) => r.id === app.verify!.route)) problems.push(`${app.id}: verify.route ${app.verify.route} is not a route`);
+    const routeIds = new Set<string>();
+    for (const r of app.routes ?? []) {
+      if (routeIds.has(r.id)) problems.push(`${app.id}: duplicate route id ${r.id}`);
+      routeIds.add(r.id);
+    }
+    const ports = app.runProfile?.ports ?? {};
+    const texts = [
+      app.run?.start,
+      app.run?.electron?.build,
+      app.commands?.install,
+      app.commands?.build,
+      app.commands?.typecheck,
+      ...(app.runProfile?.flags ?? []),
+      ...Object.values(app.runProfile?.env ?? {}),
+      ...(app.tests?.safe ?? []).map((t) => t.cmd),
+    ];
+    for (const text of texts)
+      for (const m of (text ?? "").matchAll(/\{port:([A-Za-z0-9_-]+)\}/g))
+        if (!(m[1]! in ports)) problems.push(`${app.id}: {port:${m[1]}} names no runProfile.ports entry`);
+    if (app.allowlist !== null && app.allowlist !== undefined && app.allowlist !== `apps/allowlists/${app.id}.json`)
+      problems.push(`${app.id}: allowlist must be apps/allowlists/${app.id}.json or null`);
+    if (!Number.isInteger(app.literalFloor) || app.literalFloor < 0) problems.push(`${app.id}: literalFloor must be a non-negative integer`);
   }
   return problems;
 }
