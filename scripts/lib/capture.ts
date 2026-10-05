@@ -35,9 +35,17 @@ export const CONTEXT_OPTIONS = {
  * ±1 in a channel from run to run: partial re-raster of invalidated tiles
  * and GPU compositing. Scrollbars stay visible because themes style them
  * (Playwright hides them in headless mode by default).
+ *
+ * handleSIG* false: Playwright's own handlers close the browser and call
+ * process.exit(130) before the tool can stop the app it started, leaving the
+ * app's process groups orphaned. Tools install app-runner's
+ * installSignalHandlers instead.
  */
 export const LAUNCH_OPTIONS = {
   headless: true,
+  handleSIGINT: false,
+  handleSIGTERM: false,
+  handleSIGHUP: false,
   ignoreDefaultArgs: ["--hide-scrollbars"],
   args: [
     "--disable-gpu",

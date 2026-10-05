@@ -17,6 +17,7 @@ import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { encodePng } from "./lib/png";
+import { installSignalHandlers } from "./lib/app-runner";
 import { loadPlaywright } from "./lib/playwright";
 import { DESIGN_SYSTEM_ROOT } from "./lib/registry";
 import { defaultOutDir, diffSets, readManifest, SET_NAME, setDir, type SetDiff, type ShotDiff } from "./lib/snapshot-set";
@@ -138,7 +139,8 @@ console.log(`sheet: ${htmlPath}`);
 let renderError: string | undefined;
 try {
   const { chromium } = loadPlaywright(root);
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: true, handleSIGINT: false, handleSIGTERM: false, handleSIGHUP: false });
+  installSignalHandlers(() => browser.close());
   try {
     const context = await browser.newContext({ deviceScaleFactor: 1, viewport: { width: 1280, height: 720 } });
     const tab = await context.newPage();
