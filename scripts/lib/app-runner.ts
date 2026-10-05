@@ -66,6 +66,8 @@ export interface RunningApp {
   serveRoot?: string;
   /** static mode without run.start: every file the built-in server sent. */
   servedFiles?: () => string[];
+  /** Set when the run used allowUnproven: its results must not count for a gate. */
+  unproven?: true;
 }
 
 export interface StartOptions {
@@ -73,6 +75,11 @@ export interface StartOptions {
   outDir: string;
   /** Per phase (build, then ready). Default 180 s. */
   timeoutMs?: number;
+  /**
+   * Run an unproven profile. Only for proving a profile (the registry worker); the run logs a loud
+   * line to stderr and to the run log. Default false: an unproven profile is refused.
+   */
+  allowUnproven?: boolean;
 }
 
 // -- placeholders, env, fixtures ---------------------------------------------
@@ -337,8 +344,10 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
   const mode = app.run?.mode;
   if (!mode || mode === "none")
     throw new Error(`${app.id}: run mode none (${app.run?.reason ?? "no reason given"}): no screenshots and no runtime checks`);
-  if (app.runProfile?.proof?.status !== "proven")
-    throw new Error(`${app.id}: run profile is ${app.runProfile?.proof?.status ?? "missing"}; only a proven profile runs`);
+  if (!app.runProfile) throw new Error(`${app.id}: no run profile`);
+  const unproven = app.runProfile.proof?.status !== "proven";
+  if (unproven && !opts.allowUnproven)
+    throw new Error(`${app.id}: run profile is ${app.runProfile.proof?.status ?? "missing"}; only a proven profile runs`);
   const root = resolve(opts.root);
   const timeoutMs = opts.timeoutMs ?? 180_000;
   checkProfilePorts(app);
@@ -352,6 +361,11 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
   mkdirSync(logDir, { recursive: true });
   const logPath = join(logDir, `${stamp()}-${mode}.log`);
   appendFileSync(logPath, `# ${app.id} run mode ${mode}, root ${root}, tmp ${tmp}\n`);
+  if (unproven) {
+    const warning = `!!! ${app.id}: RUNNING AN UNPROVEN PROFILE (allowUnproven). Use only to prove the profile; never for gates.`;
+    console.error(warning);
+    appendFileSync(logPath, `${warning}\n`);
+  }
 
   const ports = { ...(app.runProfile.ports ?? {}) };
   const ctx: PlaceholderContext = { root, tmp, ports };
@@ -395,6 +409,7 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
       if (busy.length) throw new Error(`${app.id}: ports still bound after stop, not by this run's processes: ${busy.join(", ")}`);
     },
   };
+  if (unproven) running.unproven = true;
   internals.set(running, { rootPids });
   live.add(running);
 
