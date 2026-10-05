@@ -2,7 +2,8 @@
 
 Every app you click around in uses one shell: a collapsible sidebar, a sticky topbar, and the page content in a lane. An optional inspector panel docks on the right.
 
-- CSS: [`css/layout.css`](../css/layout.css) (load after `dist/css/tokens.css`)
+- CSS: [`css/layout.css`](../css/layout.css) (load after `css/fonts.css` and `dist/css/tokens.css`)
+- Wiring the package into an app: [consume.md](consume.md)
 - Demo: [`guide/app-shell-demo.html`](app-shell-demo.html) (open it in a browser)
 - React reference: [`templates/react-app-shell/`](../templates/react-app-shell/)
 - Code structure for the app around it: [code-structure.md](code-structure.md)
@@ -275,11 +276,11 @@ These shells keep working as they are. They migrate to this standard later, one 
 
 ## Checklist for a new app
 
-1. Load the fonts (`@codecaine-ai/text-measure/fonts.css` has Inter and IBM Plex Mono), then `@codecaine-ai/design-system/tokens.css`, then `@codecaine-ai/design-system/layout.css`, once at the app root.
+1. Load `@codecaine-ai/design-system/fonts.css` (Inter and IBM Plex Mono), then `@codecaine-ai/design-system/tokens.css` (`tokens-dark-first.css` on a dark-first surface), then `@codecaine-ai/design-system/layout.css`, once at the app root. [consume.md](consume.md) shows how to depend on the package.
 2. Copy `templates/react-app-shell/src/_components/AppShell/` (React) or the markup above (anything else).
 3. Write the nav config. Every top-level row has an icon; tools go in an `end` section.
 4. Pick a storage key: `<app>.sidebar`.
-5. Set `data-theme` on `<html>` and set `color-scheme` with it (`html[data-theme="dark"] { color-scheme: dark; }`), so scrollbars and form controls follow the theme.
+5. Set `data-theme` on `<html>`. `tokens.css` sets `color-scheme` with it, so scrollbars and form controls follow the theme.
 6. Check by hand: toggle, `⌘\`, reload keeps the state, dark theme, keyboard only, reduced motion, and a 390px-wide window (no sideways scroll).
 
 ## Known gaps
@@ -287,7 +288,6 @@ These shells keep working as they are. They migrate to this standard later, one 
 - **No breakpoint token.** CSS custom properties cannot be used in media queries, so 800px is written twice: the `@media (max-width: 800px)` block in `css/layout.css` and `NARROW_VIEWPORT_QUERY` in the template. Change both together. A build-time `@custom-media` plus an exported constant would make it one value.
 - **No UI heading size.** The topbar and sidebar titles use `--ds-font-size-reading` (18px), the closest token. A `--ds-font-size-heading` would say what it means.
 - **Rail tooltips are native `title` tooltips.** They do not show on keyboard focus. A styled tooltip waits for a popover or anchor-positioning primitive.
-- **Fonts and `color-scheme` are not in `tokens.css`.** The tokens name Inter and IBM Plex Mono but ship no `@font-face`, and no theme block sets `color-scheme`. Each app does both today (checklist steps 1 and 5).
 
 ## Screenshots
 

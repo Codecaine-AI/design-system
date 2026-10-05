@@ -194,6 +194,23 @@ export const tokens = {
           "text": "#ad1a72"
         }
       },
+      "chart": {
+        "diverging": {
+          "midpoint": "color-mix(in srgb, #9b9a97 45%, #f8f8f7)",
+          "negative": "#d44e48",
+          "positive": "#088bd9"
+        },
+        "series": {
+          "1": "#088bd9",
+          "2": "#dd6d07",
+          "3": "#c84e90",
+          "4": "#b48509",
+          "5": "#0d9c97",
+          "6": "#d44e48",
+          "7": "#976bde",
+          "8": "#09a253"
+        }
+      },
       "code": {
         "bg": "color-mix(in srgb, #ebeced 30%, transparent)",
         "border": "#e6e5e3",
@@ -466,6 +483,23 @@ export const tokens = {
         "6": {
           "soft": "color-mix(in srgb, #db61a2 13%, #151b23)",
           "text": "#dd69a6"
+        }
+      },
+      "chart": {
+        "diverging": {
+          "midpoint": "color-mix(in srgb, #656c76 50%, #151b23)",
+          "negative": "#d44e48",
+          "positive": "#0891e3"
+        },
+        "series": {
+          "1": "#0891e3",
+          "2": "#dd6d07",
+          "3": "#c84e90",
+          "4": "#b48509",
+          "5": "#0ea29d",
+          "6": "#d44e48",
+          "7": "#976bde",
+          "8": "#09a655"
         }
       },
       "code": {
@@ -804,6 +838,17 @@ export const flat = {
     "color.category.5.text": "#6940a5",
     "color.category.6.soft": "#f4dfeb",
     "color.category.6.text": "#ad1a72",
+    "color.chart.diverging.midpoint": "color-mix(in srgb, #9b9a97 45%, #f8f8f7)",
+    "color.chart.diverging.negative": "#d44e48",
+    "color.chart.diverging.positive": "#088bd9",
+    "color.chart.series.1": "#088bd9",
+    "color.chart.series.2": "#dd6d07",
+    "color.chart.series.3": "#c84e90",
+    "color.chart.series.4": "#b48509",
+    "color.chart.series.5": "#0d9c97",
+    "color.chart.series.6": "#d44e48",
+    "color.chart.series.7": "#976bde",
+    "color.chart.series.8": "#09a253",
     "color.code.bg": "color-mix(in srgb, #ebeced 30%, transparent)",
     "color.code.border": "#e6e5e3",
     "color.code.chip.call": "#795e26",
@@ -998,6 +1043,17 @@ export const flat = {
     "color.category.5.text": "#ab7df8",
     "color.category.6.soft": "color-mix(in srgb, #db61a2 13%, #151b23)",
     "color.category.6.text": "#dd69a6",
+    "color.chart.diverging.midpoint": "color-mix(in srgb, #656c76 50%, #151b23)",
+    "color.chart.diverging.negative": "#d44e48",
+    "color.chart.diverging.positive": "#0891e3",
+    "color.chart.series.1": "#0891e3",
+    "color.chart.series.2": "#dd6d07",
+    "color.chart.series.3": "#c84e90",
+    "color.chart.series.4": "#b48509",
+    "color.chart.series.5": "#0ea29d",
+    "color.chart.series.6": "#d44e48",
+    "color.chart.series.7": "#976bde",
+    "color.chart.series.8": "#09a655",
     "color.code.bg": "#1e1e1e",
     "color.code.border": "#3c3c3c",
     "color.code.chip.call": "#dcdcaa",

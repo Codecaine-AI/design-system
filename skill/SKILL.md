@@ -32,8 +32,10 @@ metadata:
 
 - **Inside Codecaine Core:** add `"@codecaine-ai/design-system": "workspace:*"` to the package, then run `bun install` at the Core root. Core's `workspaces` already lists `../../design-system`, so the link is live.
 - **Another local bun app:** add the relative path to the root `workspaces` and depend on `workspace:*`, or use `bun link`. That gives a live link. Avoid a bun `file:` dependency: bun links it file by file at install time, so files added later (new outputs) are missing until someone reruns `bun install`.
-- **npm apps:** use a `file:` dependency, which npm links live, or `@import` the CSS by relative path. Apps built on Vercel, Railway or Docker can't reach the package yet. `guide/audit.md` covers this.
-- **Load order:** fonts first, then `@codecaine-ai/design-system/tokens.css`, then `layout.css`. For Tailwind, `tailwind-strict.css` comes before `tailwind.css`.
+- **npm apps:** use a `file:` dependency, which npm links live, or `@import` the CSS by relative path.
+- **Apps built on Vercel, Railway or Docker:** vendor a packed copy. Run `bun run pack --out <app>/vendor` in design-system and depend on `file:vendor/<tgz name>`. Repack after a token change.
+- **Load order:** `@codecaine-ai/design-system/fonts.css`, then `tokens.css` (`tokens-dark-first.css` on a dark-first surface), then `layout.css`. Agent-viewer hosts add `host-contract.css` after the tokens. For Tailwind v4, `tailwind-strict.css` comes before `tailwind.css`; Tailwind v3 apps use the `tailwind-v3-preset` export as a preset.
+- `guide/consume.md` has the full recipe, including the Vite settings.
 
 ## Move an Existing App
 

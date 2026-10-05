@@ -161,6 +161,24 @@
         "soft": { "$type": "color", "$value": "{color.pink.soft}", "$description": "Category 6 fill." }
       }
     },
+    "chart": {
+      "$description": "Data-viz palette for charts (ECharts, SVG, canvas). series.1 to series.8 are categorical: assign them in order and never cycle; a ninth series folds into Other. Scatter, bubble and small-multiple charts use at most series.1 to series.3. Each theme passes the dataviz checks: OKLCH lightness in band, chroma >= 0.1, adjacent series apart under protanopia and deuteranopia (OKLab dE >= 8) and normal vision (dE >= 15), and >= 3:1 on page and panel. Text never takes a series color: labels and values use color.text.*, gridlines color.border.subtle, axes color.border.strong.",
+      "series": {
+        "1": { "$type": "color", "$value": "#0891e3", "$description": "Series 1 (blue). A single-series chart uses this slot." },
+        "2": { "$type": "color", "$value": "#dd6d07", "$description": "Series 2 (orange)." },
+        "3": { "$type": "color", "$value": "#c84e90", "$description": "Series 3 (pink)." },
+        "4": { "$type": "color", "$value": "#b48509", "$description": "Series 4 (yellow)." },
+        "5": { "$type": "color", "$value": "#0ea29d", "$description": "Series 5 (teal)." },
+        "6": { "$type": "color", "$value": "#d44e48", "$description": "Series 6 (red)." },
+        "7": { "$type": "color", "$value": "#976bde", "$description": "Series 7 (violet)." },
+        "8": { "$type": "color", "$value": "#09a655", "$description": "Series 8 (green)." }
+      },
+      "diverging": {
+        "positive": { "$type": "color", "$value": "{color.chart.series.1}", "$description": "Diverging positive pole (blue): inflow, gain, above the baseline." },
+        "midpoint": { "$type": "color", "$value": "{color.gray.line}", "$description": "Diverging neutral midpoint (gray): zero, no change." },
+        "negative": { "$type": "color", "$value": "{color.chart.series.6}", "$description": "Diverging negative pole (red): outflow, loss, below the baseline." }
+      }
+    },
     "diff": {
       "add": { "$type": "color", "$value": "{color.green.text}", "$description": "Added: sign, name and marker." },
       "add-bg": { "$type": "color", "$value": "color-mix(in srgb, {color.green.solid} 8%, {color.surface.panel})", "$description": "Added row tint (opaque; muted and syntax text keep 4.5:1 on it)." },

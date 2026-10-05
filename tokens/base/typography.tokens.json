@@ -1,8 +1,8 @@
 {
   "font": {
     "family": {
-      "sans": { "$type": "fontFamily", "$value": "Inter, ui-sans-serif, system-ui, sans-serif", "$description": "UI and reading text. Inter 400-700 ships with @codecaine-ai/text-measure fonts.css." },
-      "mono": { "$type": "fontFamily", "$value": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace", "$description": "Code, inline code chips, kbd. IBM Plex Mono 400-600 ships with @codecaine-ai/text-measure fonts.css." },
+      "sans": { "$type": "fontFamily", "$value": "Inter, ui-sans-serif, system-ui, sans-serif", "$description": "UI and reading text. Inter 400-700 ships in fonts.css (the text-measure faces)." },
+      "mono": { "$type": "fontFamily", "$value": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace", "$description": "Code, inline code chips, kbd. IBM Plex Mono 400-600 ships in fonts.css (the text-measure faces)." },
       "serif": { "$type": "fontFamily", "$value": "ui-serif, Georgia, 'Times New Roman', serif", "$description": "Optional serif reading face (docs style rail font choice)." },
       "mono-system": { "$type": "fontFamily", "$value": "ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace", "$description": "Platform mono, no web font (docs style rail 'Mono' choice)." }
     },

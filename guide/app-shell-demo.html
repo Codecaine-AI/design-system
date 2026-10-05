@@ -4,9 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>App shell demo · @codecaine-ai/design-system</title>
-    <!-- Inter and IBM Plex Mono: the design system names the fonts but does not ship them.
-         Apps import @codecaine-ai/text-measure/fonts.css; this demo reads it from the workspace. -->
-    <link rel="stylesheet" href="../../codecaine/core/canvas/packages/text-measure/fonts.css" />
+    <!-- Load order: fonts, tokens, layout. Apps import @codecaine-ai/design-system/fonts.css. -->
+    <link rel="stylesheet" href="../css/fonts.css" />
     <link rel="stylesheet" href="../dist/css/tokens.css" />
     <link rel="stylesheet" href="../css/layout.css" />
     <script>
@@ -20,15 +19,8 @@
       })();
     </script>
     <style>
-      /* Page setup and demo content only. The shell itself comes from css/layout.css. */
-      html {
-        color-scheme: light;
-      }
-
-      html[data-theme="dark"] {
-        color-scheme: dark;
-      }
-
+      /* Page setup and demo content only. The shell itself comes from css/layout.css;
+         color-scheme comes from tokens.css. */
       body {
         margin: 0;
       }

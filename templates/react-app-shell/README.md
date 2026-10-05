@@ -32,10 +32,10 @@ The nav model lives in `Sidebar/` because only the sidebar subtree uses it. Ever
 ## Use it
 
 1. Copy `src/_components/AppShell/` into your app's `src/_components/`. Copy `src/shared/_components/Icon/` too if you want the example icons.
-2. Load the CSS once at the app root. These paths map to `dist/css/tokens.css` and `css/layout.css`:
+2. Load the CSS once at the app root. These paths map to `css/fonts.css`, `dist/css/tokens.css` and `css/layout.css`:
 
    ```ts
-   import '@codecaine-ai/text-measure/fonts.css'; // Inter + IBM Plex Mono; tokens.css names them but ships no @font-face
+   import '@codecaine-ai/design-system/fonts.css'; // Inter + IBM Plex Mono, shipped in the package
    import '@codecaine-ai/design-system/tokens.css';
    import '@codecaine-ai/design-system/layout.css';
    ```
