@@ -23,6 +23,7 @@ import {
   startApp,
   type RunningApp,
 } from "../scripts/lib/app-runner.ts";
+import { adoptStyleSheet, DETERMINISM_CSS } from "../scripts/lib/capture.ts";
 import { loadPlaywright, playwrightAnchor, playwrightUnavailable } from "../scripts/lib/playwright.ts";
 import type { AppEntry } from "../scripts/lib/registry.ts";
 
@@ -325,6 +326,39 @@ describe("guardedContext", () => {
       } finally {
         await browser.close();
         stray.stop(true);
+      }
+    },
+    30_000,
+  );
+});
+
+describe("guardedContext determinism", () => {
+  test.skipIf(Boolean(noPlaywright))(
+    "applies DETERMINISM_CSS on a page whose CSP blocks inline styles (guarded context and Electron's injection)",
+    async () => {
+      const running = await start(fixtureApp({ ui: 46918, helper: 46919 }), makeRoot());
+      const browser = await loadPlaywright(process.env.DS_MIRROR ?? "/Users/Ford/workspace-ds").chromium.launch({ headless: true });
+      try {
+        const transition = async (determinism: boolean) => {
+          const { context } = await guardedContext(browser, running, { determinism });
+          const page = await context.newPage();
+          await page.goto(`${running.baseUrl}/csp`);
+          const value = await page.locator("#box").evaluate((element: any) => (globalThis as any).getComputedStyle(element).transitionDuration);
+          await context.close();
+          return value;
+        };
+        expect(await transition(false)).toBe("2s"); // the app's own stylesheet loads under its CSP
+        expect(await transition(true)).toBe("0s");
+
+        // The Electron path cannot bypass CSP; it adopts a constructed stylesheet instead.
+        const plain = await browser.newContext();
+        const page = await plain.newPage();
+        await page.goto(`${running.baseUrl}/csp`);
+        await page.evaluate(adoptStyleSheet, DETERMINISM_CSS);
+        expect(await page.locator("#box").evaluate((element: any) => (globalThis as any).getComputedStyle(element).transitionDuration)).toBe("0s");
+        await plain.close();
+      } finally {
+        await browser.close();
       }
     },
     30_000,

@@ -811,6 +811,9 @@ export async function guardedContext(
   const context = await browser.newContext({
     ...CONTEXT_OPTIONS,
     serviceWorkers: "block",
+    // DETERMINISM_CSS is an inline <style>; a page CSP like `style-src 'self'` would block it and leave
+    // animations running. Bypassing CSP changes no settled style of the app.
+    bypassCSP: true,
     colorScheme: opts.colorScheme ?? "light",
     ...(opts.viewport ? { viewport: opts.viewport } : {}),
     ...(opts.storageState ? { storageState: opts.storageState } : {}),
