@@ -301,12 +301,18 @@ async function stableShot(page: any, masks: string[]) {
 
 /** Waits, runs the steps, applies post-load theme switches, then takes the stable shot. */
 async function settleAndShoot(page: any, network: ReturnType<typeof trackNetwork>, route: RouteSpec, viewport: { width: number; height: number }, afterLoad: () => Promise<void>, verifyTheme: () => Promise<void>) {
+  const waitFor = async () => {
+    if (route.waitFor) await page.locator(route.waitFor).first().waitFor({ state: "visible", timeout: 30_000 });
+    await network.quiet();
+  };
   await network.quiet();
-  if (route.waitFor) await page.locator(route.waitFor).first().waitFor({ state: "visible", timeout: 30_000 });
-  await network.quiet();
+  // route.waitFor is the state to capture. Without steps it is also "the app is ready" for the theme
+  // switch; with steps, it is reached by them (each step waits for its own target).
+  if (!route.steps?.length) await waitFor();
   await waitForAssets(page);
   await afterLoad();
   for (const step of route.steps ?? []) await runStep(page, step, network);
+  if (route.steps?.length) await waitFor();
   // A neutral pointer: steps that click or hover leave it over a control otherwise.
   await page.mouse.move(0, 0);
   await network.quiet();
