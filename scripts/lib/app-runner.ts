@@ -9,7 +9,8 @@
  *     then confirms every port the run bound is free.
  *
  * Run modes (registry `run.mode`):
- *   browser   spawn `run.start`, read the bound URL from its output with `run.readyPattern`
+ *   browser   spawn `run.start`, read the bound URL from its output with `run.readyPattern`; served
+ *             URL paths map under `run.serveRoot` (the Vite/web root), default `run.cwd`
  *   static    `run.start` set: same as browser (a fixture server that builds into {tmp});
  *             otherwise run `commands.build`, then serve `run.staticDir` on the app's port
  *   electron  run `run.electron.build`, then Playwright `_electron.launch` against `run.electron.main`;
@@ -68,7 +69,7 @@ export interface RunningApp {
   electron?: { app: any; window(): Promise<any> };
   /** run.mode "electron" only: requests the guard blocked in electronApp.context(). */
   blocked?: () => string[];
-  /** Directory the served URL paths map to (Vite root or static dir). */
+  /** Directory the served URL paths map to: run.serveRoot (the Vite/web root), else the static dir, else run.cwd. */
   serveRoot?: string;
   /** static mode without run.start: every file the built-in server sent. */
   servedFiles?: () => string[];
@@ -535,7 +536,11 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
       const flagText = flags.map(shellQuote).join(" ");
       cmd = cmd.includes("{flags}") ? cmd.replaceAll("{flags}", flagText) : flagText ? `${cmd} ${flagText}` : cmd;
       const cwd = appCwd(app, root, app.run.cwd);
-      running.serveRoot = app.run.staticDir ? resolvePath(root, expand(app.run.staticDir)) : cwd;
+      running.serveRoot = app.run.serveRoot
+        ? resolvePath(root, expand(app.run.serveRoot))
+        : app.run.staticDir
+          ? resolvePath(root, expand(app.run.staticDir))
+          : cwd;
       const proc = spawnLogged(cmd, cwd, env, logPath);
       if (!proc.child.pid) throw new Error(`${app.id}: failed to spawn ${cmd}`);
       roots.push(rootProc(proc.child.pid));
@@ -615,7 +620,7 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
       stillStarting();
       electronApp.process()?.stdout?.on("data", (chunk: Buffer) => appendFileSync(logPath, chunk));
       electronApp.process()?.stderr?.on("data", (chunk: Buffer) => appendFileSync(logPath, chunk));
-      running.serveRoot = cwd;
+      running.serveRoot = app.run.serveRoot ? resolvePath(root, expand(app.run.serveRoot)) : cwd;
       running.electron = { app: electronApp, window: () => electronApp.firstWindow({ timeout: timeoutMs }) };
       running.blocked = await installGuard(electronApp.context(), running);
       // Only now may the app emit `ready` and open windows: their first loads go through the guard.
@@ -691,7 +696,11 @@ function toDiskPath(entry: string, serveRoot: string, basePath: string): string 
 export function servedFromRoot(running: RunningApp, filePaths: string[]): { ok: boolean; outside: string[]; unresolved: string[] } {
   const rootReal = realpathSync(running.root);
   const tmpReal = existsSync(running.tmp ?? "") ? realpathSync(running.tmp) : undefined;
-  const serveRoot = running.serveRoot ?? appCwd(running.app, running.root, running.app.run?.cwd);
+  const serveRoot =
+    running.serveRoot ??
+    (running.app.run?.serveRoot
+      ? resolvePath(running.root, expandPlaceholders(running.app.run.serveRoot, { root: running.root, tmp: running.tmp, ports: running.ports ?? {} }))
+      : appCwd(running.app, running.root, running.app.run?.cwd));
   const basePath = running.baseUrl ? new URL(running.baseUrl).pathname.replace(/\/+$/, "") : "";
   const outside: string[] = [];
   const unresolved: string[] = [];

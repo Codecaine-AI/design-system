@@ -186,13 +186,18 @@ describe("killRun", () => {
 describe("startApp", () => {
   test("serves from the printed URL, runs with the sanitized env, and stop() frees every port the run bound", async () => {
     process.env.GITHUB_TOKEN = "ghp_planted";
+    // The server starts in app/ but serves app/web (like docs-workbench: cwd docs-system, Vite root web/).
+    const root = makeRoot();
+    mkdirSync(join(root, "app/web/src"), { recursive: true });
+    writeFileSync(join(root, "app/web/src/main.tsx"), "");
     let running: RunningApp;
     try {
-      running = await start(fixtureApp({ ui: 46911, helper: 46912 }), makeRoot());
+      running = await start(fixtureApp({ ui: 46911, helper: 46912 }, {}, { serveRoot: "app/web" }), root);
     } finally {
       delete process.env.GITHUB_TOKEN;
     }
     expect(running.baseUrl).toBe("http://127.0.0.1:46911");
+    expect(servedFromRoot(running, ["http://127.0.0.1:46911/src/main.tsx?v=1"])).toEqual({ ok: true, outside: [], unresolved: [] });
     expect(await (await fetch(`${running.baseUrl}/ping`)).text()).toBe("pong");
     expect(running.startedPorts).toEqual(expect.arrayContaining([46911, 46912]));
 
