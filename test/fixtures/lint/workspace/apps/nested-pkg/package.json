@@ -1,0 +1,7 @@
+{
+  "name": "nested-pkg",
+  "private": true,
+  "dependencies": {
+    "@codecaine-ai/design-system": "workspace:*"
+  }
+}
