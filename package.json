@@ -31,6 +31,15 @@
   "scripts": {
     "build": "bun scripts/build.ts",
     "check": "bun scripts/build.ts --check",
-    "test": "bun test ./test"
+    "test": "bun test ./test",
+    "registry:check": "bun scripts/registry-check.ts",
+    "lint:apps": "bun scripts/lint-apps.ts",
+    "verify:apps": "bun scripts/verify-apps.ts",
+    "snapshot": "bun scripts/snapshot.ts",
+    "snapshot:diff": "bun scripts/snapshot-diff.ts",
+    "snapshot:sheet": "bun scripts/snapshot-sheet.ts",
+    "codemod:literals": "bun scripts/codemod-literals.ts",
+    "progress": "bun scripts/progress.ts",
+    "pack": "bun scripts/pack.ts"
   }
 }
