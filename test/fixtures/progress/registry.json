@@ -1,0 +1,210 @@
+{
+  "version": 1,
+  "apps": [
+    {
+      "id": "alpha",
+      "name": "Alpha",
+      "wave": 1,
+      "kind": "app",
+      "repo": "repos/alpha",
+      "root": "repos/alpha",
+      "literalFloor": 0,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": true
+        },
+        "3": {
+          "required": false,
+          "reason": "library: no folder standard"
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": true
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": true
+        },
+        "structure": {
+          "required": false,
+          "reason": "library: no folder standard"
+        }
+      }
+    },
+    {
+      "id": "beta",
+      "name": "Beta",
+      "wave": 1,
+      "kind": "app",
+      "repo": "repos/beta",
+      "root": "repos/beta",
+      "literalFloor": 0,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": true
+        },
+        "3": {
+          "required": true
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": true
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": true
+        },
+        "structure": {
+          "required": true
+        }
+      }
+    },
+    {
+      "id": "gamma",
+      "name": "Gamma",
+      "wave": 1,
+      "kind": "app",
+      "repo": "repos/gamma",
+      "root": "repos/gamma",
+      "literalFloor": 5,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": false,
+          "reason": "renders inside a host shell"
+        },
+        "3": {
+          "required": true
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": true
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": true
+        },
+        "structure": {
+          "required": true
+        }
+      }
+    },
+    {
+      "id": "epsilon",
+      "name": "Epsilon",
+      "wave": 2,
+      "kind": "app",
+      "repo": "repos/epsilon",
+      "root": "repos/epsilon",
+      "literalFloor": 0,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": false,
+          "reason": "renders inside a host shell"
+        },
+        "3": {
+          "required": false,
+          "reason": "library: no folder standard"
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": true
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": true
+        },
+        "structure": {
+          "required": true
+        }
+      }
+    },
+    {
+      "id": "zeta",
+      "name": "Zeta",
+      "wave": 3,
+      "kind": "app",
+      "repo": "repos/zeta",
+      "root": "repos/zeta",
+      "literalFloor": 0,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": true
+        },
+        "3": {
+          "required": true
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": true
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": true
+        },
+        "structure": {
+          "required": true
+        }
+      }
+    }
+  ]
+}

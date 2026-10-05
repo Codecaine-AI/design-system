@@ -7,10 +7,11 @@
 1. [guide/tokens.md](guide/tokens.md): token tiers, names and the full reference.
 2. [guide/layout.md](guide/layout.md): the app shell and content lanes.
 3. [guide/code-structure.md](guide/code-structure.md): how UI code is organized.
+4. [guide/consume.md](guide/consume.md): how an app depends on the package and the order it loads the CSS (fonts, tokens, layout).
 
 ## Rules
 
-1. Style only with tokens: `var(--ds-*)` in CSS, the utilities from `tailwind.css`, or `cssVar()` in JS.
+1. Style only with tokens: `var(--ds-*)` in CSS, the utilities from `tailwind.css` (or the `tailwind-v3-preset` in a Tailwind v3 app), or `cssVar()` in JS. Charts use `color.chart.*`.
 2. Never hard-code a color, size, spacing, radius, font, shadow, duration or z-index.
 3. In Tailwind, never use Tailwind's own scales: the default palette (`bg-red-500`, `bg-white`, `text-black`), text sizes (`text-sm`), shadows (`shadow-md`), radius steps (`rounded-lg`; use `rounded` or `rounded-pill`), font weights (`font-light`, `font-normal`; use `font-regular`), or its line-height, tracking, blur and easing steps. New apps import `tailwind-strict.css` before `tailwind.css`, so these do not generate at all.
 4. Use semantic roles: `color.surface`, `color.text`, `color.border`, `color.fill`, `color.accent`, `color.link`, `color.status`, `color.diff`, `color.code`. Use hue tokens (`color.blue.*` and the rest) only for categorical color.

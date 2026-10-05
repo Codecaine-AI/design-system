@@ -28,14 +28,21 @@ tokens/base/*.tokens.json         theme-independent scales: space, radius, borde
 tokens/themes/light.tokens.json   colors and shadows, light
 tokens/themes/dark.tokens.json    colors and shadows, dark (same paths as light)
 scripts/build.ts                  validator and compiler (bun, zero dependencies)
-dist/css/tokens.css               generated: custom properties only
+dist/css/tokens.css               generated: custom properties, and color-scheme per theme block
+dist/css/tokens-dark-first.css    generated: the same with dark on :root, for dark-first surfaces
+dist/css/host-contract.css        generated: the agent-viewer host contract (--background, --trace-*, ...) mapped to tokens
+dist/css/host-contract-dark-first.css  generated: the same with dark on :root
+dist/tailwind/preset-v3.cjs       generated: Tailwind v3 preset with the tailwind.css utility names
 dist/tailwind/theme.css           generated: Tailwind v4 @theme and the dark: variant
 dist/tailwind/strict.css          generated: optional reset of Tailwind's default palette, type and shadow scales
 dist/js/index.js, index.d.ts      generated: resolved values and cssVar()
 dist/json/*.json                  generated: base, light, dark (flat) and tokens.json (nested)
 dist/guide/index.html             generated: visual style guide
 css/layout.css                    app-shell layout
-guide/                            tokens.md, layout.md, code-structure.md, audit.md, app-shell-demo.html
+css/fonts.css                     @font-face for Inter and IBM Plex Mono
+fonts/                            the woff2 files (byte-identical to @codecaine-ai/text-measure's) and their OFL licenses
+scripts/pack.ts                   `bun run pack`: a tgz for apps that vendor the package
+guide/                            tokens.md, layout.md, consume.md, code-structure.md, audit.md, app-shell-demo.html
 templates/                        starter app shell
 skill/SKILL.md                    the design-system agent skill (source of truth; lascari-ai/agent-skills registers it)
 test/                             bun test
@@ -49,11 +56,12 @@ verification/docs-system/         screenshot harness and mapping.md for the docs
 ### CSS
 
 ```css
-@import "@codecaine-ai/design-system/tokens.css"; /* custom properties only */
+@import "@codecaine-ai/design-system/fonts.css"; /* Inter and IBM Plex Mono, shipped in the package */
+@import "@codecaine-ai/design-system/tokens.css"; /* or tokens-dark-first.css on a dark-first surface */
 @import "@codecaine-ai/design-system/layout.css"; /* optional: the app shell */
 ```
 
-`tokens.css` names Inter and IBM Plex Mono. Load the faces with `@codecaine-ai/text-measure/fonts.css` or your own `@font-face`; without them the stacks fall back to system fonts.
+The font files are byte-identical to `@codecaine-ai/text-measure`'s, so browser text matches canvas measurement. Agent-viewer hosts (viewer-ui, viewer-shell, prompt-kit) add `@codecaine-ai/design-system/host-contract.css` after the tokens.
 
 ### Tailwind v4
 
@@ -83,6 +91,18 @@ verification/docs-system/         screenshot harness and mapping.md for the docs
 - **A glyph on a solid tile is that tile's `on-solid`**: `bg-yellow-solid text-yellow-on-solid`, `bg-warning-solid text-warning-on-solid`. It is white or ink, whichever meets 4.5:1 on that solid. `text-on-solid` is white in light and fails on the light gray, yellow, orange and red solids. Light red tops out at 4.26:1 (white; ink is 3.87:1), so its tiles carry icons and large text only.
 - The full list is in [guide/tokens.md](guide/tokens.md#tailwind-utilities). There is no `bg-muted`: muted is a text color (`text-muted`); the neutral fill is `bg-active`.
 
+### Tailwind v3
+
+```js
+// tailwind.config.cjs
+module.exports = {
+  presets: [require("@codecaine-ai/design-system/tailwind-v3-preset")],
+  content: ["./src/**/*.{ts,tsx}"],
+};
+```
+
+The preset has the same utility names as `tailwind.css`, removes Tailwind's default palette, type, radius, shadow, blur and easing scales, and points `dark:` at `data-theme="dark"` or `.dark`. Import `fonts.css` and `tokens.css` in the entry stylesheet.
+
 ### JS and TypeScript
 
 ```ts
@@ -101,6 +121,8 @@ Use `cssVar()` in inline styles. A raw value from `tokens` does not switch with 
 `@codecaine-ai/design-system/json/base.json`, `light.json` and `dark.json` map dotted paths to resolved values. `tokens.json` holds the same values nested.
 
 ### Install
+
+[guide/consume.md](guide/consume.md) is the full recipe, including the vendored tgz for apps that build in Docker, Vercel or Railway (`bun run pack --out <app>/vendor`) and the Vite settings.
 
 | Where | How |
 | --- | --- |
@@ -127,7 +149,8 @@ A linked app (`workspace:*`, `bun link` or npm `file:`) reads the new `dist/` di
 - `data-theme="dark"` or `class="dark"` on any element switches it and everything inside. `data-theme="light"` or `class="light"` switches a region back.
 - `--ds-light-*` and `--ds-dark-*` pin a value to one theme, for a region that must not follow the page.
 - Tailwind's `dark:` matches `data-theme="dark"` or `.dark` on any ancestor. Inside a light region nested in a dark one it still applies, so style such a region with the token utilities, which follow the nearest theme.
-- `tokens.css` sets no `color-scheme` and no other property. Importing it never changes rendering by itself. Set `color-scheme` in the app.
+- `tokens.css` sets `color-scheme` in each theme block and no other property, so scrollbars and form controls follow the theme.
+- `tokens-dark-first.css` puts dark on `:root`; `data-theme="light"` or `class="light"` switches a region back.
 
 ## Commands
 

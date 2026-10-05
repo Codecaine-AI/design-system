@@ -81,6 +81,18 @@ export const DETERMINISM_CSS = `*, *::before, *::after {
   scroll-behavior: auto !important;
 }`;
 
+/**
+ * Page function: adds `css` as a constructed stylesheet (document.adoptedStyleSheets). A page CSP does
+ * not apply to constructed stylesheets, so this works where an inline <style> is blocked (the Electron
+ * path, whose context cannot bypass CSP). Pass to page.evaluate(fn, css).
+ */
+export function adoptStyleSheet(css: string) {
+  const doc = (globalThis as any).document;
+  const sheet = new (globalThis as any).CSSStyleSheet();
+  sheet.replaceSync(css);
+  doc.adoptedStyleSheets = [...doc.adoptedStyleSheets, sheet];
+}
+
 /** Init script body: installs `css` in every frame before app code runs. Pass to context.addInitScript(fn, css). */
 export function installStyleInitScript(css: string) {
   const doc = (globalThis as any).document;
@@ -460,12 +472,12 @@ export async function captureRoute(browser: any, running: RunningApp, route: Rou
   async function captureElectron(): Promise<CaptureResult> {
     const page = await electronPage(running, route);
     await page.setViewportSize(viewport);
-    await page.addStyleTag({ content: DETERMINISM_CSS });
+    await page.evaluate(adoptStyleSheet, DETERMINISM_CSS);
     watch(page);
     if (plan.init) {
       await page.evaluate(storageInitScript, plan.init.storage);
       await page.reload({ waitUntil: "load" });
-      await page.addStyleTag({ content: DETERMINISM_CSS });
+      await page.evaluate(adoptStyleSheet, DETERMINISM_CSS);
     }
     const network = trackNetwork(page);
     const before = running.blocked?.().length ?? 0;

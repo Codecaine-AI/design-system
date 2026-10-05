@@ -1,0 +1,178 @@
+/**
+ * Turns scan-literals hits into mapping rows: locate each literal, read its context, pick a token
+ * and write the replacement in the form the slot needs.
+ */
+
+import { readFileSync, statSync } from "node:fs";
+import { join, relative, resolve, sep } from "node:path";
+import { HARD, scan, type Hit, type Options } from "../../scan-literals.ts";
+import { parseColor } from "./color.ts";
+import { pickColor } from "./color-role.ts";
+import { readContext, type Context } from "./context.ts";
+import { locate, type Span } from "./locate.ts";
+import { pickClass, pickFamily, pickFontSize, pickRadius, pickSpacing, type Pick } from "./size-role.ts";
+import { kindOf, lineRange, prepareSource, type SourceFile } from "./source.ts";
+import type { Row } from "./table.ts";
+import { cssVarRef, type Theme, type TokenData } from "./tokens.ts";
+
+const COLORS = new Set(["hex", "rgb", "hsl", "oklch", "otherColorFn", "namedColor"]);
+/** Default rows: every hard category, plus the soft color signals the standard bans. */
+export const DEFAULT_CATEGORIES = [...HARD, "twPalette", "namedColor"];
+export const ALL_CATEGORIES = [...DEFAULT_CATEGORIES, "twArbitraryVar", "pxSpacing", "otherFontSize"];
+
+export interface ProposeOptions {
+  appId: string;
+  defaultTheme: Theme;
+  categories: Set<string>;
+}
+
+/** The package's `cssVar` is imported in this file, so JS slots can call it. */
+function importsCssVar(src: string): boolean {
+  return /import\s*\{[^}]*\bcssVar\b[^}]*\}\s*from\s*["']@codecaine-ai\/design-system["']/.test(src);
+}
+
+function pickFor(data: TokenData, f: SourceFile, hit: Hit, span: Span | null, ctx: Context, appId: string): Pick {
+  if (COLORS.has(hit.category)) {
+    const color = parseColor(hit.value);
+    if (!color) return { path: null, method: null, deltaE: null, why: `color ${hit.value}: color space not parsed` };
+    const [ls] = lineRange(f, hit.line);
+    const before = span ? f.text.slice(ls, span.start) : "";
+    const ringShadow = /(?:^|[\s:,"'`])0(?:px)?\s+0(?:px)?\s+0(?:px)?\s+\d*\.?\d+px\s*$/.test(before);
+    const pick: Pick = pickColor(data, color, ctx, { appId, ringShadow });
+    if (pick.path && pick.keepAlpha !== undefined) {
+      pick.css = `color-mix(in srgb, ${cssVarRef(pick.path)} ${Math.round(pick.keepAlpha * 1000) / 10}%, transparent)`;
+    }
+    return pick;
+  }
+  switch (hit.category) {
+    case "twArbitrary":
+    case "twArbitraryVar":
+    case "twPalette": {
+      const cls = span ? f.src.slice(span.start, span.end) : hit.value;
+      const pick = pickClass(data, cls, ctx, { appId });
+      if (pick.root) ctx.property = pick.root;
+      return pick;
+    }
+    case "pxFontSize":
+    case "otherFontSize":
+      return pickFontSize(data, hit.value, ctx);
+    case "radius":
+      return pickRadius(hit.value);
+    case "fontFamily":
+      return pickFamily(hit.value);
+    case "pxSpacing":
+      return pickSpacing(data, hit.value);
+  }
+  return { path: null, method: null, deltaE: null, why: `category ${hit.category}` };
+}
+
+/** The text that replaces the literal in its slot, or null with the reason. */
+function replacementFor(f: SourceFile, span: Span | null, pick: Pick, ctx: Context, cssVarOk: boolean): { text: string | null; why?: string } {
+  if (!span) return { text: null, why: "not found on the line as written (channel triplet, numeric tuple, or a value split across lines): edit by hand" };
+  if (span.slot === "class") return pick.utility ? { text: pick.utility } : { text: null };
+  if (!pick.path) return { text: null };
+  if (ctx.data) return { text: null, why: "sits in a data object (id/type keys), not a style: check before changing" };
+  if (span.slot === "canvas") return { text: null, why: "canvas 2D does not resolve var(): read the token with getComputedStyle, or keep it" };
+  const single = !pick.path.includes(",");
+  const value = pick.css ?? cssVarRef(pick.path);
+  switch (span.slot) {
+    case "text":
+      return { text: value };
+    case "wholeString": {
+      if (cssVarOk && single && !pick.css) return { text: `cssVar(${JSON.stringify(pick.path)})` };
+      const q = f.src[span.start] === "'" ? "'" : '"';
+      return { text: `${q}${value}${q}` };
+    }
+    case "number":
+      return { text: cssVarOk && single && !pick.css ? `cssVar(${JSON.stringify(pick.path)})` : JSON.stringify(value) };
+    case "attrBrace":
+      return { text: JSON.stringify(value) };
+  }
+  return { text: null };
+}
+
+/** Where to read context for a literal not found as written: after the line's own declaration name, if any. */
+function contextAnchor(f: SourceFile, line: number): Span {
+  const [ls, le] = lineRange(f, line);
+  const m = f.text.slice(ls, le).match(/(?:--|\$)?[\w-]+\s*:\s*/);
+  const at = m ? ls + m.index! + m[0].length : ls;
+  return { start: at, end: at, slot: "text" };
+}
+
+export function proposeFile(data: TokenData, f: SourceFile, hits: Hit[], opts: ProposeOptions): Array<Omit<Row, "id">> {
+  const rows: Array<Omit<Row, "id">> = [];
+  const seen = new Map<string, number>();
+  const cssVarOk = f.kind === "js" && importsCssVar(f.src);
+  for (const hit of hits) {
+    const key = `${hit.line}\u0000${hit.category}\u0000${hit.value}`;
+    const occurrence = seen.get(key) ?? 0;
+    seen.set(key, occurrence + 1);
+    if (!opts.categories.has(hit.category)) continue;
+    const span = locate(f, hit, occurrence);
+    const [ls] = lineRange(f, hit.line);
+    const ctx = readContext(f, span ?? contextAnchor(f, hit.line), { defaultTheme: opts.defaultTheme });
+    const pick = pickFor(data, f, hit, span, ctx, opts.appId);
+    const rep = replacementFor(f, span, pick, ctx, cssVarOk);
+    const why = [pick.why, rep.why].filter(Boolean).join("; ");
+    rows.push({
+      file: f.rel,
+      line: hit.line,
+      column: span ? span.start - ls + 1 : null,
+      category: hit.category,
+      kind: COLORS.has(hit.category) && hit.category !== "namedColor" ? (hit.def ? "definition" : hit.fallback ? "fallback" : "inline") : null,
+      literal: span ? f.src.slice(span.start, span.end) : hit.value,
+      context: { property: ctx.property, selector: ctx.selector, component: ctx.component, theme: ctx.theme },
+      proposed: pick.path,
+      replacement: rep.text,
+      method: pick.method,
+      deltaE: pick.deltaE,
+      why,
+      approve: "",
+    });
+  }
+  // Source order: by line, then column (a literal not found as written goes last on its line).
+  return rows.sort((a, b) => a.line - b.line || (a.column ?? 1e9) - (b.column ?? 1e9));
+}
+
+export interface ScanInput {
+  root: string;
+  paths: string[];
+  exclude: string[];
+  ext?: string;
+}
+
+/**
+ * Runs scan-literals with hits over every path (one scan per path, so each report's file paths
+ * resolve against that path) and proposes a row per hit. Files keep root-relative paths.
+ */
+export function propose(data: TokenData, input: ScanInput, opts: ProposeOptions): Row[] {
+  const rows: Array<Omit<Row, "id">> = [];
+  const done = new Set<string>();
+  for (const p of input.paths) {
+    const abs = resolve(input.root, p);
+    const options: Options = {
+      roots: [abs], json: true, top: 0, hits: true, excludes: input.exclude, exts: extSet(input.ext),
+      includeTests: false, includeSubmodules: false, keepComments: false, failAbove: null, verbose: false,
+    };
+    const report = scan(options);
+    const single = statSync(abs).isFile();
+    for (const fr of [...report.fileReports].sort((a, b) => a.path.localeCompare(b.path))) {
+      const file = single ? abs : join(abs, fr.path);
+      if (done.has(file)) continue;
+      done.add(file);
+      const kind = kindOf(file);
+      if (!kind || !fr.hits) continue;
+      const rel = relative(input.root, file).split(sep).join("/");
+      rows.push(...proposeFile(data, prepareSource(rel, readFileSync(file, "utf8"), kind), fr.hits, opts));
+    }
+  }
+  return rows.map((r, i) => ({ id: i + 1, ...r }));
+}
+
+const DEFAULT_EXTS = ["css", "scss", "sass", "less", "uss", "ts", "tsx", "mts", "cts", "js", "jsx", "mjs", "cjs", "html", "htm", "vue", "svelte", "astro"];
+
+function extSet(ext?: string): Set<string> {
+  if (!ext) return new Set(DEFAULT_EXTS);
+  const list = ext.replace(/^\+/, "").split(",").map((e) => e.trim().replace(/^\./, "").toLowerCase()).filter(Boolean);
+  return new Set(ext.startsWith("+") ? [...DEFAULT_EXTS, ...list] : list);
+}

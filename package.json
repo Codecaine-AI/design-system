@@ -9,13 +9,30 @@
       "types": "./dist/js/index.d.ts",
       "default": "./dist/js/index.js"
     },
+    "./fonts.css": {
+      "style": "./css/fonts.css",
+      "default": "./css/fonts.css"
+    },
+    "./fonts/*": "./fonts/*",
     "./tokens.css": {
       "style": "./dist/css/tokens.css",
       "default": "./dist/css/tokens.css"
     },
+    "./tokens-dark-first.css": {
+      "style": "./dist/css/tokens-dark-first.css",
+      "default": "./dist/css/tokens-dark-first.css"
+    },
     "./layout.css": {
       "style": "./css/layout.css",
       "default": "./css/layout.css"
+    },
+    "./host-contract.css": {
+      "style": "./dist/css/host-contract.css",
+      "default": "./dist/css/host-contract.css"
+    },
+    "./host-contract-dark-first.css": {
+      "style": "./dist/css/host-contract-dark-first.css",
+      "default": "./dist/css/host-contract-dark-first.css"
     },
     "./tailwind.css": {
       "style": "./dist/tailwind/theme.css",
@@ -25,9 +42,23 @@
       "style": "./dist/tailwind/strict.css",
       "default": "./dist/tailwind/strict.css"
     },
+    "./tailwind-v3-preset": {
+      "require": "./dist/tailwind/preset-v3.cjs",
+      "default": "./dist/tailwind/preset-v3.cjs"
+    },
     "./json/*": "./dist/json/*",
     "./package.json": "./package.json"
   },
+  "files": [
+    "dist",
+    "css",
+    "fonts",
+    "tokens",
+    "templates",
+    "guide/*.md",
+    "AGENTS.md",
+    "README.md"
+  ],
   "scripts": {
     "build": "bun scripts/build.ts",
     "check": "bun scripts/build.ts --check",

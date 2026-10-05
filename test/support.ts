@@ -4,11 +4,21 @@
  * The CSS parser accepts exactly what the build writes (flat blocks of declarations, plus comments)
  * and throws on anything else, so a format change fails loudly instead of slipping past a test.
  */
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 
 /** Package root. */
 export const PKG = join(import.meta.dir, "..");
+
+/**
+ * The workspace tree around the package, for tests that compare against sibling packages
+ * (text-measure's fonts, Core's Tailwind v3): the package's parent when it holds codecaine/core
+ * (the owner's tree), else $DS_MIRROR (a rollout worktree). null when neither does; such tests skip.
+ */
+export function workspaceRoot(): string | null {
+  const candidates = [resolve(PKG, ".."), process.env.DS_MIRROR].filter((dir): dir is string => Boolean(dir));
+  return candidates.find((dir) => existsSync(join(dir, "codecaine/core/package.json"))) ?? null;
+}
 
 export const THEMES = ["light", "dark"] as const;
 export type Theme = (typeof THEMES)[number];
@@ -98,9 +108,9 @@ export function parseStylesheet(css: string): { blocks: CssBlock[]; statements: 
 
 export interface TokensCss {
   blocks: CssBlock[];
-  /** Declarations of the `:root` block: base and theme-pinned variables. */
+  /** Custom properties of the `:root` block: base and theme-pinned variables. */
   root: Map<string, string>;
-  /** Declarations of each theme switch block. */
+  /** Custom properties of each theme switch block (its `color-scheme` is left out). */
   light: Map<string, string>;
   dark: Map<string, string>;
 }
@@ -114,10 +124,52 @@ export function tokensCss(): TokensCss {
   const block = (selector: string) => {
     const found = blocks.filter((b) => b.prelude === selector);
     if (found.length !== 1) throw new Error(`dist/css/tokens.css has ${found.length} "${selector}" blocks, expected 1`);
-    return new Map(found[0].declarations);
+    return new Map(found[0].declarations.filter(([property]) => property.startsWith("--")));
   };
   tokensCssCache = { blocks, root: block(SELECTORS.root), light: block(SELECTORS.light), dark: block(SELECTORS.dark) };
   return tokensCssCache;
+}
+
+/** An element in a cascade: the root element, and its data-theme attribute or one class. */
+export interface El {
+  root?: boolean;
+  theme?: string;
+  className?: string;
+}
+
+function matches(selector: string, el: El): boolean {
+  if (selector === ":root") return Boolean(el.root);
+  const attr = /^\[data-theme="([a-z0-9-]+)"\]$/.exec(selector);
+  if (attr) return el.theme === attr[1];
+  if (/^\.[a-z0-9-]+$/.test(selector)) return el.className === selector.slice(1);
+  throw new Error(`unsupported selector in a generated sheet: ${selector}`);
+}
+
+/**
+ * Computed values at the last element of `chain` (outermost first), the way a browser computes them for
+ * the flat sheets the build writes: every block whose selector list matches an element applies in source
+ * order (the selectors share one specificity), var() substitutes at the element that declares the
+ * property, and an undeclared property (custom properties and color-scheme) inherits from the parent.
+ */
+export function cascade(sheets: CssBlock[][], chain: El[]): (name: string) => string {
+  const declared = chain.map((el) => {
+    const map = new Map<string, string>();
+    for (const block of sheets.flat()) {
+      if (block.prelude.startsWith("@")) continue;
+      if (block.prelude.split(",").some((selector) => matches(selector.trim(), el))) for (const [p, v] of block.declarations) map.set(p, v);
+    }
+    return map;
+  });
+  const value = (at: number, name: string, seen: string[] = []): string => {
+    if (seen.includes(`${at}:${name}`)) throw new Error(`var() cycle at ${name}`);
+    const raw = declared[at].get(name);
+    if (raw === undefined) {
+      if (at === 0) throw new Error(`${name} is not declared`);
+      return value(at - 1, name);
+    }
+    return raw.replace(VAR_RE, (_, ref: string) => value(at, ref, [...seen, `${at}:${name}`]));
+  };
+  return (name) => value(chain.length - 1, name);
 }
 
 /** Every custom property declared anywhere in dist/css/tokens.css. */

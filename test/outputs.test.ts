@@ -7,16 +7,19 @@ import { existsSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { MD_BEGIN, MD_END } from "../scripts/build.ts";
 import {
+  cascade,
   computeInTheme,
   computePinned,
   cssVarOf,
   declaredVars,
+  type El,
   PKG,
   parseCss,
   parseStylesheet,
   readJson,
   readText,
   SELECTORS,
+  type Theme,
   THEMES,
   tokensCss,
   varRefs,
@@ -30,14 +33,17 @@ function allPaths(): string[] {
 }
 
 describe("dist/css/tokens.css", () => {
-  test("holds --ds-* custom properties only: :root, then the light block, then the dark block", () => {
+  test("holds --ds-* custom properties and one color-scheme per theme block: :root, then the light block, then the dark block", () => {
     const blocks = parseCss(readText("dist/css/tokens.css")); // throws on any text outside a block
     // Order is behavior: the dark block must follow `:root, ...light` to win at equal specificity.
     expect(blocks.map((b) => b.prelude)).toEqual([SELECTORS.root, SELECTORS.light, SELECTORS.dark]);
+    const scheme: Record<string, string | undefined> = { [SELECTORS.light]: "light", [SELECTORS.dark]: "dark" };
     for (const { prelude, declarations } of blocks) {
       const names = declarations.map(([property]) => property);
-      expect({ prelude, invalid: declarations.filter(([p, value]) => !CUSTOM_PROPERTY.test(p) || !value) }).toEqual({ prelude, invalid: [] });
+      const invalid = declarations.filter(([p, value]) => (p === "color-scheme" ? value !== scheme[prelude] : !CUSTOM_PROPERTY.test(p) || !value));
+      expect({ prelude, invalid }).toEqual({ prelude, invalid: [] });
       expect({ prelude, repeated: names.filter((n, i) => names.indexOf(n) !== i) }).toEqual({ prelude, repeated: [] });
+      expect({ prelude, scheme: names.includes("color-scheme") }).toEqual({ prelude, scheme: prelude in scheme });
     }
   });
 
@@ -76,6 +82,50 @@ describe("dist/css/tokens.css", () => {
       }
     }
     expect(wrong).toEqual([]);
+  });
+});
+
+describe("theme switch: tokens.css (light first) and tokens-dark-first.css (dark first)", () => {
+  type Case = [label: string, chain: El[], theme: Theme];
+  const other = { light: "dark", dark: "light" } as const;
+  /** Elements and the theme each must render, for a sheet whose :root theme is `first`. */
+  const cases = (first: Theme): Case[] => [
+    ["the root, no attribute", [{ root: true }], first],
+    [`the root, data-theme="${first}"`, [{ root: true, theme: first }], first],
+    [`the root, data-theme="${other[first]}"`, [{ root: true, theme: other[first] }], other[first]],
+    [`the root, class "${other[first]}"`, [{ root: true, className: other[first] }], other[first]],
+    [`a data-theme="${other[first]}" region`, [{ root: true }, { theme: other[first] }], other[first]],
+    [`a "${first}" region inside a "${other[first]}" root`, [{ root: true, theme: other[first] }, { className: first }], first],
+    ["a plain element inside a switched region", [{ root: true }, { theme: other[first] }, {}], other[first]],
+  ];
+  const sheets: Array<[file: string, first: Theme]> = [
+    ["dist/css/tokens.css", "light"],
+    ["dist/css/tokens-dark-first.css", "dark"],
+  ];
+
+  test.each(sheets)("%s: every theme variable and color-scheme follow the nearest theme, the root default being %s", (file, first) => {
+    const blocks = parseCss(readText(file));
+    const wrong: string[] = [];
+    for (const [label, chain, theme] of cases(first)) {
+      const get = cascade([blocks], chain);
+      if (get("color-scheme") !== theme) wrong.push(`${label}: color-scheme ${get("color-scheme")}`);
+      for (const [path, value] of Object.entries(readJson(`dist/json/${theme}.json`))) {
+        const got = get(cssVarOf(path));
+        if (got !== String(value)) wrong.push(`${label}: ${cssVarOf(path)} = ${got} (expected ${theme} ${value})`);
+      }
+    }
+    expect(wrong).toEqual([]);
+  });
+
+  test("tokens-dark-first.css declares the same variables as tokens.css; only the block order and the :root theme differ", () => {
+    const declarations = (file: string) =>
+      Object.fromEntries(parseCss(readText(file)).map((b) => [b.prelude.replace(/^:root, (?=\[)/, ""), Object.fromEntries(b.declarations)]));
+    expect(declarations("dist/css/tokens-dark-first.css")).toEqual(declarations("dist/css/tokens.css"));
+    expect(parseCss(readText("dist/css/tokens-dark-first.css")).map((b) => b.prelude)).toEqual([
+      ":root",
+      ':root, [data-theme="dark"], .dark',
+      '[data-theme="light"], .light',
+    ]);
   });
 });
 
@@ -183,11 +233,11 @@ describe("guides", () => {
     expect(refs.filter((name) => !declared.has(name))).toEqual([]);
   });
 
-  test.if(existsSync(join(PKG, "guide/app-shell-demo.html")))("dist/guide/index.html loads the fonts.css guide/app-shell-demo.html loads", () => {
+  test.if(existsSync(join(PKG, "guide/app-shell-demo.html")))("dist/guide/index.html and guide/app-shell-demo.html load the package's own css/fonts.css", () => {
     const fontLinks = (path: string) =>
       [...readText(path).matchAll(/<link\b[^>]*\bhref="([^"]+\/fonts\.css)"/g)].map((m) => resolve(PKG, dirname(path), m[1]));
     const guide = fontLinks("dist/guide/index.html");
-    expect(guide).toHaveLength(1);
+    expect(guide).toEqual([join(PKG, "css/fonts.css")]);
     expect(guide).toEqual(fontLinks("guide/app-shell-demo.html"));
   });
 });
@@ -203,7 +253,21 @@ describe("package.json", () => {
   test("exports resolve to the files the package ships", () => {
     const resolveExport = (subpath: string) => relative(PKG, Bun.resolveSync(`${pkg.name}${subpath}`, PKG));
     expect(Object.keys(pkg.exports)).toEqual(
-      expect.arrayContaining([".", "./tokens.css", "./layout.css", "./tailwind.css", "./tailwind-strict.css", "./json/*", "./package.json"]),
+      expect.arrayContaining([
+        ".",
+        "./fonts.css",
+        "./fonts/*",
+        "./tokens.css",
+        "./tokens-dark-first.css",
+        "./layout.css",
+        "./host-contract.css",
+        "./host-contract-dark-first.css",
+        "./tailwind.css",
+        "./tailwind-strict.css",
+        "./tailwind-v3-preset",
+        "./json/*",
+        "./package.json",
+      ]),
     );
     // Every condition's target exists (Bun resolves only its own conditions; Tailwind and Vite read "style").
     const targets = (entry: unknown): string[] =>
@@ -216,6 +280,12 @@ describe("package.json", () => {
     expect(resolveExport("/layout.css")).toBe("css/layout.css");
     expect(resolveExport("/tailwind.css")).toBe("dist/tailwind/theme.css");
     expect(resolveExport("/tailwind-strict.css")).toBe("dist/tailwind/strict.css");
+    expect(resolveExport("/fonts.css")).toBe("css/fonts.css");
+    expect(resolveExport("/fonts/Inter-Regular.woff2")).toBe("fonts/Inter-Regular.woff2");
+    expect(resolveExport("/tokens-dark-first.css")).toBe("dist/css/tokens-dark-first.css");
+    expect(resolveExport("/host-contract.css")).toBe("dist/css/host-contract.css");
+    expect(resolveExport("/host-contract-dark-first.css")).toBe("dist/css/host-contract-dark-first.css");
+    expect(resolveExport("/tailwind-v3-preset")).toBe("dist/tailwind/preset-v3.cjs");
     for (const name of ["base", ...THEMES, "tokens"]) expect(resolveExport(`/json/${name}.json`)).toBe(`dist/json/${name}.json`);
     expect(resolveExport("/package.json")).toBe("package.json");
   });

@@ -7,8 +7,8 @@ Design tokens are the named values every app styles with: colors, spacing, radiu
 | Tier | Where | What it holds |
 | --- | --- | --- |
 | 1. Base scales | `tokens/base/*.tokens.json` | Theme-independent: `space`, `radius`, `border.width`, `focus`, `blur`, `font`, `line-height`, `letter-spacing`, `motion`, `z`, `layout` (lanes and app-shell sizes). |
-| 2. Theme colors | `tokens/themes/<theme>.tokens.json` | Literal values per theme: the neutral roles (`color.surface`, `color.text`, `color.border`, `color.fill.chip`, `color.accent`, `color.link`) and the hue roster (`color.<hue>.*`, `color.amber.text`). |
-| 3. Derived roles | same theme files | Aliases and mixes over tier 2: `color.status`, `color.category`, `color.diff`, `color.selection`, `color.focus-ring`, `color.fill.*`, `color.code`, `color.syntax`, `color.annotation`, `color.glass`, `shadow`. |
+| 2. Theme colors | `tokens/themes/<theme>.tokens.json` | Literal values per theme: the neutral roles (`color.surface`, `color.text`, `color.border`, `color.fill.chip`, `color.accent`, `color.link`), the hue roster (`color.<hue>.*`, `color.amber.text`) and the chart series (`color.chart.series.*`). |
+| 3. Derived roles | same theme files | Aliases and mixes over tier 2: `color.status`, `color.category`, `color.chart.diverging`, `color.diff`, `color.selection`, `color.focus-ring`, `color.fill.*`, `color.code`, `color.syntax`, `color.annotation`, `color.glass`, `shadow`. |
 | Compat | same theme files | `color.notion.*`: docs-system's Notion palette (`--color-*`). CSS variables only, no Tailwind utilities. |
 
 Both theme files hold exactly the same paths. The build fails if they differ. It also fails on any other `.json` file under `tokens/`, and on a key repeated inside one JSON object, which `JSON.parse` would silently drop.
@@ -42,6 +42,7 @@ Both theme files hold exactly the same paths. The build fails if they differ. It
 6. Add or change tokens only in `tokens/`. Never edit `dist/`.
 7. Component-specific knobs (a callout's padding, a table's row rule) stay in the app and are built from these tokens. Add a token here only when two apps need the value, or when it is part of the shared look.
 8. `color.notion.*` is compat for docs-system. New code never uses it.
+9. Charts use `color.chart.*`. Assign `color.chart.series.1`, `.2`, ... in order and never cycle; a ninth series folds into "Other". Scatter and small-multiple charts use at most three series. Polarity (inflow and outflow, gain and loss) uses `color.chart.diverging.*`. Labels, values and legends use text tokens, never the series color. ECharts and canvas cannot read CSS variables: take the values from `flat[theme]` in the JS module (or `getComputedStyle`) and rebuild the chart options when the theme changes. SVG can use `var(--ds-color-chart-series-1)` directly. `test/contrast.test.ts` checks the palette in both themes: lightness band, chroma, color-vision separation of neighbors and 3:1 on page and panel.
 
 ## Changing a token
 
@@ -54,8 +55,13 @@ Both theme files hold exactly the same paths. The build fails if they differ. It
 
 ## Theming
 
-- `tokens.css` declares custom properties only. Importing it never changes rendering by itself.
+- `tokens.css` declares custom properties, plus `color-scheme` in each theme block. It sets no other property, so importing it changes only the root's `color-scheme`: scrollbars, form controls and the default canvas follow the active theme.
 - `:root` gets the light theme. Set `data-theme="dark"` or `class="dark"` on any element to switch it and everything inside it. `data-theme="light"` or `class="light"` switches a region back.
+- Dark-first surfaces (tool chrome that is dark by default) import `tokens-dark-first.css` instead: the same variables, with dark on `:root`. `data-theme="light"` or `class="light"` switches a region back. Set `data-theme="dark"` on `<html>` too if the app uses Tailwind's `dark:`, which matches the attribute, not the default.
+- Fonts: import `fonts.css` before the tokens. It declares Inter and IBM Plex Mono from font files inside the package, byte-identical to `@codecaine-ai/text-measure`'s.
+- Agent-viewer hosts (viewer-ui, viewer-shell, prompt-kit) also import `host-contract.css` (or `host-contract-dark-first.css`) after the tokens. It maps the unprefixed contract (`--background`, `--trace-user`, `--status-info-fill`, `--editor-bg`, ...) to these tokens in the format the libraries read, mostly RGB triplets for `rgb(var(--x) / <alpha>)`. The triplets are written at build time as `--ds-light-rgb-<path>` and `--ds-dark-rgb-<path>`.
+- Tailwind v3 apps use `presets: [require("@codecaine-ai/design-system/tailwind-v3-preset")]`: the utility names of `tailwind.css`, without Tailwind's default palette and scales.
+- Wiring per app (workspace, link, npm `file:`, vendored tgz, Vite settings): [consume.md](consume.md).
 - Tailwind's `dark:` is redefined by `tailwind.css` to the same switch: `data-theme="dark"` or `.dark` on the element or an ancestor, not the OS setting. It still matches inside a light region nested in a dark one; the token utilities follow the nearest theme.
 - Light and dark are one shared theme for Codecaine and Lascari AI. Add a theme by adding `tokens/themes/<name>.tokens.json` with the same paths.
 
@@ -63,7 +69,7 @@ Both theme files hold exactly the same paths. The build fails if they differ. It
 
 <!-- BEGIN GENERATED: token reference (scripts/build.ts) -->
 
-79 base tokens and 192 theme tokens (light and dark), 655 CSS custom properties in total. Theme values show the authored value: `{path}` is an alias, emitted as `var()`.
+79 base tokens and 203 theme tokens (light and dark), 688 CSS custom properties in total. Theme values show the authored value: `{path}` is an alias, emitted as `var()`.
 
 ### Base tokens
 
@@ -118,8 +124,8 @@ One corner radius app-wide. Every rounded surface uses radius.base; pills use ra
 
 | Token | CSS variable | Type | Value | Description |
 | --- | --- | --- | --- | --- |
-| `font.family.sans` | `--ds-font-family-sans` | fontFamily | `Inter, ui-sans-serif, system-ui, sans-serif` | UI and reading text. Inter 400-700 ships with @codecaine-ai/text-measure fonts.css. |
-| `font.family.mono` | `--ds-font-family-mono` | fontFamily | `"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace` | Code, inline code chips, kbd. IBM Plex Mono 400-600 ships with @codecaine-ai/text-measure fonts.css. |
+| `font.family.sans` | `--ds-font-family-sans` | fontFamily | `Inter, ui-sans-serif, system-ui, sans-serif` | UI and reading text. Inter 400-700 ships in fonts.css (the text-measure faces). |
+| `font.family.mono` | `--ds-font-family-mono` | fontFamily | `"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace` | Code, inline code chips, kbd. IBM Plex Mono 400-600 ships in fonts.css (the text-measure faces). |
 | `font.family.serif` | `--ds-font-family-serif` | fontFamily | `ui-serif, Georgia, 'Times New Roman', serif` | Optional serif reading face (docs style rail font choice). |
 | `font.family.mono-system` | `--ds-font-family-mono-system` | fontFamily | `ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace` | Platform mono, no web font (docs style rail 'Mono' choice). |
 
@@ -452,6 +458,24 @@ Categorical roster for series, tags and depth cycles, in this order.
 | `color.category.6.text` | `--ds-color-category-6-text` | `{color.pink.text}` | `{color.pink.text}` | Category 6 (pink). |
 | `color.category.6.soft` | `--ds-color-category-6-soft` | `{color.pink.soft}` | `{color.pink.soft}` | Category 6 fill. |
 
+#### `color.chart`
+
+Data-viz palette for charts (ECharts, SVG, canvas). series.1 to series.8 are categorical: assign them in order and never cycle; a ninth series folds into Other. Scatter, bubble and small-multiple charts use at most series.1 to series.3. Each theme passes the dataviz checks: OKLCH lightness in band, chroma >= 0.1, adjacent series apart under protanopia and deuteranopia (OKLab dE >= 8) and normal vision (dE >= 15), and >= 3:1 on page and panel. Text never takes a series color: labels and values use color.text.*, gridlines color.border.subtle, axes color.border.strong.
+
+| Token | CSS variable | Light | Dark | Description |
+| --- | --- | --- | --- | --- |
+| `color.chart.series.1` | `--ds-color-chart-series-1` | `#088bd9` | `#0891e3` | Series 1 (blue). A single-series chart uses this slot. |
+| `color.chart.series.2` | `--ds-color-chart-series-2` | `#dd6d07` | `#dd6d07` | Series 2 (orange). |
+| `color.chart.series.3` | `--ds-color-chart-series-3` | `#c84e90` | `#c84e90` | Series 3 (pink). |
+| `color.chart.series.4` | `--ds-color-chart-series-4` | `#b48509` | `#b48509` | Series 4 (yellow). |
+| `color.chart.series.5` | `--ds-color-chart-series-5` | `#0d9c97` | `#0ea29d` | Series 5 (teal). |
+| `color.chart.series.6` | `--ds-color-chart-series-6` | `#d44e48` | `#d44e48` | Series 6 (red). |
+| `color.chart.series.7` | `--ds-color-chart-series-7` | `#976bde` | `#976bde` | Series 7 (violet). |
+| `color.chart.series.8` | `--ds-color-chart-series-8` | `#09a253` | `#09a655` | Series 8 (green). |
+| `color.chart.diverging.positive` | `--ds-color-chart-diverging-positive` | `{color.chart.series.1}` | `{color.chart.series.1}` | Diverging positive pole (blue): inflow, gain, above the baseline. |
+| `color.chart.diverging.midpoint` | `--ds-color-chart-diverging-midpoint` | `{color.gray.line}` | `{color.gray.line}` | Diverging neutral midpoint (gray): zero, no change. |
+| `color.chart.diverging.negative` | `--ds-color-chart-diverging-negative` | `{color.chart.series.6}` | `{color.chart.series.6}` | Diverging negative pole (red): outflow, loss, below the baseline. |
+
 #### `color.diff`
 
 | Token | CSS variable | Light | Dark | Description |
@@ -630,6 +654,17 @@ Keys written by `dist/tailwind/theme.css`. Each reads the token's `--ds-*` varia
 | `--color-cat-5` | `color.category.5.text` | `bg-cat-5`, `text-cat-5`, `border-cat-5` |
 | `--color-cat-6-soft` | `color.category.6.soft` | `bg-cat-6-soft`, `text-cat-6-soft`, `border-cat-6-soft` |
 | `--color-cat-6` | `color.category.6.text` | `bg-cat-6`, `text-cat-6`, `border-cat-6` |
+| `--color-chart-diverging-midpoint` | `color.chart.diverging.midpoint` | `bg-chart-diverging-midpoint`, `text-chart-diverging-midpoint`, `border-chart-diverging-midpoint` |
+| `--color-chart-diverging-negative` | `color.chart.diverging.negative` | `bg-chart-diverging-negative`, `text-chart-diverging-negative`, `border-chart-diverging-negative` |
+| `--color-chart-diverging-positive` | `color.chart.diverging.positive` | `bg-chart-diverging-positive`, `text-chart-diverging-positive`, `border-chart-diverging-positive` |
+| `--color-chart-series-1` | `color.chart.series.1` | `bg-chart-series-1`, `text-chart-series-1`, `border-chart-series-1` |
+| `--color-chart-series-2` | `color.chart.series.2` | `bg-chart-series-2`, `text-chart-series-2`, `border-chart-series-2` |
+| `--color-chart-series-3` | `color.chart.series.3` | `bg-chart-series-3`, `text-chart-series-3`, `border-chart-series-3` |
+| `--color-chart-series-4` | `color.chart.series.4` | `bg-chart-series-4`, `text-chart-series-4`, `border-chart-series-4` |
+| `--color-chart-series-5` | `color.chart.series.5` | `bg-chart-series-5`, `text-chart-series-5`, `border-chart-series-5` |
+| `--color-chart-series-6` | `color.chart.series.6` | `bg-chart-series-6`, `text-chart-series-6`, `border-chart-series-6` |
+| `--color-chart-series-7` | `color.chart.series.7` | `bg-chart-series-7`, `text-chart-series-7`, `border-chart-series-7` |
+| `--color-chart-series-8` | `color.chart.series.8` | `bg-chart-series-8`, `text-chart-series-8`, `border-chart-series-8` |
 | `--color-code-bg` | `color.code.bg` | `bg-code-bg`, `text-code-bg`, `border-code-bg` |
 | `--color-code-border` | `color.code.border` | `bg-code-border`, `text-code-border`, `border-code-border` |
 | `--color-code-chip-call` | `color.code.chip.call` | `bg-code-chip-call`, `text-code-chip-call`, `border-code-chip-call` |
