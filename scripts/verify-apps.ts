@@ -19,7 +19,8 @@ import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { type AppEntry, DESIGN_SYSTEM_ROOT, getApp, loadRegistry, type PassId, type Registry } from "./lib/registry";
-import { type Assertion, checkPage, fail, na, pass, sentinelAssertions } from "./lib/verify/page-checks";
+import { type Assertion, fail, na, pass } from "./lib/verify/assertions";
+import { checkPage, sentinelAssertions } from "./lib/verify/page-checks";
 import {
   checkPropagateRoot,
   eligibleApps,

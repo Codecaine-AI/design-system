@@ -6,7 +6,8 @@
 import { fileURLToPath } from "node:url";
 import { guardedContext, type RunningApp, servedFromRoot, splitBlocked, startApp, stopAllApps } from "../app-runner";
 import type { AppEntry, RouteSpec } from "../registry";
-import { type Assertion, fail, pass, type ResponseLog, runStep, trackResponses } from "./page-checks";
+import { type Assertion, fail, pass, type ResponseLog, trackResponses } from "./assertions";
+import { runStep } from "./page-checks";
 import { onInterrupt } from "./propagate";
 
 export interface Session {

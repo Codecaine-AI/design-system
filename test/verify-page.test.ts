@@ -7,7 +7,8 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { CONTEXT_OPTIONS, LAUNCH_OPTIONS } from "../scripts/lib/capture.ts";
 import { loadPlaywright } from "../scripts/lib/playwright.ts";
 import { type AppEntry, DESIGN_SYSTEM_ROOT, type PassId } from "../scripts/lib/registry.ts";
-import { type Assertion, checkPage, trackResponses } from "../scripts/lib/verify/page-checks.ts";
+import { type Assertion, trackResponses } from "../scripts/lib/verify/assertions.ts";
+import { checkPage } from "../scripts/lib/verify/page-checks.ts";
 import { loadBuildValues } from "../scripts/lib/verify/tokens.ts";
 import { browserSkip, fixtureApp, fixtureResponse, MIRROR, PROBES } from "./verify-support.ts";
 

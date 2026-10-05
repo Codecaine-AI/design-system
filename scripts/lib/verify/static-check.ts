@@ -7,7 +7,7 @@ import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, sep } from "node:path";
 import { type AppEntry, resolvePath } from "../registry";
-import { type Assertion, fail, na, pass } from "./page-checks";
+import { type Assertion, fail, na, pass } from "./assertions";
 import type { BuildValues } from "./tokens";
 
 const PACKAGE = "@codecaine-ai/design-system";
