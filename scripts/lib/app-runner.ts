@@ -607,7 +607,9 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
       electronApp = await _electron.launch({
         executablePath,
         // Playwright adds its loader only without executablePath; ours loads it and holds `ready` (below).
-        args: ["-r", ELECTRON_LOADER, main, ...flags],
+        // Electron ignores $HOME on macOS: the loader moves userData & co. under {tmp}/electron-user-data,
+        // and --user-data-dir covers Chromium's own early use of the profile dir.
+        args: ["-r", ELECTRON_LOADER, `--user-data-dir=${join(tmp, "electron-user-data")}`, main, ...flags],
         cwd,
         env: { ...env, DS_PW_ELECTRON_LOADER: playwrightElectronLoader(root) },
         timeout: timeoutMs,
