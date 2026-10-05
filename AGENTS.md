@@ -27,12 +27,27 @@
 3. Add a token only when the value is part of the shared look or two apps need it. A component's own knobs stay in the app, built from tokens.
 4. Run the commands below, then open `dist/guide/index.html` and check light and dark.
 
+## Check an app
+
+1. `apps.json` describes every app: its repo, how it consumes the package, its entry stylesheet, scan paths, literal floor, allowlist, run profile and routes. Change an entry, then run `bun run registry:check`.
+2. `bun run lint:apps <app>` proves the app is wired and conformant: the package resolves inside the workspace, the entry stylesheet loads the CSS in order, no literal sits outside the allowlist, every `--ds-*` name exists, the app uses the shell and the code follows the folder structure.
+3. `bun run verify:apps <app>` proves the app renders from the tokens in a real browser: token probes in light and dark, the fonts, the sidebar state, served files and blocked requests.
+4. Never run an app outside its run profile (temp `HOME`, cleaned environment, the ports in its block). `verify:apps` and `snapshot` start and stop it under the profile.
+5. An app passes when `lint:apps` and `verify:apps` both exit 0. Screenshots and results go to `--out-dir` (default `$DS_RUN`, else `<tmpdir>/ds-rollout`), never into a git checkout.
+
 ## Commands
 
-Run in `/Users/Ford/workspace/design-system`:
+Run in `/Users/Ford/workspace/design-system`. `--root` is the workspace to check. It defaults to the folder that holds this checkout. `app...` defaults to every app in `apps.json`.
 
 | Command | Use |
 | --- | --- |
 | `bun run build` | Validate tokens and regenerate `dist/` and `guide/tokens.md`. |
 | `bun run check` | Exit 1 when `dist/` is stale. |
 | `bun run test` | Run the tests. |
+| `bun run registry:check [--root <dir>]` | Check `apps.json` against the workspace: paths, ports, allowlists, fixtures. |
+| `bun run lint:apps [--root <dir>] [--pass <n>] [app...]` | Static conformance: resolution, wiring, literals, names (pass 1), shell (pass 2), structure (pass 3). One line per violation. `--json` for scripts. |
+| `bun run verify:apps [--root <dir>] [--pass <n>] [app...]` | Runtime check in a browser under each app's run profile. `--propagate --root <dir>` rebuilds with a sentinel page color and checks that live-linked apps paint it. `--restore --root <dir>` undoes an interrupted propagate. Both refuse `/Users/Ford/workspace`. |
+| `bun run snapshot`, `snapshot:diff`, `snapshot:sheet` | Screenshot an app's routes in each theme (`--app <id> --set <name>`), pixel-diff two sets (`--a <set> --b <set>`, `--exact` exits 1 on any change), write a before/after sheet. |
+| `bun run codemod:literals --app <id> propose` | Propose a token for every hard-coded literal in a mapping table. `apply --table <mapping.json>` changes only rows marked `"approve": "yes"`. |
+| `bun run progress [--root <dir>]` | Write `progress.html` and `progress.md`: every app's pass status and literal count. |
+| `bun run pack [--out <dir>]` | Pack a tgz for a vendored app. Prints its path and its `tokens.css` sha256. |

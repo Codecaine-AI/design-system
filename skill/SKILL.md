@@ -37,6 +37,21 @@ metadata:
 - **Load order:** `@codecaine-ai/design-system/fonts.css`, then `tokens.css` (`tokens-dark-first.css` on a dark-first surface), then `layout.css`. Agent-viewer hosts add `host-contract.css` after the tokens. For Tailwind v4, `tailwind-strict.css` comes before `tailwind.css`; Tailwind v3 apps use the `tailwind-v3-preset` export as a preset.
 - `guide/consume.md` has the full recipe, including the Vite settings.
 
+## Check an App
+
+Run these in `/Users/Ford/workspace/design-system`. `--root` defaults to the workspace that holds it.
+
+1. Find the app's entry in `apps.json`: repo, wiring, entry stylesheet, scan paths, literal floor, run profile and routes. After you change an entry, run `bun run registry:check`.
+2. Run `bun run lint:apps <app>` (add `--pass <n>` to check one migration pass). It prints one line per violation and exits 0 when the app is wired and conformant.
+3. Run `bun run verify:apps <app>`. It starts the app under its run profile and proves in a browser that it renders from the tokens in light and dark.
+4. Never start the app outside its run profile. `verify:apps` and `snapshot` start and stop it for you.
+5. `bun run progress` writes one page with every app's status and literal count.
+
 ## Move an Existing App
 
-`guide/audit.md` lists every app with its gaps, effort and migration wave. Move tokens first, then the shell, then the code structure, one app per change. Prove each change with before and after screenshots. `verification/docs-system/` has a harness you can reuse.
+`guide/audit.md` lists every app with its gaps, effort and migration wave, and `apps.json` holds its registry entry. Move tokens first, then the shell, then the code structure, one app per change:
+
+1. Capture the before state: `bun run snapshot --app <id> --set before`.
+2. Run `bun run codemod:literals --app <id> propose`, mark the rows you accept `"approve": "yes"`, then run `bun run codemod:literals apply --table <mapping.json>`.
+3. Wire the CSS (`guide/consume.md`) and fix what is left until `lint:apps --pass <n>` and `verify:apps --pass <n>` both pass.
+4. Run `bun run snapshot --app <id> --set after`, then `bun run snapshot:sheet --app <id> --a before --b after` (and `snapshot:diff` with the same flags) to prove the change.
