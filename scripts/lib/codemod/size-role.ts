@@ -152,15 +152,26 @@ function colorOfClass(value: string, palette: boolean, mod?: string): Rgba | nul
   return { ...c, a: c.a * modAlpha(mod) };
 }
 
+/**
+ * The Tailwind that compiles a file's classes: v4 (also "none": a Tailwind-free app's stray
+ * classes), v3 (only what the design-system preset generates), or "uno" (UnoCSS: no class rewrites).
+ */
+export type TailwindTarget = "v4" | "v3" | "none" | "uno";
+
 export interface ClassOptions {
   appId: string;
   /** Root-relative path of the file (token guards). */
   file?: string;
-  /** The app's Tailwind (registry stack.tailwind): v3 apps get only utilities their preset generates. */
-  tailwind?: "v4" | "v3" | "none";
+  /** The Tailwind that compiles the class: v3 hosts get only utilities their preset generates; UnoCSS hosts get none. */
+  tailwind?: TailwindTarget;
 }
 
 export function pickClass(data: TokenData, cls: string, ctx: Context, opts: ClassOptions): Pick & { root?: string } {
+  if (opts.tailwind === "uno") {
+    const would = pickClassBody(data, cls, ctx, { ...opts, tailwind: "v4" });
+    const hint = would.utility ? `; under Tailwind v4 it would be ${would.utility}` : "";
+    return { ...none(`UnoCSS host: its presets have no design-system utilities, so no class rewrite is proposed${hint}: edit by hand`), root: would.root };
+  }
   let pick = pickClassBody(data, cls, ctx, opts);
   if (opts.tailwind === "v3" && pick.utility && pick.root && !v3Generates(data, pick.root, pick.utility, false) && !v3Generates(data, pick.root, pick.utility, true)) {
     pick = { ...none(`Tailwind v3: the preset has no ${pick.utility} (${pick.why}); pick a preset step or keep it with an allowlist entry`), root: pick.root };
@@ -245,6 +256,8 @@ function pickClassBody(data: TokenData, cls: string, ctx: Context, opts: ClassOp
       return { ...p, utility: p.path ? themeUtility(data, "--text-", "text", p.path) : null, root };
     }
     if (RADIUS_ROOT.test(root)) {
+      // rounded-[6px_0_0_6px] sets each corner: one utility would round all four.
+      if (v.trim().split(/\s+/).length > 1) return { ...none(`radius ${v}: one value per corner; write per-corner classes (rounded-tl, rounded-tr, rounded-br, rounded-bl) by hand`), utility: null, root };
       const p = pickRadius(v);
       if (!p.path || p.path.includes(",")) return { ...p, utility: null, root };
       const suffix = p.path === "radius.pill" ? "-pill" : p.path === "radius.none" ? "-none" : "";

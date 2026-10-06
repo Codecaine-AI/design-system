@@ -1,13 +1,14 @@
 /**
  * Applies the approved rows of a mapping table. A row changes the source only when its `approve`
- * is "yes", it has a replacement, its file sits inside the root, its line is byte-for-byte the line
- * propose read (by hash), and the literal stands at the recorded column as a whole token.
- * Everything else is reported, never guessed: a row whose line changed is stale, not searched for.
+ * is "yes", it has a replacement, its file sits inside the root, the whole file is byte-for-byte
+ * the file propose read (by hash), and the literal stands at the recorded line and column as a
+ * whole token. Everything else is reported, never guessed: any change to a file since propose makes
+ * every row of that file stale (an identical line elsewhere is never taken for the row's line).
  */
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { targetIn } from "./paths.ts";
-import { lineSha, type Row, type Table } from "./table.ts";
+import { fileSha, lineSha, type Row, type Table } from "./table.ts";
 
 export interface ApplyResult {
   applied: Row[];
@@ -17,6 +18,8 @@ export interface ApplyResult {
   unapproved: number;
   /** Files that changed (or would change with dryRun). */
   files: string[];
+  /** Files whose text changed since propose (or that the table has no hash for): all their approved rows were skipped. */
+  staleFiles: Array<{ file: string; rows: number; reason: string }>;
 }
 
 export const isApproved = (r: Row) => String(r.approve ?? "").trim().toLowerCase() === "yes";
@@ -26,7 +29,7 @@ export const isApproved = (r: Row) => String(r.approve ?? "").trim().toLowerCase
  * inside it, symlinks included, and a row pointing elsewhere is skipped.
  */
 export function applyTable(table: Table, rootReal: string, opts: { dryRun?: boolean } = {}): ApplyResult {
-  const result: ApplyResult = { applied: [], skipped: [], unapproved: 0, files: [] };
+  const result: ApplyResult = { applied: [], skipped: [], unapproved: 0, files: [], staleFiles: [] };
   const byFile = new Map<string, Row[]>();
   for (const row of table.rows) {
     if (!isApproved(row)) {
@@ -48,7 +51,19 @@ export function applyTable(table: Table, rootReal: string, opts: { dryRun?: bool
       for (const row of rows) result.skipped.push({ row, reason: `refused: ${target.refused}` });
       continue;
     }
-    const lines = readFileSync(target.path, "utf8").split("\n");
+    const text = readFileSync(target.path, "utf8");
+    const want = table.files?.[file];
+    const stale = !want
+      ? "the table has no hash for this file (a table from an older codemod): run propose again"
+      : fileSha(text) !== want
+        ? "the file changed since propose (whole-file hash): run propose again"
+        : null;
+    if (stale) {
+      for (const row of rows) result.skipped.push({ row, reason: `stale: ${stale}` });
+      result.staleFiles.push({ file, rows: rows.length, reason: stale });
+      continue;
+    }
+    const lines = text.split("\n");
     const edits = new Map<number, Array<{ row: Row; pos: number }>>();
     for (const row of rows) {
       const pos = findLiteral(lines, row);

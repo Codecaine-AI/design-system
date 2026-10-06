@@ -6,4 +6,4 @@ export const Icon = () => (
     <path fill="#ffffff" stroke="#e6e5e3" d="M0 0" />
   </svg>
 );
-export const chip = { background: "#ebebe9", gap: dsVar("space.2") };
+export const chipStyle = { background: "#ebebe9", gap: dsVar("space.2") };

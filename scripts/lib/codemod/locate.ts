@@ -6,6 +6,7 @@
 
 import type { Hit } from "../../scan-literals.ts";
 import { parseColor } from "./color.ts";
+import { isCanvasValue } from "./slot.ts";
 import { isCssAt, lineRange, type SourceFile } from "./source.ts";
 
 /**
@@ -28,9 +29,6 @@ export interface Span {
 const HEX = /(?<![&\w$\\/])#([0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})(?![\w-])/g;
 const COLOR_FN =
   /(?<![\w-])(rgba?|hsla?|oklch|oklab|lab|lch|hwb|color)\(((?:[^()]|\((?:[^()]|\([^()]*\))*\))*)\)/gi;
-/** Canvas 2D assignments and gradient stops: `ctx.fillStyle = "`, `ctx.font = "`, `addColorStop(0, "`. */
-const CANVAS = /(?:\.(?:fillStyle|strokeStyle|shadowColor|font)\s*=|addColorStop\([^,]*,)\s*["'`]?[^"'`]*$/;
-
 const COLOR_CATEGORY = new Set(["hex", "rgb", "hsl", "oklch", "otherColorFn", "namedColor"]);
 /** scan-literals' VAR_GROUP: a var() with up to two levels of nested parentheses. */
 const VAR_GROUP = /var\((?:[^()]|\((?:[^()]|\([^()]*\))*\))*\)/gi;
@@ -198,7 +196,7 @@ function candidates(f: SourceFile, hit: Hit, lineHits: readonly Hit[]): Span[] {
         if (f.inStr && !f.inStr[i + 1]) continue;
         if (masked(masks, i, j)) continue;
         // The places scan-literals skips: an ID selector in CSS, a link target or url() elsewhere.
-        if (cssFile && isSelector(f.text, j)) continue;
+        if ((cssFile || isCssAt(f, i)) && isSelector(f.text, j)) continue;
         if (!cssFile && (/(?:href|to|id|for|xlink:href)\s*=\s*\{?\s*["'`]$/.test(f.text.slice(Math.max(0, i - 24), i)) || /url\(\s*['"]?$/.test(f.text.slice(Math.max(0, i - 24), i)))) continue;
         if (normalizeHex(m[0]) === hit.value) add(i, j);
       }
@@ -325,8 +323,8 @@ export function locate(f: SourceFile, hit: Hit, occurrence: number, lineHits: re
     return span;
   }
   if (span.slot !== "text") return span;
-  const [ls] = lineRange(f, hit.line);
-  if (f.kind === "js" && CANVAS.test(f.text.slice(ls, span.start))) return { ...span, slot: "canvas" };
+  // The whole statement decides: `ctx.fillStyle = on ? "#fff" : "#000"`, `ctx.strokeStyle = c || "#fff"`.
+  if (isCanvasValue(f, span)) return { ...span, slot: "canvas" };
   if (f.inStr && f.inStr[span.start] === 1) {
     let a = span.start;
     let b = span.end;

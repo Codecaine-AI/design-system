@@ -8,22 +8,28 @@
  */
 import { beforeAll, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, symlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
+import { classTarget, designSystemCommit } from "../scripts/codemod-literals.ts";
 import { applyTable } from "../scripts/lib/codemod/apply.ts";
 import { tokenAllowed } from "../scripts/lib/codemod/color-role.ts";
 import { applyRoot, tableDir } from "../scripts/lib/codemod/paths.ts";
 import { DEFAULT_CATEGORIES, propose } from "../scripts/lib/codemod/propose.ts";
-import { lineSha, summarize, type Row, type Table } from "../scripts/lib/codemod/table.ts";
+import { fileSha, lineSha, summarize, type Row, type Table } from "../scripts/lib/codemod/table.ts";
 import { loadTokens } from "../scripts/lib/codemod/tokens.ts";
+import { loadRegistry } from "../scripts/lib/registry.ts";
+import { SYSTEM_BIN } from "../scripts/lib/system-bin.ts";
 import { PKG } from "./support.ts";
 
 const FIXTURES = join(PKG, "test/fixtures/codemod");
 const SRC = "app/src";
 
+function proposeAt(root: string) {
+  return propose(loadTokens(), { root, paths: [SRC], exclude: [] }, { appId: "fixture", defaultTheme: "light", categories: new Set(DEFAULT_CATEGORIES) });
+}
 function proposeIn(root: string): Row[] {
-  return propose(loadTokens(), { root, paths: [SRC], exclude: [] }, { appId: "fixture", defaultTheme: "light", categories: new Set(DEFAULT_CATEGORIES) }).rows;
+  return proposeAt(root).rows;
 }
 
 let rows: Row[];
@@ -44,7 +50,15 @@ function tempRoot(): string {
   return root;
 }
 
-const tableOf = (root: string, list: Row[]): Table => ({
+/** The files' hashes as they are now (what propose would record), for rows written by hand. */
+function hashesNow(root: string, list: Row[]): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const r of list) if (existsSync(join(root, r.file))) out[r.file] = fileSha(readFileSync(join(root, r.file), "utf8"));
+  return out;
+}
+
+/** A table over `list`; `files` are the hashes propose recorded (default: the files as they are now). */
+const tableOf = (root: string, list: Row[], files: Record<string, string> = hashesNow(root, list)): Table => ({
   tool: "codemod-literals",
   version: 1,
   app: "fixture",
@@ -53,6 +67,7 @@ const tableOf = (root: string, list: Row[]): Table => ({
   designSystem: { root: PKG, commit: null },
   scan: { paths: [SRC], exclude: [], categories: DEFAULT_CATEGORIES },
   summary: summarize(list),
+  files,
   rows: list,
 });
 
@@ -94,7 +109,7 @@ describe("propose: role first", () => {
     expect(text.proposed).toBeNull();
     expect(text.why).not.toContain("color.accent");
     // The same color with no role is the accent by nearest color.
-    expect(row("widgets.tsx", 12, '"#0078df"')).toMatchObject({ proposed: "color.accent", method: "nearest", deltaE: 0 });
+    expect(row("widgets.tsx", 12, '"#0078df"')).toMatchObject({ proposed: "color.accent", method: "nearest", deltaE: 0, replacement: null });
   });
 
   test("rows it cannot map say why, and rows that map but must not change get no replacement", () => {
@@ -167,7 +182,7 @@ describe("propose: Tailwind classes", () => {
 });
 
 /** Rows for the review fixtures (test/fixtures/codemod/review): light default, or dark-first, or a v3 app. */
-function reviewRows(path: string, opts: { theme?: "light" | "dark"; tailwind?: "v3" | "v4" } = {}): Row[] {
+function reviewRows(path: string, opts: { theme?: "light" | "dark"; tailwind?: "v3" | "v4" | "uno" } = {}): Row[] {
   return propose(loadTokens(), { root: FIXTURES, paths: [`review/${path}`], exclude: [] }, {
     appId: "fixture", defaultTheme: opts.theme ?? "light", categories: new Set(DEFAULT_CATEGORIES), tailwind: opts.tailwind,
   }).rows;
@@ -379,6 +394,270 @@ describe("propose: second review round", () => {
   });
 });
 
+/** Rows for the round-2 fixtures (test/fixtures/codemod/review/r2). */
+function r2Rows(path: string, opts: { tailwind?: "v3" | "v4" | "uno"; ext?: string } = {}): Row[] {
+  return propose(loadTokens(), { root: FIXTURES, paths: [`review/r2/${path}`], exclude: [], ext: opts.ext }, {
+    appId: "fixture", defaultTheme: "light", categories: new Set(DEFAULT_CATEGORIES), tailwind: opts.tailwind,
+  }).rows;
+}
+
+function r2(list: Row[], line: number, literal: string, nth = 0): Row {
+  const found = list.filter((r) => r.line === line && r.literal === literal);
+  if (!found[nth]) throw new Error(`no row for line ${line} ${literal}; rows on that line: ${list.filter((r) => r.line === line).map((r) => r.literal).join(", ")}`);
+  return found[nth];
+}
+
+describe("propose: canvas 2D reads the whole statement", () => {
+  test("ternaries, ||, ??, a ternary over several lines and a gradient stop are canvas: no replacement", () => {
+    const rows = r2Rows("canvas.ts");
+    expect(rows.length).toBe(8);
+    expect(rows.filter((r) => r.replacement !== null)).toEqual([]);
+    for (const r of rows.filter((x) => x.proposed)) expect({ line: r.line, why: r.why }).toEqual({ line: r.line, why: expect.stringContaining("canvas 2D does not resolve var()") });
+  });
+});
+
+describe("propose: a JS value gets a replacement only where it reaches CSS", () => {
+  const rows = () => r2Rows("js-slots.tsx");
+
+  test("settings, palettes, chart options, color inputs, comparisons, call arguments and component props: none", () => {
+    const list = rows();
+    const cases: Array<[number, string, string]> = [
+      [3, "15", "an object held by BASE_SETTINGS"], // prompt-kit BASE_SETTINGS.fontSize
+      [3, '"#ffffff"', "foregroundColor is not a CSS property"],
+      [4, '"#1a1a1a"', "an array element"], // pen-plotter PALETTE
+      [5, '"#666562"', "an object under series, a chart or map option"], // an ECharts series label
+      [5, "11", "an object under series, a chart or map option"],
+      [5, '"#e6e5e3"', "itemStyle is a chart option"],
+      [6, '"#808080"', "the value attribute is not a style"], // a color input's value
+      [7, '"#ffffff"', "compared"], // === "#ffffff"
+      [8, '"#4a463f"', "an argument to label()"],
+      [9, '"#e6e5e3"', "snakeStartColor is not a CSS property"], // circlesnakes DEFAULT_SETTINGS
+      [18, '"#e6e5e3"', "the color prop of <Badge> (a component)"],
+    ];
+    for (const [line, literal, why] of cases) {
+      const r = r2(list, line, literal);
+      expect({ line, literal, replacement: r.replacement, why: r.why.includes(`not known to reach CSS (${why}`) }).toEqual({ line, literal, replacement: null, why: true });
+    }
+  });
+
+  test("a nearest pick in a CSS slot that names no CSS property gets none", () => {
+    const r = r2(rows(), 20, '"#0078df"'); // el.style.setProperty(name, "#0078df")
+    expect(r).toMatchObject({ proposed: "color.accent", method: "nearest", replacement: null });
+    expect(r.why).toContain("a nearest-color pick in JS with no CSS property");
+  });
+
+  test("a mask's colors and an SVG filter's flood and lighting colors get no token", () => {
+    expect(r2(rows(), 21, "rgb(0 0 0 / 0.55)")).toMatchObject({ proposed: null, replacement: null, context: { property: "mask-image" } });
+    expect(r2(rows(), 25, '"#808080"')).toMatchObject({ proposed: null, replacement: null });
+    expect(r2(rows(), 25, '"#ffffff"')).toMatchObject({ proposed: null, replacement: null });
+  });
+
+  test("a style attribute object, a style-named object, a CSSProperties object, el.style, setProperty and a color attribute do", () => {
+    const list = rows();
+    expect(r2(list, 10, '"#ffffff"').replacement).toBe('"var(--ds-color-surface-page)"'); // style={{ background: on ? … : "#ffffff" }}
+    expect(r2(list, 10, "13").replacement).toBe('"var(--ds-font-size-ui-sm)"');
+    expect(r2(list, 11, '"#e6e5e3"').replacement).toBe('"var(--ds-color-border-default)"'); // panelStyle
+    expect(r2(list, 12, '"#ffffff"').replacement).toBe('"var(--ds-color-text-on-solid)"'); // box: CSSProperties
+    expect(r2(list, 14, '"#ffffff"').replacement).toBe('"var(--ds-color-surface-page)"'); // el.style.background =
+    expect(r2(list, 15, '"#ebebe9"')).toMatchObject({ proposed: "color.fill.chip", method: "role", replacement: '"var(--ds-color-fill-chip)"', context: { property: "--chip" } });
+    expect(r2(list, 17, '"#e6e5e3"').replacement).toBe('"var(--ds-color-border-default)"'); // <circle fill={on ? … : "#e6e5e3"}>
+    expect(r2(list, 22, '"#ffffff"').replacement).toBe('"var(--ds-color-text-on-solid)"'); // a spread inside style={{…}}
+    expect(r2(list, 23, "{12}").replacement).toBe('"var(--ds-font-size-ui-xs)"'); // <text fontSize={12}>: the tag's `>` is no comparison
+    expect(r2(list, 24, "#ffffff").replacement).toMatch(/^var\(--ds-color-/); // el.style.filter is CSS, not canvas
+    expect(r2(list, 24, "#ffffff").why).not.toContain("canvas");
+  });
+
+  test("approved, every replacement compiles", () => {
+    const root = mkdtempSync(join(tmpdir(), "codemod-r2-"));
+    cpSync(join(FIXTURES, "review"), join(root, "review"), { recursive: true });
+    const p = propose(loadTokens(), { root, paths: ["review/r2/js-slots.tsx", "review/r2/types.ts", "review/r2/commented-import.tsx"], exclude: [] }, {
+      appId: "fixture", defaultTheme: "light", categories: new Set(DEFAULT_CATEGORIES),
+    });
+    const list = p.rows.map((r) => ({ ...r, approve: r.replacement === null ? "" : "yes" }));
+    const result = applyTable(tableOf(root, list, p.files), realpathSync(root));
+    expect(result.skipped).toEqual([]);
+    for (const file of ["js-slots.tsx", "types.ts", "commented-import.tsx"]) {
+      const build = spawnSync(process.execPath, ["build", join(root, "review/r2", file), "--outfile", join(root, "out", file), "--packages", "external"], { encoding: "utf8" });
+      expect({ file, status: build.status, stderr: build.stderr }).toEqual({ file, status: 0, stderr: "" });
+    }
+  });
+});
+
+describe("propose: text, prose and code are never styles", () => {
+  test("JSX text children, aria-label, title and alt values get no replacement", () => {
+    const rows = r2Rows("text-slots.tsx");
+    expect(rows.map((r) => [r.line, r.literal])).toEqual([[3, '"#ffffff"'], [3, '"#e6e5e3"'], [4, '"#2563eb"'], [7, '"#ffffff"']]);
+    expect(rows.filter((r) => r.replacement !== null)).toEqual([]);
+  });
+
+  test("Markdown: prose, inline code and fenced code never change; <style>, style and class attributes do", () => {
+    const rows = r2Rows("notes.md", { ext: "+md" });
+    expect(rows.map((r) => [r.line, r.literal, r.replacement])).toEqual([
+      [3, "#ffffff", null], // prose
+      [3, "#e6e5e3", null], // `inline code`
+      [6, "#ffffff", null], // ```css fence
+      [10, "#666562", "var(--ds-color-text-muted)"], // <style>
+      [13, "#666562", "var(--ds-color-text-muted)"], // style="…"
+      [13, "bg-[#ffffff]", "bg-page"], // class="…"
+    ]);
+    expect(r2(rows, 6, "#ffffff").why).toContain("Markdown code");
+  });
+
+  test("HTML: an SVG fill changes; HTML's own bgcolor and <font color> do not (var() does not resolve there)", () => {
+    const rows = r2Rows("legacy.html");
+    expect(rows.map((r) => [r.line, r.literal, r.replacement])).toEqual([
+      [1, "#ffffff", null],
+      [1, "#e6e5e3", null],
+      [2, "#ffffff", "var(--ds-color-text-on-solid)"],
+    ]);
+  });
+
+  test("Vue: a :style binding and <style> change; a title, element text and the <script> block do not", () => {
+    const rows = r2Rows("comp.vue");
+    expect(rows.map((r) => [r.line, r.literal, r.replacement])).toEqual([
+      [2, "#666562", "var(--ds-color-text-muted)"],
+      [2, "#ffffff", null],
+      [2, "#e6e5e3", null],
+      [5, "#3B82F6", null],
+      [8, "#ffffff", "var(--ds-color-surface-page)"],
+    ]);
+  });
+});
+
+describe("propose: radius, names and types", () => {
+  test("a class with a radius per corner stays unmapped instead of rounding every corner", () => {
+    for (const tailwind of ["v4", "v3"] as const) {
+      const rows = r2Rows("radius.tsx", { tailwind });
+      expect(r2(rows, 2, "rounded-[6px_0_0_6px]")).toMatchObject({ proposed: null, replacement: null });
+      expect(r2(rows, 2, "rounded-[6px_0_0_6px]").why).toContain("one value per corner");
+      expect(r2(rows, 2, "rounded-[6px]").replacement).toBe("rounded");
+    }
+  });
+
+  test("the last role word of a name decides: a label's background is a background", () => {
+    const rows = r2Rows("names.css");
+    expect(r2(rows, 3, "#f8f8f7").proposed).toBe("color.surface.panel"); // --connector-label-background
+    expect(r2(rows, 4, "#666562").proposed).toBe("color.text.muted"); // --label-color
+    // Only a CSS mask property is a mask: a variable named for a mask scrim still reads by role.
+    expect(r2(rows, 6, "#000000").why).toContain("a mask");
+    expect(r2(rows, 6, "rgba(0, 0, 0, 0.45)").why).not.toContain("a mask");
+  });
+
+  test("a literal type alias, an annotation and a type argument are hand edits", () => {
+    const rows = r2Rows("types.ts");
+    expect(r2(rows, 3, '"#ffffff"')).toMatchObject({ replacement: null });
+    expect(r2(rows, 3, '"#ffffff"').why).toContain("a literal type alias");
+    expect(r2(rows, 4, '"#e6e5e3"', 0).why).toContain("a type annotation");
+    expect(r2(rows, 4, '"#e6e5e3"', 1).replacement).toBeNull(); // the value: assigned to a variable
+    expect(r2(rows, 6, '"#ffffff"').why).toContain("a type argument");
+    expect(r2(rows, 7, '"#ebebe9"').replacement).toBe('cssVar("color.fill.chip")'); // the file's live import
+  });
+
+  test("a commented-out import and import text in a string bind no cssVar", () => {
+    expect(r2(r2Rows("commented-import.tsx"), 4, '"#ebebe9"').replacement).toBe('"var(--ds-color-fill-chip)"');
+  });
+});
+
+describe("propose: second-pass review of the slot reading", () => {
+  const none = (rows: Row[], line: number, literal: string, why: string, nth = 0) => {
+    const r = r2(rows, line, literal, nth);
+    expect({ line, literal, replacement: r.replacement, why: r.why.includes(why) }).toEqual({ line, literal, replacement: null, why: true });
+  };
+
+  test("a comparison with `<` followed by an assignment is not a JSX attribute", () => {
+    const rows = r2Rows("lt.ts");
+    none(rows, 5, '"#ffffff"', "assigned to color"); // after `innerWidth<breakpoint;`
+    none(rows, 7, '"#ffffff"', "assigned to color"); // `if (n<min) color = …`
+  });
+
+  test("a Tailwind class in a compared string, prose or a non-class attribute is not rewritten", () => {
+    const rows = r2Rows("classes.tsx");
+    none(rows, 2, "bg-blue-500", "compared");
+    none(rows, 3, "text-[#ffffff]", "text, not a class list");
+    none(rows, 4, "text-[#ffffff]", "the aria-label attribute");
+    expect(r2(rows, 4, "text-[#ffffff]", 1).replacement).toBe("text-on-solid"); // its className
+    // A class template whose ${…} holds quoted classes over several lines is still a class list.
+    expect(r2(rows, 5, "rounded-[2px]").replacement).toBe("rounded");
+    expect(r2(rows, 6, "bg-[#ffffff]").replacement).toBe("bg-page");
+  });
+
+  test("color and fill are presentation attributes only on SVG elements", () => {
+    const rows = r2Rows("props.tsx");
+    none(rows, 3, '"#ffffff"', "the color prop of <MyIcon>");
+    none(rows, 4, '"#ffffff"', "<meshStandardMaterial> is not an SVG presentation attribute");
+    none(rows, 5, '"#ffffff"', "<link> is not an SVG presentation attribute");
+    expect(r2(rows, 6, '"#ffffff"').replacement).toBe('"var(--ds-color-text-on-solid)"');
+    const vue = r2Rows("guards.vue");
+    none(vue, 2, "#ffffff", "<MyIcon> is not an SVG presentation attribute");
+    expect(r2(vue, 3, "#e6e5e3").replacement).toBe("var(--ds-color-border-default)");
+    none(vue, 6, "#ffffff", "a <script> block"); // markup in a script string
+  });
+
+  test("markup: <style> inside comments or backticks opens nothing; script blocks, indented and list-indented code never change", () => {
+    const md = r2Rows("guards.md", { ext: "+md" });
+    none(md, 3, "#ffffff", "Markdown prose");
+    none(md, 8, "#ffffff", "Markdown code"); // a fence indented inside a list item
+    none(md, 13, "#ffffff", "Markdown code"); // an indented code block
+    expect(r2(md, 15, "#666562").replacement).toBe("var(--ds-color-text-muted)");
+    const html = r2Rows("guards.html");
+    none(html, 2, "#ffffff", "element text"); // after a comment naming <style>
+    expect(r2(html, 4, "#666562").replacement).toBe("var(--ds-color-text-muted)");
+    expect(html.filter((r) => r.line === 4 && r.replacement !== null).map((r) => r.literal)).toEqual(["#666562"]); // #bad, #face are selectors
+    none(html, 7, "#ffffff", "a <script> block");
+  });
+
+  test("templates holding code or an SVG image are not CSS; a page template is CSS only in its <style>; a curried call is a call", () => {
+    const rows = r2Rows("templates.ts");
+    none(rows, 2, "#ffffff", "assigned to snippet");
+    none(rows, 3, "#ffffff", "assigned to cursor");
+    none(rows, 4, "#ffffff", "assigned to page");
+    expect(r2(rows, 4, "#666562").replacement).toBe("var(--ds-color-text-muted)");
+    none(rows, 6, '"#ffffff"', "an argument to darken(…)()");
+    expect(r2(rows, 6, '"#ebebe9"').replacement).toBe('"var(--ds-color-fill-chip)"');
+  });
+
+  test("chart and map options, other functions' arguments, a map feature's setProperty and a type leaking past a line without a semicolon: none", () => {
+    const rows = r2Rows("configs.tsx");
+    none(rows, 4, '"#ffffff"', "an object under graphic"); // ECharts graphic style
+    none(rows, 5, '"#ffffff"', "an object under stylers"); // Google Maps styles
+    none(rows, 6, '"#ffffff"', "an object under paint"); // a Mapbox layer
+    none(rows, 7, '"#ffffff"', "an argument to L.geoJSON()");
+    none(rows, 8, '"#ffffff"', "an argument to feature.setProperty()");
+    none(rows, 10, '"#ffffff"', "an object under legend");
+  });
+
+  test("styled templates with type arguments and interpolated functions are CSS; a typed class field is; a style-named object in canvas code is not", () => {
+    const rows = r2Rows("styled.tsx");
+    expect(r2(rows, 5, "#ffffff").replacement).toBe("var(--ds-color-text-on-solid)");
+    expect(r2(rows, 6, '"#ffffff"')).toMatchObject({ context: { property: "background" }, replacement: '"var(--ds-color-surface-page)"' });
+    expect(r2(rows, 9, '"#ffffff"').replacement).toBe('"var(--ds-color-text-on-solid)"'); // private boxStyle: CSSProperties
+    none(rows, 10, '"#ffffff"', "an object held by settings");
+    none(r2Rows("canvas-file.ts"), 3, '"#ffffff"', "textStyle in a file that draws on a canvas");
+  });
+});
+
+describe("propose: the Tailwind that compiles the classes", () => {
+  test("a library's classes target its host's Tailwind from the registry", () => {
+    const app = (id: string) => loadRegistry().apps.find((a) => a.id === id)!;
+    expect(classTarget(app("prompt-kit-ui"))).toEqual({ tailwind: "v3", from: "stack.hostTailwind" });
+    expect(classTarget(app("viewer-shell")).tailwind).toBe("v3");
+    expect(classTarget(app("canvas-renderer")).tailwind).toBe("v4");
+    expect(classTarget(app("slidev-template"))).toEqual({ tailwind: "uno", from: "stack.hostTailwind" });
+    expect(classTarget(app("docs-workbench"))).toEqual({ tailwind: "v4", from: "stack.tailwind" });
+    expect(classTarget(app("simple-research-kernel")).tailwind).toBe("v3");
+    expect(classTarget(app("sequence-studio")).tailwind).toBe("none");
+  });
+
+  test("an UnoCSS host gets no class rewrites: the rows are unmapped with the reason", () => {
+    const rows = reviewRows("v3.tsx", { tailwind: "uno" });
+    expect(rows.length).toBeGreaterThan(0);
+    for (const r of rows) {
+      expect({ literal: r.literal, proposed: r.proposed, replacement: r.replacement, method: r.method }).toEqual({ literal: r.literal, proposed: null, replacement: null, method: null });
+      expect(r.why).toContain("UnoCSS host");
+    }
+  });
+});
+
 describe("token guards", () => {
   test("Notion compat tokens stay in the docs-system repo", () => {
     const pool = ["color.notion.bg.yellow", "color.notion.text.navigation", "color.surface.panel"];
@@ -394,12 +673,12 @@ describe("apply", () => {
     return list.map((r) => ({ ...r, approve: pick(r) ? "yes" : "" }));
   }
 
-  test("changes only approved rows, skips stale and replacement-less rows, and dry-run writes nothing", () => {
+  test("changes only approved rows, skips every row of a changed file and replacement-less rows, and dry-run writes nothing", () => {
     const root = tempRoot();
-    const fresh = proposeIn(root);
+    const fresh = proposeAt(root);
     const wanted = new Set(["#f5f3ef", "text-white", "w-[320px]", "13", "#c62121", "#ffffff"]);
-    const list = approved(fresh, (r) => wanted.has(r.literal));
-    // Line 20 (.error-text) changes after propose: its row is stale.
+    const list = approved(fresh.rows, (r) => wanted.has(r.literal));
+    // Line 20 (.error-text) changes after propose: every row of theme.css is stale, line 3's too.
     const theme = join(root, SRC, "theme.css");
     const before = readFileSync(theme, "utf8").split("\n");
     before[19] = "  color: #c00000;";
@@ -407,55 +686,77 @@ describe("apply", () => {
     const widgets = join(root, SRC, "widgets.tsx");
     const original = readFileSync(widgets, "utf8");
 
-    const dry = applyTable(tableOf(root, list), root, { dryRun: true });
+    const dry = applyTable(tableOf(root, list, fresh.files), root, { dryRun: true });
     expect(readFileSync(widgets, "utf8")).toBe(original);
 
-    const result = applyTable(tableOf(root, list), root);
+    const result = applyTable(tableOf(root, list, fresh.files), root);
     expect(result.applied.length).toBe(dry.applied.length);
     expect(result.unapproved).toBe(list.length - list.filter((r) => r.approve === "yes").length);
     const themeLines = readFileSync(theme, "utf8").split("\n");
     const widgetLines = readFileSync(widgets, "utf8").split("\n");
-    expect(themeLines[2]).toBe("  --background: var(--ds-color-surface-page);");
-    expect(themeLines[3]).toBe("  --muted-foreground: #62666d;"); // not approved
-    expect(themeLines[19]).toBe("  color: #c00000;"); // stale: left alone
+    expect(themeLines[2]).toBe("  --background: #f5f3ef;"); // its line is unchanged, but its file is not
+    expect(themeLines[19]).toBe("  color: #c00000;");
     expect(widgetLines[3]).toContain('className="w-80 text-[11px]');
     expect(widgetLines[5]).toContain("text-on-solid text-on-solid"); // both occurrences on one line
     expect(widgetLines[6]).toContain('fontSize: "var(--ds-font-size-ui-sm)"');
     expect(widgetLines[15]).toBe('  ctx.fillStyle = "#ffffff";'); // canvas row has no replacement
     expect(result.skipped.map((s) => [s.row.literal, s.reason.split(":")[0]])).toEqual([
+      ["#f5f3ef", "stale"],
       ["#c62121", "stale"],
       ["#ffffff", "no replacement"],
     ]);
+    expect(result.staleFiles).toEqual([{ file: `${SRC}/theme.css`, rows: 2, reason: "the file changed since propose (whole-file hash): run propose again" }]);
   });
 
-  test("an edited replacement wins; a row whose line changed at all is stale, never searched for", () => {
+  test("an edited replacement wins", () => {
     const root = tempRoot();
-    const list = approved(proposeIn(root), (r) => r.literal === "#f9f9f9" || r.literal === "#f8f8f7");
+    const list = approved(proposeIn(root), (r) => r.literal === "#f9f9f9");
     list.find((r) => r.literal === "#f9f9f9")!.replacement = "var(--ds-color-surface-panel)";
-    const theme = join(root, SRC, "theme.css");
-    // Line 41 keeps its literal at a new column: the old codemod found it "once anywhere on the line".
-    writeFileSync(theme, readFileSync(theme, "utf8").replace("  background: var(--card-bg, #f8f8f7);", "    background:   var(--card-bg, #f8f8f7);"));
     const result = applyTable(tableOf(root, list), root);
     expect(result.applied.map((r) => r.literal)).toEqual(["#f9f9f9"]);
-    expect(result.skipped.map((s) => [s.row.literal, s.reason])).toEqual([["#f8f8f7", "stale: line 41 changed since propose"]]);
-    const text = readFileSync(theme, "utf8");
-    expect(text.split("\n")[15]).toBe("  background: var(--ds-color-surface-panel);");
-    expect(text).toContain("    background:   var(--card-bg, #f8f8f7);");
+    expect(readFileSync(join(root, SRC, "theme.css"), "utf8").split("\n")[15]).toBe("  background: var(--ds-color-surface-panel);");
   });
 
   test("lines shifted down by an edit above: the row is stale, and the line that moved into its place is untouched", () => {
     const root = tempRoot();
     const file = join(root, SRC, "shift.css");
     writeFileSync(file, ".btn {\n  color: #f9f9f9;\n}\n.card {\n  background: #f9f9f9;\n}\n");
-    const list = approved(proposeIn(root), (r) => r.file.endsWith("shift.css") && r.line === 5);
+    const p = proposeAt(root);
+    const list = approved(p.rows, (r) => r.file.endsWith("shift.css") && r.line === 5);
     expect(list.filter((r) => r.approve === "yes").map((r) => r.literal)).toEqual(["#f9f9f9"]);
     // Three lines above push `.btn`'s color onto line 5.
     const shifted = `/* a */\n/* b */\n/* c */\n${readFileSync(file, "utf8")}`;
     writeFileSync(file, shifted);
-    const result = applyTable(tableOf(root, list), root);
+    const result = applyTable(tableOf(root, list, p.files), root);
     expect(result.applied).toEqual([]);
-    expect(result.skipped.map((s) => s.reason)).toEqual(["stale: line 5 changed since propose"]);
+    expect(result.skipped.map((s) => s.reason)).toEqual(["stale: the file changed since propose (whole-file hash): run propose again"]);
     expect(readFileSync(file, "utf8")).toBe(shifted);
+  });
+
+  test("an identical line shifted into the row's place is not the row's line: the whole file is stale", () => {
+    const root = tempRoot();
+    const file = join(root, SRC, "same.css");
+    writeFileSync(file, ".btn:hover {\n  background: #ffffff;\n}\n.card {\n  background: #ffffff;\n}\n");
+    const p = proposeAt(root);
+    // Approve `.card`'s row (line 5) only.
+    const list = approved(p.rows, (r) => r.file.endsWith("same.css") && r.line === 5);
+    expect(list.filter((r) => r.approve === "yes").length).toBe(1);
+    // Three lines above put `.btn:hover`'s identical line on line 5: same text, same column, same line hash.
+    const shifted = `/* a */\n/* b */\n/* c */\n${readFileSync(file, "utf8")}`;
+    writeFileSync(file, shifted);
+    expect(shifted.split("\n")[4]).toBe("  background: #ffffff;");
+    const result = applyTable(tableOf(root, list, p.files), root);
+    expect(result.applied).toEqual([]);
+    expect(result.staleFiles.map((s) => s.file)).toEqual([`${SRC}/same.css`]);
+    expect(readFileSync(file, "utf8")).toBe(shifted);
+  });
+
+  test("a table without file hashes (from an older codemod) changes nothing", () => {
+    const root = tempRoot();
+    const list = approved(proposeIn(root), (r) => r.literal === "#f9f9f9");
+    const result = applyTable({ ...tableOf(root, list), files: undefined }, root);
+    expect(result.applied).toEqual([]);
+    expect(result.skipped.map((s) => s.reason)).toEqual(["stale: the table has no hash for this file (a table from an older codemod): run propose again"]);
   });
 
   test("a literal at its column that runs on into a longer token is not replaced", () => {
@@ -531,6 +832,15 @@ describe("CLI", () => {
     expect(run.stdout).toContain("applied 1 rows in 1 files");
     expect(run.stdout).toMatch(/skipped #\d+ app\/src\/widgets\.tsx:16 "#ffffff": no replacement/);
     expect(readFileSync(join(root, SRC, "theme.css"), "utf8")).toContain("background: var(--ds-color-surface-sidebar);");
+
+    // mapping-2 was proposed before that apply changed theme.css: its theme.css rows are stale, and apply says so.
+    const second = JSON.parse(readFileSync(join(dir, "mapping-2.json"), "utf8")) as Table;
+    for (const r of second.rows) if (r.literal === "#f5f3ef") r.approve = "yes";
+    writeFileSync(join(dir, "mapping-2.json"), JSON.stringify(second));
+    const stale = cli("apply", "--table", join(dir, "mapping-2.json"));
+    expect(stale.status).toBe(1);
+    expect(stale.stdout).toContain("applied 0 rows in 0 files");
+    expect(stale.stdout).toContain(`stale ${SRC}/theme.css: the file changed since propose (whole-file hash): run propose again (1 approved rows skipped)`);
   });
 
   test("propose counts the soft hits it leaves out, in the summary and the table", () => {
@@ -557,6 +867,36 @@ describe("CLI", () => {
     expect(existsSync(join(repo, "reports"))).toBe(false);
     const owner = mkdtempSync(join(tmpdir(), "codemod-owner-"));
     expect(() => tableDir(join(owner, "rollout"), "fixture", owner)).toThrow("owner's tree");
+  });
+
+  test("propose targets a v3 host's Tailwind for a library, and --tailwind uno is accepted", () => {
+    const out = mkdtempSync(join(tmpdir(), "codemod-out-"));
+    const run = cli("--app", "prompt-kit-ui", "--root", FIXTURES, "--out-dir", out, "propose", "--paths", "review/r2/v3-host.tsx");
+    expect(run.status).toBe(0);
+    expect(run.stdout).toContain("classes target Tailwind v3 (stack.hostTailwind)");
+    const table = JSON.parse(readFileSync(join(out, "prompt-kit-ui/codemod/mapping-1.json"), "utf8")) as Table;
+    expect(table.tailwind).toBe("v3");
+    const by = (literal: string) => table.rows.find((r) => r.literal === literal)!;
+    expect(by("w-[60px]").replacement).toBeNull(); // w-15: v4 only
+    expect(by("w-[64px]").replacement).toBe("w-16");
+    expect(Object.keys(table.files ?? {})).toEqual(["review/r2/v3-host.tsx"]);
+    const uno = cli("--app", "fixture", "--root", FIXTURES, "--out-dir", out, "propose", "--paths", "review/r2/v3-host.tsx", "--tailwind", "uno");
+    expect(uno.status).toBe(0);
+    expect(uno.stdout).toContain("classes target UnoCSS (no class rewrites) (--tailwind)");
+  });
+
+  test("the design-system commit is read with git by its absolute path, never through PATH", () => {
+    const stand = join(mkdtempSync(join(tmpdir(), "codemod-git-")), "git");
+    writeFileSync(stand, "#!/bin/sh\necho stand-in\n");
+    chmodSync(stand, 0o755);
+    const saved = SYSTEM_BIN.git;
+    SYSTEM_BIN.git = stand;
+    try {
+      expect(designSystemCommit()).toBe("stand-in");
+    } finally {
+      SYSTEM_BIN.git = saved;
+    }
+    expect(designSystemCommit()).toMatch(/^[0-9a-f]{40}$/);
   });
 
   test("an app missing from the registry needs --paths", () => {
