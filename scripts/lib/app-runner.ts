@@ -73,6 +73,7 @@ import { loadPlaywright, playwrightAnchor } from "./playwright";
 import { portProblems, PROFILE_PORTS } from "../registry-check";
 import { DESIGN_SYSTEM_ROOT, resolvePath, validateRegistry, type AppEntry, type Registry } from "./registry";
 import { safeAppId, safeOutputPath } from "./safe-paths";
+import { SYSTEM_BIN, SYSTEM_PATH } from "./system-bin";
 import { runPolicy, sandboxCommand, sandboxProfile, sandboxUnavailable, type SandboxPolicy } from "./sandbox";
 
 /** The owner's ports (scripts/lib/owner.ts). No run binds or contacts them, whatever its profile says. */
@@ -333,6 +334,9 @@ export interface RootProc {
 
 const normalizeStart = (text: string) => text.trim().split(/\s+/).join(" ");
 
+/** ps and lsof run by absolute path (system-bin.ts) with a system-only PATH and the C locale. */
+const SYSTEM_ENV = { PATH: SYSTEM_PATH, LANG: "C", LC_ALL: "C" };
+
 /** `ps` and `lsof` never hang a stop: each call is killed after this long and counts as failed. */
 const PS_TIMEOUT_MS = 10_000;
 const LSOF_TIMEOUT_MS = 10_000;
@@ -343,7 +347,7 @@ const LSOF_TIMEOUT_MS = 10_000;
  */
 function readProcessTable(attempts = 3, timeout = PS_TIMEOUT_MS): ProcInfo[] | null {
   for (let attempt = 0; attempt < attempts; attempt++) {
-    const result = spawnSync("ps", ["-A", "-o", "pid=,ppid=,pgid=,lstart="], { encoding: "utf8", timeout });
+    const result = spawnSync(SYSTEM_BIN.ps, ["-A", "-o", "pid=,ppid=,pgid=,lstart="], { encoding: "utf8", timeout, env: SYSTEM_ENV });
     if (result.error || result.status !== 0) continue;
     const procs: ProcInfo[] = [];
     for (const line of (result.stdout ?? "").split("\n")) {
@@ -370,7 +374,7 @@ function exists(pid: number): boolean {
 /** `ps -o lstart=` of a pid (whitespace normalized), or "" when it is gone or `ps` keeps failing. */
 function startTime(pid: number): string {
   for (let attempt = 0; attempt < 3; attempt++) {
-    const result = spawnSync("ps", ["-o", "lstart=", "-p", String(pid)], { encoding: "utf8", timeout: PS_TIMEOUT_MS });
+    const result = spawnSync(SYSTEM_BIN.ps, ["-o", "lstart=", "-p", String(pid)], { encoding: "utf8", timeout: PS_TIMEOUT_MS, env: SYSTEM_ENV });
     const started = normalizeStart(result.stdout ?? "");
     if (started || (!result.error && !exists(pid))) return started;
   }
@@ -407,17 +411,21 @@ function stillRunning(procs: readonly ProcInfo[], table: readonly ProcInfo[]): P
 /**
  * The run's processes: descendants of its roots, plus every member of their process groups. A root whose
  * pid now belongs to a different process (start time changed) is dropped with its group: the pid was reused.
+ * The group of a root that has exited counts only while one of its members is a `known` run process with
+ * the same start time: once every member is gone, the group id can belong to a stranger that got the pid.
  */
-function runProcesses(roots: RootProc[], table: readonly ProcInfo[]): ProcInfo[] {
+function runProcesses(roots: RootProc[], table: readonly ProcInfo[], known: readonly ProcInfo[] = []): ProcInfo[] {
   const byPid = new Map(table.map((proc) => [proc.pid, proc]));
-  const rootPids = roots
-    .filter((root) => {
-      if (unreaped(root)) return true;
-      const now = byPid.get(root.pid);
-      return !now || now.started === normalizeStart(root.started); // exited roots: their group may live on
-    })
-    .map((root) => root.pid);
-  const groups = new Set(rootPids);
+  const provenGroups = new Set(stillRunning(known, table).map((proc) => proc.pgid));
+  const rootPids: number[] = [];
+  const groups = new Set<number>();
+  for (const root of roots) {
+    const now = byPid.get(root.pid);
+    if (unreaped(root) || (now && now.started === normalizeStart(root.started))) {
+      rootPids.push(root.pid);
+      groups.add(root.pid);
+    } else if (!now && provenGroups.has(root.pid)) groups.add(root.pid); // exited root: its group lives on in known members
+  }
   const found = new Map<number, ProcInfo>();
   const queue = [...rootPids];
   while (queue.length) {
@@ -436,7 +444,7 @@ function runProcesses(roots: RootProc[], table: readonly ProcInfo[]): ProcInfo[]
 
 /** Runs lsof with a timeout; null when it fails (exit 1 with no message is "nothing matched", not a failure). */
 function lsofSync(args: string[]): string | null {
-  const result = spawnSync("lsof", args, { encoding: "utf8", timeout: LSOF_TIMEOUT_MS });
+  const result = spawnSync(SYSTEM_BIN.lsof, args, { encoding: "utf8", timeout: LSOF_TIMEOUT_MS, env: SYSTEM_ENV });
   if (result.error) return null;
   if (result.status === 0 || (result.status === 1 && !(result.stderr ?? "").trim())) return result.stdout ?? "";
   return null;
@@ -490,15 +498,16 @@ function signalRun(procs: readonly ProcInfo[], sig: NodeJS.Signals, table: reado
 }
 
 /**
- * The fallback when `ps` fails: the process groups the run's roots lead (every root is spawned detached,
- * so its pid is its group id). An unreaped root's group is certainly ours; an exited root's group id
- * cannot be reused while any member of the group is alive.
+ * The fallback when `ps` fails: the process groups of the roots this process spawned and has not reaped
+ * (each was spawned detached, so its pid is its group id, and an unreaped pid cannot be reused). An exited
+ * root's group is not signalled blind: without `ps` nothing proves the id is still the run's. What that
+ * leaves stays in `live` (unconfirmed), and the watchdog kills the group when this process exits.
  */
 function signalRootGroups(roots: readonly RootProc[], sig: NodeJS.Signals) {
   for (const root of roots) {
-    if (root.pid <= 1 || root.pid === process.pid || root.pid === OWN_PGID()) continue;
+    if (!unreaped(root) || root.pid <= 1 || root.pid === process.pid || root.pid === OWN_PGID()) continue;
     signal(-root.pid, sig);
-    if (unreaped(root)) signal(root.pid, sig);
+    signal(root.pid, sig);
   }
 }
 
@@ -518,7 +527,7 @@ export interface KillResult {
 export async function killRun(roots: RootProc[], graceMs = 8_000, known: readonly ProcInfo[] = []): Promise<KillResult> {
   const first = readProcessTable();
   const captured = new Map<number, ProcInfo>();
-  if (first) for (const proc of [...stillRunning(known, first), ...runProcesses(roots, first)]) if (proc.pid !== process.pid) captured.set(proc.pid, proc);
+  if (first) for (const proc of [...stillRunning(known, first), ...runProcesses(roots, first, known)]) if (proc.pid !== process.pid) captured.set(proc.pid, proc);
   const procs = [...captured.values()];
   // Roots this process spawned (detached, so each leads its own group) are signalled from their child
   // handle too: that needs no `ps`, so a failing process table can never leave a root running.
@@ -533,13 +542,13 @@ export async function killRun(roots: RootProc[], graceMs = 8_000, known: readonl
       signalRootGroups(roots, sig);
       return own.length + 1; // unknown: assume something is left
     }
-    return signalRun([...procs, ...runProcesses(roots, table)], sig, table) + own.length;
+    return signalRun([...procs, ...runProcesses(roots, table, procs)], sig, table) + own.length;
   };
   const left = (): ProcInfo[] | null => {
     const table = readProcessTable(1);
     if (!table) return null;
     const alive = new Map<number, ProcInfo>();
-    for (const proc of [...stillRunning(procs, table), ...runProcesses(roots, table)]) if (proc.pid !== process.pid) alive.set(proc.pid, proc);
+    for (const proc of [...stillRunning(procs, table), ...runProcesses(roots, table, procs)]) if (proc.pid !== process.pid) alive.set(proc.pid, proc);
     return [...alive.values()];
   };
   const anyLeft = () => {
@@ -618,6 +627,7 @@ async function runToExit(
   timeoutMs: number,
   roots: RootProc[],
   policy: SandboxPolicy | null,
+  known: () => readonly ProcInfo[] = () => [],
 ): Promise<number> {
   const proc = spawnLogged(cmd, cwd, env, logPath, policy);
   const pid = proc.child.pid;
@@ -627,7 +637,8 @@ async function runToExit(
   try {
     const deadline = Date.now() + timeoutMs;
     while (proc.exited() === null && Date.now() < deadline) await sleep(100);
-    await killRun([root], 2_000);
+    // Strays the command left in its group: the sampler saw them while the root ran (known).
+    await killRun([root], 2_000, known());
   } finally {
     roots.splice(roots.indexOf(root), 1);
   }
@@ -699,7 +710,7 @@ function killAllNow() {
       signal(-root.pid, "SIGKILL");
       signal(root.pid, "SIGKILL");
     }
-    if (table) signalRun([...stillRunning([...internal.known.values()], table), ...runProcesses(internal.roots, table)], "SIGKILL", table);
+    if (table) signalRun([...stillRunning([...internal.known.values()], table), ...runProcesses(internal.roots, table, [...internal.known.values()])], "SIGKILL", table);
     else signalRootGroups(internal.roots, "SIGKILL");
     internal.lateKill?.();
   }
@@ -814,7 +825,7 @@ function ownPorts(running: RunningApp, maxAgeMs = PORT_CACHE_MS): Set<number> {
   if (!internal) return new Set(running.startedPorts.filter((port) => !OWNER_PORTS.includes(port)));
   if (internal.portCache && Date.now() - internal.portCache.at <= maxAgeMs) return internal.portCache.ports;
   const table = readProcessTable(1);
-  const listening = table ? listeningPorts(runProcesses(internal.roots, table).map((proc) => proc.pid)) : [];
+  const listening = table ? listeningPorts(runProcesses(internal.roots, table, [...internal.known.values()]).map((proc) => proc.pid)) : [];
   recordListeners(running, listening);
   const ports = new Set([...listening, ...(internal.staticPort ? [internal.staticPort] : [])].filter((port) => !OWNER_PORTS.includes(port)));
   internal.portCache = { at: Date.now(), ports };
@@ -829,7 +840,7 @@ function captureProcesses(internal: Internal, persist: () => void): ProcInfo[] |
   const table = readProcessTable();
   if (!table) return null;
   const before = internal.known.size;
-  const procs = [...runProcesses(internal.roots, table), ...stillRunning([...internal.known.values()], table)];
+  const procs = [...runProcesses(internal.roots, table, [...internal.known.values()]), ...stillRunning([...internal.known.values()], table)];
   for (const proc of procs) if (!internal.known.has(proc.pid)) internal.known.set(proc.pid, proc);
   if (internal.known.size !== before) persist();
   return procs;
@@ -992,6 +1003,9 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
   const expand = (text: string) => expandPlaceholders(text, ctx);
   const roots: RootProc[] = [];
   const internal: Internal = { roots, known: new Map(), sockets: new Set() };
+  const knownProcs = () => [...internal.known.values()];
+  /** Settles when an Electron launch in flight has resolved or failed (undefined when none is). */
+  let launchSettled: Promise<any> | undefined;
   let server: ReturnType<typeof Bun.serve> | undefined;
   let electronApp: any;
   let electronPidFile: string | undefined;
@@ -1061,6 +1075,17 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
     wake?.();
     await sampler;
     await sampleOnce(); // the last look before anything is killed (adopts a launching Electron too)
+    // An Electron launch in flight: kill it from its pid file now, then let the launch settle (it fails, or
+    // resolves and startApp's stopped-while-starting path ends it) before this stop may count as done.
+    let launchOpen = false;
+    if (launchSettled) {
+      internal.lateKill?.();
+      const settled = await Promise.race([launchSettled.then((app) => ({ app })), sleep(15_000).then(() => null)]);
+      launchOpen = settled === null;
+      // A launch that resolved anyway: its Electron becomes a root here, so the kill below covers it.
+      const child = settled?.app?.process?.();
+      if (child?.pid && !roots.some((root) => root.pid === child.pid)) roots.push(rootProc(child.pid, child));
+    }
     if (electronApp) await Promise.race([electronApp.close().catch(() => undefined), sleep(10_000)]);
     server?.stop(true);
     internal.staticPort = undefined;
@@ -1077,7 +1102,13 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
       await sleep(100);
     }
     removeScratch();
-    const unconfirmed = kill.confirmed ? "" : kill.left.length ? `pids ${kill.left.map((proc) => proc.pid).join(", ")} still running` : "ps failed";
+    const unconfirmed = launchOpen
+      ? "an Electron launch did not settle"
+      : kill.confirmed
+        ? ""
+        : kill.left.length
+          ? `pids ${kill.left.map((proc) => proc.pid).join(", ")} still running`
+          : "ps failed";
     appendFileSync(
       logPath,
       `\n# stopped${unconfirmed ? ` (NOT CONFIRMED: ${unconfirmed})` : ""}${busy.length ? `; still bound: ${busy.join(", ")}` : "; ports free"}; ${egress.samples} egress samples\n`,
@@ -1167,7 +1198,7 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
     } else if (mode === "static") {
       if (!app.run.staticDir) throw new Error(`${app.id}: run mode static needs run.staticDir (or run.start)`);
       if (!app.commands?.build) throw new Error(`${app.id}: run mode static needs commands.build`);
-      const code = await runToExit(expand(app.commands.build), appCwd(app, root, app.commands.cwd), env, logPath, timeoutMs, roots, policy);
+      const code = await runToExit(expand(app.commands.build), appCwd(app, root, app.commands.cwd), env, logPath, timeoutMs, roots, policy, knownProcs);
       stillStarting();
       if (code !== 0) throw new Error(`${app.id}: build exited ${code}; see ${logPath}`);
       const dir = resolvePath(root, expand(app.run.staticDir));
@@ -1186,7 +1217,7 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
     } else if (mode === "electron") {
       if (!app.run.electron) throw new Error(`${app.id}: run mode electron needs run.electron`);
       const cwd = appCwd(app, root, app.run.cwd);
-      const code = await runToExit(expand(app.run.electron.build), cwd, env, logPath, timeoutMs, roots, policy);
+      const code = await runToExit(expand(app.run.electron.build), cwd, env, logPath, timeoutMs, roots, policy, knownProcs);
       stillStarting();
       if (code !== 0) throw new Error(`${app.id}: electron build exited ${code}; see ${logPath}`);
       const main = resolvePath(root, app.run.electron.main);
@@ -1206,8 +1237,9 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
       };
       const { _electron } = loadPlaywright(root);
       const listenersBefore = new Map(SIGNALS.map((sig) => [sig, new Set(process.listeners(sig))]));
+      let launched: Promise<any> | undefined;
       try {
-        electronApp = await _electron.launch({
+        launched = _electron.launch({
           executablePath: launcher.path,
           // Playwright adds its loader only without executablePath; ours loads it and holds `ready` (below).
           // Electron ignores $HOME on macOS: the loader moves userData & co. under {tmp}/electron-user-data,
@@ -1222,6 +1254,11 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
           handleSIGTERM: false,
           handleSIGHUP: false,
         });
+        launchSettled = launched.then(
+          (app) => app,
+          () => undefined,
+        );
+        electronApp = await launched;
       } finally {
         // Playwright's Electron launcher installs its own signal handlers regardless of the options above;
         // they exit before stopAllApps runs. Remove exactly the ones the launch added.
@@ -1501,7 +1538,7 @@ export async function launchBrowser(root: string, overrides: Record<string, unkn
 
 /** The command line of a pid (`ps -o command=`), or "" when it is gone or ps fails. */
 function commandOf(pid: number): string {
-  const result = spawnSync("ps", ["-o", "command=", "-p", String(pid)], { encoding: "utf8", timeout: PS_TIMEOUT_MS });
+  const result = spawnSync(SYSTEM_BIN.ps, ["-o", "command=", "-p", String(pid)], { encoding: "utf8", timeout: PS_TIMEOUT_MS, env: SYSTEM_ENV });
   return result.status === 0 ? (result.stdout ?? "").trim() : "";
 }
 

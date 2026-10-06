@@ -5,7 +5,7 @@
  * owner. Test ports 46931-46936.
  */
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -20,9 +20,12 @@ const ds = join(root, "design-system"); // the real layout: the checkout the too
 const out = join(root, "rollout");
 const runTmp = join(scratch, "run-tmp");
 const sharedTmp = join(scratch, "shared-tmp"); // stands in for the system temp dir every run shares
+const usrLocalBin = join(scratch, "usr-local", "bin"); // stands in for /usr/local/bin: owner-writable and on PATH
 for (const dir of [owner, join(root, "app"), join(ds, "apps"), join(out, "runs"), runTmp, join(sharedTmp, "other-run"), join(home, ".codex"), join(home, ".bun", "bin"), join(home, "Library", "Caches", "ms-playwright"), join(home, "Documents")])
   mkdirSync(dir, { recursive: true });
 writeFileSync(join(owner, "data.json"), "{}");
+mkdirSync(usrLocalBin, { recursive: true });
+writeFileSync(join(usrLocalBin, "git"), "#!/bin/sh\n", { mode: 0o755 });
 for (const name of [".env", ".env.local", ".envrc", ".env-local", ".env_prod"]) writeFileSync(join(root, "app", name), "SECRET=1");
 writeFileSync(join(root, "app", "config.json"), "{}");
 writeFileSync(join(ds, "apps", "serve.ts"), "// fixture server");
@@ -65,7 +68,7 @@ function policy(overrides: Partial<Parameters<typeof runPolicy>[0]> = {}): Sandb
     deniedPorts: [OWNER],
     ...overrides,
   });
-  return { ...p, sharedTemp: [sharedTmp] };
+  return p;
 }
 
 /** Runs `sh -c script` under the policy; returns exit code and combined output. */
@@ -128,7 +131,7 @@ describe.skipIf(Boolean(unavailable))("sandbox profile", () => {
     }
   });
 
-  test("writes: the root and the run's temp dir only; never the design-system checkout or the out dir inside the root", () => {
+  test("writes: the root, the run's temp dir and the devices only; never the design-system checkout or the out dir inside the root, nothing on PATH, no other temp dir", () => {
     expect(
       verdicts([
         ["root", `echo x > '${join(root, "app", "out.txt")}'`],
@@ -140,6 +143,12 @@ describe.skipIf(Boolean(unavailable))("sandbox profile", () => {
         ["home", `echo x > '${join(home, ".zshrc")}'`],
         ["another run's temp dir", `echo x > '${join(sharedTmp, "other-run", "planted")}'`],
         ["shared temp dir", `echo x > '${join(sharedTmp, "planted")}'`],
+        ["a tool on PATH", `echo 'echo planted' > '${join(usrLocalBin, "git")}'`],
+        ["replacing a tool on PATH", `mv '${join(usrLocalBin, "git")}' '${join(usrLocalBin, "git.old")}'`],
+        ["a new tool on PATH", `echo x > '${join(usrLocalBin, "ps")}'`],
+        ["the real system temp dir", `echo x > '${join(realpathSync(tmpdir()), `ds-sandbox-planted-${process.pid}`)}'`],
+        ["/dev/null", "echo x > /dev/null"],
+        ["stderr by path", "echo x > /dev/stderr"],
       ]),
     ).toEqual([
       "ok root",
@@ -151,7 +160,15 @@ describe.skipIf(Boolean(unavailable))("sandbox profile", () => {
       "denied home",
       "denied another run's temp dir",
       "denied shared temp dir",
+      "denied a tool on PATH",
+      "denied replacing a tool on PATH",
+      "denied a new tool on PATH",
+      "denied the real system temp dir",
+      "ok /dev/null",
+      "ok stderr by path",
     ]);
+    expect(readFileSync(join(usrLocalBin, "git"), "utf8")).toBe("#!/bin/sh\n");
+    expect(existsSync(join(realpathSync(tmpdir()), `ds-sandbox-planted-${process.pid}`))).toBe(false);
     for (const planted of [join(ds, "apps", "planted"), join(out, "runs", "forged.json"), join(owner, "planted"), join(sharedTmp, "planted")]) expect(existsSync(planted)).toBe(false);
   });
 

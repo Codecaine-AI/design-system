@@ -11,9 +11,10 @@
  *            (~/.bun, ~/.nvm) and the Playwright browser cache (plus stat of home and the dirs on the way to
  *            them, so realpath works); never a `.env*` file anywhere; never a credential store or the
  *            owner's tree (HOME_SECRETS, OWNER_TREE unless it is the --root), even inside a readable dir
- *   writes   only inside the --root tree and the run's temp dir; never the design-system checkout the tool
- *            runs from, the tool's out dir (logs, run records) or another temp dir (the system temp dirs
- *            are shared by every run and the tool)
+ *   writes   nowhere (deny file-write* under "/") except the --root tree, the run's temp dir and the
+ *            device files runtimes open; never the design-system checkout the tool runs from or the tool's
+ *            out dir (logs, run records), even inside --root. Nothing on PATH (/usr/local/bin is the
+ *            owner's), no other temp dir, no cache dir: a run can plant nothing an unsandboxed process runs
  *   signals  only processes inside this same sandbox (the run's own)
  *
  * Seatbelt matches the kernel's canonical path (realpath, on-disk case, /Users rather than the firmlink
@@ -39,17 +40,17 @@
  * profile (for example when the tool itself already runs inside a sandbox that forbids nesting).
  */
 import { spawnSync } from "node:child_process";
-import { existsSync, realpathSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { existsSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 
 import { HOME_SECRETS, OWNER_PORTS, OWNER_TREE } from "./owner";
+import { SYSTEM_BIN } from "./system-bin";
 import { DESIGN_SYSTEM_ROOT } from "./registry";
 import { canonicalPath, realHome, sameDir } from "./safe-paths";
 
 export { realHome };
 
-export const SANDBOX_EXEC = "/usr/bin/sandbox-exec";
+export const SANDBOX_EXEC = SYSTEM_BIN.sandboxExec;
 
 export class SandboxUnavailable extends Error {
   override name = "SandboxUnavailable";
@@ -68,8 +69,6 @@ export interface SandboxPolicy {
   hidden: string[];
   /** Paths inside `hidden` the run may still read (not write): the design-system checkout the tool runs from. */
   readableInHidden?: string[];
-  /** Shared temp roots (the system temp dirs): writes there are denied except inside `writable`. */
-  sharedTemp?: string[];
   /** Loopback ports the run may connect to. Omitted: every loopback port except `deniedPorts` (legacy). */
   connectPorts?: number[];
   /** Loopback ports the run may listen on; "any" for an Electron app (DevTools and the inspector bind port 0). */
@@ -88,6 +87,16 @@ export const ENV_FILE_REGEX = String.raw`/\.env[^/]*$`;
  * and syslog. Found empirically: bun, node, python3 and Vite start and serve with only these.
  */
 export const SYSTEM_UNIX_SOCKETS = ["/private/var/run/mDNSResponder", "/private/var/run/syslog"];
+
+/**
+ * Device files a run may open for writing: the null/zero devices, its terminal, inherited descriptors
+ * (/dev/stdout is /dev/fd/1), pseudo-terminals, and dtrace's helper (the dynamic linker opens it).
+ */
+const WRITABLE_DEVICES = [
+  ...["/dev/null", "/dev/zero", "/dev/tty", "/dev/ptmx", "/dev/dtracehelper"].map((path) => `(literal "${path}")`),
+  '(subpath "/dev/fd")',
+  '(regex #"^/dev/ttys[0-9]+$")',
+].join(" ");
 
 /** Runtime dirs under the real home that apps start from (relative to it): bun, nvm's node, Playwright's browsers. */
 export const HOME_RUNTIMES = [".bun", ".nvm", "Library/Caches/ms-playwright"];
@@ -155,9 +164,10 @@ export function sandboxProfile(policy: SandboxPolicy): string {
     lines.push(keep.length ? `(deny network-bind (require-not (require-any ${keep.join(" ")})))` : "(deny network-bind)");
   }
 
-  lines.push(";; writes: only the writable dirs, never their read-only parts");
-  lines.push(`(deny file-write* ${filters("subpath", [home, ...(policy.sharedTemp ?? [])])})`);
+  lines.push(";; writes: nowhere but the writable dirs and the devices every runtime opens; never their read-only parts");
+  lines.push('(deny file-write* (subpath "/"))');
   if (policy.writable.length) lines.push(`(allow file-write* ${filters("subpath", policy.writable)})`);
+  lines.push(`(allow file-write* ${WRITABLE_DEVICES})`);
   if (policy.readOnly?.length) lines.push(`(deny file-write* ${filters("subpath", policy.readOnly)})`);
 
   if (policy.readable) {
@@ -175,12 +185,6 @@ export function sandboxProfile(policy: SandboxPolicy): string {
   // A #"..." regex literal takes the pattern as written: backslashes are not string escapes there.
   lines.push(`(deny file-read* file-write* (regex #"${ENV_FILE_REGEX}"))`);
   return `${lines.join("\n")}\n`;
-}
-
-/** The system temp dirs every process shares: the per-user one (os.tmpdir) and /tmp, /var/tmp. */
-export function sharedTempDirs(): string[] {
-  const dirs = [tmpdir(), "/private/tmp", "/private/var/tmp"].filter((dir) => existsSync(dir)).map((dir) => realpathSync(dir));
-  return [...new Set(dirs)];
 }
 
 export interface RunPolicyOptions {
@@ -234,7 +238,6 @@ export function runPolicy(opts: RunPolicyOptions): SandboxPolicy {
     readable: [opts.root, opts.tmp, opts.outDir, designSystem, ...HOME_RUNTIMES.map((rel) => join(home, rel))],
     hidden,
     readableInHidden: [designSystem],
-    sharedTemp: sharedTempDirs(),
     connectPorts: opts.anyLoopback ? undefined : [...block, ...(opts.allowedLocalPorts ?? [])],
     bindPorts: opts.anyLoopback || opts.bindAnyPort ? "any" : block,
     unixSockets: { paths: SYSTEM_UNIX_SOCKETS, dirs: [opts.tmp] },

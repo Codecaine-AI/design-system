@@ -13,6 +13,7 @@ import { existsSync, readdirSync, statSync } from "node:fs";
 import { basename, join, sep } from "node:path";
 
 import { cleanupRuns, stopAllApps } from "../scripts/lib/app-runner.ts";
+import { SYSTEM_BIN } from "../scripts/lib/system-bin.ts";
 
 export interface Leak {
   pid: number;
@@ -22,14 +23,14 @@ export interface Leak {
 
 /** Listeners on 46900-46999 whose cwd is inside `scratch`. */
 export function leakedListeners(scratch: string): Leak[] {
-  const out = spawnSync("lsof", ["-nP", "-w", "-iTCP:46900-46999", "-sTCP:LISTEN", "-Fpn"], { encoding: "utf8", timeout: 10_000 }).stdout ?? "";
+  const out = spawnSync(SYSTEM_BIN.lsof, ["-nP", "-w", "-iTCP:46900-46999", "-sTCP:LISTEN", "-Fpn"], { encoding: "utf8", timeout: 10_000 }).stdout ?? "";
   const leaks: Leak[] = [];
   let pid = 0;
   for (const line of out.split("\n")) {
     if (line.startsWith("p")) pid = Number(line.slice(1));
     else if (line.startsWith("n") && pid) {
       const port = Number(line.slice(line.lastIndexOf(":") + 1));
-      const cwd = (spawnSync("lsof", ["-a", "-w", "-p", String(pid), "-d", "cwd", "-Fn"], { encoding: "utf8", timeout: 10_000 }).stdout ?? "")
+      const cwd = (spawnSync(SYSTEM_BIN.lsof, ["-a", "-w", "-p", String(pid), "-d", "cwd", "-Fn"], { encoding: "utf8", timeout: 10_000 }).stdout ?? "")
         .split("\n")
         .find((entry) => entry.startsWith("n"))
         ?.slice(1);
@@ -45,7 +46,7 @@ export function leakedListeners(scratch: string): Leak[] {
  */
 export function assertNoLeaks(scratch: string): void {
   const leaks = leakedListeners(scratch);
-  const pgidOf = (pid: number) => Number((spawnSync("ps", ["-o", "pgid=", "-p", String(pid)], { encoding: "utf8", timeout: 10_000 }).stdout ?? "").trim());
+  const pgidOf = (pid: number) => Number((spawnSync(SYSTEM_BIN.ps, ["-o", "pgid=", "-p", String(pid)], { encoding: "utf8", timeout: 10_000 }).stdout ?? "").trim());
   const ownGroup = pgidOf(process.pid);
   for (const { pid } of leaks) {
     const pgid = pgidOf(pid);
