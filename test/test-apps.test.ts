@@ -23,6 +23,7 @@ const bunSummary = (pass, fail) => " " + pass + " pass\n " + fail + " fail\nRan 
 switch (mode) {
   case "pass": console.log("(pass) s > a [0.10ms]\n" + bunSummary(3, 0)); break;
   case "known-fail": console.error("(fail) s > a [0.10ms]\n" + bunSummary(2, 1)); process.exit(1);
+  case "unhandled": console.error("# Unhandled error between tests\n-------\nerror: Cannot find module './gone.json' from '" + process.cwd() + "/a.test.ts'\n-------\n" + bunSummary(0, 1) + "\n 1 error"); process.exit(1);
   case "new-fail": console.error("(fail) s > a [0.10ms]\n(fail) s > b [0.20ms]\n" + bunSummary(1, 2)); process.exit(1);
   case "vitest-new": console.log(" FAIL  src/a.test.ts > s > old\n FAIL  src/a.test.ts > s > fresh\n\n      Tests  2 failed | 5 passed (7)"); process.exit(1);
   case "unittest-known": console.error("FAIL: test_x (m.C.test_x)\n----\nRan 4 tests in 0.010s\n\nFAILED (failures=1)"); process.exit(1);
@@ -90,6 +91,8 @@ const APPS: AppEntry[] = [
   app("known-fail", run("known-fail"), { baselines: { "tests.safe[0]": known(["s > a"]) } }),
   app("new-fail", run("new-fail"), { baselines: { "tests.safe[0]": known(["s > a"]) } }),
   app("no-baseline", run("known-fail")),
+  // The baseline names the file under {root}: recorded on one tree, it matches a run on another.
+  app("unhandled", run("unhandled"), { baselines: { "tests.safe[0]": known(["unhandled: error: Cannot find module './gone.json' from '{root}/core/member/app/a.test.ts'"], { errors: 1 }) } }),
   app("baseline-green", run("known-fail"), { baselines: { "tests.safe[0]": { exit: 0, pass: 3, fail: 0, date: "2026-10-05", method: "test" } } }),
   app("vitest-new", run("vitest-new"), { baselines: { "tests.safe[0]": known(["src/a.test.ts > s > old"]) } }),
   app("unittest-known", run("unittest-known"), { baselines: { "tests.safe[0]": known(["m.C.test_x"]) } }),
@@ -179,6 +182,7 @@ describe.skipIf(!!noSandbox)("bun run test:apps", () => {
     ["pass", true],
     ["known-fail", true],
     ["unittest-known", true],
+    ["unhandled", true],
     ["new-fail", false],
     ["no-baseline", false],
     ["baseline-green", false],

@@ -80,9 +80,12 @@ export interface ParsedResult {
 
 const uniqueSorted = (items: string[]) => [...new Set(items)].sort();
 
-/** Reads a test or typecheck summary and the failing names from a command's (ANSI-stripped) output. */
-export function parseOutput(output: string): ParsedResult {
-  const text = stripAnsi(output);
+/**
+ * Reads a test or typecheck summary and the failing names from a command's (ANSI-stripped) output. `root`
+ * (the --root) is written `{root}` in names, so a baseline recorded on one tree matches a run on another.
+ */
+export function parseOutput(output: string, root?: string): ParsedResult {
+  const text = root ? stripAnsi(output).split(root).join("{root}") : stripAnsi(output);
   const lines = text.split("\n");
   const count = (re: RegExp) => {
     let value: number | undefined;
@@ -93,9 +96,16 @@ export function parseOutput(output: string): ParsedResult {
     return value;
   };
 
-  // bun test: "(fail) suite > name [1.23ms]" lines, then " 342 pass", " 54 fail", " 9 errors", "Ran N tests across M files."
+  // bun test: "(fail) suite > name [1.23ms]" lines, then " 342 pass", " 54 fail", " 9 errors", "Ran N tests across M files".
+  // An error outside a test ("# Unhandled error between tests", e.g. a file that cannot load) is named by its
+  // first "error:" line, as "unhandled: error: ...".
   if (lines.some((line) => /^Ran \d+ tests? across \d+ files?\b/.test(line.trim()))) {
     const failing = lines.filter((line) => line.startsWith("(fail) ")).map((line) => line.slice(7).replace(/\s*\[[\d.]+m?s\]\s*$/, "").trim());
+    lines.forEach((line, i) => {
+      if (line.trim() !== "# Unhandled error between tests") return;
+      const error = lines.slice(i + 1, i + 6).find((next) => next.startsWith("error:"));
+      if (error) failing.push(`unhandled: ${error.trim()}`);
+    });
     return { parser: "bun", pass: count(/^\s*(\d+) pass\b/), fail: count(/^\s*(\d+) fail\b/), errors: count(/^\s*(\d+) errors?\b/) ?? 0, failing: uniqueSorted(failing) };
   }
 
@@ -405,7 +415,7 @@ async function runOne(app: AppEntry, planned: PlannedCommand, opts: TestAppOptio
     const after = statusSnapshot(opts.scope.checkouts);
     const writes = writeReport(root, opts.scope, before, after, marker, [opts.outDir, tmp]);
     rmSync(marker, { force: true });
-    const parsed = parseOutput(output);
+    const parsed = parseOutput(output, root);
     const baseline = app.tests?.baselines?.[planned.label];
     const verdict = timedOut ? { ok: false, reasons: [`timed out after ${timeout / 1000} s`], newFailures: [], fixed: [] } : compareWithBaseline(code, parsed, baseline);
     if (writes.unexpected.length) verdict.reasons.push(`${writes.unexpected.length} unexpected write(s): ${writes.unexpected.slice(0, 5).join(", ")}${writes.unexpected.length > 5 ? ", ..." : ""}`);
