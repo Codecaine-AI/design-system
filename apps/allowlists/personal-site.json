@@ -16,5 +16,6 @@
       "category": "pxFontSize",
       "reason": "page and section headings with no font-size token within 2px (reading 18px, title 36px): kept per decision 65a; heading-size token gap (8 hits: h2 26px in styles.css, layout.css and blog.css; h1 44px in layout.css and blog.css; post-list titles 24px; resume h2 22px; resume h1 28px on phones)"
     }
-  ]
+  ],
+  "twClasses": []
 }
