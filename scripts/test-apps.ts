@@ -9,8 +9,12 @@
  *   - with the app's profile environment (profileEnv: allowlisted variables only, HOME and the XDG dirs in a
  *     fresh temp dir with the profile's fixtures, BUN_OPTIONS=--no-env-file, runProfile.env, unsetEnv removed),
  *     placeholders ({root}, {tmp}, {ds}, {port:<name>}) substituted;
- *   - inside the OS sandbox (sandbox.ts runPolicy: writes only in --root, the temp dir and the out dir; no
- *     `.env` reads; no owner port; loopback only). Without a working sandbox-exec it refuses to run anything;
+ *   - inside the OS sandbox (sandbox.ts runPolicy: writes only in --root and the temp dir; no `.env` reads;
+ *     loopback only). A test command may connect to and listen on any loopback port (suites start their own
+ *     servers on ephemeral ports) except the owner's ports and every port something already listens on when
+ *     it starts (netstat, every user's sockets): a listener the run did not start counts as an owner service.
+ *     A named command (typecheck, build) gets no port at all. Without a working sandbox-exec, or without a
+ *     listener snapshot, it refuses to run anything;
  *   - in its own process group, with a watchdog that kills the group when this tool dies, and a timeout;
  *   - between two write checks: `git status --ignored --porcelain` of every checkout the app touches (the
  *     checkouts holding its repo, root and command cwds, the checkouts nested in those, and the checkouts
@@ -43,6 +47,7 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 
 import { expandPlaceholders, killRun, profileEnv, rootProc, stripAnsi, validateLoadedRegistry } from "./lib/app-runner";
+import { OWNER_PORTS } from "./lib/owner";
 import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, REGISTRY_PATH, resolvePath, type AppEntry, type Registry, type TestBaseline } from "./lib/registry";
 import { safeAppId, safeOutputPath, safeTempBase } from "./lib/safe-paths";
 import { runPolicy, sandboxCommand, sandboxUnavailable, SANDBOX_EXEC } from "./lib/sandbox";
@@ -288,6 +293,24 @@ export function writeReport(root: string, scope: WriteScope, before: Map<string,
 // Running
 // ---------------------------------------------------------------------------
 
+/**
+ * Every TCP port something listens on now, on any address and for any user (netstat reads the kernel's
+ * table; lsof without root misses other users' sockets). Throws when netstat fails: without the snapshot a
+ * test command could reach a service the run did not start.
+ */
+export function listeningPorts(): number[] {
+  const out = spawnSync("netstat", ["-an", "-p", "tcp"], { encoding: "utf8", timeout: 15_000, maxBuffer: 64 << 20 });
+  if (out.status !== 0 || out.error) throw new Error(`netstat failed (${out.error?.message ?? `exit ${out.status}`}); without a listener snapshot nothing runs`);
+  const ports = new Set<number>();
+  for (const line of (out.stdout ?? "").split("\n")) {
+    const cols = line.trim().split(/\s+/);
+    if (!cols[0]?.startsWith("tcp") || !line.includes("LISTEN")) continue;
+    const port = Number(/[.:](\d+)$/.exec(cols[3] ?? "")?.[1]);
+    if (Number.isInteger(port) && port > 0) ports.add(port);
+  }
+  return [...ports].sort((a, b) => a - b);
+}
+
 export interface PlannedCommand {
   /** "tests.safe[<i>]" or "commands.<name>": the key of its baseline. */
   label: string;
@@ -378,9 +401,15 @@ async function runOne(app: AppEntry, planned: PlannedCommand, opts: TestAppOptio
     const env = profileEnv(app, { root, tmp });
     const expanded = expandPlaceholders(planned.cmd, { root, tmp, ports: app.runProfile?.ports ?? {} });
     const cwd = resolvePath(root, planned.cwd);
-    const policy = runPolicy({ root, tmp, outDir: opts.outDir });
+    // Test suites start their own servers on ephemeral ports: any loopback port but the owner's and every port
+    // already listened on (decision 22). Named commands (typecheck, build) need no port.
+    const deniedPorts = planned.label.startsWith("tests.") ? [...new Set([...OWNER_PORTS, ...listeningPorts()])].sort((a, b) => a - b) : undefined;
+    const policy = deniedPorts ? runPolicy({ root, tmp, outDir: opts.outDir, anyLoopback: true, deniedPorts }) : runPolicy({ root, tmp, outDir: opts.outDir });
     const argv = sandboxCommand(policy, ["/bin/sh", "-c", withWatchdog(expanded)]);
-    writeFileSync(log, `$ ${expanded}\n  (cwd ${cwd}, sandboxed, HOME ${tmp})\n`);
+    writeFileSync(
+      log,
+      `$ ${expanded}\n  (cwd ${cwd}, sandboxed, HOME ${tmp}, ${deniedPorts ? `loopback except ${deniedPorts.length} owner or listening ports: ${deniedPorts.join(",")}` : "no network port"})\n`,
+    );
 
     const marker = join(opts.dir, `.marker-${planned.label.replace(/[^A-Za-z0-9_.-]+/g, "_")}`);
     const before = statusSnapshot(opts.scope.checkouts);

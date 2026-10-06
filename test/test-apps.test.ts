@@ -12,6 +12,7 @@ import { join } from "node:path";
 
 import type { AppEntry, TestBaseline } from "../scripts/lib/registry.ts";
 import { sandboxUnavailable } from "../scripts/lib/sandbox.ts";
+import { assertNoLeaks } from "./leaks.ts";
 import { PKG } from "./support.ts";
 
 const STANDIN = String.raw`
@@ -44,6 +45,18 @@ switch (mode) {
     if (process.env.DS_TEST_SECRET !== undefined) problems.push("DS_TEST_SECRET crossed into the run");
     if (process.env.FROM_PROFILE !== "yes") problems.push("runProfile.env missing");
     try { readFileSync(".env", "utf8"); problems.push(".env was readable: no sandbox"); } catch (error) { if (error.code !== "EPERM") problems.push(".env read failed with " + error.code + ", not the sandbox's EPERM"); }
+    console.log(problems.join("\n") + "\n" + bunSummary(problems.length ? 0 : 1, problems.length ? 1 : 0));
+    process.exit(problems.length ? 1 : 0);
+  }
+  case "connect": {
+    const problems = [];
+    // A suite's own server on an ephemeral port is allowed.
+    const own = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: () => new Response("own") });
+    try { if ((await (await fetch("http://127.0.0.1:" + own.port + "/")).text()) !== "own") problems.push("own server answered wrong"); }
+    catch (error) { problems.push("own server on " + own.port + " unreachable: " + error.message); }
+    own.stop(true);
+    // A listener that was up before the run is not.
+    try { await fetch("http://127.0.0.1:" + arg + "/", { signal: AbortSignal.timeout(3000) }); problems.push("reached the listener on " + arg + " that was up before the run"); } catch {}
     console.log(problems.join("\n") + "\n" + bunSummary(problems.length ? 0 : 1, problems.length ? 1 : 0));
     process.exit(problems.length ? 1 : 0);
   }
@@ -84,6 +97,8 @@ function app(id: string, cmd: string, extra: { baselines?: Record<string, TestBa
 }
 
 const run = (mode: string) => `bun --no-env-file standin.mjs ${mode}`;
+/** A listener this test starts before any run (registry tests' range 46940-46959): no run may reach it. */
+const PRE_EXISTING_PORT = 46941;
 const known = (failing: string[], over: Partial<TestBaseline> = {}): TestBaseline => ({ exit: 1, fail: failing.length, failing, date: "2026-10-05", method: "test", ...over });
 
 const APPS: AppEntry[] = [
@@ -103,6 +118,7 @@ const APPS: AppEntry[] = [
   app("write-enclosing", run("write-enclosing")),
   app("quiet-writes", run("quiet-writes")),
   app("env", `${run("env")} {tmp}`, { env: { FROM_PROFILE: "yes" } }),
+  app("connect", `${run("connect")} ${PRE_EXISTING_PORT}`),
   app("hang", `${run("hang")} {root}/pids/hang.pid`),
 ];
 
@@ -137,12 +153,22 @@ function testApps(args: string[]) {
 
 let scratch: string;
 let root: string;
+/** The listener that is up before every run: its own process (the test process blocks in spawnSync), counting hits in a file. */
+let preExisting: ReturnType<typeof Bun.spawn> | undefined;
+const preExistingHits = () => (existsSync(join(scratch, "hits.txt")) ? readFileSync(join(scratch, "hits.txt"), "utf8").length : 0);
 let registry: string;
 let out: string;
 const noSandbox = sandboxUnavailable();
 
-beforeAll(() => {
+beforeAll(async () => {
   scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-test-apps-")));
+  writeFileSync(
+    join(scratch, "listener.mjs"),
+    `import { appendFileSync } from "node:fs";\nBun.serve({ hostname: "127.0.0.1", port: ${PRE_EXISTING_PORT}, fetch: () => (appendFileSync("hits.txt", "x"), new Response("not the run's")) });\n`,
+  );
+  preExisting = Bun.spawn([process.execPath, "--no-env-file", "listener.mjs"], { cwd: scratch, stdio: ["ignore", "ignore", "inherit"] });
+  for (let i = 0; i < 100 && !(await fetch(`http://127.0.0.1:${PRE_EXISTING_PORT}/`).then(() => true, () => false)); i++) await Bun.sleep(50);
+  rmSync(join(scratch, "hits.txt"), { force: true }); // the readiness probe's own hit
   root = join(scratch, "workspace");
   out = join(scratch, "out");
   registry = join(scratch, "apps.json");
@@ -160,7 +186,12 @@ beforeAll(() => {
   writeFileSync(registry, `${JSON.stringify({ version: 1, apps: APPS }, null, 2)}\n`);
 });
 
-afterAll(() => rmSync(scratch, { recursive: true, force: true }));
+afterAll(async () => {
+  preExisting?.kill("SIGKILL");
+  await preExisting?.exited;
+  assertNoLeaks(scratch);
+  rmSync(scratch, { recursive: true, force: true });
+});
 
 describe.skipIf(!!noSandbox)("bun run test:apps", () => {
   let main: ReturnType<typeof testApps>;
@@ -219,6 +250,11 @@ describe.skipIf(!!noSandbox)("bun run test:apps", () => {
   test("the command runs with the profile env (temp HOME, BUN_OPTIONS=--no-env-file, nothing else inherited) inside the sandbox (.env unreadable)", () => {
     // The stand-in checks each and prints what is wrong; the log shows it when this fails.
     expect({ ok: result("env").ok, log: readFileSync(result("env").log, "utf8") }).toMatchObject({ ok: true });
+  });
+
+  test("a test command reaches its own ephemeral servers but no port that was listening before it started", () => {
+    expect({ ok: result("connect").ok, log: readFileSync(result("connect").log, "utf8") }).toMatchObject({ ok: true });
+    expect(preExistingHits()).toBe(0);
   });
 
   test("each report proposes the baseline the managing agent records", () => {
