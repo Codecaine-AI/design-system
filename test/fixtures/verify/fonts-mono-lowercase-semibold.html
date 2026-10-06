@@ -1,0 +1,21 @@
+<!doctype html>
+<!-- verify:apps fixture (Opus fix-round-1 P2-1): after the package's IBM Plex Mono rules, another package's 600 face declared as "ibm plex mono". The browser matches family names case-insensitively, so it renders the 600 text and the package's 600 face stays unloaded. Text renders at 500 and 600. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>IBM Plex Mono 600 under a lowercase family name</title>
+    <style>
+      @font-face { font-family: "Inter"; font-weight: 400; src: url("/fonts/Inter-Regular.woff2") format("woff2"); }
+      @font-face { font-family: "IBM Plex Mono"; font-weight: 400; src: url("/fonts/IBMPlexMono-Regular.woff2") format("woff2"); }
+      @font-face { font-family: "IBM Plex Mono"; font-weight: 500; src: url("/fonts/IBMPlexMono-Medium.woff2") format("woff2"); }
+      @font-face { font-family: "IBM Plex Mono"; font-weight: 600; src: url("/fonts/IBMPlexMono-SemiBold.woff2") format("woff2"); }
+      @font-face { font-family: "ibm plex mono"; font-weight: 600; src: url("/copy/text-measure/fonts/IBMPlexMono-SemiBold.woff2") format("woff2"); }
+      body { margin: 0; font-family: Inter, sans-serif; font-weight: 400; }
+      code { font-family: "IBM Plex Mono", monospace; font-weight: 500; }
+      code.strong { font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <p>Text in Inter, <code>a medium label</code> and <code class="strong">a semibold label</code>.</p>
+  </body>
+</html>

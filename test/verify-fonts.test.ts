@@ -35,6 +35,7 @@ const MONO_600 = "http://127.0.0.1:47000/@fs/pkg/IBMPlexMono-SemiBold.woff2";
 const OTHER_600 = "http://127.0.0.1:47000/@fs/text-measure/IBMPlexMono-SemiBold.woff2";
 const COPY_600 = "http://127.0.0.1:47000/assets/IBMPlexMono-SemiBold-7b1e.woff2";
 const FORCED_MONO = '400 16px "IBM Plex Mono"';
+const UNATTRIBUTED = "one is a face added from script or an unreadable stylesheet, so its source cannot be attributed to the package";
 const PKG_CSS = "http://127.0.0.1:47000/vendor/design-system/fonts.css";
 const OTHER_CSS = "http://127.0.0.1:47000/vendor/text-measure/fonts.css";
 
@@ -141,7 +142,10 @@ describe("fontAssertions", () => {
         "the 600 normal face did not load before the check (error): its text renders in a fallback font; IBM Plex Mono renders on this route only in faces other than the regular one (faces 500 normal loaded, 600 normal error)",
       ]);
       // A face added from script (no @font-face rule) proves nothing about the package's fonts.css.
-      expect(verdict(otherFaces([rule("400", [PKG_400]), rule("500", [MONO_500])]), ok([PKG_400, MONO_500]))).toEqual(["fail", `no readable @font-face rule declares the 600 normal face of IBM Plex Mono; ${ONLY_OTHER}`]);
+      expect(verdict(otherFaces([rule("400", [PKG_400]), rule("500", [MONO_500])]), ok([PKG_400, MONO_500]))).toEqual([
+        "fail",
+        `the 600 normal face of IBM Plex Mono has 1 FontFace object in document.fonts but 0 readable @font-face rules: ${UNATTRIBUTED}; ${ONLY_OTHER}`,
+      ]);
     });
 
     test("the forced regular face must then load, from the package", () => {
@@ -152,7 +156,10 @@ describe("fontAssertions", () => {
       ]);
       // A reading the check did not force (after = before): the regular face is still unloaded.
       const unforced = otherFaces(pkgRules(), ["600"], "unloaded", { forced: null });
-      expect(verdict(unforced, ok([MONO_600]))).toEqual(["fail", expect.stringMatching(/and its regular face did not load when the check forced it \(400 normal unloaded\)$/)]);
+      expect(verdict(unforced, ok([MONO_600]))).toEqual(["fail", expect.stringMatching(/, and its regular face is not loaded, and the check forced nothing \(400 normal unloaded\)$/)]);
+      // Nothing forced, yet the regular face loaded (the page loaded it between the readings): the pass does not claim a forced load.
+      const loadedLater = otherFaces(pkgRules(), ["500", "600"], "loaded", { forced: null });
+      expect(verdict(loadedLater, ok([PKG_400, MONO_500, MONO_600]))).toEqual(["pass", `renders only in faces 500 normal, 600 normal, each from the package; regular face loaded from ${PKG_400} (the package's)`]);
       const otherRegular = otherFaces([rule("400", [OTHER_400]), rule("500", [MONO_500]), rule("600", [MONO_600])]);
       expect(verdict(otherRegular, ok([OTHER_400, MONO_500, MONO_600]))).toEqual(["fail", `the regular face loads from ${OTHER_400}: not the package's`]);
     });
@@ -161,6 +168,48 @@ describe("fontAssertions", () => {
       const inter = reading([rule("400", [PKG_400]), rule("500", [PKG_500])], [face("400", "unloaded"), face("500")]);
       expect(verdict(inter, ok([PKG_500]))).toEqual(["fail", expect.stringMatching(/^regular face of Inter: none loaded by the page before the check \(400 normal unloaded\); the check never forces Inter/)]);
       expect(forcedLoad("Inter", inter)).toBeNull();
+    });
+  });
+
+  describe("a judged face with more FontFace objects than readable rules cannot be attributed (fix round 1, Codex P0)", () => {
+    const mono = (rules: FontReading["rules"], before: FaceStatus[], after: FaceStatus[], forced: string | null = null) => reading(rules, before, { family: "IBM Plex Mono", after, forced });
+    const twoFaces = (weight: string, family: string, unreadable = "") =>
+      `the ${weight} normal face of ${family} has 2 FontFace objects in document.fonts but 1 readable @font-face rule${unreadable}: ${UNATTRIBUTED}`;
+
+    test("Codex's shape: the package's 600 face unloaded, a script 600 face loaded, the package URL preloaded, the forced 400 from the package: fail", () => {
+      const r = mono([rule("400", [PKG_400]), rule("600", [MONO_600])], [face("400", "unloaded"), face("600", "unloaded"), face("600")], [face("400"), face("600", "unloaded"), face("600")], FORCED_MONO);
+      expect(verdict(r, ok([PKG_400, MONO_600]))).toEqual([
+        "fail",
+        `${twoFaces("600", "IBM Plex Mono")}; IBM Plex Mono renders on this route only in faces other than the regular one (faces 600 normal loaded)`,
+      ]);
+    });
+
+    test("the same for the regular face, in each branch and for Inter: the package's 400 unloaded, a script 400 loaded", () => {
+      const rules = [rule("400", [PKG_400])];
+      // Rendered in the regular face.
+      expect(verdict(mono(rules, [face("400", "unloaded"), face("400")], [face("400", "unloaded"), face("400")]), ok([PKG_400]))).toEqual(["fail", twoFaces("400", "IBM Plex Mono")]);
+      const inter = reading([...rules, rule("700", [PKG_700])], [face("400", "unloaded"), face("400"), face("700", "unloaded")]);
+      expect(verdict(inter, ok([PKG_400]))).toEqual(["fail", twoFaces("400", "Inter")]);
+      // Not rendered: the forced load loaded the script face.
+      const notRendered = mono(rules, [face("400", "unloaded"), face("400", "unloaded")], [face("400", "unloaded"), face("400")], FORCED_MONO);
+      expect(verdict(notRendered, ok([PKG_400]))).toEqual(["fail", twoFaces("400", "IBM Plex Mono")]);
+      // Rendered only in 500: the forced regular face is judged the same way.
+      const forced = mono([...rules, rule("500", [MONO_500])], [face("400", "unloaded"), face("400", "unloaded"), face("500")], [face("400", "unloaded"), face("400"), face("500")], FORCED_MONO);
+      expect(verdict(forced, ok([PKG_400, MONO_500]))).toEqual(["fail", twoFaces("400", "IBM Plex Mono")]);
+    });
+
+    test("a judged face with no readable rule while a stylesheet is unreadable fails; an unreadable sheet that declares no judged face does not", () => {
+      const crossOrigin = reading([rule("700", [PKG_700])], [face("400"), face("700", "unloaded")], { unreadableSheets: 1 });
+      expect(verdict(crossOrigin, ok([PKG_400]))).toEqual([
+        "fail",
+        `the 400 normal face of Inter has 1 FontFace object in document.fonts but 0 readable @font-face rules (1 stylesheet unreadable): ${UNATTRIBUTED}`,
+      ]);
+      expect(verdict(reading([rule("400", [PKG_400])], [face("400")], { unreadableSheets: 2 }), ok([PKG_400]))[0]).toBe("pass");
+    });
+
+    test("no false failure: the package's fonts.css loaded twice, or a script face at a weight the check does not judge", () => {
+      expect(verdict(reading([rule("400", [PKG_400]), rule("400", [PKG_400])], [face("400", "unloaded"), face("400")]), ok([PKG_400]))[0]).toBe("pass");
+      expect(verdict(reading([rule("400", [PKG_400])], [face("400"), face("700", "unloaded")]), ok([PKG_400]))[0]).toBe("pass");
     });
   });
 

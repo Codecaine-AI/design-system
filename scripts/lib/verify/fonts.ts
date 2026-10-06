@@ -17,7 +17,10 @@
  * that was fetched and that font-source.ts accepts: the package's fonts/, or a byte copy of a package
  * font declared in the package's fonts.css. A local() face, a fallback, or the same font from another
  * package (text-measure's fonts) fails. A face other than the regular one is judged by the same rules,
- * on the rule that declares its own weight and style.
+ * on the rule that declares its own weight and style. Every judged face must be attributable to a
+ * readable rule: when document.fonts holds more faces with its weight and style than readable rules
+ * declare (a FontFace added from script, a rule in a cross-origin stylesheet), the check cannot read the
+ * source of the face that loaded, and it fails. Family names match case-insensitively, as in the browser.
  */
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -123,7 +126,8 @@ export async function readFonts(page: any, opts: ReadFontsOptions = {}): Promise
   const families = [...(opts.families ?? FONT_FAMILIES)];
   const seen: Array<Pick<FontReading, "before" | "probedBy">> = await page.evaluate(
     async ({ names, selectors }: { names: string[]; selectors: string[] }) => {
-      const clean = (family: string) => family.replace(/["']/g, "").trim();
+      // Family names match case-insensitively, as the browser matches them.
+      const clean = (family: string) => family.replace(/["']/g, "").trim().toLowerCase();
       await Promise.race([document.fonts.ready, new Promise((resolve) => setTimeout(resolve, 10_000))]);
       const firstFamilies = selectors.map((selector) => {
         const element = document.querySelector(selector);
@@ -131,7 +135,7 @@ export async function readFonts(page: any, opts: ReadFontsOptions = {}): Promise
       });
       return names.map((name) => ({
         before: Array.from(document.fonts)
-          .filter((face) => clean(face.family) === name)
+          .filter((face) => clean(face.family) === name.toLowerCase())
           .map((face) => ({ weight: face.weight, style: face.style, status: face.status })),
         probedBy: firstFamilies.filter((probe) => probe.family === name.toLowerCase()).map((probe) => probe.selector),
       }));
@@ -141,7 +145,7 @@ export async function readFonts(page: any, opts: ReadFontsOptions = {}): Promise
   const forced = families.map((family, i) => forcedLoad(family, seen[i]!));
   const rest: Array<Pick<FontReading, "after" | "rules" | "unreadableSheets">> = await page.evaluate(
     async ({ names, loads }: { names: string[]; loads: string[] }) => {
-      const clean = (family: string) => family.replace(/["']/g, "").trim();
+      const clean = (family: string) => family.replace(/["']/g, "").trim().toLowerCase();
       if (loads.length) {
         const loading = Promise.all(loads.map((font) => document.fonts.load(font).catch(() => undefined)));
         await Promise.race([loading, new Promise((resolve) => setTimeout(resolve, 10_000))]);
@@ -182,10 +186,10 @@ export async function readFonts(page: any, opts: ReadFontsOptions = {}): Promise
       }
       return names.map((family) => ({
         after: Array.from(document.fonts)
-          .filter((face) => clean(face.family) === family)
+          .filter((face) => clean(face.family) === family.toLowerCase())
           .map((face) => ({ weight: face.weight, style: face.style, status: face.status })),
         rules: rules
-          .filter((rule) => rule.family === family)
+          .filter((rule) => rule.family === family.toLowerCase())
           .map((rule) => ({
             weight: rule.weight,
             style: rule.style,
@@ -251,21 +255,45 @@ const faceName = (face: { weight: string; style: string }) => `${face.weight} ${
 /** One face's source verdict: the fetched url() the judge accepted, or why the face fails. Either way, what was read. */
 type SourceCheck = ({ ok: true; url: string; how: string } | { ok: false; message: string }) & { detail: Record<string, unknown> };
 
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+/** Each face once, by its weight and style descriptors as the page reports them. */
+const distinctFaces = (faces: FaceStatus[]) => faces.filter((face, i) => faces.findIndex((other) => faceName(other) === faceName(face)) === i);
+
 /**
- * The source rules for one face, given the readable @font-face rules that declare it, in cascade order:
- * the last one wins, it lists a url() and no local() before it, one of its url()s was fetched, and
- * `judge` accepts a fetched one. `noun` names the face in messages ("the regular face", "the 500 normal
- * face"); `declared` names it when no rule declares it.
+ * Why a judged face cannot be attributed to a readable @font-face rule, or null. document.fonts holds one
+ * FontFace per @font-face rule, readable or not, plus every face a script added, and a face's source is
+ * not readable from the page. When the faces with a judged face's weight and style outnumber the readable
+ * rules that declare them, or none is readable and a stylesheet is unreadable, the face that loaded may
+ * be one whose source the check never sees (a script FontFace from another package, say), so the last
+ * readable rule proves nothing about it.
  */
-function checkSource(r: FontReading, rules: FontRule[], noun: string, declared: string, responses: ResponseLog, judge: FontSourceJudge): SourceCheck {
-  const detail: Record<string, unknown> = {};
-  if (rules.length === 0) {
-    const message =
-      r.rules.length === 0
-        ? `faces are loaded but no readable @font-face declares ${r.family}${r.unreadableSheets ? ` (${r.unreadableSheets} stylesheet(s) unreadable)` : ""}`
-        : `no readable @font-face rule declares ${declared} of ${r.family}`;
-    return { ok: false, message, detail };
+function unattributed(r: FontReading, faces: FaceStatus[]): string | null {
+  for (const face of distinctFaces(faces)) {
+    const inSet = Math.max(r.before.filter((other) => sameFace(other, face)).length, r.after.filter((other) => sameFace(other, face)).length);
+    const declaring = r.rules.filter((rule) => sameFace(rule, face)).length;
+    if (inSet > declaring || (declaring === 0 && r.unreadableSheets > 0)) {
+      const unreadable = r.unreadableSheets ? ` (${plural(r.unreadableSheets, "stylesheet")} unreadable)` : "";
+      return `the ${faceName(face)} face of ${r.family} has ${plural(inSet, "FontFace object")} in document.fonts but ${plural(declaring, "readable @font-face rule")}${unreadable}: one is a face added from script or an unreadable stylesheet, so its source cannot be attributed to the package`;
+    }
   }
+  return null;
+}
+
+/**
+ * The source rules for one face, given the faces of it that the check judges (`faces`, from
+ * document.fonts) and the readable @font-face rules that declare it, in cascade order: every judged face
+ * is attributable to a readable rule (unattributed), the last rule wins, it lists a url() and no local()
+ * before it, one of its url()s was fetched, and `judge` accepts a fetched one. `noun` names the face in
+ * messages ("the regular face", "the 500 normal face"); `declared` names it when no rule declares it.
+ */
+function checkSource(r: FontReading, faces: FaceStatus[], rules: FontRule[], noun: string, declared: string, responses: ResponseLog, judge: FontSourceJudge): SourceCheck {
+  const detail: Record<string, unknown> = {};
+  if (r.rules.length === 0) {
+    return { ok: false, message: `faces are loaded but no readable @font-face declares ${r.family}${r.unreadableSheets ? ` (${r.unreadableSheets} stylesheet(s) unreadable)` : ""}`, detail };
+  }
+  const ambiguous = unattributed(r, faces);
+  if (ambiguous) return { ok: false, message: ambiguous, detail };
+  if (rules.length === 0) return { ok: false, message: `no readable @font-face rule declares ${declared} of ${r.family}`, detail };
   // Of several rules with the same descriptors, the last one declared is the face the page uses.
   const winner = rules[rules.length - 1]!;
   detail.rule = winner;
@@ -293,7 +321,8 @@ function checkSource(r: FontReading, rules: FontRule[], noun: string, declared: 
  * by the page itself (or, for IBM Plex Mono not rendered on the route or rendered only in other faces,
  * by the check's forced load), its winning @font-face rule's url() fetched, and the fetched file judged
  * by `judge` to come from the package. IBM Plex Mono rendered only in other faces: every face the page
- * loaded passes the same rules first, on the rule that declares that face.
+ * loaded passes the same rules first, on the rule that declares that face. In every branch, a judged face
+ * with more FontFace objects than readable rules for its weight and style fails (unattributed).
  */
 export function fontAssertions(readings: FontReading[], responses: ResponseLog, judge: FontSourceJudge): Assertion[] {
   return readings.map((r) => {
@@ -313,19 +342,21 @@ export function fontAssertions(readings: FontReading[], responses: ResponseLog, 
       const stuck = started.find((face) => face.status !== "loaded");
       if (stuck) return fail(id, `the ${faceName(stuck)} face did not load before the check (${stuck.status}): its text renders in a fallback font; ${why}`, detail);
       // Each distinct face once; a face whose descriptors match no rule fails below (sameFace never matches an unparsed weight).
-      const faces = started.filter((face, i) => started.findIndex((other) => faceName(other) === faceName(face)) === i);
+      const faces = distinctFaces(started);
       const judged: Array<Record<string, unknown>> = [];
       detail.renderedFaces = judged;
       for (const face of faces) {
         const noun = `the ${faceName(face)} face`;
-        const check = checkSource(r, r.rules.filter((rule) => sameFace(rule, face)), noun, noun, responses, judge);
+        const check = checkSource(r, [face], r.rules.filter((rule) => sameFace(rule, face)), noun, noun, responses, judge);
         judged.push({ weight: face.weight, style: face.style, ...check.detail });
         if (!check.ok) return fail(id, `${check.message}; ${why}`, detail);
       }
       const regularAfter = regularOf(r.after);
-      if (!regularAfter.some((face) => face.status === "loaded"))
-        return fail(id, `${why}, and its regular face did not load when the check forced ${r.forced ?? "it"} (${statuses(regularAfter)})`, detail);
-      loadedBy = `renders only in faces ${faces.map(faceName).join(", ")}, each from the package; regular face loaded when the check forced it`;
+      if (!regularAfter.some((face) => face.status === "loaded")) {
+        const load = r.forced ? `did not load when the check forced ${r.forced}` : "is not loaded, and the check forced nothing";
+        return fail(id, `${why}, and its regular face ${load} (${statuses(regularAfter)})`, detail);
+      }
+      loadedBy = `renders only in faces ${faces.map(faceName).join(", ")}, each from the package; regular face loaded${r.forced ? " when the check forced it" : ""}`;
     } else if (rendered) {
       if (!regularBefore.some((face) => face.status === "loaded")) {
         const why = mayForce
@@ -340,7 +371,8 @@ export function fontAssertions(readings: FontReading[], responses: ResponseLog, 
         return fail(id, `${r.family} is not rendered on this route, and its regular face did not load when the check forced ${r.forced ?? "it"} (${statuses(regularAfter)})`, detail);
       loadedBy = "available, not rendered on this route: regular face loaded";
     }
-    const check = checkSource(r, regularOf(r.rules), "the regular face", "the regular face (400, normal)", responses, judge);
+    const loadedRegular = regularOf(r.after).filter((face) => face.status === "loaded");
+    const check = checkSource(r, loadedRegular, regularOf(r.rules), "the regular face", "the regular face (400, normal)", responses, judge);
     Object.assign(detail, check.detail);
     return check.ok ? pass(id, `${loadedBy} from ${check.url} (${check.how})`, detail) : fail(id, check.message, detail);
   });

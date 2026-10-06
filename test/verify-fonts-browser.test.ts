@@ -116,6 +116,27 @@ describe.skipIf(Boolean(browserSkip))("font checks in Chromium", () => {
     });
   }, 30_000);
 
+  test("a script FontFace at 600 over the package's 600 face, the package URL preloaded: fails, its source cannot be attributed", async () => {
+    expect((await fonts("fonts-mono-script-face"))["font: IBM Plex Mono"]).toEqual({
+      status: "fail",
+      message: expect.stringMatching(
+        /^the 600 normal face of IBM Plex Mono has 2 FontFace objects in document\.fonts but 1 readable @font-face rule: one is a face added from script or an unreadable stylesheet, so its source cannot be attributed to the package; IBM Plex Mono renders on this route only in faces other than the regular one \(faces 600 normal loaded(, 600 normal loaded)?\)$/,
+      ),
+    });
+  }, 30_000);
+
+  test.skipIf(!existsSync(TEXT_MEASURE_CSS))("another package's face declared as \"ibm plex mono\" fails at 600 and at 400: family names match case-insensitively", async () => {
+    const semibold = join(copies, "text-measure/fonts/IBMPlexMono-SemiBold.woff2");
+    expect((await fonts("fonts-mono-lowercase-semibold"))["font: IBM Plex Mono"]).toEqual({
+      status: "fail",
+      message: `the 600 normal face loads from ${semibold}: ${DECISION_20}: it is in an inline <style> or a constructed stylesheet; IBM Plex Mono renders on this route only in faces other than the regular one (faces 500 normal loaded, 600 normal loaded)`,
+    });
+    expect((await fonts("fonts-mono-lowercase-regular"))["font: IBM Plex Mono"]).toEqual({
+      status: "fail",
+      message: `the regular face loads from ${join(copies, "text-measure/fonts/IBMPlexMono-Regular.woff2")}: ${DECISION_20}: it is in an inline <style> or a constructed stylesheet`,
+    });
+  }, 30_000);
+
   test("byte copies declared in a copy of the package's fonts.css pass, its rules read through @import", async () => {
     const found = await fonts("fonts-copied-sheet");
     for (const family of ["Inter", "IBM Plex Mono"]) {
