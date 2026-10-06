@@ -89,18 +89,18 @@
       "run": {
         "mode": "static",
         "cwd": "codecaine/core/sequence",
-        "start": "bun {ds}/apps/fixtures/sequence-renderer/serve.ts {flags}",
+        "start": "bun --no-env-file {ds}/apps/fixtures/sequence-renderer/serve.ts {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)",
         "staticDir": "{tmp}/sequence-renderer-site"
       },
       "commands": {
         "cwd": "codecaine/core/sequence",
-        "typecheck": "bun run typecheck:sequence"
+        "typecheck": "bun --no-env-file run typecheck:sequence"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test packages/sequence/src",
+            "cmd": "bun --no-env-file test packages/sequence/src",
             "cwd": "codecaine/core/sequence"
           }
         ]
@@ -152,7 +152,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. All 3 routes rendered light and dark; 0 blocked requests; 18 connections seen, all inbound to :47000; no foreign connection.",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. All 3 routes rendered light and dark; 0 blocked requests; 18 connections seen, all inbound to :47000; no foreign connection. Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 6 route loads ok, 0 blocked requests, 20 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
           "date": "2026-10-05"
         }
       },
@@ -175,6 +175,12 @@
             "token": "color.text.body"
           }
         ],
+        "waivedRoles": [
+          {
+            "role": "border",
+            "reason": "the diagram has no neutral chrome border: every SVG stroke is a content color, the accent (participant boxes, lifelines, messages, notes: packages/sequence/src/theme.ts:98 participantStroke → --seq-accent #C77D2E, render/svg.ts:155) or the fragment accent #5B7FBD; these stay product colors"
+          }
+        ],
         "darkSwitch": {
           "kind": "query",
           "param": "theme",
@@ -183,12 +189,12 @@
       },
       "exceptions": [
         {
-          "what": "verify has no border probe",
-          "reason": "the diagram's strokes (lifelines, participant borders, fragment frames) are the accent and fragment-accent hues, which stay product colors; the neutral roles are page, panel and text"
-        },
-        {
           "what": "the run is a fixture page, not the library itself",
           "reason": "a library has no UI: apps/fixtures/sequence-renderer/serve.ts renders the engine's own example programs inline in a host page that loads tokens.css, so before/after sheets exist for the pilot"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 1 s (79 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -466,7 +472,7 @@
       "run": {
         "mode": "browser",
         "cwd": "codecaine/core/docs-system",
-        "start": "bun {ds}/apps/fixtures/docs-workbench/serve.ts {flags}",
+        "start": "bun --no-env-file {ds}/apps/fixtures/docs-workbench/serve.ts {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)",
         "serveRoot": "codecaine/core/docs-system/packages/docs-workbench/web"
       },
@@ -477,7 +483,7 @@
       "tests": {
         "safe": [
           {
-            "cmd": "bun test packages/docs-workbench/src packages/docs-workbench/web/src",
+            "cmd": "bun --no-env-file test ./packages/docs-workbench/src/__tests__/serve-fs-watch.test.ts ./packages/docs-workbench/src/__tests__/shared-api.test.ts ./packages/docs-workbench/src/pdf-export.test.ts ./packages/docs-workbench/web/src/__tests__/annotate-range.test.ts ./packages/docs-workbench/web/src/__tests__/api.test.ts ./packages/docs-workbench/web/src/__tests__/block-selection-wash.test.ts ./packages/docs-workbench/web/src/__tests__/canvas-embed.test.tsx ./packages/docs-workbench/web/src/__tests__/code-theme.test.tsx ./packages/docs-workbench/web/src/__tests__/default-fonts.test.ts ./packages/docs-workbench/web/src/__tests__/doc-peek.test.tsx ./packages/docs-workbench/web/src/__tests__/doc-title.test.ts ./packages/docs-workbench/web/src/__tests__/global-theme.test.tsx ./packages/docs-workbench/web/src/__tests__/grain-code-mask.test.ts ./packages/docs-workbench/web/src/__tests__/inline-svg.test.ts ./packages/docs-workbench/web/src/__tests__/layout-metrics-drift.test.ts ./packages/docs-workbench/web/src/__tests__/pdf-export.test.tsx ./packages/docs-workbench/web/src/__tests__/sequence-embed.test.tsx ./packages/docs-workbench/web/src/__tests__/shared-events.test.ts ./packages/docs-workbench/web/src/__tests__/sidebar.test.tsx ./packages/docs-workbench/web/src/__tests__/style-rail-static-head.test.ts ./packages/docs-workbench/web/src/__tests__/style-rail-token-wiring.test.ts ./packages/docs-workbench/web/src/__tests__/style-rail.test.tsx ./packages/docs-workbench/web/src/__tests__/workbench.test.tsx ./packages/docs-workbench/web/src/lab/__tests__/DocLab.test.tsx ./packages/docs-workbench/web/src/lab/__tests__/doc-lab-changeset-messages.test.ts ./packages/docs-workbench/web/src/lab/__tests__/doc-lab-changesets.test.ts ./packages/docs-workbench/web/src/lab/__tests__/doc-lab-controller.test.tsx ./packages/docs-workbench/web/src/lab/__tests__/doc-lab-projection.test.ts ./packages/docs-workbench/web/src/lab/__tests__/docs-kernel-client.test.ts ./packages/docs-workbench/web/src/lab/__tests__/docs-kernel-session-source.test.ts",
             "cwd": "codecaine/core/docs-system"
           }
         ],
@@ -493,6 +499,10 @@
           {
             "cmd": "docs-cli serve without --standalone",
             "reason": "hands off to the installed central docs service (:4820) whenever background.json exists"
+          },
+          {
+            "cmd": "bun test packages/docs-workbench/src/__tests__/serve-routes.test.ts",
+            "reason": "writes into the repo: seeds packages/docs-workbench/web/dist-static/index.html (serve-routes.test.ts:331-336, also 377, 451, 490), and its export path runs ensureSpaBuilt (src/spa.ts:105), which runs `bun x vite build` into the checkout"
           }
         ]
       },
@@ -575,8 +585,8 @@
           "CODECAINE_DOCS_STATE_DIR": "{tmp}/docs-state",
           "CODECAINE_DOCS_GLOBAL_THEMES": "{tmp}/docs-state/themes",
           "CODECAINE_DOCS_CODE_THEMES": "{tmp}/docs-state/code-themes",
-          "CANVAS_STUDIO_URL": "http://localhost:3999",
-          "SEQUENCE_STUDIO_URL": "http://localhost:3998"
+          "CANVAS_STUDIO_URL": "http://127.0.0.1:{port:deadCanvasStudio}",
+          "SEQUENCE_STUDIO_URL": "http://127.0.0.1:{port:deadSequenceStudio}"
         },
         "unsetEnv": [
           "DOCS_SHARED_API_URL",
@@ -609,11 +619,13 @@
         "ports": {
           "api": 47020,
           "ui": 47021,
-          "deadKernel": 47022
+          "deadKernel": 47022,
+          "deadCanvasStudio": 47023,
+          "deadSequenceStudio": 47024
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. State isolation recipe of verification/docs-system/README.md with a corpus copied from the repo's docs/ into {tmp}; serve runs --standalone --dev, never the central service. All 7 routes rendered (12 captures); the only blocked requests were 36 to the dead kernel port :47022 (own block, never bound; rendering did not need them); 120 connections seen, all inbound to :47021 or vite->api on :47020; no connection to :4820, :4840 or any other port; verify probes matched the light and dark token values.",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. State isolation recipe of verification/docs-system/README.md with a corpus copied from the repo's docs/ into {tmp}; serve runs --standalone --dev, never the central service. All 7 routes rendered (12 captures); the only blocked requests were 36 to the dead kernel port :47022 (own block, never bound; rendering did not need them); 120 connections seen, all inbound to :47021 or vite->api on :47020; no connection to :4820, :4840 or any other port; verify probes matched the light and dark token values. Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 13 route loads ok, blocked 36x http://127.0.0.1:47022, 120 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
           "date": "2026-10-05"
         }
       },
@@ -669,8 +681,8 @@
           "reason": "the frozen verification tarball holds private workspace docs; the fixture copies repo content into {tmp} at start"
         },
         {
-          "what": "CANVAS_STUDIO_URL and SEQUENCE_STUDIO_URL point at the owner's ports 3999/3998",
-          "reason": "build-time defines baked into links only (open-in-studio buttons); nothing fetches them, and the browser guard blocks any request to them"
+          "what": "CANVAS_STUDIO_URL and SEQUENCE_STUDIO_URL point at dead ports in the app's block",
+          "reason": "web/vite.config.ts:45-50 bakes them into the open-in-studio links (defaults are the owner's :3999 and :3998); the profile points them at 47023 and 47024, named ports nothing binds, so a click reaches nobody and the guard counts it as expected-blocked"
         },
         {
           "what": "routes omit the side peek and the link editor",
@@ -682,11 +694,15 @@
         },
         {
           "what": "baseline test failures",
-          "reason": "at the mirror's owner HEAD the safe suite has 54 failing tests of 425 (workbench shell, useDocLabSession and others time out at about 1000 ms), and the same tests fail under the normal environment; the tests gate compares against this baseline"
+          "reason": "at the mirror owner HEAD the safe suite (30 files, serve-routes and live-smoke excluded) has 54 failing tests of 396 (workbench shell, useDocLabSession, style rail export/import, static public-site shell and others time out at about 1000 ms); the same 54 failed before serve-routes left the set (54 of 425) and fail under the normal environment, so the sandbox denies nothing they need; the tests gate compares against this baseline"
         },
         {
           "what": "literal floor 14",
           "reason": "allowlisted: the PDF export stylesheet and page-number color (export output), the hidden color-control code in style-rail-panes.tsx, the grain mask gradient, and the legacy stock-metrics constant"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 1 in 63 s (342 pass, 54 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -783,7 +799,7 @@
       "tests": {
         "safe": [
           {
-            "cmd": "bun test packages/studio",
+            "cmd": "bun --no-env-file test packages/studio",
             "cwd": "codecaine/core/canvas"
           }
         ],
@@ -869,7 +885,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. All 6 routes rendered light and dark (12 captures); the guard blocked 4 requests to localhost:4803 (the owner's docs-system dev API, asked for linked boards by the boards route only; rendering did not need them, and the verify route gallery makes none); 86 connections seen, all inbound to :47030; no connection to :4820 or any other port; the canvas repo stayed clean (CANVAS_DIR copy in {tmp}).",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. All 6 routes rendered light and dark (12 captures); the guard blocked 4 requests to localhost:4803 (the owner's docs-system dev API, asked for linked boards by the boards route only; rendering did not need them, and the verify route gallery makes none); 86 connections seen, all inbound to :47030; no connection to :4820 or any other port; the canvas repo stayed clean (CANVAS_DIR copy in {tmp}). Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 12 route loads ok, blocked 4x http://localhost:4803, 86 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
           "date": "2026-10-05"
         }
       },
@@ -882,14 +898,24 @@
             "token": "color.surface.page"
           },
           {
-            "selector": "header.border-b",
-            "property": "border-bottom-color",
-            "token": "color.border.default"
+            "selector": "article.bg-card:first-of-type",
+            "property": "background-color",
+            "token": "color.surface.panel"
+          },
+          {
+            "selector": "body",
+            "property": "color",
+            "token": "color.text.body"
           },
           {
             "selector": "header.border-b h1",
             "property": "color",
-            "token": "color.text.body"
+            "token": "color.text.ink"
+          },
+          {
+            "selector": "header.border-b",
+            "property": "border-bottom-color",
+            "token": "color.border.default"
           }
         ],
         "darkSwitch": {
@@ -911,8 +937,8 @@
           "reason": "4803 is the owner's docs-system self-docs dev API (docs-system/Makefile:23-45: make dev, dev-web, docs). The origin is DEFAULT_PROJECT_SERVER_ORIGIN in packages/studio/src/project/docs-server.ts:18, read in ProjectBoardsSection.tsx:33; the only override is localStorage studio.project-server-origin (docs-server.ts:20), with no env var, flag or config. The guard blocks it (2 requests per capture of the boards route) and the linked-boards section stays quiet, so rendering does not need it; verify runs on the gallery route, which makes no such request. A dev-only override (or a route storage seed) would let the boards route point it at a dead port in this block"
         },
         {
-          "what": "no route opens the AI panel",
-          "reason": "the agent panel talks to /api/agent/*, which the dev server proxies to the owner's harness on :4820 (hard-coded in server/agent-proxy.ts); routes stay off it"
+          "what": "the dev server proxies /api/agent/* and /api/canvases/:id/agent/* to the owner's :4820",
+          "reason": "packages/studio/vite.config.ts:59 mounts createAgentProxyHandler({}) with no target; server/agent-proxy.ts:21 (AGENT_PATH_PATTERN: /api/agent, /api/agent/*, /api/agent?..., /api/canvases/<id>/agent[/...]) pipes method, headers and body to DEFAULT_TARGET http://127.0.0.1:4820 (agent-proxy.ts:23); no env var, flag or config overrides the target. These are the only proxied prefixes in the dev server. No registry route, step or verify probe requests them (checked from the per-route request log); the AI panel that calls them is never opened. The run sandbox (decision 12) denies the connection to :4820 as the hard boundary"
         },
         {
           "what": "baseline test failures",
@@ -920,7 +946,11 @@
         },
         {
           "what": "allowlist",
-          "reason": "the swatch checkerboard (transparency art) and the Style rail's theme-card previews of the canvas presets (board data, color-control code kept per owner decision)"
+          "reason": "the swatch checkerboard in src/index.css:300-305 (transparency art behind color swatches, 5 hits) and the color-input fallback #000000 in src/style/StyleRail.tsx:514 (color-control code kept per owner decision; <input type=color> needs a hex value)"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 1 in 1 s (77 pass, 2 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -944,6 +974,7 @@
       "stack": {
         "summary": "TypeScript library: DOM and SVG with inline styles; static SVG renderer runs in Node and is rasterized with resvg",
         "tailwind": "none",
+        "utilityClasses": true,
         "packageManager": "bun"
       },
       "consume": {
@@ -1019,12 +1050,12 @@
       },
       "commands": {
         "cwd": "codecaine/core/canvas",
-        "typecheck": "bun run typecheck:canvas"
+        "typecheck": "bun --no-env-file run typecheck:canvas"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test packages/canvas/src",
+            "cmd": "bun --no-env-file test packages/canvas/src",
             "cwd": "codecaine/core/canvas"
           }
         ],
@@ -1100,7 +1131,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. All 4 routes rendered light and dark through the studio host (8 captures); 0 blocked requests; 58 connections seen, all inbound to :47040; no foreign connection; the canvas repo stayed clean.",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. All 4 routes rendered light and dark through the studio host (8 captures); 0 blocked requests; 58 connections seen, all inbound to :47040; no foreign connection; the canvas repo stayed clean. Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 8 route loads ok, 0 blocked requests, 58 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
           "date": "2026-10-05"
         }
       },
@@ -1110,12 +1141,31 @@
           {
             "selector": "[data-canvas-stage=\"true\"]",
             "property": "background-color",
-            "token": "color.surface.page"
+            "token": "color.surface.page",
+            "themes": [
+              "light"
+            ]
           },
           {
             "selector": "[aria-label=\"Zoom controls\"]",
             "property": "background-color",
             "token": "color.surface.panel"
+          },
+          {
+            "selector": "[aria-label=\"Zoom controls\"] [data-zoom-percent]",
+            "property": "color",
+            "token": "color.text.body"
+          },
+          {
+            "selector": "button[title=\"Toggle style settings\"]",
+            "property": "border-top-color",
+            "token": "color.border.default"
+          }
+        ],
+        "waivedRoles": [
+          {
+            "role": "page",
+            "reason": "decision 10: the board stage is board data, not app chrome; the schematic-light preset keeps its light stage when the app is dark, so the stage probe runs in light only and no canvas-owned element paints the page in dark"
           }
         ],
         "darkSwitch": {
@@ -1133,8 +1183,8 @@
           "reason": "a library: its gallery, editor and viewer render in the studio host, with boards from a temp copy of canvases/"
         },
         {
-          "what": "verify probes: the schematic-light board and the floating chrome only",
-          "reason": "board colors are canvas theme data (figjam, schematic-light, schematic-dark); the audit migrates the schematic neutrals and the chrome, and the FigJam preset and its 10 inks stay canvas-owned. The chrome's text and borders come from the host's shadcn utilities with alpha (bg-background/95, border/70), so canvas-studio's probes cover them"
+          "what": "verify probes: the stage in light, the editor chrome in both themes (decision 10)",
+          "reason": "board colors are canvas theme data (figjam, schematic-light, schematic-dark); the schematic presets are bridged to design-system values (light preset → light tokens) and do not follow the app theme, so [data-canvas-stage] is probed in light only. The chrome probes run in light and dark: the zoom pill (stage/editor/components/ZoomControls.tsx:97,106) and its percent label (:119,127), and the outline Button from canvas/src/ui/button.tsx:21-22 (instance: the style toggle, studio/src/App.tsx:1133 via TopBar.tsx:96). No canvas chrome on the editor route has another solid border: the dock and zoom pill use shadows, the TopBar pills border-border/70 (alpha)"
         },
         {
           "what": "allowlist",
@@ -1149,8 +1199,12 @@
           "reason": "4803 is the owner's docs-system self-docs dev API (docs-system/Makefile:23-45: make dev, dev-web, docs). The origin is DEFAULT_PROJECT_SERVER_ORIGIN in packages/studio/src/project/docs-server.ts:18, read in ProjectBoardsSection.tsx:33; the only override is localStorage studio.project-server-origin (docs-server.ts:20), with no env var, flag or config. The guard blocks it (2 requests per capture of the boards route) and the linked-boards section stays quiet, so rendering does not need it; verify runs on the gallery route, which makes no such request. A dev-only override (or a route storage seed) would let the boards route point it at a dead port in this block"
         },
         {
-          "what": "no route opens the AI panel",
-          "reason": "the agent panel talks to /api/agent/*, which the dev server proxies to the owner's harness on :4820 (hard-coded in server/agent-proxy.ts); routes stay off it"
+          "what": "the dev server proxies /api/agent/* and /api/canvases/:id/agent/* to the owner's :4820",
+          "reason": "packages/studio/vite.config.ts:59 mounts createAgentProxyHandler({}) with no target; server/agent-proxy.ts:21 (AGENT_PATH_PATTERN: /api/agent, /api/agent/*, /api/agent?..., /api/canvases/<id>/agent[/...]) pipes method, headers and body to DEFAULT_TARGET http://127.0.0.1:4820 (agent-proxy.ts:23); no env var, flag or config overrides the target. These are the only proxied prefixes in the dev server. No registry route, step or verify probe requests them (checked from the per-route request log); the AI panel that calls them is never opened. The run sandbox (decision 12) denies the connection to :4820 as the hard boundary"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 1 in 6 s (1186 pass, 13 fail, 9 errors); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -1247,12 +1301,12 @@
       },
       "commands": {
         "cwd": "codecaine/core/canvas",
-        "typecheck": "bun run typecheck:canvas-agent"
+        "typecheck": "bun --no-env-file run typecheck:canvas-agent"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test test/viewer-extension.test.ts",
+            "cmd": "bun --no-env-file test test/viewer-extension.test.ts",
             "cwd": "codecaine/core/canvas/packages/canvas-agent"
           }
         ],
@@ -1331,6 +1385,11 @@
             "token": "color.surface.sidebar"
           },
           {
+            "selector": ".research-style-shell",
+            "property": "color",
+            "token": "color.text.body"
+          },
+          {
             "selector": "aside.w-56",
             "property": "border-right-color",
             "token": "color.border.default"
@@ -1354,6 +1413,10 @@
         {
           "what": "typecheck may fail in the mirror",
           "reason": "tsconfig pins React types to ./node_modules/@types/react, which the mirror's canvas-agent/node_modules does not hold"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 0 s (4 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -1443,18 +1506,18 @@
       "run": {
         "mode": "static",
         "cwd": "codecaine/core/docs-system/packages/docs-mcp",
-        "start": "bun {ds}/apps/fixtures/docs-mcp-home/serve.ts {flags}",
+        "start": "bun --no-env-file {ds}/apps/fixtures/docs-mcp-home/serve.ts {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)",
         "staticDir": "{tmp}/docs-mcp-home-site"
       },
       "commands": {
         "cwd": "codecaine/core/docs-system/packages/docs-mcp",
-        "typecheck": "bun run typecheck"
+        "typecheck": "bun --no-env-file run typecheck"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test src/__tests__/device-discovery.test.ts",
+            "cmd": "bun --no-env-file test src/__tests__/device-discovery.test.ts",
             "cwd": "codecaine/core/docs-system/packages/docs-mcp"
           }
         ],
@@ -1510,7 +1573,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. The fixture server rendered the real directoryHtml; the home route rendered in dark (the only theme of a dark-first surface); 0 blocked requests (the page's /api polls hit the fixture); 5 connections seen, all inbound to :47060; no foreign connection.",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. The fixture server rendered the real directoryHtml; the home route rendered in dark (the only theme of a dark-first surface); 0 blocked requests (the page's /api polls hit the fixture); 5 connections seen, all inbound to :47060; no foreign connection. Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 1 route loads ok, 0 blocked requests, 5 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
           "date": "2026-10-05"
         }
       },
@@ -1526,6 +1589,11 @@
             "selector": "#search",
             "property": "background-color",
             "token": "color.surface.panel"
+          },
+          {
+            "selector": "body",
+            "property": "color",
+            "token": "color.text.body"
           },
           {
             "selector": "h1",
@@ -1547,6 +1615,10 @@
         {
           "what": "the run is a fixture server, not the docs service",
           "reason": "apps/fixtures/docs-mcp-home/serve.ts renders the real directoryHtml with 4 synthetic projects and answers the page's /api/projects, /api/discovery and /api/status polls in memory; the supervisor (which reads ~/.local/state and binds :4820) is never imported"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 0 s (4 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -1639,7 +1711,7 @@
       "run": {
         "mode": "browser",
         "cwd": "codecaine/core/docs-system",
-        "start": "bun {ds}/apps/fixtures/docs-workbench/serve.ts {flags}",
+        "start": "bun --no-env-file {ds}/apps/fixtures/docs-workbench/serve.ts {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)",
         "serveRoot": "codecaine/core/docs-system/packages/docs-workbench/web"
       },
@@ -1650,7 +1722,7 @@
       "tests": {
         "safe": [
           {
-            "cmd": "bun test src/components src/editor src/lab src/peek src/transitions",
+            "cmd": "bun --no-env-file test src/components src/editor src/lab src/peek src/transitions",
             "cwd": "codecaine/core/docs-system/packages/docs-viewer"
           }
         ],
@@ -1691,6 +1763,11 @@
           "id": "stack",
           "path": "/playground.html?doc=10-system-design/40-block-vocabulary/50-flow-and-diagrams/30-stack&type=stack&theme=light",
           "waitFor": "[data-doc-root]"
+        },
+        {
+          "id": "rich-text",
+          "path": "/playground.html?doc=10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text&type=structured-table&all=1&theme=light",
+          "waitFor": "[data-docs-block-type=\"structured-table\"]"
         }
       ],
       "runProfile": {
@@ -1699,8 +1776,8 @@
           "CODECAINE_DOCS_STATE_DIR": "{tmp}/docs-state",
           "CODECAINE_DOCS_GLOBAL_THEMES": "{tmp}/docs-state/themes",
           "CODECAINE_DOCS_CODE_THEMES": "{tmp}/docs-state/code-themes",
-          "CANVAS_STUDIO_URL": "http://localhost:3999",
-          "SEQUENCE_STUDIO_URL": "http://localhost:3998"
+          "CANVAS_STUDIO_URL": "http://127.0.0.1:{port:deadCanvasStudio}",
+          "SEQUENCE_STUDIO_URL": "http://127.0.0.1:{port:deadSequenceStudio}"
         },
         "unsetEnv": [
           "DOCS_SHARED_API_URL",
@@ -1733,26 +1810,45 @@
         "ports": {
           "api": 47070,
           "ui": 47071,
-          "deadKernel": 47072
+          "deadKernel": 47072,
+          "deadCanvasStudio": 47073,
+          "deadSequenceStudio": 47074
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. Same isolation recipe as docs-workbench (fixture launcher, corpus copied into {tmp}, --standalone --dev, dead kernel port). All 6 playground routes rendered with ?theme=light and ?theme=dark (12 captures); 0 blocked requests; 91 connections seen, all inbound to :47071 or vite->api on :47070; no foreign connection; verify probes matched the light and dark token values.",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. Same isolation recipe as docs-workbench (fixture launcher, corpus copied into {tmp}, --standalone --dev, dead kernel port). All 6 playground routes rendered with ?theme=light and ?theme=dark (12 captures); 0 blocked requests; 91 connections seen, all inbound to :47071 or vite->api on :47070; no foreign connection; verify probes matched the light and dark token values. Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 14 route loads ok, 0 blocked requests, 105 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
           "date": "2026-10-05"
         }
       },
       "verify": {
-        "route": "callout",
+        "route": "rich-text",
         "probes": [
           {
-            "selector": "body",
+            "selector": "[data-docs-block-type=\"structured-table\"] > div",
             "property": "background-color",
-            "token": "color.surface.page"
+            "token": "color.surface.panel"
           },
           {
-            "selector": "[data-doc-root]",
+            "selector": "[data-block-id=\"b-rich-text-overview-intro-2\"] p",
             "property": "color",
             "token": "color.text.body"
+          },
+          {
+            "selector": "a[href=\"https://example.com\"]",
+            "property": "color",
+            "token": "color.link",
+            "role": "text"
+          },
+          {
+            "selector": "[data-docs-block-type=\"structured-table\"] > div",
+            "property": "border-top-color",
+            "token": "color.border.default"
+          }
+        ],
+        "waivedRoles": [
+          {
+            "role": "page",
+            "reason": "host-owned: the docs-workbench playground paints the page (docs-workbench/web/src/playground/main.tsx:82, body background var(--docs-page)); the viewer root [data-doc-root] (docs-viewer/src/render/DocBlockRenderer.tsx:254) has no background"
           }
         ],
         "darkSwitch": {
@@ -1763,8 +1859,8 @@
       },
       "exceptions": [
         {
-          "what": "verify probes: page and text only",
-          "reason": "the viewer's panels are the dark code-surface island (color.code.*, dark in both themes) and its callout rails are hue colors; snapshot sheets cover them"
+          "what": "verify probes: viewer-owned elements on the rich-text route",
+          "reason": "the structured-table frame (components/structured-table/table-classes.ts:37-38: --docs-panel background, --docs-rule border) is the panel and border, a paragraph (render/block-classes.ts:61) the body text, a link (block-classes.ts:176, --docs-link) the link color; the page belongs to the host playground (waived). The callout has no panel background at stock (CalloutDocsBlock.tsx:136,167: transparent tint and a tone rail), so it is not the panel probe; snapshot sheets cover the callouts and the code-surface island"
         },
         {
           "what": "rendered through docs-workbench's playground",
@@ -1772,7 +1868,15 @@
         },
         {
           "what": "literal floor 307",
-          "reason": "audit: keep literal var() fallbacks so the viewer renders without the host stylesheet. 197 fallbacks today plus the 110 color definitions, which may move behind var(--ds-*, <literal>); every literal left must be a fallback (allowlist kind fallback)"
+          "reason": "audit 'Keep literal fallbacks': the viewer must render without the host stylesheet. 197 var() fallbacks (allowlist kind fallback, src/**) plus 110 custom-property definitions whose value is var(--host-name, <literal>) in 7 component files (allowlist kind definition, one entry per file with its count); the floor caps the total, so a new literal fails the check"
+        },
+        {
+          "what": "CANVAS_STUDIO_URL and SEQUENCE_STUDIO_URL point at dead ports in the app's block",
+          "reason": "web/vite.config.ts:45-50 bakes them into the open-in-studio links (defaults are the owner's :3999 and :3998); the profile points them at 47073 and 47074, named ports nothing binds, so a click reaches nobody and the guard counts it as expected-blocked"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 3 s (352 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -1866,12 +1970,12 @@
       },
       "commands": {
         "cwd": "codecaine/core/docs-system/packages/docs-publish",
-        "build": "bun build.ts"
+        "build": "bun --no-env-file build.ts"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test src",
+            "cmd": "bun --no-env-file test src",
             "cwd": "codecaine/core/docs-system/packages/docs-publish"
           }
         ]
@@ -1904,11 +2008,15 @@
       "exceptions": [
         {
           "what": "allowlist",
-          "reason": "src/editor.css keeps its neutral var() fallbacks for the host's --color-* and --site-* names on purpose (comment at editor.css:63-65)"
+          "reason": "src/editor.css .docs-draft-editor block (lines 67-105, comment 63-66): 22 custom-property definitions with the editor's container defaults (host --color-*/--site-* fallbacks at 68-76, status and accent palette at 82-103), scoped to that file, kind definition, category hex and the block's 8 literal values; the floor of 22 caps them, so any new definition in the file fails the check. The fallback at editor.css:171 and the inline literals in styles.css:44-46 migrate"
         },
         {
           "what": "commands.build writes the package's own dist/",
           "reason": "the publish build output (gitignored); every token change needs a rebuild, npm pack and a version bump in personal-site"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 1 s (11 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -1928,6 +2036,7 @@
       "stack": {
         "summary": "React 19 library shipped as TS source; style-system.css plus runtime styleVars(); host Tailwind",
         "tailwind": "none",
+        "utilityClasses": true,
         "packageManager": "bun"
       },
       "consume": {
@@ -2004,12 +2113,12 @@
       },
       "commands": {
         "cwd": "codecaine/core/agent-kernel",
-        "typecheck": "bun run typecheck:viewer-shell"
+        "typecheck": "bun --no-env-file run typecheck:viewer-shell"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test ./packages/viewer-shell/src",
+            "cmd": "bun --no-env-file test ./packages/viewer-shell/src",
             "cwd": "codecaine/core/agent-kernel"
           }
         ]
@@ -2024,6 +2133,11 @@
           "id": "traces",
           "path": "/traces",
           "waitFor": "main.research-style-shell"
+        },
+        {
+          "id": "traces-rail",
+          "path": "/traces?style=open",
+          "waitFor": "aside.style-settings-rail"
         }
       ],
       "runProfile": {
@@ -2063,12 +2177,12 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. Through simple-research-kernel's Vite 5 frontend with API_TARGET at the dead port :47091 (own block, never bound). Both routes rendered light and dark (4 captures; the console errors are the failed API calls); 0 blocked browser requests; 30 connections seen, all inbound to :47090; no connection outside the run's own ports; the agent-kernel repo stayed clean.",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. Through simple-research-kernel's Vite 5 frontend with API_TARGET at the dead port :47091 (own block, never bound). Both routes rendered light and dark (4 captures; the console errors are the failed API calls); 0 blocked browser requests; 30 connections seen, all inbound to :47090; no connection outside the run's own ports; the agent-kernel repo stayed clean. Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 6 route loads ok, 0 blocked requests, 47 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
           "date": "2026-10-05"
         }
       },
       "verify": {
-        "route": "research-rail",
+        "route": "traces-rail",
         "probes": [
           {
             "selector": "main.research-style-shell",
@@ -2076,9 +2190,19 @@
             "token": "color.surface.page"
           },
           {
-            "selector": "aside.style-settings-rail h2",
+            "selector": "section[data-trace-workspace=\"list\"]",
+            "property": "background-color",
+            "token": "color.surface.panel"
+          },
+          {
+            "selector": "main.research-style-shell",
             "property": "color",
             "token": "color.text.body"
+          },
+          {
+            "selector": "aside.style-settings-rail h2",
+            "property": "color",
+            "token": "color.text.ink"
           },
           {
             "selector": "aside.style-settings-rail",
@@ -2100,6 +2224,14 @@
         {
           "what": "allowlist",
           "reason": "the grain overlay's SVG filter constants (#ffffff/#808080 in StyleOverlay.tsx) are filter math, not colors"
+        },
+        {
+          "what": "verify route traces-rail",
+          "reason": "the research-rail route has no solid viewer-shell panel (the rail is bg-card/85, its sections bg-background/30, and alpha never equals a token); the trace workspace list (workspace/KernelTraceWorkspace.tsx:255-256, bg-card) is one. Body text is the shell's own color (main.research-style-shell, colored by viewer-shell's style vars, style/style-settings.ts:324; host element examples/simple-research-kernel/src/_layouts/ResearchKernelLayout.tsx:72); the rail's hex inputs are color controls the owner decision hides, so they are not probed"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 0 s (35 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -2121,6 +2253,7 @@
       "stack": {
         "summary": "React 19 library; host Tailwind (v3 config or v4 @theme inline + @source) and trace-viewer.css",
         "tailwind": "none",
+        "utilityClasses": true,
         "packageManager": "bun"
       },
       "consume": {
@@ -2197,16 +2330,21 @@
       },
       "commands": {
         "cwd": "codecaine/core/agent-kernel",
-        "typecheck": "bun run typecheck:viewer-ui"
+        "typecheck": "bun --no-env-file run typecheck:viewer-ui"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test src",
+            "cmd": "bun --no-env-file test ./src/agent-viewer/catalog-client.test.ts ./src/agent-viewer/prompt-edit-client.test.ts ./src/agent-viewer/prompt-edit-loop.e2e.test.ts ./src/agent-viewer/prompt-edit-session-view.test.ts ./src/agent-viewer/prompt-lab-session-controller.test.ts ./src/agent-viewer/prompt-lab-session-mode.test.ts ./src/kernel-route-parity.test.ts ./src/trace-viewer/SpanCard/span-indent.test.tsx ./src/trace-viewer/detail-panel/DetailShell.test.tsx ./src/trace-viewer/detail-panel/DetailShellExtensions.test.tsx ./src/trace-viewer/detail-panel/DetailsView.test.tsx ./src/trace-viewer/detail-panel/blocks.test.tsx ./src/trace-viewer/detail-panel/contract-conformance.test.tsx ./src/trace-viewer/detail-panel/doc-figure/Clamped.test.tsx ./src/trace-viewer/detail-panel/doc-figure/DocFigure.test.tsx ./src/trace-viewer/detail-panel/doc-figure/rendered-height.test.ts ./src/trace-viewer/detail-panel/doc-figure/tokenize.test.ts ./src/trace-viewer/detail-panel/renderers/AggregateBodies.test.tsx ./src/trace-viewer/detail-panel/renderers/ContextBuildBody.test.tsx ./src/trace-viewer/detail-panel/renderers/FactCard.test.tsx ./src/trace-viewer/detail-panel/renderers/MessageBody.test.tsx ./src/trace-viewer/detail-panel/renderers/ToolBody.test.tsx ./src/trace-viewer/detail-panel/renderers/TurnBody.test.tsx ./src/trace-viewer/detail-panel/renderers/json-document.test.ts ./src/trace-viewer/detail-panel/renderers/real-snapshot-render.test.tsx ./src/trace-viewer/detail-panel/renderers/request-snapshot-api.test.tsx ./src/trace-viewer/detail-panel/renderers/snapshot-message-view.test.tsx ./src/trace-viewer/detail-panel/renderers/turn-sections.test.tsx ./src/trace-viewer/detail-panel/renderers/turn/ToolsSection.test.tsx ./src/trace-viewer/detail-panel/renderers/turn/turn-block-content.test.tsx ./src/trace-viewer/icons/span-icons.test.tsx ./src/trace-viewer/selection.test.tsx ./src/trace-viewer/trace-tree-utils.test.ts ./src/trace-viewer/usage-summary.test.ts",
             "cwd": "codecaine/core/agent-kernel/packages/viewer-ui"
           }
         ],
-        "unsafe": []
+        "unsafe": [
+          {
+            "cmd": "bun test ./src/trace-viewer/detail-panel/DetailShell.overflow.test.tsx ./src/trace-viewer/detail-panel/renderers/hierarchy-live-review.test.tsx ./src/trace-viewer/detail-panel/renderers/state-outline.test.ts ./src/trace-viewer/detail-panel/state-tab-postures.test.tsx",
+            "reason": "open the owner's live kernel trace DB canvas/.agent-kernel/trace.db (read-only, WAL) through reviewed-capture.test-helper.ts:29 and DetailShell.overflow.test.tsx:21-23, state-tab-postures.test.tsx:45-47, renderers/hierarchy-live-review.test.tsx:35-37, renderers/state-outline.test.ts:18-20; real trace data is never test input"
+          }
+        ]
       },
       "routes": [],
       "runProfile": {
@@ -2240,8 +2378,12 @@
           "reason": "trace-viewer.css keeps hex var() fallbacks for the prompt-editor surface (hosts without the contract still render)"
         },
         {
-          "what": "three safe tests read real trace data when it exists",
-          "reason": "state-tab-postures, DetailShell.overflow and hierarchy-live-review read canvas/.agent-kernel/trace.db read-only and skip when it is absent, as it is in the mirror; keep it out of the mirror"
+          "what": "safe tests: explicit files",
+          "reason": "tests.safe lists the 34 test files that open no trace data; the 4 files that read canvas/.agent-kernel/trace.db are in tests.unsafe, so a new test file is not run until it is checked and listed"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 1 s (318 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -2337,12 +2479,12 @@
       },
       "commands": {
         "cwd": "codecaine/core/agent-kernel/examples/simple-research-kernel",
-        "typecheck": "bun run typecheck"
+        "typecheck": "bun --no-env-file run typecheck"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test ./examples/simple-research-kernel/src",
+            "cmd": "bun --no-env-file test ./examples/simple-research-kernel/src",
             "cwd": "codecaine/core/agent-kernel"
           }
         ],
@@ -2454,6 +2596,10 @@
         {
           "what": "the API is not started",
           "reason": "API_TARGET points the Vite proxy at a dead port in this app's block; pages render their layout, sidebar and rail with the API error state"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 0 s (7 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -2473,6 +2619,7 @@
       "stack": {
         "summary": "React 19 library; host Tailwind, about 112 inline style sites and injected <style> blocks; editor-surface rules ship in viewer-ui",
         "tailwind": "none",
+        "utilityClasses": true,
         "packageManager": "bun"
       },
       "consume": {
@@ -2550,12 +2697,12 @@
       },
       "commands": {
         "cwd": "codecaine/core/prompt-kit/packages/prompt-kit",
-        "typecheck": "bun run typecheck"
+        "typecheck": "bun --no-env-file run typecheck"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test tests",
+            "cmd": "bun --no-env-file test tests",
             "cwd": "codecaine/core/prompt-kit/packages/prompt-kit"
           }
         ]
@@ -2593,6 +2740,10 @@
         {
           "what": "needs a light editor palette designed first",
           "reason": "audit: migrate last; the editor is effectively dark-only today"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 4 s (749 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -2683,14 +2834,14 @@
         "reason": "the docs origin is hard-coded: `export const SERVICE_ORIGIN = 'http://127.0.0.1:4820'` (src/main/tree-model.ts:5), which src/main/docs-service.ts polls every 5 s (GET /api/projects, /projects/<id>/docs/api/tree), and the renderer builds viewer URLs from a literal http://127.0.0.1:4820 (src/renderer/src/App.tsx:114). SYSTEM_VIEW_OPEN_URL (src/main/dev-hooks.ts:8) only opens one URL at startup; polling still targets 4820. No env var, setting or flag redirects it, and a second instance hands focus to the owner's running app (single-instance lock). Runnable once SERVICE_ORIGIN and App.tsx:114 read one env var that a profile points at a run-started docs-workbench fixture",
         "cwd": "system-view",
         "electron": {
-          "build": "bun run build",
+          "build": "bun --no-env-file run build",
           "main": "system-view/out/main/index.js"
         }
       },
       "commands": {
         "cwd": "system-view",
-        "typecheck": "bun run typecheck",
-        "build": "bun run build"
+        "typecheck": "bun --no-env-file run typecheck",
+        "build": "bun --no-env-file run build"
       },
       "tests": {
         "safe": [],
@@ -2756,9 +2907,14 @@
             "token": "color.surface.sidebar"
           },
           {
-            "selector": ".sidebar-title",
+            "selector": ".tree",
             "property": "color",
             "token": "color.text.body"
+          },
+          {
+            "selector": ".sidebar-title",
+            "property": "color",
+            "token": "color.text.ink"
           },
           {
             "selector": ".sidebar",
@@ -2878,15 +3034,20 @@
       "run": {
         "mode": "browser",
         "cwd": "lascari-ai/personal-site",
-        "start": "./node_modules/.bin/vite {flags}",
+        "start": "exec bun --no-env-file {ds}/apps/fixtures/personal-site/serve.ts --root {root} --tmp {tmp} --port {port:ui}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
       },
       "commands": {
         "cwd": "lascari-ai/personal-site",
-        "typecheck": "./node_modules/.bin/tsc -b"
+        "typecheck": "./node_modules/.bin/tsc -p tsconfig.json --noEmit"
       },
       "tests": {
-        "safe": [],
+        "safe": [
+          {
+            "cmd": "./node_modules/.bin/vitest run --root . --config {ds}/apps/fixtures/personal-site/vitest.config.mjs --configLoader runner --no-cache",
+            "cwd": "lascari-ai/personal-site"
+          }
+        ],
         "unsafe": [
           {
             "cmd": "npm test (vitest run)",
@@ -2931,11 +3092,6 @@
           "id": "resume",
           "path": "/resume/",
           "waitFor": ".site-header"
-        },
-        {
-          "id": "blog",
-          "path": "/blog/",
-          "waitFor": ".site-header"
         }
       ],
       "runProfile": {
@@ -2961,19 +3117,13 @@
         ],
         "tempHome": true,
         "fixtures": [],
-        "flags": [
-          "--host",
-          "127.0.0.1",
-          "--port",
-          "{port:ui}",
-          "--strictPort"
-        ],
+        "flags": [],
         "ports": {
           "ui": 47140
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. All 6 routes rendered light and dark (12 captures); 0 blocked requests; 81 connections seen, all inbound to :47140; no foreign connection (no route touches /blog/drafts, the only :4820 proxy); git status of the repo was clean after the run, so the tracked resume markdown regenerated byte-identical; verify probes matched the light and dark token values.",
+          "method": "apps/fixtures/personal-site/serve.ts: Vite 7.3.3 JS API with configFile false; plugins sitePages, inlineLandingLoader, externalLinks, @tailwindcss/vite and resume-pages.mjs's resumeContent transform; no devContentEditor, resumePages, watchBlog/generateBlog, writingDraftPreview or feedback handlers; cacheDir in {tmp}, watcher and dep discovery off, GET/HEAD only (POST /__dev-content-edit, /api/logo-feedback, /api/landing-feedback answer 405; /blog/, /sitemap.xml, /robots.txt, /blog/drafts/ answer 404). First proof by the fixture's author: 10 loads, 16 distinct URLs all on 127.0.0.1:47140, 0 console errors, 61 sockets (1 listener, 60 inbound), 0 foreign; git status and find -newer (node_modules/.vite and .vite-temp included) unchanged. Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 10 route loads ok, 0 blocked requests, 60 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
           "date": "2026-10-05"
         }
       },
@@ -2991,9 +3141,14 @@
             "token": "color.surface.sidebar"
           },
           {
-            "selector": "h1",
+            "selector": ".home-introduction p:first-of-type",
             "property": "color",
             "token": "color.text.body"
+          },
+          {
+            "selector": ".home-introduction h1",
+            "property": "color",
+            "token": "color.text.ink"
           },
           {
             "selector": ".site-header",
@@ -3009,12 +3164,12 @@
       },
       "exceptions": [
         {
-          "what": "vite.config.ts writes generated files into the repo at load",
-          "reason": "generateBlog() and resumePages() regenerate blog/, public/blog/, public/sitemap.xml, robots.txt, legacy-redirects.json (gitignored) and the tracked public/resume/ford-lascari-resume.md from repo sources; the proof checks the tracked file is unchanged afterwards"
+          "what": "runs and tests do not load vite.config.ts",
+          "reason": "at load it regenerates blog/, public/blog/, sitemap.xml, robots.txt and legacy-redirects.json (scripts/blog-pages.mjs:86-99,104,155-159) and the tracked public/resume/ford-lascari-resume.md (scripts/resume-pages.mjs:26-35); its dev server writes page HTML (scripts/dev-content-editor.mjs:99), proxies /blog/drafts/__docs/api to the owner's :4820 (scripts/writing-draft-preview.mjs:8,42-46) and writes design-reviews/ JSON (scripts/logo-feedback.mjs:45-46, landing-feedback.mjs:19). Runs use apps/fixtures/personal-site/serve.ts (Vite JS API, configFile false, only sitePages, inlineLandingLoader, externalLinks, @tailwindcss/vite and the resume transform rebuilt from resume-pages.mjs's pure exports; cacheDir in {tmp}, watcher off, GET/HEAD only); tests use apps/fixtures/personal-site/vitest.config.mjs (no plugins, cache under the temp HOME)"
         },
         {
-          "what": "routes skip the landing (/), /logo-lab and /blog/drafts/",
-          "reason": "the landing and logo lab are CircleSnakes product art (audit Skip); /blog/drafts/__docs/api proxies to the owner's docs service on :4820"
+          "what": "routes skip the landing (/), /logo-lab and all of /blog/",
+          "reason": "the landing and logo lab are CircleSnakes product art (audit Skip). Blog pages exist only as generateBlog() output, which takes no output dir (scripts/blog-pages.mjs:7 fixes root from import.meta.url), so the fixture does not generate them and answers 404 for /blog/, /sitemap.xml, /robots.txt and /legacy-redirects.json; /blog/drafts/ (the :4820 proxy) is not mounted"
         },
         {
           "what": "entryStylesheet is about/index.html",
@@ -3023,6 +3178,22 @@
         {
           "what": "pass 3 on vanilla partials",
           "reason": "the ledger plans slices (1h) for its _components partials; the linter's 400-line rule applies, the index.tsx rule does not fit vanilla HTML partials"
+        },
+        {
+          "what": "blog article pages load docs-publish's docs.css before styles.css (known gap)",
+          "reason": "scripts/blog-pages.mjs:103 links ${runtime}/docs.css (runtime path :94, copied from @codecaine-ai/docs-publish dist/styles at :96-97) and an inline docsThemeHead <style> (:76-78) before /src/site/styles.css and blog.css on article pages (:141). docs.css (vendor tgz 0.1.0-proof.20) declares, unlayered at :root, 80 of the same --palette-*/--color-* names as src/site/palette.css and styles.css plus 962 --docs-* properties, a second tokens copy. The linter's single entry (about/index.html → styles.css → palette.css, layout.css) never sees docs.css, the inline theme style, blog.css → blog-style.css (also imported by services.css:5), resume.css or services.css; with /blog/ dropped no capture covers article pages. Pass 1 must check the blog graph by hand until the registry takes several entries"
+        },
+        {
+          "what": "captures show production markup, not the owner's dev view",
+          "reason": "the fixture leaves out devContentEditor, so pages carry no [data-dev-edit] marks and no 'Edit mode (dev)' badge (injected at dev-content-editor.mjs:79; badge in src/site/dev-content-editor.ts:15). Baselines captured under the old `vite` profile must be retaken"
+        },
+        {
+          "what": "typecheck uses tsc -p --noEmit",
+          "reason": "tsc -b (the app's build step) can write tsconfig.tsbuildinfo into the checkout; the project is a single non-composite tsconfig with noEmit (tsconfig.json:16), so `tsc -p tsconfig.json --noEmit` checks the same files and writes nothing"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 2 s (Tests  92 passed (92)); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -3209,7 +3380,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. python3 manager/server.py --root {tmp}/skills (synthetic catalog copied from apps/fixtures; HOME and the agent links inside {tmp}). All 5 routes rendered light and dark (10 captures, no console errors once the runner applied its determinism CSS under the CSP); 0 blocked requests; no foreign connection; the agent-skills repo stayed clean.",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. python3 manager/server.py --root {tmp}/skills (synthetic catalog copied from apps/fixtures; HOME and the agent links inside {tmp}). All 5 routes rendered light and dark (10 captures, no console errors once the runner applied its determinism CSS under the CSP); 0 blocked requests; no foreign connection; the agent-skills repo stayed clean. Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 10 route loads ok, 0 blocked requests, 1 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
           "date": "2026-10-05"
         }
       },
@@ -3225,6 +3396,11 @@
             "selector": ".sidebar",
             "property": "background-color",
             "token": "color.surface.sidebar"
+          },
+          {
+            "selector": "body",
+            "property": "color",
+            "token": "color.text.body"
           },
           {
             "selector": ".topbar",
@@ -3246,6 +3422,10 @@
         {
           "what": "synthetic skills catalog",
           "reason": "apps/fixtures/agent-skills-manager/skills (3 invented skills, agents under the temp HOME) replaces the repo's real catalog and the owner's ~/.claude, ~/.codex skill links; writes happen only on POST /api/apply, which no route triggers"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 1 s (Ran 10 tests in 0.195s, OK); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -3419,6 +3599,16 @@
             "selector": "aside",
             "property": "background-color",
             "token": "color.surface.sidebar"
+          },
+          {
+            "selector": "body",
+            "property": "color",
+            "token": "color.text.body"
+          },
+          {
+            "selector": "aside",
+            "property": "border-right-color",
+            "token": "color.border.default"
           }
         ],
         "darkSwitch": {
@@ -3433,7 +3623,7 @@
       "exceptions": [
         {
           "what": "allowlist",
-          "reason": "owner decision: the landing hero (src/app/(guest)/page.tsx) and the serif display face (Cormorant Garamond) are brand and stay"
+          "reason": "owner decision: the landing hero src/app/(guest)/page.tsx is brand and stays (129 literal hits and every class in that file). The serif display face Cormorant Garamond loads through next/font (src/app/layout.tsx:4,20-23; --font-display in globals.css:18), which is not a literal hit, so the allowlist has no entry for it"
         },
         {
           "what": "dormant since 2026-04-08",
@@ -3457,6 +3647,7 @@
       "stack": {
         "summary": "React 19 peer library; the load-bearing CSS is an injected TARGETING_CSS string; host Tailwind compiles the utilities",
         "tailwind": "none",
+        "utilityClasses": true,
         "packageManager": "bun"
       },
       "consume": {
@@ -3533,12 +3724,12 @@
       },
       "commands": {
         "cwd": "codecaine/core/annotations",
-        "typecheck": "bun run typecheck"
+        "typecheck": "bun --no-env-file run typecheck"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test src",
+            "cmd": "bun --no-env-file test src",
             "cwd": "codecaine/core/annotations"
           }
         ]
@@ -3584,6 +3775,10 @@
         {
           "what": "run mode none when unblocked too",
           "reason": "no standalone page: it renders inside docs-viewer and prompt-kit hosts; a host-based route (docs-workbench lab-annotate) can prove it later"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 1 s (68 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -3682,7 +3877,7 @@
       },
       "commands": {
         "cwd": "codecaine/core/observatory",
-        "typecheck": "bun run typecheck"
+        "typecheck": "bun --no-env-file run typecheck"
       },
       "tests": {
         "safe": [],
@@ -3747,6 +3942,21 @@
             "selector": "div.research-style-shell",
             "property": "background-color",
             "token": "color.surface.page"
+          },
+          {
+            "selector": "aside",
+            "property": "background-color",
+            "token": "color.surface.sidebar"
+          },
+          {
+            "selector": "div.research-style-shell",
+            "property": "color",
+            "token": "color.text.body"
+          },
+          {
+            "selector": "aside",
+            "property": "border-right-color",
+            "token": "color.border.default"
           }
         ],
         "darkSwitch": {
@@ -3859,18 +4069,18 @@
         "mode": "none",
         "reason": "blocked by uncommitted owner work; profile unproven",
         "cwd": "codecaine/tools/variator",
-        "start": "bun src/server/index.ts",
+        "start": "bun --no-env-file src/server/index.ts",
         "readyPattern": "Variator (http://127\\.0\\.0\\.1:\\d+)",
         "serveRoot": "codecaine/tools/variator/src/web"
       },
       "commands": {
         "cwd": "codecaine/tools/variator",
-        "typecheck": "bun run typecheck"
+        "typecheck": "bun --no-env-file run typecheck"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test src",
+            "cmd": "bun --no-env-file test src",
             "cwd": "codecaine/tools/variator"
           }
         ],
@@ -3947,7 +4157,7 @@
         "route": "capture",
         "probes": [
           {
-            "selector": "body",
+            "selector": "html",
             "property": "background-color",
             "token": "color.surface.page"
           },
@@ -3955,6 +4165,11 @@
             "selector": ".capture.panel",
             "property": "background-color",
             "token": "color.surface.panel"
+          },
+          {
+            "selector": ".capture.panel",
+            "property": "color",
+            "token": "color.text.body"
           },
           {
             "selector": ".topbar",
@@ -3982,11 +4197,15 @@
         },
         {
           "what": "allowlist",
-          "reason": "the .brand wordmark in Space Grotesk and the color-picker fallback #808080 (color-control code kept per owner decision)"
+          "reason": "brand art: Space Grotesk only on the .brand wordmark (src/web/style.css:179-180, decision 11; 1 hit, file and literal scoped); the color-picker fallback #808080 in src/web/tuning.tsx (color-control code kept per owner decision; <input type=color> needs a hex value)"
         },
         {
           "what": "theme rule light-dark",
           "reason": "pinned light today; not on the owner's dark-first list, so it gains a dark theme with the tokens"
+        },
+        {
+          "what": "safe tests not re-run: blocked",
+          "reason": "the app is blocked and its dependencies are not installed in the mirror; run tests.safe in the run sandbox with write detection when it unblocks, before the tests gate counts it"
         }
       ]
     },
@@ -4011,6 +4230,7 @@
       "stack": {
         "summary": "Slidev 51, Vue 3.5, UnoCSS (Windi-compatible); npm (pnpm lock also present)",
         "tailwind": "none",
+        "utilityClasses": true,
         "packageManager": "npm"
       },
       "consume": {
@@ -4021,8 +4241,8 @@
       "theme": {
         "rule": "light-dark"
       },
-      "literalFloor": 6,
-      "allowlist": "apps/allowlists/slidev-template.json",
+      "literalFloor": 0,
+      "allowlist": null,
       "shell": false,
       "folderStandard": false,
       "passes": {
@@ -4153,6 +4373,21 @@
             "selector": "#slide-content",
             "property": "background-color",
             "token": "color.surface.page"
+          },
+          {
+            "selector": "#slide-content",
+            "property": "color",
+            "token": "color.text.body"
+          }
+        ],
+        "waivedRoles": [
+          {
+            "role": "panel",
+            "reason": "slide 1 has no panel chrome: the template's only panel chrome is the code-block background .slidev-code.shiki (styles/layout.css:89-91) and no deck slide has a code fence; the title slide's QR card (slides/00-title/index.md:14) is gradient art outside the scan paths"
+          },
+          {
+            "role": "border",
+            "reason": "the template layout (styles/layout.css) styles no bordered chrome (blockquote is border-none, layout.css:78; no tables); slide 2's card borders (slides/01-column-cards/index.md:11) are per-slide utilities outside the scan paths; the FileExplorer and Terminal components draw their own frames but are not on slide 1 (they migrate with the rest, audit: all 203 template literals)"
           }
         ],
         "darkSwitch": {
@@ -4166,8 +4401,8 @@
           "reason": "uncommitted components/MotionCanvas.vue and slide-templates/motion-canvas/description.md in the owner's tree (inside the scan paths)"
         },
         {
-          "what": "allowlist",
-          "reason": "Styrene (trial license) and Fira Code font faces, and the chart data colors in components/Chart.vue"
+          "what": "no allowlist (floor 0)",
+          "reason": "decision 11: the chart chrome and series colors in components/Chart.vue:36-41 migrate to the color.chart.* tokens and the chrome tokens; the Styrene (trial license, slide-templates/*) and Fira Code (Terminal.vue:245, FileTree/FileExplorer.vue:391) font faces migrate to Inter and IBM Plex Mono; nothing stays literal"
         },
         {
           "what": "theme rule light-dark",
@@ -4272,12 +4507,12 @@
       },
       "commands": {
         "cwd": "life/budget/apps/web",
-        "typecheck": "bun run typecheck"
+        "typecheck": "bun --no-env-file run typecheck"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test apps/web/tests",
+            "cmd": "bun --no-env-file test apps/web/tests",
             "cwd": "life/budget"
           }
         ],
@@ -4373,6 +4608,11 @@
             "token": "color.surface.sidebar"
           },
           {
+            "selector": "section.card.balance .breakdown",
+            "property": "color",
+            "token": "color.text.body"
+          },
+          {
             "selector": "aside.main-sidebar",
             "property": "border-right-color",
             "token": "color.border.default"
@@ -4403,6 +4643,14 @@
         {
           "what": "theme rule light-dark",
           "reason": "light only today; the audit adds dark mode (6.5h QA)"
+        },
+        {
+          "what": "bun --no-env-file on every bun command",
+          "reason": "the owner's life/budget/.env holds MERCURY_* and SIMPLEFIN_* credentials and bun auto-loads .env from its cwd; every bun command here passes --no-env-file, and the run sandbox denies .env reads"
+        },
+        {
+          "what": "safe tests not re-run: blocked",
+          "reason": "the app is blocked and its dependencies are not installed in the mirror; run tests.safe in the run sandbox with write detection when it unblocks, before the tests gate counts it"
         }
       ]
     },
@@ -4492,19 +4740,19 @@
         "reason": "blocked by uncommitted owner work; profile unproven",
         "cwd": "apps/pen-plotter/apps/desktop",
         "electron": {
-          "build": "bun run build",
+          "build": "bun --no-env-file run build",
           "main": "apps/pen-plotter/apps/desktop/out/main/index.js"
         }
       },
       "commands": {
         "cwd": "apps/pen-plotter/apps/desktop",
-        "typecheck": "bun run typecheck",
-        "build": "bun run build"
+        "typecheck": "bun --no-env-file run typecheck",
+        "build": "bun --no-env-file run build"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test packages apps/desktop/tests",
+            "cmd": "bun --no-env-file test packages apps/desktop/tests",
             "cwd": "apps/pen-plotter"
           }
         ],
@@ -4564,14 +4812,24 @@
         "route": "main",
         "probes": [
           {
+            "selector": "html",
+            "property": "background-color",
+            "token": "color.surface.page"
+          },
+          {
+            "selector": "aside.sidebar.left > section.panel:first-of-type",
+            "property": "background-color",
+            "token": "color.surface.panel"
+          },
+          {
+            "selector": ".drawable",
+            "property": "color",
+            "token": "color.text.body"
+          },
+          {
             "selector": "aside.sidebar.left",
             "property": "border-right-color",
             "token": "color.border.default"
-          },
-          {
-            "selector": "section.panel:first-of-type",
-            "property": "background-color",
-            "token": "color.surface.panel"
           }
         ],
         "darkSwitch": {
@@ -4594,11 +4852,15 @@
         },
         {
           "what": "allowlist",
-          "reason": "the PensPanel ink PALETTE (ink data) and the machine-state canvas colors in Preview.tsx (they encode machine state)"
+          "reason": "only the PensPanel ink PALETTE (src/renderer/src/PensPanel.tsx, 8 hits: the real pen colors, ink data). The machine-state canvas colors in Preview.tsx are not allowlisted: they migrate to status tokens"
         },
         {
           "what": "theme rule light-dark",
           "reason": "light only today; not on the owner's dark-first list"
+        },
+        {
+          "what": "safe tests not re-run: blocked",
+          "reason": "the app is blocked and its dependencies are not installed in the mirror; run tests.safe in the run sandbox with write detection when it unblocks, before the tests gate counts it"
         }
       ]
     },
@@ -4689,7 +4951,8 @@
           "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
         },
         "tests": {
-          "required": true
+          "required": false,
+          "reason": "no safe test command: the only suite is a pytest file with no project or pinned environment (tests.unsafe); the migration touches only CSS and TSX, which lint, typecheck and snapshots cover"
         }
       },
       "run": {
@@ -4704,12 +4967,7 @@
         "typecheck": "./node_modules/.bin/tsc --noEmit"
       },
       "tests": {
-        "safe": [
-          {
-            "cmd": "uv run pytest tools/asset-extraction-pipeline/tests/test_extraction.py",
-            "cwd": "apps/MainMenu/apps/scene-engine"
-          }
-        ],
+        "safe": [],
         "unsafe": [
           {
             "cmd": "npm run desktop:dev / desktop:pack:mac",
@@ -4718,6 +4976,10 @@
           {
             "cmd": "asset extraction without ASSET_PIPELINE_IMAGE_MODE=placeholder",
             "reason": "calls OpenAI image edits and Anthropic messages"
+          },
+          {
+            "cmd": "uv run pytest tools/asset-extraction-pipeline/tests/test_extraction.py (cwd apps/MainMenu/apps/scene-engine)",
+            "reason": "scene-engine has no pyproject.toml and pytest is not a dependency, so `uv run` either fails or, from another cwd, creates a .venv in the repo and downloads from PyPI; no provisioned, offline test environment exists"
           }
         ]
       },
@@ -4787,6 +5049,11 @@
             "token": "color.surface.sidebar"
           },
           {
+            "selector": ".unity-app-main > main",
+            "property": "color",
+            "token": "color.text.body"
+          },
+          {
             "selector": "aside.unity-sidebar",
             "property": "border-right-color",
             "token": "color.border.default"
@@ -4838,7 +5105,7 @@
       },
       "consume": {
         "via": "link",
-        "detail": "Add ../../design-system to the root workspaces and depend on `workspace:*`, or link:@codecaine-ai/design-system the way it takes prompt-kit; then @import and @source. Never a bun file: dependency."
+        "detail": "link: a `link:@codecaine-ai/design-system` dependency through the repo's bun link registry, the way it already takes prompt-kit (the registrations are recreated when the app unblocks, STATE decision 4); then @import the CSS and @source the package. Never a bun file: dependency."
       },
       "entryStylesheet": "harnesses/gamecube-decomp-harness/apps/frontend/src/main.tsx",
       "theme": {
@@ -4846,7 +5113,7 @@
         "storageKey": "styleSettings.v1"
       },
       "literalFloor": 0,
-      "allowlist": "apps/allowlists/gamecube.json",
+      "allowlist": null,
       "shell": true,
       "folderStandard": true,
       "passes": {
@@ -4904,18 +5171,18 @@
         "mode": "none",
         "reason": "blocked by uncommitted owner work; profile unproven",
         "cwd": "harnesses/gamecube-decomp-harness",
-        "start": "bun apps/server/src/server.ts",
+        "start": "bun --no-env-file apps/server/src/server.ts",
         "readyPattern": "listening on (http://localhost:\\d+)"
       },
       "commands": {
         "cwd": "harnesses/gamecube-decomp-harness",
-        "typecheck": "bun run ui:check",
-        "build": "bun run ui:build"
+        "typecheck": "bun --no-env-file run ui:check",
+        "build": "bun --no-env-file run ui:build"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test ./apps/frontend/src",
+            "cmd": "bun --no-env-file test ./apps/frontend/src",
             "cwd": "harnesses/gamecube-decomp-harness"
           }
         ],
@@ -4987,6 +5254,21 @@
             "selector": "main.app-shell",
             "property": "background-color",
             "token": "color.surface.page"
+          },
+          {
+            "selector": "main.app-shell > section",
+            "property": "background-color",
+            "token": "color.surface.panel"
+          },
+          {
+            "selector": "main.app-shell",
+            "property": "color",
+            "token": "color.text.body"
+          },
+          {
+            "selector": "main.app-shell > section > header",
+            "property": "border-bottom-color",
+            "token": "color.border.default"
           }
         ],
         "darkSwitch": {
@@ -5008,12 +5290,16 @@
           "reason": "the UI is served by the orchestrator server, which writes runtime/state SQLite in the repo and reconciles harnesses; a profile needs its state root in {tmp} and harness auto-start off, plus the link: registrations recreated (STATE decision 4)"
         },
         {
-          "what": "allowlist",
-          "reason": "TX-02 is licensed and part of the app's identity (@font-face blocks and --font-mono in styles.css); the kb-lab palette in knowledge/browser.css is a separate product surface"
+          "what": "no allowlist (floor 0)",
+          "reason": "decision 11: TX-02 in the tool chrome (@font-face blocks and --font-mono in apps/frontend/src/styles.css) migrates to Inter and IBM Plex Mono; the kb-lab palette in knowledge/browser.css migrates too (tool chrome, not a listed product look)"
         },
         {
           "what": "style engine",
           "reason": "owner decision: keep its effect knobs, hide color controls, bump styleSettings.v1"
+        },
+        {
+          "what": "safe tests not re-run: blocked",
+          "reason": "the app is blocked and its dependencies are not installed in the mirror; run tests.safe in the run sandbox with write detection when it unblocks, before the tests gate counts it"
         }
       ]
     },
@@ -5120,7 +5406,7 @@
       "tests": {
         "safe": [
           {
-            "cmd": "./node_modules/.bin/vitest run",
+            "cmd": "./node_modules/.bin/vitest run --no-cache",
             "cwd": "apps/circle-snakes/CircleSnakesWeb"
           }
         ],
@@ -5185,9 +5471,25 @@
             "token": "color.surface.panel"
           },
           {
-            "selector": "#control-panel h1",
+            "selector": "#control-panel",
             "property": "color",
             "token": "color.text.body"
+          },
+          {
+            "selector": "#control-panel h1",
+            "property": "color",
+            "token": "color.text.ink"
+          },
+          {
+            "selector": "#control-panel",
+            "property": "border-top-color",
+            "token": "color.border.default"
+          }
+        ],
+        "waivedRoles": [
+          {
+            "role": "page",
+            "reason": "no chrome page surface: the panels float over product art, the full-viewport WebGL canvas #scene-root (index.html:10-14, drawn by ThreeRenderer.updateBackground, src/render/ThreeRenderer.ts:285) over a body gradient driven by the scene background settings (src/app/styles.css:3-10,23-25; src/app/main.ts:92-97)"
           }
         ],
         "darkSwitch": {
@@ -5207,6 +5509,10 @@
         {
           "what": "planned profile",
           "reason": "vite dev on its own port with a WebGL scene; mask the canvas in diffs (the scene animates); needs npm install"
+        },
+        {
+          "what": "safe tests not re-run: blocked",
+          "reason": "the app is blocked and its dependencies are not installed in the mirror; run tests.safe in the run sandbox with write detection when it unblocks, before the tests gate counts it"
         }
       ]
     }

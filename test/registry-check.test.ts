@@ -57,7 +57,7 @@ function entry(over: Partial<AppEntry> = {}): AppEntry {
     passes: { "1": req, "2": na, "3": na },
     checks: { resolution: req, wiring: req, literals: req, names: req, shell: na, structure: na },
     gates: { lint: req, verify: req, snapshot: req, pixelDiff: na, tests: na },
-    run: { mode: "browser", cwd: "app", start: "bun {ds}/apps/fixtures/demo/serve.ts --port {port:ui}", readyPattern: "(http://\\S+)" },
+    run: { mode: "browser", cwd: "app", start: "bun --no-env-file {ds}/apps/fixtures/demo/serve.ts --port {port:ui}", readyPattern: "(http://\\S+)" },
     commands: { cwd: "app" },
     tests: { safe: [] },
     routes: [{ id: "home", path: "/" }],
@@ -139,6 +139,36 @@ describe("registry:check", () => {
     const { root, ds } = makeTrees();
     writeFileSync(join(ds, "apps/allowlists/demo.json"), JSON.stringify({ literals: [{ file: "app/src/x.ts" }], twClasses: [] }));
     expect(checkRegistry({ version: 1, apps: [entry()] }, { root, dsRoot: ds })).toContain("demo: allowlist literals[0] has no reason");
+  });
+});
+
+describe("registry:check keeps runs off the owner's ports and .env files", () => {
+  const profile = (over: Partial<AppEntry["runProfile"]>) => ({ ...entry().runProfile, ...over });
+  const safe = (cmd: string) => ({ tests: { safe: [{ cmd, cwd: "app" }] } });
+
+  test.each<[string, Partial<AppEntry>, string]>([
+    ["an owner port in allowedLocalPorts", { runProfile: profile({ allowedLocalPorts: [4820] }) }, "allowedLocalPorts lists owner port 4820"],
+    ["an allowed local port outside the block", { runProfile: profile({ allowedLocalPorts: [47011] }) }, "allowedLocalPorts port 47011 is outside its block 47000-47009"],
+    ["an owner port in an env URL", { runProfile: profile({ env: { STUDIO_URL: "http://localhost:3999" } }) }, "runProfile.env.STUDIO_URL names owner port 3999"],
+    ["a loopback port outside the block in an env URL", { runProfile: profile({ env: { API: "http://127.0.0.1:47130/api" } }) }, "runProfile.env.API names port 47130 outside its block"],
+    ["a port option outside the block in the flags", { runProfile: profile({ flags: ["--kernel-port", "47990"] }) }, "runProfile.flags names port 47990 outside its block"],
+    ["an owner port in a safe test command", safe("bun --no-env-file test --port=4840"), "tests.safe[0] names owner port 4840"],
+    ["a bun test without --no-env-file", safe("bun test src"), "tests.safe[0] runs bun without --no-env-file"],
+    ["a bun script without --no-env-file after a cd", safe("cd sub && exec bun run typecheck"), "runs bun without --no-env-file"],
+    ["utilityClasses on a Tailwind app", { stack: { summary: "", tailwind: "v4", packageManager: "bun", utilityClasses: true } }, "stack.utilityClasses is redundant"],
+  ])("reports %s", (_, over, message) => {
+    const problems = check([entry(over)]);
+    expect(problems.some((p) => p.includes(message))).toBe(true);
+  });
+
+  test("accepts the app's own ports, placeholders, bun x and --no-env-file", () => {
+    const ok = entry({
+      run: { ...entry().run, start: "bun --no-env-file {ds}/apps/fixtures/demo/serve.ts --port {port:ui} && bun x --bun vite" },
+      runProfile: profile({ env: { KERNEL: "http://127.0.0.1:{port:ui}", OWN: "http://localhost:47009" }, flags: ["--api-port", "47001"], allowedLocalPorts: [47008] }),
+      tests: { safe: [{ cmd: "bunx --bun tsc && bun --no-env-file test ./src/a.test.ts", cwd: "app" }] },
+      stack: { summary: "", tailwind: "none", packageManager: "bun", utilityClasses: true },
+    });
+    expect(check([ok])).toEqual([]);
   });
 });
 

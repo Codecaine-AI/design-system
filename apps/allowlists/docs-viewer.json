@@ -4,6 +4,41 @@
       "file": "codecaine/core/docs-system/packages/docs-viewer/src/**",
       "kind": "fallback",
       "reason": "audit: keep literal var() fallbacks, the viewer must render without the host stylesheet; definitions that move behind var(--ds-*, <fallback>) land here too"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/components/file-tree/FileTreeDocsBlock.tsx",
+      "kind": "definition",
+      "reason": "audit \"Keep literal fallbacks\": custom-property definitions whose value is var(--host-name, <literal>) (a host-less fallback in definition position), so the viewer renders without the host stylesheet (17 hits)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/components/interaction-surface/InteractionSurfaceDocsBlock.tsx",
+      "kind": "definition",
+      "reason": "audit \"Keep literal fallbacks\": custom-property definitions whose value is var(--host-name, <literal>) (a host-less fallback in definition position), so the viewer renders without the host stylesheet (12 hits)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/components/outline-rows/OutlineRows.tsx",
+      "kind": "definition",
+      "reason": "audit \"Keep literal fallbacks\": custom-property definitions whose value is var(--host-name, <literal>) (a host-less fallback in definition position), so the viewer renders without the host stylesheet (26 hits)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/components/outline-rows/tree-rows.tsx",
+      "kind": "definition",
+      "reason": "audit \"Keep literal fallbacks\": custom-property definitions whose value is var(--host-name, <literal>) (a host-less fallback in definition position), so the viewer renders without the host stylesheet (12 hits)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/components/process-outline/ProcessOutlineDocsBlock.tsx",
+      "kind": "definition",
+      "reason": "audit \"Keep literal fallbacks\": custom-property definitions whose value is var(--host-name, <literal>) (a host-less fallback in definition position), so the viewer renders without the host stylesheet (12 hits)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/components/rich-text/CalloutDocsBlock.tsx",
+      "kind": "definition",
+      "reason": "audit \"Keep literal fallbacks\": custom-property definitions whose value is var(--host-name, <literal>) (a host-less fallback in definition position), so the viewer renders without the host stylesheet (16 hits)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/components/stack/StackDocsBlock.tsx",
+      "kind": "definition",
+      "reason": "audit \"Keep literal fallbacks\": custom-property definitions whose value is var(--host-name, <literal>) (a host-less fallback in definition position), so the viewer renders without the host stylesheet (15 hits)"
     }
   ],
   "twClasses": []
