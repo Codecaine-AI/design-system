@@ -30,8 +30,8 @@
  */
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, readlinkSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
-import { isAbsolute, join, relative, resolve } from "node:path";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 
 import { cleanupRuns, installSignalHandlers, launchBrowser, refreshStartedPorts, startApp, validateLoadedRegistry, type RunningApp } from "./lib/app-runner";
 import { CaptureError, captureRoute, routeThemes, shotKey, warmUp } from "./lib/capture";
@@ -56,6 +56,7 @@ import {
   writeManifest,
 } from "./lib/snapshot-set";
 import { SYSTEM_BIN, SYSTEM_PATH } from "./lib/system-bin";
+import { treeState } from "./lib/provenance";
 import { propagateBlocker } from "./lib/verify/propagate";
 
 function flag(name: string): string | undefined {
@@ -163,102 +164,13 @@ function repoState(path: string) {
 function sha256(path: string): string | null {
   return existsSync(path) ? createHash("sha256").update(readFileSync(path)).digest("hex") : null;
 }
-const appRepoPath = resolvePath(root, app.repo);
 const dsInRoot = join(root, "design-system");
 /** Problems reading the trees for provenance (a git failure): manifest warnings, never a crash. */
 const provenanceWarnings = new Set<string>();
 
-/** git's raw stdout, or null after recording why it failed. */
-function gitBytes(repo: string, args: string[]): Buffer | null {
-  const result = spawnSync(SYSTEM_BIN.git, ["-C", repo, ...args], { maxBuffer: 1 << 30, env: GIT_ENV });
-  if (result.status === 0 && result.stdout) return result.stdout;
-  provenanceWarnings.add(`provenance: git ${args.join(" ")} in ${repo} failed: ${(result.error?.message ?? result.stderr?.toString() ?? "").trim() || `exit ${result.status}`}`);
-  return null;
-}
-
-/** sha256 of a file's content, a symlink's link text, or the error that stopped the read. */
-function entryHash(path: string): string {
-  try {
-    const stat = lstatSync(path);
-    if (stat.isSymbolicLink()) return `symlink:${readlinkSync(path)}`;
-    if (!stat.isFile()) return "not a file";
-    return sha256Hex(readFileSync(path));
-  } catch (error) {
-    provenanceWarnings.add(`provenance: cannot read ${path}: ${error instanceof Error ? error.message : String(error)}`);
-    return `error: ${error instanceof Error ? error.message : String(error)}`;
-  }
-}
-
-/** The app's root and scan paths relative to its repo (git pathspecs); paths outside the repo are skipped. */
-const untrackedPathspecs = [app.root, ...(app.scan?.paths ?? [])]
-  .filter((path): path is string => typeof path === "string")
-  .map((path) => relative(appRepoPath, resolvePath(root, path)))
-  .filter((rel) => !rel.startsWith("..") && !isAbsolute(rel))
-  .map((rel) => rel || ".");
-
-/**
- * sha256 of the app repo's uncommitted content: `git diff --binary HEAD`, then each untracked file under
- * the app's root and scan paths (sorted) as `<path>\0<sha256>\n`. Unlike the porcelain status, a second
- * edit to an already-modified file changes it. A git failure hashes the error text (and warns).
- */
-function appContentSha256(): string {
-  const hash = createHash("sha256");
-  // --no-ext-diff and --no-textconv: the repo's config never runs a command of its own here.
-  const diff = gitBytes(appRepoPath, ["diff", "--binary", "--no-ext-diff", "--no-textconv", "HEAD"]);
-  hash.update(diff ?? `diff failed\n`);
-  hash.update("\0untracked\0");
-  if (untrackedPathspecs.length) {
-    const list = gitBytes(appRepoPath, ["ls-files", "--others", "--exclude-standard", "-z", "--", ...untrackedPathspecs]);
-    if (!list) hash.update("ls-files failed\n");
-    const files = (list?.toString("utf8") ?? "").split("\0").filter(Boolean).sort();
-    for (const file of files) hash.update(`${file}\0${entryHash(join(appRepoPath, file))}\n`);
-  }
-  return hash.digest("hex");
-}
-
-/** Every file under `dir` (lstat: symlinks are entries, never followed), as paths relative to `base`. */
-function walkFiles(dir: string, base: string, out: string[]): void {
-  for (const name of readdirSync(dir)) {
-    const path = join(dir, name);
-    if (lstatSync(path).isDirectory()) walkFiles(path, base, out);
-    else out.push(relative(base, path));
-  }
-}
-
-/** sha256 over sorted `<rel>\0<sha256>\n` of every file in the rendered design-system's dist/, css/ and fonts/. */
-function designSystemFilesSha256(): string {
-  const lines: string[] = [];
-  for (const sub of ["dist", "css", "fonts"]) {
-    const top = join(dsInRoot, sub);
-    if (!existsSync(top)) {
-      lines.push(`${sub}: missing\n`);
-      continue;
-    }
-    const files: string[] = [];
-    try {
-      walkFiles(top, dsInRoot, files);
-    } catch (error) {
-      provenanceWarnings.add(`provenance: cannot list ${top}: ${error instanceof Error ? error.message : String(error)}`);
-      lines.push(`${sub}: unreadable\n`);
-    }
-    for (const rel of files) lines.push(`${rel}\0${entryHash(join(dsInRoot, rel))}\n`);
-  }
-  return sha256Hex(lines.sort().join(""));
-}
-
-/** The trees a shot was captured from, read right after the shot. */
+/** The trees a shot was captured from, read right after the shot (scripts/lib/provenance.ts). */
 function provenanceNow(): ShotProvenance {
-  const status = git(appRepoPath, ["status", "--porcelain"]);
-  return {
-    appHead: git(appRepoPath, ["rev-parse", "HEAD"]),
-    appStatusSha256: createHash("sha256").update(status).digest("hex"),
-    appDirty: status.split("\n").filter(Boolean).length,
-    appContentSha256: appContentSha256(),
-    designSystemHead: git(dsInRoot, ["rev-parse", "HEAD"]),
-    tokensCssSha256: sha256(join(dsInRoot, "dist/css/tokens.css")),
-    designSystemFilesSha256: designSystemFilesSha256(),
-    capturedAt: new Date().toISOString(),
-  };
+  return { ...treeState(root, app, provenanceWarnings), capturedAt: new Date().toISOString() };
 }
 
 let running: RunningApp | undefined;

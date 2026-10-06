@@ -141,6 +141,37 @@ test.skipIf(Boolean(browserSkip))(
 );
 
 test.skipIf(Boolean(browserSkip))(
+  "B must show the tree being gated: an edit to the app's CSS or the design-system's files after capture fails --exact until B is recaptured",
+  () => {
+    const t = tree();
+    writeFileSync(join(t.app, "style.css"), "body { margin: 0; }\n");
+    git(t.app, "add", "style.css");
+    git(t.app, "commit", "-q", "-m", "style");
+    mkdirSync(join(t.root, "design-system/css"), { recursive: true });
+    writeFileSync(join(t.root, "design-system/css/fonts.css"), "/* fonts */\n");
+    expect(snapshot(t, "base").exitCode).toBe(0);
+    expect(snapshot(t, "after").exitCode).toBe(0);
+    expect(diff(t, "base", "after").exitCode).toBe(0);
+
+    // An edit after B was captured (no pixel changes): B no longer shows the tree being gated.
+    writeFileSync(join(t.app, "style.css"), "body { margin: 0; }\n/* reviewed */\n");
+    const stale = diff(t, "base", "after");
+    expect(stale.exitCode).toBe(1);
+    expect(stale.stdout.toString()).toContain(`FAIL  set: B (after) no longer matches the tree at ${t.root}: app content (uncommitted changes) (home-dark, home-light, other-light) changed since capture; recapture B`);
+
+    // Recaptured, B passes; A stays a baseline from before the edit.
+    expect(snapshot(t, "after", "--force").exitCode).toBe(0);
+    expect(diff(t, "base", "after").exitCode).toBe(0);
+
+    writeFileSync(join(t.root, "design-system/css/fonts.css"), "/* fonts, rebuilt */\n");
+    const rebuilt = diff(t, "base", "after");
+    expect(rebuilt.exitCode).toBe(1);
+    expect(rebuilt.stdout.toString()).toContain("design-system dist/, css/, fonts/ (home-dark, home-light, other-light) changed since capture; recapture B");
+  },
+  180_000,
+);
+
+test.skipIf(Boolean(browserSkip))(
   "a capture killed mid-run leaves an incomplete set that --exact rejects, and no app behind",
   async () => {
     const t = tree(46977);

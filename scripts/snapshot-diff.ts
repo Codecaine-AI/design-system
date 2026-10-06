@@ -3,10 +3,13 @@
  * Exact pixel diff of two shot sets of one app, judged against the current registry entry.
  *
  *   bun run snapshot:diff --app <id> --a <set> --b <set> [--exact] [--only <route|key>,...] [--out-dir <dir>]
- *                         [--registry <apps.json>]
+ *                         [--registry <apps.json>] [--root <dir>]
  *
  * The expected shots, gating, reasons, darkDiffers and mask selectors come from apps.json (default the
  * checkout's own; --registry another, which must pass the registry checks), never from a manifest.
+ * B must show the tree being gated: its shots' app HEAD, uncommitted app content and design-system
+ * dist/css/fonts are compared with the tree at --root now (default: the root B was captured from), and a
+ * shot the tree no longer matches fails --exact ("recapture B"). A is a historical baseline: not checked.
  *
  * Writes <out-dir>/<app>/diffs/<a>-vs-<b>/ (the old folder is removed first, so a failed run never
  * leaves a stale report behind):
@@ -29,9 +32,10 @@ import { resolve } from "node:path";
 import { validateLoadedRegistry } from "./lib/app-runner";
 import { toolOutputDir } from "./lib/output-dir";
 import { decodePng, encodePng } from "./lib/png";
-import { getApp, loadRegistry, REGISTRY_PATH, type AppEntry } from "./lib/registry";
+import { treeState } from "./lib/provenance";
+import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, REGISTRY_PATH, type AppEntry } from "./lib/registry";
 import { safeAppId, safeSegment } from "./lib/safe-paths";
-import { defaultOutDir, diffPath, diffSets, SET_NAME, setPath, sha256Hex, sideBySide } from "./lib/snapshot-set";
+import { defaultOutDir, diffPath, diffSets, readManifest, SET_NAME, setPath, sha256Hex, sideBySide } from "./lib/snapshot-set";
 
 function flag(name: string): string | undefined {
   const index = process.argv.indexOf(name);
@@ -53,7 +57,7 @@ const a = flag("--a");
 const b = flag("--b");
 const exact = process.argv.includes("--exact");
 if (!app || !a || !b || [a, b].some((set) => !SET_NAME.test(set))) {
-  console.error("usage: bun run snapshot:diff --app <id> --a <set> --b <set> [--exact] [--only <route|key>,...] [--out-dir <dir>] [--registry <apps.json>]");
+  console.error("usage: bun run snapshot:diff --app <id> --a <set> --b <set> [--exact] [--only <route|key>,...] [--out-dir <dir>] [--registry <apps.json>] [--root <dir>]");
   process.exit(2);
 }
 // Shared destination check: never the owner's tree or a git checkout; app id and set names stay one path segment.
@@ -72,7 +76,11 @@ const out = (...file: string[]) => diffPath(outDir, app, a, b, ...file);
 const diffDir = orFail(() => out());
 rmSync(diffDir, { recursive: true, force: true });
 
-const result = orFail(() => diffSets(outDir, entry, a, b, only, registry));
+// The tree being gated: --root, else the root B was captured from, else the folder that holds this checkout.
+const bRoot = orFail(() => readManifest(setPath(outDir, app, b))?.root);
+const root = resolve(flag("--root") ?? (typeof bRoot === "string" ? bRoot : resolve(DESIGN_SYSTEM_ROOT, "..")));
+const tree = { root, state: treeState(root, entry) };
+const result = orFail(() => diffSets(outDir, entry, a, b, only, registry, tree));
 
 orFail(() => {
   mkdirSync(out("compare"), { recursive: true });

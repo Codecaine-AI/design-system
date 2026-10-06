@@ -21,7 +21,8 @@
  * capture spec of the app, a set whose runs broke isolation (violations, start or stop errors, an
  * unproven profile, no sandbox, a request to an owner port), an expected shot missing or failed, a
  * partial set compared without a matching `--only`, shots captured from different trees (mixed
- * provenance, including uncommitted content), a shot without content provenance, a shot that never
+ * provenance, including uncommitted content), a B set the tree being gated no longer matches (its app
+ * HEAD, uncommitted content or design-system files changed since capture), a shot without content provenance, a shot that never
  * settled, a PNG the manifest does not list, a registry mask with no recorded boxes, mask boxes that
  * differ between A and B, and a dark shot identical to its light shot on a route that sets `darkDiffers`.
  */
@@ -33,6 +34,7 @@ import { join, resolve } from "node:path";
 import { guardVerdict } from "./app-runner";
 import { routeThemes, shotKey } from "./capture";
 import { decodePng, type RgbaImage } from "./png";
+import { staleFields, type TreeState } from "./provenance";
 import { REGISTRY_PATH, type AppEntry, type RouteSpec } from "./registry";
 import { safeChildPath } from "./safe-paths";
 
@@ -382,6 +384,8 @@ export interface SetDiff {
   comparison: "exact RGBA outside masks";
   /** The apps.json the sets were judged against; `canonical` when it is the checkout's own apps.json. */
   registry: { path: string; sha256: string; captureSha256: string; canonical: boolean };
+  /** The tree B was checked against at diff time (--root), and its state then; null when not checked. */
+  tree: { root: string; state: TreeState } | null;
   /** The diff's --only selection, or null for every shot. */
   only: string[] | null;
   /** The --only each set was captured with (null: a full set). */
@@ -578,12 +582,39 @@ function recordedMaskFindings(side: Side, key: string, selectors: string[]): { p
 }
 
 /**
+ * B shots whose recorded provenance the tree no longer matches (app HEAD, uncommitted content, the
+ * design-system's dist/css/fonts): B must show the tree being gated. A is a historical baseline and is
+ * never checked against the tree.
+ */
+function staleProblems(side: Side, keys: string[], tree: { root: string; state: TreeState }): string[] {
+  const byField = new Map<string, string[]>();
+  for (const key of keys) {
+    const entry = side.entries.get(key);
+    if (!entry?.provenance || entry.error) continue;
+    for (const field of staleFields(entry.provenance, tree.state)) byField.set(field, [...(byField.get(field) ?? []), key]);
+  }
+  if (byField.size === 0) return [];
+  const changed = [...byField].map(([field, ks]) => `${field} (${ks.slice(0, 3).join(", ")}${ks.length > 3 ? ` +${ks.length - 3}` : ""})`);
+  return [`${side.label} (${side.name}) no longer matches the tree at ${tree.root}: ${changed.join("; ")} changed since capture; recapture ${side.label}`];
+}
+
+/**
  * Diffs two sets of `app` against the current registry entry. The shots compared are the registry's
  * (every route x theme); a key only a set holds is not compared (a warning), but a PNG its manifest
  * does not list is still a problem. `only` selects registry routes or keys; any other id is a usage
  * error, and so are `a === b` and a missing set. `registry` is the apps.json `app` was loaded from.
+ * `tree` is the state of the tree being gated (provenance.ts treeState of --root): every B shot must
+ * still match it.
  */
-export function diffSets(outDir: string, app: AppEntry, a: string, b: string, only: string[] | undefined, registry: { path: string; sha256: string }): SetDiff {
+export function diffSets(
+  outDir: string,
+  app: AppEntry,
+  a: string,
+  b: string,
+  only: string[] | undefined,
+  registry: { path: string; sha256: string },
+  tree: { root: string; state: TreeState } | null = null,
+): SetDiff {
   if (a === b) throw new DiffUsageError(`--a and --b are the same set (${a}): a set always matches itself`);
   const judge: Judge = { app, registry, captureSha256: captureSha256(app) };
   const expected = registryShots(app);
@@ -605,7 +636,7 @@ export function diffSets(outDir: string, app: AppEntry, a: string, b: string, on
   const keys = selected.filter((key) => expected.has(key));
 
   const warnings: string[] = [];
-  const problems = [...sideProblems(A, keys, diffOnly, judge, warnings), ...sideProblems(B, keys, diffOnly, judge, warnings)];
+  const problems = [...sideProblems(A, keys, diffOnly, judge, warnings), ...sideProblems(B, keys, diffOnly, judge, warnings), ...(tree ? staleProblems(B, keys, tree) : [])];
   for (const key of selected.filter((k) => !expected.has(k))) {
     warnings.push(`${key}: not a shot of ${app.id} in ${registry.path}; not compared`);
     for (const side of [A, B]) if (side.pngs.has(key) && !side.entries.has(key)) problems.push(`${side.label} has ${key}.png but its manifest does not list the shot`);
@@ -695,6 +726,7 @@ export function diffSets(outDir: string, app: AppEntry, a: string, b: string, on
     generatedAt: new Date().toISOString(),
     comparison: "exact RGBA outside masks",
     registry: { path: registry.path, sha256: registry.sha256, captureSha256: judge.captureSha256, canonical: resolve(registry.path) === REGISTRY_PATH },
+    tree,
     only: diffOnly,
     setOnly: { a: A.manifest?.only ?? null, b: B.manifest?.only ?? null },
     ok: shots.length > 0 && problems.length === 0 && failures.length === 0,

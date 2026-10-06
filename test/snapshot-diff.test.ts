@@ -19,6 +19,7 @@ import { join } from "node:path";
 
 import { encodePng } from "../scripts/lib/png.ts";
 import type { AppEntry, RouteSpec } from "../scripts/lib/registry.ts";
+import { treeState } from "../scripts/lib/provenance.ts";
 import { captureSha256, type RunRecord, type ShotProvenance } from "../scripts/lib/snapshot-set.ts";
 import { snapshotApp, writeRegistry } from "./snapshot-support.ts";
 
@@ -38,16 +39,19 @@ function png(changes: Array<[number, number]> = [], width = W, height = H, fill 
   return encodePng({ width, height, data });
 }
 
-const PROVENANCE: ShotProvenance = {
-  appHead: "a".repeat(40),
-  appStatusSha256: "0".repeat(64),
-  appDirty: 0,
-  appContentSha256: "c".repeat(64),
-  designSystemHead: "d".repeat(40),
-  tokensCssSha256: "t".repeat(64),
-  designSystemFilesSha256: "f".repeat(64),
-  capturedAt: "2026-10-05T12:00:00.000Z",
-};
+/**
+ * The tree the sets show: an app repo with one commit and a design-system with a fonts.css. Every
+ * diff runs with --root TREE, and B must still match it, so the sets record its state as it is.
+ */
+const TREE = join(scratch, "tree");
+mkdirSync(join(TREE, "app"), { recursive: true });
+mkdirSync(join(TREE, "design-system/css"), { recursive: true });
+writeFileSync(join(TREE, "app/style.css"), "body { margin: 0; }\n");
+writeFileSync(join(TREE, "design-system/css/fonts.css"), "/* fonts */\n");
+for (const args of [["init", "-q"], ["add", "."], ["-c", "user.email=test@example.invalid", "-c", "user.name=test", "commit", "-q", "-m", "tree"]])
+  if (Bun.spawnSync(["git", "-C", join(TREE, "app"), ...args]).exitCode !== 0) throw new Error(`git ${args.join(" ")} failed in ${TREE}/app`);
+
+const PROVENANCE: ShotProvenance = { ...treeState(TREE, snapshotApp()), capturedAt: "2026-10-05T12:00:00.000Z" };
 
 const RUN: RunRecord = { mode: "browser", startedAt: "2026-10-05T11:59:00.000Z", finishedAt: "2026-10-05T12:01:00.000Z", blockedRequests: [], expectedBlocked: [] };
 
@@ -139,7 +143,7 @@ function writeSet(w: Work, set: string, shots: Shot[], opts: SetOptions = {}) {
 }
 
 function cli(w: Work, args: string[], script = "snapshot-diff.ts") {
-  const result = Bun.spawnSync(["bun", `scripts/${script}`, "--app", "demo", "--exact", "--out-dir", w.out, "--registry", w.registry, ...args], { cwd: PKG });
+  const result = Bun.spawnSync(["bun", `scripts/${script}`, "--app", "demo", "--exact", "--out-dir", w.out, "--registry", w.registry, "--root", TREE, ...args], { cwd: PKG });
   const reportPath = join(w.out, "demo", "diffs", `${args[args.indexOf("--a") + 1]}-vs-${args[args.indexOf("--b") + 1]}`, "report.json");
   return {
     exitCode: result.exitCode,
@@ -296,19 +300,43 @@ test("a partial set passes only with a matching --only", () => {
   expect(runDiff(shots, { ...opts, args: ["--only", "edit"] }).exitCode).toBe(1);
 });
 
+test("B must still match the tree at --root (app HEAD, uncommitted content, design-system files); A is a baseline and is never checked", () => {
+  const stale = (provenance: Partial<ShotProvenance>) => runDiff([{ key: "home-light", png: png(), provenance }]);
+  expect([stale({ appContentSha256: "e".repeat(64) }).exitCode, stale({ appContentSha256: "e".repeat(64) }).report.problems]).toEqual([
+    1,
+    [`B (b) no longer matches the tree at ${TREE}: app content (uncommitted changes) (home-light) changed since capture; recapture B`],
+  ]);
+  expect(stale({ designSystemFilesSha256: "f".repeat(64) }).report.problems).toEqual([
+    `B (b) no longer matches the tree at ${TREE}: design-system dist/, css/, fonts/ (home-light) changed since capture; recapture B`,
+  ]);
+  // The same old tree in A: a baseline from before the migration.
+  const baseline = runDiff([{ key: "home-light", png: png() }], { a: [{ key: "home-light", png: png(), provenance: { appHead: "a".repeat(40), appContentSha256: "e".repeat(64) } }] });
+  expect([baseline.exitCode, baseline.report.tree.root]).toEqual([0, TREE]);
+});
+
 test("shots of one set captured from different trees fail, uncommitted content included", () => {
   const result = runDiff([
     { key: "home-light", png: png() },
     { key: "edit-light", png: png(), provenance: { appHead: "b".repeat(40), capturedAt: "2026-10-06T08:00:00.000Z" } },
   ]);
+  const head = PROVENANCE.appHead.slice(0, 12);
   expect(result.exitCode).toBe(1);
-  expect(result.report.problems).toEqual([expect.stringMatching(/^B \(b\) mixes captures of different trees: app bbbbbbbbbbbb.*: edit-light \| app aaaaaaaaaaaa.*: home-light$/)]);
+  expect(result.report.problems).toEqual([
+    expect.stringMatching(new RegExp(`^B \\(b\\) mixes captures of different trees: app bbbbbbbbbbbb.*: edit-light \\| app ${head}.*: home-light$`)),
+    `B (b) no longer matches the tree at ${TREE}: app HEAD (edit-light) changed since capture; recapture B`,
+  ]);
   // The same HEAD and the same porcelain status, but a second edit to an already-dirty file.
   const content = runDiff([
     { key: "home-light", png: png(), provenance: { appDirty: 1 } },
     { key: "edit-light", png: png(), provenance: { appDirty: 1, appContentSha256: "e".repeat(64) } },
   ]);
-  expect([content.exitCode, content.report.problems]).toEqual([1, [expect.stringMatching(/^B \(b\) mixes captures of different trees: .*content eeeeeeee.*: edit-light \| .*content cccccccc.*: home-light$/)]]);
+  expect([content.exitCode, content.report.problems]).toEqual([
+    1,
+    [
+      expect.stringMatching(new RegExp(`^B \\(b\\) mixes captures of different trees: .*content eeeeeeee.*: edit-light \\| .*content ${PROVENANCE.appContentSha256!.slice(0, 8)}.*: home-light$`)),
+      `B (b) no longer matches the tree at ${TREE}: app content (uncommitted changes) (edit-light) changed since capture; recapture B`,
+    ],
+  ]);
   // Only the time differs: one tree.
   expect(runDiff([{ key: "home-light", png: png() }, { key: "edit-light", png: png(), provenance: { capturedAt: "2026-10-06T08:00:00.000Z" } }]).exitCode).toBe(0);
 });

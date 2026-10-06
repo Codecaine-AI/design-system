@@ -13,7 +13,8 @@
  * the registry checks). --out-dir is never the owner's tree or a git checkout, and no write or delete
  * under it goes through a symlink.
  *
- * Playwright resolves from --root (default: the folder that holds this design-system checkout).
+ * Playwright resolves from --root (default: the folder that holds this design-system checkout). B is
+ * checked against the tree at --root when it is given, else at the root B was captured from.
  * Exit: 2 on bad arguments, a missing set, an invalid registry or an unsafe output path; 1 when the
  * route PNGs could not be rendered.
  */
@@ -24,6 +25,7 @@ import { pathToFileURL } from "node:url";
 import { encodePng } from "./lib/png";
 import { installSignalHandlers, launchBrowser, validateLoadedRegistry } from "./lib/app-runner";
 import { toolOutputDir } from "./lib/output-dir";
+import { treeState } from "./lib/provenance";
 import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, REGISTRY_PATH, type AppEntry } from "./lib/registry";
 import { safeAppId, safeSegment } from "./lib/safe-paths";
 import { defaultOutDir, diffSets, readManifest, SET_NAME, setPath, sha256Hex, sheetPath, type SetDiff, type ShotDiff } from "./lib/snapshot-set";
@@ -73,7 +75,10 @@ const htmlPath = orFail(() => sheet(`${name}.html`));
 rmSync(assetsDir, { recursive: true, force: true });
 rmSync(htmlPath, { force: true });
 
-const result: SetDiff = orFail(() => diffSets(outDir, entry, a, b, only, registry));
+// B is checked against the tree at --root (default: the root B was captured from), as snapshot:diff does.
+const bRoot = orFail(() => readManifest(setPath(outDir, app, b))?.root);
+const treeRoot = flag("--root") ? root : typeof bRoot === "string" ? resolve(bRoot) : root;
+const result: SetDiff = orFail(() => diffSets(outDir, entry, a, b, only, registry, { root: treeRoot, state: treeState(treeRoot, entry) }));
 orFail(() => {
   mkdirSync(assetsDir, { recursive: true });
   for (const [key, diff] of result.images) writeFileSync(sheet(name, `${key}.diff.png`), encodePng(diff.image));
