@@ -2545,6 +2545,10 @@
           "kind": "storage",
           "key": "simpleResearchStyleSettings.v2",
           "value": "{\"theme\":\"dark\"}"
+        },
+        "sidebar": {
+          "toggle": ".ds-sidebar-toggle",
+          "storageKey": "simple-research-kernel.sidebar"
         }
       },
       "exceptions": [
