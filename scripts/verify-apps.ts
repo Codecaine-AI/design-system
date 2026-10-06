@@ -5,7 +5,9 @@
  *   bun run verify:apps --propagate --root <dir> [--out-dir <dir>] [app...]
  *   bun run verify:apps --restore --root <dir> [--out-dir <dir>]
  *
- * Each app starts with its run profile (scripts/lib/app-runner.ts) and a fresh browser context.
+ * Each app starts with its run profile (scripts/lib/app-runner.ts) and gets its own Chromium, started
+ * inside the OS sandbox with that run's ports only (launchBrowser), and a fresh guarded context. Every
+ * repository git reads and Playwright are pinned before the first app starts.
  * Assertions: the design-system package the app uses resolves inside --root with the current
  * tokens.css (every run mode), the verify spec probes page, panel, text and border, token probes
  * compute to the current build's values in the default theme and after the dark switch (dark-first:

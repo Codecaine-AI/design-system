@@ -7,7 +7,8 @@
  *   - `-c core.fsmonitor=false -c core.untrackedCache=false -c core.hooksPath=/dev/null
  *     -c core.attributesFile=/dev/null --no-optional-locks` on every call;
  *   - GIT_CONFIG_NOSYSTEM=1, GIT_CONFIG_GLOBAL=/dev/null, GIT_ATTR_NOSYSTEM=1, HOME and XDG_CONFIG_HOME in
- *     an empty temp dir of the tool's own, and nothing else from the tool's environment (no GIT_DIR);
+ *     an empty dir nobody can write (/var/empty, else a temp dir of the tool's own), and nothing else from
+ *     the tool's environment (no GIT_DIR);
  *   - pinned: each repository's work tree, git dir and common dir are recorded (pinRepos) before the first
  *     app of the process starts, and every later call names them (--git-dir, --work-tree), so a `.git`
  *     file a run rewrote cannot point git at a repository (and a config) the run made. A call refuses
@@ -27,7 +28,7 @@
  */
 import { spawnSync, type SpawnSyncReturns } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, lstatSync, mkdtempSync, readFileSync, readlinkSync, rmSync, statSync } from "node:fs";
+import { existsSync, lstatSync, mkdtempSync, readdirSync, readFileSync, readlinkSync, rmSync, statSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 
 import { canonicalPath, safeTempBase } from "./safe-paths";
@@ -57,9 +58,16 @@ export class GitPinChanged extends GitPinError {
 
 let home: string | undefined;
 
-/** The empty HOME every git call gets (created once per process, removed at exit). */
+/**
+ * The empty HOME every git call gets: /var/empty (an empty dir root owns, so nobody can put a config in it,
+ * and nothing is left behind), else a temp dir of this process, removed at exit.
+ */
 function gitHome(): string {
   if (home && existsSync(home)) return home;
+  try {
+    const stat = statSync("/var/empty");
+    if (stat.isDirectory() && stat.uid === 0 && (stat.mode & 0o022) === 0 && readdirSync("/var/empty").length === 0) return (home = "/var/empty");
+  } catch {}
   home = mkdtempSync(join(safeTempBase(), "ds-git-home-"));
   const made = home;
   process.once("exit", () => rmSync(made, { recursive: true, force: true }));
@@ -151,10 +159,38 @@ export function gitEntryState(workTree: string): string {
   }
 }
 
-/** sha256 over the repository files that decide what git may run: config, config.worktree, info/attributes. */
+/**
+ * Config sections that never make the calls the tools make (rev-parse, status, diff, ls-files) run a
+ * command or read another file: upstream, remote, identity and UI settings. `git push -u` or a branch
+ * upstream change by the owner or another worker edits these while tools run; they are not compared.
+ */
+const INERT_CONFIG = /^(branch|remote|user|pull|push|fetch|gui|rerere|maintenance|advice|color|column|init|i18n|log|format|credential)\./i;
+
+/** The settings of one config file that count (INERT_CONFIG left out), sorted; the raw bytes when git cannot parse it. */
+function configSettings(file: string): string {
+  try {
+    const stat = lstatSync(file);
+    if (!stat.isFile()) return `not a file (${stat.isSymbolicLink() ? `symlink ${readlinkSync(file)}` : "dir"})`;
+  } catch {
+    return "missing";
+  }
+  const out = spawnGit(dirname(file), ["config", "--file", file, "--list", "--no-includes", "-z"], { timeout: 30_000 });
+  if (out.status !== 0 || out.error) return `unparsed ${createHash("sha256").update(readFileSync(file)).digest("hex")}`;
+  return (out.stdout ?? "")
+    .split("\0")
+    .filter((entry) => entry && !INERT_CONFIG.test(entry))
+    .sort()
+    .join("\0");
+}
+
+/**
+ * sha256 over what decides what git may run in a repository: its config and config.worktree (every
+ * setting but INERT_CONFIG's) and info/attributes (whole).
+ */
 function configState(paths: Pick<RepoPaths, "gitDir" | "commonDir">): string {
   const hash = createHash("sha256");
-  for (const file of [join(paths.commonDir, "config"), join(paths.gitDir, "config.worktree"), join(paths.commonDir, "info", "attributes"), join(paths.gitDir, "info", "attributes")]) {
+  for (const file of [join(paths.commonDir, "config"), join(paths.gitDir, "config.worktree")]) hash.update(`${file}\0${configSettings(file)}\n`);
+  for (const file of [join(paths.commonDir, "info", "attributes"), join(paths.gitDir, "info", "attributes")]) {
     hash.update(`${file}\0`);
     try {
       const stat = lstatSync(file);

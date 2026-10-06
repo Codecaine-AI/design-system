@@ -78,7 +78,8 @@ const redirectProbe = (foreign: string) => `<!doctype html><html><body>
 </script></body></html>`;
 
 Bun.serve({
-  hostname: "127.0.0.1",
+  // FIXTURE_HOST: a test makes the server listen beyond loopback (0.0.0.0).
+  hostname: process.env.FIXTURE_HOST ?? "127.0.0.1",
   port,
   websocket: { open: (socket) => socket.send("hello"), message: () => {} },
   fetch: (request, server) => {
@@ -90,6 +91,21 @@ Bun.serve({
       const params = new URL(request.url).searchParams;
       return new Response(null, { status: Number(params.get("status") ?? 302), headers: { location: params.get("to") ?? "/" } });
     }
+    // A response that never ends (a session event stream read with fetch + body.getReader()).
+    if (pathname === "/stream")
+      return new Response(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode("first-chunk"));
+          },
+        }),
+        { headers: { "content-type": "application/x-ndjson" } },
+      );
+    if (pathname === "/stream-probe")
+      return new Response(
+          `<!doctype html><script>window.streamResult = fetch("/stream").then((r) => r.body.getReader().read()).then(({ value }) => new TextDecoder().decode(value), () => "failed");</script>`,
+          { headers: { "content-type": "text/html" } },
+        );
     if (pathname === "/redirect-probe") return new Response(redirectProbe(new URL(request.url).searchParams.get("foreign") ?? "0"), { headers: { "content-type": "text/html" } });
     // A page under a strict CSP (like a server that sends `style-src 'self'`) with a slow transition.
     if (pathname === "/csp")

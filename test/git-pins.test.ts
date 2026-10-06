@@ -85,6 +85,17 @@ describe("pinned, hook-free git", () => {
     expect(existsSync(t.marker)).toBe(false);
   });
 
+  test("an upstream or remote setting added to the config (git push -u, by the owner) does not refuse the pin", () => {
+    const t = fixture();
+    const pin = pinFor(t.app)!;
+    git(t.app, "config", "branch.main.remote", "origin");
+    git(t.app, "config", "remote.origin.url", "https://example.invalid/repo.git");
+    git(t.app, "config", "user.name", "someone");
+    expect(pinnedGit(pin, ["rev-parse", "HEAD"]).status).toBe(0);
+    git(t.app, "config", "core.sshCommand", "/tmp/x");
+    expect(() => pinnedGit(pin, ["rev-parse", "HEAD"])).toThrow(GitPinChanged);
+  });
+
   test("no global or system config: a ~/.gitconfig with a fsmonitor in the tool's HOME is never read", () => {
     const t = fixture();
     const home = join(t.root, "home");

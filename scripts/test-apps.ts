@@ -23,6 +23,9 @@
  *   - in its own process group, with a watchdog that kills the group when this tool dies, and a timeout;
  *     afterwards every process still carrying the run's tag in its environment (one that left the group) is
  *     killed and fails the run;
+ *   - watched every 250 ms for a listener beyond loopback (0.0.0.0, ::, a LAN address: other hosts could
+ *     connect, and Seatbelt cannot refuse such a bind): a hit kills the command's group at once and fails it,
+ *     naming the address and port (egress.ts exposedListeners);
  *   - between two write checks over exactly what the run may write (appWriteScope: the app's own checkouts,
  *     the read-only dirs inside them pruned), so an edit anywhere else (a concurrent worker in Core, the
  *     design-system checkout, the run folder) cannot fail the app:
@@ -65,6 +68,7 @@ import { basename, dirname, join, relative, resolve, sep } from "node:path";
 
 import { expandPlaceholders, killRun, profileBlock, profileEnv, rootProc, stripAnsi, validateLoadedRegistry, type ProcInfo } from "./lib/app-runner";
 import { appScope, gitEntries, statusSnapshot, type WriteScope } from "./lib/checkouts";
+import { describeConnection, exposedListeners } from "./lib/egress";
 import { discoverRepo } from "./lib/git";
 import { OWNER_PORTS } from "./lib/owner";
 import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, REGISTRY_PATH, resolvePath, type AppEntry, type Registry, type TestBaseline } from "./lib/registry";
@@ -459,6 +463,8 @@ export interface CommandResult extends PlannedCommand {
   expanded: string;
   /** Processes outside the command's group that still carried the run's tag after it ended (killed). */
   strays: number[];
+  /** Listeners beyond loopback the command's processes opened (the command was killed at the first). */
+  exposed: string[];
   exit: number;
   timedOut: boolean;
   seconds: number;
@@ -568,10 +574,24 @@ async function runOne(app: AppEntry, planned: PlannedCommand, opts: TestAppOptio
     // The group's members as they appear (the watchdog among them): killRun stops an exited root's group
     // only through members it has seen.
     const known = new Map<number, ProcInfo>();
+    // Listeners beyond loopback: Seatbelt lets a suite bind 0.0.0.0 (its `localhost` is every local address),
+    // so the tool looks, and kills the group at the first one.
+    const exposed: string[] = [];
     let running = true;
     const watch = (async () => {
       while (running && child.pid) {
-        for (const proc of groupMembers(child.pid)) if (!known.has(proc.pid)) known.set(proc.pid, proc);
+        const members = groupMembers(child.pid);
+        for (const proc of members) if (!known.has(proc.pid)) known.set(proc.pid, proc);
+        if (exposed.length === 0 && members.length) {
+          const found = await exposedListeners(members.map((proc) => proc.pid));
+          if (found.ok && found.listeners.length) {
+            exposed.push(...found.listeners.map(describeConnection));
+            appendFileSync(log, `\n# VIOLATION listening beyond loopback, reachable from other hosts: ${exposed.join("; ")}; killing the command\n`);
+            try {
+              process.kill(-child.pid, "SIGKILL");
+            } catch {}
+          }
+        }
         await sleep(250);
       }
     })();
@@ -598,6 +618,7 @@ async function runOne(app: AppEntry, planned: PlannedCommand, opts: TestAppOptio
     const verdict = timedOut ? { ok: false, reasons: [`timed out after ${timeout / 1000} s`], newFailures: [], fixed: [] } : compareWithBaseline(code, parsed, baseline, planned.cmd);
     if (writes.unexpected.length) verdict.reasons.push(`${writes.unexpected.length} unexpected write(s): ${writes.unexpected.slice(0, 5).join(", ")}${writes.unexpected.length > 5 ? ", ..." : ""}`);
     if (strays.length) verdict.reasons.push(`${strays.length} process(es) left the command's group and outlived it (killed)`);
+    if (exposed.length) verdict.reasons.push(`listened beyond loopback, reachable from other hosts (killed): ${exposed.join("; ")}`);
     const proposedBaseline: TestBaseline = {
       cmd: planned.cmd,
       exit: code,
@@ -608,8 +629,8 @@ async function runOne(app: AppEntry, planned: PlannedCommand, opts: TestAppOptio
       date: new Date().toLocaleDateString("sv-SE"), // the local YYYY-MM-DD
       method: `bun run test:apps --root ${root} (sandbox-exec, profile env, write check), 1 run`,
     };
-    const ok = verdict.ok && writes.unexpected.length === 0 && !timedOut && strays.length === 0;
-    return { ...planned, expanded, strays, exit: code, timedOut, seconds, parsed, baseline, verdict, writes, ok, log, proposedBaseline };
+    const ok = verdict.ok && writes.unexpected.length === 0 && !timedOut && strays.length === 0 && exposed.length === 0;
+    return { ...planned, expanded, strays, exposed, exit: code, timedOut, seconds, parsed, baseline, verdict, writes, ok, log, proposedBaseline };
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }

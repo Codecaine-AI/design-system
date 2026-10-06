@@ -10,6 +10,8 @@ import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { spawnSync } from "node:child_process";
 
+import { exposedListeners } from "../scripts/lib/egress.ts";
+
 import {
   browserPolicy,
   EPHEMERAL_PORTS,
@@ -30,7 +32,7 @@ const root = join(home, "workspace-ds");
 const ds = join(root, "design-system"); // the real layout: the checkout the tool runs from sits inside --root
 const out = join(root, "rollout"); // the run folder, which is also the tool's out dir
 const app = join(root, "app"); // the app's own checkout: the only dir under --root a run may write
-const vendor = join(app, "vendor"); // another repository's checkout nested in the app's (read-only, appScope)
+const vendor = join(app, "external", "vendor"); // another repository's checkout nested in the app's (read-only, appScope)
 const sibling = join(root, "other"); // another app's checkout
 const tooling = join(root, ".tooling", "wt"); // a tooling worktree
 const bunGlobal = join(root, ".bun-global", "bin");
@@ -248,6 +250,25 @@ describe.skipIf(Boolean(unavailable))("sandbox profile", () => {
       expect(existsSync(planted)).toBe(false);
   });
 
+  test("a read-only checkout nested in the app's cannot be reached by renaming a folder around it (move, write, move back)", () => {
+    writeFileSync(join(vendor, "kept.txt"), "original");
+    const said = sandboxed(
+      [
+        `mv '${join(app, "external")}' '${join(app, "moved")}' && echo moved-parent`,
+        `echo pwned > '${join(app, "moved", "vendor", "kept.txt")}'`,
+        `mv '${join(app, "moved")}' '${join(app, "external")}'`,
+        `rmdir '${join(app, "external")}' 2>/dev/null && echo removed-parent`,
+        `mkdir -p '${join(app, "external", "sibling")}' && echo x > '${join(app, "external", "sibling", "f")}' && echo sibling-ok`,
+        "true",
+      ].join("; "),
+    ).output;
+    expect(said).not.toContain("moved-parent");
+    expect(said).not.toContain("removed-parent");
+    expect(said).toContain("sibling-ok"); // other entries of that folder stay writable
+    expect(readFileSync(join(vendor, "kept.txt"), "utf8")).toBe("original");
+    expect(sandboxProfile(policy())).toContain(`(deny file-write* (literal "${join(app, "external")}"))`);
+  });
+
   test("without `writable` a run writes only its temp dir, not even an app checkout", () => {
     expect(
       verdicts(
@@ -454,6 +475,25 @@ describe.skipIf(Boolean(unavailable) || !Bun.which("python3"))("suiteNetwork (de
       highListener.stop(true);
     }
   }, 120_000);
+
+  test("a listener beyond loopback (0.0.0.0), which no Seatbelt bind rule can refuse, is found by exposedListeners; a 127.0.0.1 one is not", async () => {
+    // Seatbelt's `localhost` host matches every local address for binds, and no inbound rule filters
+    // peers (probed on macOS 26.5): test:apps must check its commands' listeners itself.
+    const script = "import socket, time\nl = socket.socket(); l.bind(('127.0.0.1', 0)); l.listen()\nw = socket.socket(); w.bind(('0.0.0.0', 0)); w.listen()\nprint(l.getsockname()[1], w.getsockname()[1], flush=True)\ntime.sleep(20)\n";
+    const proc = Bun.spawn(sandboxCommand(policy({ suiteNetwork: { listeners: [] } }), [Bun.which("python3")!, "-c", script]), { cwd: runTmp, stdout: "pipe", stderr: "pipe" });
+    try {
+      const reader = proc.stdout.getReader();
+      const first = new TextDecoder().decode((await reader.read()).value);
+      const [loopbackPort, widePort] = first.trim().split(/\s+/).map(Number);
+      const found = await exposedListeners([proc.pid]);
+      expect(found.ok).toBe(true);
+      const ports = found.ok ? found.listeners.map((listener) => listener.local.port) : [];
+      expect(ports).toContain(widePort!);
+      expect(ports).not.toContain(loopbackPort!);
+    } finally {
+      proc.kill("SIGKILL");
+    }
+  }, 60_000);
 
   test("the suite profile is too long for argv: sandbox-exec reads it from a file the run cannot write", () => {
     const argv = sandboxCommand(policy({ suiteNetwork: { listeners: [] } }), ["/usr/bin/true"]);

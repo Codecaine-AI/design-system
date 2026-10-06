@@ -113,6 +113,23 @@ export async function lsofConnections(pids: number[], protocol: "-iTCP" | "-i" =
   }
 }
 
+/**
+ * Whether a socket listens beyond loopback (0.0.0.0, ::, `*`, a LAN address): other hosts can connect.
+ * Seatbelt cannot refuse such a bind (its `localhost` matches every local address) nor filter the peers a
+ * listener accepts, so the tools check for it themselves: the app runner (egress sampling) and, for test
+ * suites, test:apps (exposedListeners on the command's processes).
+ */
+export function isExposedListener(c: Connection): boolean {
+  return !c.remote && c.state === "LISTEN" && !isLoopbackAddress(c.local.host);
+}
+
+/** The listeners of `pids` that other hosts can reach (isExposedListener); a failed lsof is reported, never "none". */
+export async function exposedListeners(pids: number[]): Promise<{ ok: true; listeners: Connection[] } | { ok: false; reason: string }> {
+  const result = await lsofConnections(pids);
+  if (!result.ok) return result;
+  return { ok: true, listeners: result.conns.filter(isExposedListener) };
+}
+
 /** One line per connection, for violations and reports: "egress: bun(123) 127.0.0.1:50000->127.0.0.1:4820 (ESTABLISHED)". */
 export function describeConnection(c: Connection): string {
   const name = c.remote ? `${c.local.host}:${c.local.port}->${c.remote.host}:${c.remote.port}` : `${c.local.host}:${c.local.port}`;
