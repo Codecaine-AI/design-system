@@ -7,7 +7,7 @@
  */
 import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, realpathSync, writeFileSync, mkdirSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseLedger } from "../scripts/lib/progress/ledger.ts";
@@ -250,6 +250,33 @@ describe("outputs", () => {
     const missing = spawnSync("bun", ["scripts/progress.ts", ...args.slice(0, 6), "--state", join(out, "nope.md")], { cwd: PKG, encoding: "utf8" });
     expect(missing.status).toBe(2);
     expect(missing.stderr).toContain("nope.md does not exist");
+  });
+
+  test("refuses an --out-dir inside a git checkout and an output file that is a symlink, writing nothing", () => {
+    const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-progress-dest-")));
+    try {
+      const run = (out: string) =>
+        spawnSync("bun", ["scripts/progress.ts", "--root", "/fixture/root", "--out-dir", out, "--lint-json", fixture("lint.json"), "--state", fixture("STATE.md"), "--registry", fixture("registry.json")], { cwd: PKG, encoding: "utf8" });
+
+      // A linked worktree marks its top with a `.git` file, not a directory.
+      const checkout = join(scratch, "checkout");
+      mkdirSync(checkout);
+      writeFileSync(join(checkout, ".git"), "gitdir: /elsewhere/.git/worktrees/checkout\n");
+      const inside = run(join(checkout, "reports"));
+      expect([inside.status, inside.stderr]).toEqual([2, expect.stringContaining(`is inside the git checkout ${checkout}`)]);
+      expect(existsSync(join(checkout, "reports"))).toBe(false);
+
+      const out = join(scratch, "out");
+      mkdirSync(out);
+      const target = join(scratch, "elsewhere.md");
+      writeFileSync(target, "not progress");
+      symlinkSync(target, join(out, "progress.md"));
+      const linked = run(out);
+      expect([linked.status, linked.stderr]).toEqual([2, expect.stringContaining("is a symlink")]);
+      expect(readFileSync(target, "utf8")).toBe("not progress");
+    } finally {
+      rmSync(scratch, { recursive: true, force: true });
+    }
   });
 });
 
