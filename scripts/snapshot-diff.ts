@@ -20,6 +20,9 @@
  *   compare/<key>.png    A | B | diff side by side
  * --out-dir is never the owner's tree or a git checkout, and no write under it goes through a symlink.
  *
+ * Without --exact the summary counts changed gating shots as "changed (expected without --exact)" and names
+ * only the other gating problems; report.json is the same either way.
+ *
  * Exit: 2 on bad arguments (same set twice, an --only id that names no registry route or shot, a missing
  * set, an invalid registry, an unsafe output path). With --exact, 1 when the gate fails
  * (scripts/lib/snapshot-set.ts: a gating shot changed, missing, failed, unstable or unlisted; mask boxes
@@ -119,10 +122,13 @@ for (const problem of result.problems) console.log(`  FAIL  set: ${problem}`);
 for (const warning of result.warnings) console.log(`  warn  ${warning}`);
 if (!result.registry.canonical) console.log(`  warn  judged against ${result.registry.path}, not the checkout's apps.json (${REGISTRY_PATH})`);
 const { totals } = result;
-console.log(
-  `\n${totals.identical}/${totals.shots} identical, ${totals.changed} changed, ${totals.missing} missing, ` +
-    `${totals.gatingFailures} gating failure(s), ${result.problems.length} set problem(s) -> ${out("report.json")}`,
-);
+// Without --exact a changed pixel is what a migration pass expects: count it as changed, and call only what
+// --exact would fail on besides the changes (missing, failed, unstable, mask problems) a gating problem.
+const changedOnly = result.shots.filter((shot) => shot.gating && shot.status === "changed" && shot.problems.length === 0).length;
+const verdict = exact
+  ? `${totals.changed} changed, ${totals.missing} missing, ${totals.gatingFailures} gating failure(s)`
+  : `${totals.changed} changed (expected without --exact), ${totals.missing} missing, ${totals.gatingFailures - changedOnly} gating problem(s)`;
+console.log(`\n${totals.identical}/${totals.shots} identical, ${verdict}, ${result.problems.length} set problem(s) -> ${out("report.json")}`);
 if (exact && !result.ok) {
   if (totals.shots === 0) console.error("--exact: no shots compared");
   process.exit(1);
