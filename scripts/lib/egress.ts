@@ -86,8 +86,11 @@ export function lsofResult(code: number | null, stdout: string, stderr: string):
   return { ok: false, reason: `lsof exited ${code}${stderr.trim() ? `: ${stderr.trim().split("\n")[0]}` : ""}` };
 }
 
-/** TCP sockets of `pids` (`lsof -nP -w -a -p <pids> -iTCP`, or `-i` for UDP too). */
-export async function lsofConnections(pids: number[], protocol: "-iTCP" | "-i" = "-iTCP"): Promise<LsofResult> {
+/** How long one lsof may run before it is killed and the sample counts as failed. */
+export const LSOF_TIMEOUT_MS = 10_000;
+
+/** TCP sockets of `pids` (`lsof -nP -w -a -p <pids> -iTCP`, or `-i` for UDP too). A hung lsof is killed and fails. */
+export async function lsofConnections(pids: number[], protocol: "-iTCP" | "-i" = "-iTCP", timeoutMs = LSOF_TIMEOUT_MS): Promise<LsofResult> {
   if (pids.length === 0) return { ok: true, conns: [] };
   let proc: ReturnType<typeof Bun.spawn>;
   try {
@@ -95,8 +98,18 @@ export async function lsofConnections(pids: number[], protocol: "-iTCP" | "-i" =
   } catch (error) {
     return { ok: false, reason: `lsof did not run: ${error instanceof Error ? error.message : String(error)}` };
   }
-  const [stdout, stderr, code] = await Promise.all([new Response(proc.stdout as ReadableStream).text(), new Response(proc.stderr as ReadableStream).text(), proc.exited]);
-  return lsofResult(code, stdout, stderr);
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    proc.kill("SIGKILL");
+  }, timeoutMs);
+  try {
+    const [stdout, stderr, code] = await Promise.all([new Response(proc.stdout as ReadableStream).text(), new Response(proc.stderr as ReadableStream).text(), proc.exited]);
+    if (timedOut) return { ok: false, reason: `lsof timed out after ${timeoutMs} ms` };
+    return lsofResult(code, stdout, stderr);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /** One line per connection, for violations and reports: "egress: bun(123) 127.0.0.1:50000->127.0.0.1:4820 (ESTABLISHED)". */

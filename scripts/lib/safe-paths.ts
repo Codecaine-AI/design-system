@@ -8,19 +8,54 @@
  *   safeOutputPath(p, o)   the canonical destination; refuses the owner's tree unless `root` is that tree
  *   safeAppId(id)          an app id that is safe as one path segment (the registry id pattern)
  *   safeSegment(name)      any other user-supplied path segment (set names, route ids)
+ *   safeChildPath(b, ...s) a nested destination under a validated base: every segment safe, no symlinked
+ *                          component on the way, never the owner's tree (for every nested output write)
+ *   safeTempBase()         os.tmpdir(), canonical and validated, for mkdtemp callers (TMPDIR is inherited)
  *
  * Only the owner's tree is refused. Writing into a checkout in the mirror (`pack --out <app>/vendor`)
  * is intended.
  */
+import { spawnSync } from "node:child_process";
 import { existsSync, lstatSync, readlinkSync, realpathSync, statSync } from "node:fs";
-import { basename, dirname, join, resolve, sep } from "node:path";
+import { tmpdir } from "node:os";
+import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
 
-import { OWNER_TREE } from "./owner";
+import { HOME_FORBIDDEN, OWNER_TREE } from "./owner";
 
 export { OWNER_TREE };
 
 export class UnsafePathError extends Error {
   override name = "UnsafePathError";
+}
+
+let cachedHome: string | undefined;
+
+/**
+ * The real user's home, from the user database, never from $HOME (under bun, os.userInfo().homedir and
+ * os.homedir() both return $HOME). macOS: `id -P` (the passwd entry, field 9), else `dscl`; elsewhere
+ * `getent passwd`. Read once and cached. Throws when no lookup works: every check that protects the home
+ * fails closed rather than guarding the wrong directory.
+ */
+export function realHome(): string {
+  if (cachedHome) return cachedHome;
+  const run = (cmd: string, args: string[]) => {
+    const result = spawnSync(cmd, args, { encoding: "utf8", timeout: 5_000, env: { PATH: "/usr/bin:/bin:/usr/sbin:/sbin" } });
+    return result.status === 0 && !result.error ? (result.stdout ?? "").trim() : "";
+  };
+  const uid = String(process.getuid?.() ?? "");
+  const candidates = [
+    () => (existsSync("/usr/bin/id") ? run("/usr/bin/id", ["-P"]).split(":")[8] : undefined),
+    () => {
+      const name = run("/usr/bin/id", ["-un"]);
+      return name && existsSync("/usr/bin/dscl") ? /^NFSHomeDirectory:\s*(\S.*)$/m.exec(run("/usr/bin/dscl", [".", "-read", `/Users/${name}`, "NFSHomeDirectory"]))?.[1] : undefined;
+    },
+    () => (uid ? run("getent", ["passwd", uid]).split(":")[5] : undefined),
+  ];
+  for (const candidate of candidates) {
+    const home = candidate()?.trim();
+    if (home && isAbsolute(home)) return (cachedHome = home);
+  }
+  throw new UnsafePathError("cannot read the real home directory from the user database (id -P, dscl, getent all failed)");
 }
 
 /** Registry app ids: lowercase letters, digits and hyphens, starting with a letter or digit. */
@@ -38,7 +73,7 @@ export function canonicalPath(path: string): string {
   const rest: string[] = [];
   for (let hops = 0; ; hops++) {
     if (hops > 64) throw new UnsafePathError(`${path}: too many symlinks`);
-    if (existsSync(current)) return rest.length ? join(realpathSync(current), ...rest.reverse()) : realpathSync(current);
+    if (existsSync(current)) return rest.length ? join(realpathOf(current), ...rest.reverse()) : realpathOf(current);
     let link: string | undefined;
     try {
       if (lstatSync(current).isSymbolicLink()) link = readlinkSync(current);
@@ -53,6 +88,22 @@ export function canonicalPath(path: string): string {
     if (parent === current) return join(current, ...rest.reverse());
     rest.push(basename(current));
     current = parent;
+  }
+}
+
+/**
+ * realpathSync, except for an existing path realpath may not open: a TCC-protected dir (~/Library/Cookies
+ * gives EPERM) or a Unix socket (EOPNOTSUPP). Such a path that is not itself a symlink is its canonical
+ * parent plus its own name.
+ */
+function realpathOf(path: string): string {
+  try {
+    return realpathSync(path);
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    const parent = dirname(path);
+    if (!["EPERM", "EACCES", "EOPNOTSUPP"].includes(code ?? "") || parent === path || lstatSync(path).isSymbolicLink()) throw error;
+    return join(realpathOf(parent), basename(path));
   }
 }
 
@@ -125,4 +176,86 @@ export function safeAppId(id: string): string {
 export function safeSegment(name: string, label = "name"): string {
   if (typeof name !== "string" || !SEGMENT_PATTERN.test(name)) throw new UnsafePathError(`${label} ${JSON.stringify(name)} does not match ${SEGMENT_PATTERN}`);
   return name;
+}
+
+export interface SafeChildBase {
+  /** The output dir the nested path lives under (validated with safeOutputPath here). */
+  base: string;
+  /** The run's --root (as for safeOutputPath: the owner's tree is allowed only when root is that tree). */
+  root?: string;
+  /** The owner's tree; tests pass a temp dir. Default OWNER_TREE. */
+  ownerTree?: string;
+  /** Names the destination in errors. */
+  label?: string;
+}
+
+/**
+ * The destination `<base>/<segment>/.../<segment>` for a nested output write (snapshot shots, verify
+ * results, logs). `base` is validated like safeOutputPath; each segment must pass safeSegment (no
+ * separators, no traversal, no leading dot); every component that already exists on the way must be a
+ * real directory, never a symlink (lstat, so a link planted after the base was validated is refused, the
+ * way O_NOFOLLOW would), and the last one may be a regular file but never a symlink. The result is
+ * refused when it lands in the owner's tree. Returns the path; the caller creates it.
+ */
+export function safeChildPath(base: string | SafeChildBase, ...segments: string[]): string {
+  const opts: SafeChildBase = typeof base === "string" ? { base } : base;
+  const label = opts.label ?? "output path";
+  const owner = opts.ownerTree ?? OWNER_TREE;
+  if (segments.length === 0) throw new UnsafePathError(`${label}: no path segments under ${opts.base}`);
+  const root = safeOutputPath(opts.base, { root: opts.root, ownerTree: owner, label });
+  for (const segment of segments) safeSegment(segment, `${label} segment`);
+  let current = root;
+  const kind = (path: string) => {
+    try {
+      const stat = lstatSync(path);
+      return stat.isSymbolicLink() ? "link" : stat.isDirectory() ? "dir" : "file";
+    } catch {
+      return "missing";
+    }
+  };
+  if (kind(root) === "link") throw new UnsafePathError(`${label}: ${root} is a symlink`);
+  if (kind(root) === "file") throw new UnsafePathError(`${label}: ${root} is not a directory`);
+  let missing = kind(root) === "missing";
+  segments.forEach((segment, i) => {
+    current = join(current, segment);
+    if (missing) return;
+    const found = kind(current);
+    if (found === "link") throw new UnsafePathError(`${label}: ${current} is a symlink; refusing to write through it`);
+    if (found === "file" && i < segments.length - 1) throw new UnsafePathError(`${label}: ${current} is a file, not a directory`);
+    if (found === "missing") missing = true;
+  });
+  const ownerRun = opts.root !== undefined && sameDir(opts.root, owner);
+  if (!ownerRun && isWithin(current, owner)) throw new UnsafePathError(`${label} ${current} resolves into the owner's tree`);
+  return current;
+}
+
+export interface SafeTempOptions {
+  /** The temp base to check; default os.tmpdir() (which honors an inherited TMPDIR). */
+  tmp?: string;
+  /** The real home; default from the user database (not $HOME). */
+  home?: string;
+  /** The owner's tree; tests pass a temp dir. Default OWNER_TREE. */
+  ownerTree?: string;
+}
+
+/**
+ * The base dir for mkdtemp callers (scratch dirs, staging, npm HOME): os.tmpdir() made canonical, which
+ * must be an existing directory outside the owner's tree, not the real home itself, and not inside
+ * ~/Library or a credential store under it (HOME_FORBIDDEN). An inherited TMPDIR can point anywhere, so
+ * every `mkdtempSync(join(tmpdir(), ...))` in the tools goes through this instead.
+ */
+export function safeTempBase(opts: SafeTempOptions = {}): string {
+  const given = opts.tmp ?? tmpdir();
+  const home = opts.home ?? realHome();
+  const owner = opts.ownerTree ?? OWNER_TREE;
+  if (!given) throw new UnsafePathError("temp base is empty");
+  const canonical = canonicalPath(given);
+  if (!existsSync(canonical) || !statSync(canonical).isDirectory()) throw new UnsafePathError(`temp base ${given} (${canonical}) is not an existing directory`);
+  if (isWithin(canonical, owner)) throw new UnsafePathError(`temp base ${given} resolves into the owner's tree (${canonical}); unset TMPDIR or point it at a system temp dir`);
+  if (sameDir(canonical, home)) throw new UnsafePathError(`temp base ${given} is the home directory itself`);
+  for (const rel of HOME_FORBIDDEN) {
+    const dir = join(home, rel);
+    if (isWithin(canonical, dir)) throw new UnsafePathError(`temp base ${given} resolves into ${dir}; unset TMPDIR or point it at a system temp dir`);
+  }
+  return canonical;
 }

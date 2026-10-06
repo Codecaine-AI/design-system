@@ -280,13 +280,13 @@
       "run": {
         "mode": "browser",
         "cwd": "codecaine/core/sequence/packages/studio",
-        "start": "bun x --bun vite {flags}",
+        "start": "bun x --no-env-file --bun vite {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
       },
       "commands": {
         "cwd": "codecaine/core/sequence/packages/studio",
-        "typecheck": "bun x --bun tsc -p tsconfig.json --noEmit",
-        "build": "bun x --bun vite build --outDir {tmp}/sequence-studio-dist --emptyOutDir"
+        "typecheck": "bun x --no-env-file --bun tsc -p tsconfig.json --noEmit",
+        "build": "bun x --no-env-file --bun vite build --outDir {tmp}/sequence-studio-dist --emptyOutDir"
       },
       "tests": {
         "safe": [],
@@ -478,7 +478,7 @@
       },
       "commands": {
         "cwd": "codecaine/core/docs-system",
-        "typecheck": "bunx --bun tsc --noEmit"
+        "typecheck": "bunx --no-env-file --bun tsc --noEmit"
       },
       "tests": {
         "safe": [
@@ -788,13 +788,13 @@
       "run": {
         "mode": "browser",
         "cwd": "codecaine/core/canvas/packages/studio",
-        "start": "mkdir -p {tmp}/canvases && cp -R ../../canvases/. {tmp}/canvases/ && exec bun x --bun vite {flags}",
+        "start": "mkdir -p {tmp}/canvases && cp -R ../../canvases/. {tmp}/canvases/ && exec bun x --no-env-file --bun vite {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
       },
       "commands": {
         "cwd": "codecaine/core/canvas/packages/studio",
-        "typecheck": "bun x --bun tsc -p tsconfig.json --noEmit",
-        "build": "bun x --bun vite build --outDir {tmp}/canvas-studio-dist --emptyOutDir"
+        "typecheck": "bun x --no-env-file --bun tsc -p tsconfig.json --noEmit",
+        "build": "bun x --no-env-file --bun vite build --outDir {tmp}/canvas-studio-dist --emptyOutDir"
       },
       "tests": {
         "safe": [
@@ -1046,7 +1046,7 @@
       "run": {
         "mode": "browser",
         "cwd": "codecaine/core/canvas/packages/studio",
-        "start": "mkdir -p {tmp}/canvases && cp -R ../../canvases/. {tmp}/canvases/ && exec bun x --bun vite {flags}",
+        "start": "mkdir -p {tmp}/canvases && cp -R ../../canvases/. {tmp}/canvases/ && exec bun x --no-env-file --bun vite {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
       },
       "commands": {
@@ -1296,7 +1296,7 @@
         "mode": "none",
         "reason": "the viewer's Vite proxy sends /api to the owner's :4820 through `const HARNESS_TARGET = \"http://127.0.0.1:4820\"` (packages/canvas-agent/src/viewer/vite.config.ts:41; no env var, flag or config reads around it), and the traces page fetches /api on load, so every run would reach the owner's service. Runnable once the target reads an env var (for example CANVAS_AGENT_HARNESS_URL, falling back to 4820): a dev-only override the pass-1 worker can decide on",
         "cwd": "codecaine/core/canvas/packages/canvas-agent",
-        "start": "bun x vite --config src/viewer/vite.config.ts {flags}",
+        "start": "bun x --no-env-file vite --config src/viewer/vite.config.ts {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)",
         "serveRoot": "codecaine/core/canvas/packages/canvas-agent/src/viewer"
       },
@@ -1718,7 +1718,7 @@
       },
       "commands": {
         "cwd": "codecaine/core/docs-system",
-        "typecheck": "bunx --bun tsc --noEmit"
+        "typecheck": "bunx --no-env-file --bun tsc --noEmit"
       },
       "tests": {
         "safe": [
@@ -1907,7 +1907,7 @@
       "theme": {
         "rule": "light-dark"
       },
-      "literalFloor": 22,
+      "literalFloor": 7,
       "allowlist": "apps/allowlists/docs-publish.json",
       "shell": false,
       "folderStandard": false,
@@ -2009,7 +2009,7 @@
       "exceptions": [
         {
           "what": "allowlist",
-          "reason": "src/editor.css .docs-draft-editor block (lines 67-105, comment 63-66): 22 custom-property definitions with the editor's container defaults (host --color-*/--site-* fallbacks at 68-76, status and accent palette at 82-103), scoped to that file, kind definition, category hex and the block's 8 literal values; the floor of 22 caps them, so any new definition in the file fails the check. The fallback at editor.css:171 and the inline literals in styles.css:44-46 migrate"
+          "reason": "src/editor.css .docs-draft-editor host fallbacks only (lines 68-76): 7 custom-property definitions var(--color-*, <literal>) (#fff, #222, #2563eb, #f1f1ef) so the draft editor renders on a host without the site palette; scoped to that file, kind definition, category hex and those 4 values; the floor of 7 caps them, so any new definition in the file fails the check. Not excused: the status and accent palette at 82-103 (--destructive, --status-*, --color-bg-blue, --color-text-blue; 15 hits, the same in light and dark), which pass 1 maps to color.status.*, the fallback at editor.css:171 and the inline literals in styles.css:44-46"
         },
         {
           "what": "commands.build writes the package's own dist/",
@@ -2110,7 +2110,7 @@
       "run": {
         "mode": "browser",
         "cwd": "codecaine/core/agent-kernel/examples/simple-research-kernel",
-        "start": "bun x vite {flags}",
+        "start": "bun x --no-env-file vite {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
       },
       "commands": {
@@ -2477,7 +2477,7 @@
       "run": {
         "mode": "browser",
         "cwd": "codecaine/core/agent-kernel/examples/simple-research-kernel",
-        "start": "bun x vite {flags}",
+        "start": "bun x --no-env-file vite {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
       },
       "commands": {
@@ -3876,7 +3876,7 @@
         "mode": "none",
         "reason": "blocked by uncommitted owner work; profile unproven",
         "cwd": "codecaine/core/observatory",
-        "start": "bun x --bun vite --config src/ui/vite.config.ts {flags}",
+        "start": "bun x --no-env-file --bun vite --config src/ui/vite.config.ts {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)",
         "serveRoot": "codecaine/core/observatory/src/ui"
       },
@@ -4389,11 +4389,11 @@
         "waivedRoles": [
           {
             "role": "panel",
-            "reason": "slide 1 has no panel chrome: the template's only panel chrome is the code-block background .slidev-code.shiki (styles/layout.css:89-91) and no deck slide has a code fence; the title slide's QR card (slides/00-title/index.md:14) is gradient art outside the scan paths"
+            "reason": "slide 1 has no panel chrome: the template's only panel chrome is the code-block background .slidev-code.shiki (styles/layout.css:89-91) and no deck slide has a code fence; the title slide's QR card (slides/00-title/index.md:14) is gradient art outside the scan paths; temporary while slidev is blocked: replaced by real probes when it unblocks (see exceptions)"
           },
           {
             "role": "border",
-            "reason": "the template layout (styles/layout.css) styles no bordered chrome (blockquote is border-none, layout.css:78; no tables); slide 2's card borders (slides/01-column-cards/index.md:11) are per-slide utilities outside the scan paths; the FileExplorer and Terminal components draw their own frames but are not on slide 1 (they migrate with the rest, audit: all 203 template literals)"
+            "reason": "the template layout (styles/layout.css) styles no bordered chrome (blockquote is border-none, layout.css:78; no tables); slide 2's card borders (slides/01-column-cards/index.md:11) are per-slide utilities outside the scan paths; the FileExplorer and Terminal components draw their own frames but are not on slide 1 (they migrate with the rest, audit: all 203 template literals); temporary while slidev is blocked: replaced by real probes when it unblocks (see exceptions)"
           }
         ],
         "darkSwitch": {
@@ -4417,6 +4417,10 @@
         {
           "what": "planned profile",
           "reason": "needs npm install; QR images come from api.qrserver.com (the guard blocks them; replace with local images or mask), and slidev has no strictPort"
+        },
+        {
+          "what": "panel and border waivers are temporary",
+          "reason": "decision 21d: the template has panel chrome (.slidev-code.shiki code blocks, FileExplorer, Terminal) and bordered chrome (FileExplorer and Terminal frames), just not on slide 1. When slidev unblocks, its pass-1 worker adds a route to a fixture slide with a code fence, a FileExplorer and a Terminal, and replaces both verify.waivedRoles entries with probes there (panel: background-color of .slidev-code.shiki; border: the frame's border-*-color)"
         }
       ]
     },
@@ -4508,7 +4512,7 @@
         "mode": "none",
         "reason": "blocked by uncommitted owner work; profile unproven",
         "cwd": "life/budget/apps/web",
-        "start": "bun x vite {flags}",
+        "start": "bun x --no-env-file vite {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
       },
       "commands": {
@@ -4958,7 +4962,7 @@
         },
         "tests": {
           "required": false,
-          "reason": "no safe test command: the only suite is a pytest file with no project or pinned environment (tests.unsafe); the migration touches only CSS and TSX, which lint, typecheck and snapshots cover"
+          "reason": "no safe test command: the only suite is a pytest file with no project or pinned environment (tests.unsafe). The migration touches only CSS and TSX: lint:apps and the typecheck (bun run test:apps mainmenu --no-tests --commands typecheck) check them; snapshot and pixel diff are n/a while the app is blocked (run mode none)"
         }
       },
       "run": {
