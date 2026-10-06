@@ -151,6 +151,8 @@ export const APPS: AppEntry[] = [
   // Literals: Tailwind default-scale classes in and out of class contexts.
   appEntry({ id: "scale-classes", root: "apps/scale-classes" }),
   appEntry({ id: "templated-unused", root: "apps/templated-unused" }),
+  // Structure: component files in every wrong place, and every kind of entry file.
+  appEntry({ id: "wrong-folders", root: "apps/wrong-folders" }),
   // Resolution: where each design-system file comes from.
   appEntry({ id: "stale-copy", root: "apps/stale-copy", entryStylesheet: "apps/stale-copy/src/index.css" }),
   appEntry({ id: "nested-pkg", root: "apps/nested-pkg", entryStylesheet: "apps/nested-pkg/src/index.css" }),

@@ -304,6 +304,16 @@ describe("structure", () => {
     ]);
   });
 
+  test("every .tsx file outside _components/<Name>/index.tsx is a component in the wrong place; entry and hook files are not", () => {
+    // Not flagged: main.tsx, App.tsx, src/index.tsx, pages/home/page.tsx, app/layout.tsx, app/not-found.tsx,
+    // _components/Shelf/index.tsx, pages/home/_components/Card/index.tsx and its useCard.tsx hook.
+    expectExactly(check("wrong-folders", "structure").violations, [
+      at("apps/wrong-folders/src/components/Panel/index.tsx", 0, "component file outside _components/<Name>/index.tsx; move it to _components/Panel/index.tsx"),
+      at("apps/wrong-folders/src/components/ui/app-sidebar.tsx", 0, "move it to _components/AppSidebar/index.tsx"),
+      at("apps/wrong-folders/src/_components/Shelf/ShelfItem.tsx", 0, "component file ShelfItem.tsx in Shelf/; a component folder renders one component"),
+    ]);
+  });
+
   test("a library's 401-line file is a warning: status warn, no violations, the app stays ok", () => {
     const [lib] = lint(ws, ds, ["widgets"]).apps;
     const structure = lib.checks.find((c) => c.id === "structure")!;
