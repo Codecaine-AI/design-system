@@ -3940,7 +3940,7 @@
       "theme": {
         "rule": "dark-first"
       },
-      "literalFloor": 165,
+      "literalFloor": 158,
       "allowlist": "apps/allowlists/skitzo.json",
       "shell": true,
       "folderStandard": true,
