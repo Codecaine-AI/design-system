@@ -212,6 +212,10 @@
         {
           "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
           "reason": "bun run test:apps --root /Users/Ford/workspace-ds twice, under the final sandbox (rollout-r2-a1 5d0cf5a: writes only in the app's checked checkouts and the run tmp, loopback except owner and already-listening ports, no .env reads) with the write check (git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): run 1: exit 0, 79 pass, 0 fail in 5.5 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2: exit 0, 79 pass, 0 fail in 5.5 s, 0 unexpected writes, 0 cache writes, 0 strays. tests.baselines[\"tests.safe[0]\"] records the result (failing names of both runs united); reports in rollout/tooling/fix-r2c/final-1 and final-2"
+        },
+        {
+          "what": "test:apps re-run under the round-3 sandbox (R3-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds --commands typecheck,build twice, under the round-3 sandbox (rollout-r3-a d24a159: writes only in the app's own checkouts, checkouts.ts appScope, and the run tmp; a suite connects only to its block and 49152-65535 on loopback, minus the listeners at start and the owner's ports; a named command gets no port; no .env reads) with the write check over the app's own checkouts (git status pinned to their git dirs, find -newer/-cnewer, .git entries): tests.safe[0]: run 1 exit 0, 79 pass, 0 fail in 5.4 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0, 79 pass, 0 fail in 5.4 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.typecheck: run 1 exit 0 in 1.4 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0 in 1.4 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.build: not set in apps.json (skipped). Every result matches tests.baselines (tests.safe[0], commands.typecheck: recorded by R2-C, cmd added in R3-C from the commands those runs executed, which equal the current ones). Reports in rollout/tooling/r3-c-runs/final-1 and final-2"
         }
       ]
     },
@@ -409,6 +413,10 @@
         {
           "what": "StyleRail.tsx color-input fallback #000000",
           "reason": "owner decision: style engines hide their color controls but keep the code for now; <input type=color> needs a hex value"
+        },
+        {
+          "what": "test:apps re-run under the round-3 sandbox (R3-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds --commands typecheck,build twice, under the round-3 sandbox (rollout-r3-a d24a159: writes only in the app's own checkouts, checkouts.ts appScope, and the run tmp; a suite connects only to its block and 49152-65535 on loopback, minus the listeners at start and the owner's ports; a named command gets no port; no .env reads) with the write check over the app's own checkouts (git status pinned to their git dirs, find -newer/-cnewer, .git entries): commands.typecheck: run 1 exit 0 in 1.4 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0 in 1.4 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.build: run 1 exit 0 in 1.4 s, 0 unexpected writes, 1 cache writes, 0 strays; run 2 exit 0 in 1.4 s, 0 unexpected writes, 1 cache writes, 0 strays. Every result matches tests.baselines (commands.typecheck: recorded by R2-C, cmd added in R3-C from the commands those runs executed, which equal the current ones). Reports in rollout/tooling/r3-c-runs/final-1 and final-2"
         }
       ]
     },
@@ -810,6 +818,10 @@
         {
           "what": "typecheck baseline errors",
           "reason": "bun run test:apps --no-tests --commands typecheck (2026-10-05, final sandbox, no network port): exit 2 with 2 tsc error(s) at the owner HEAD, outside the app's own code: packages/docs-server/src/agent-tools.ts: TS2322: Type '(InteractiveCanvasObject | { id: string; style: CanvasObjectStyle | undefined; author?: string | null | undefined; type: InteractiveCanvasObjectType; ... 8 more ...; layout?: { ...; } | ... 1 more ... | undefined; })[]' is not assignable to type 'InteractiveCanvasObject[]'. | packages/docs-server/src/agent-tools.ts: TS2322: Type '{ id: string;; tests.baselines[\"commands.typecheck\"] records them, so only a new error fails test:apps"
+        },
+        {
+          "what": "test:apps re-run under the round-3 sandbox (R3-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds --commands typecheck,build twice, under the round-3 sandbox (rollout-r3-a d24a159: writes only in the app's own checkouts, checkouts.ts appScope, and the run tmp; a suite connects only to its block and 49152-65535 on loopback, minus the listeners at start and the owner's ports; a named command gets no port; no .env reads) with the write check over the app's own checkouts (git status pinned to their git dirs, find -newer/-cnewer, .git entries): tests.safe[0]: run 1 exit 1, 342 pass, 54 fail in 66.9 s, 0 unexpected writes, 1 cache writes, 0 strays; run 2 exit 1, 342 pass, 54 fail in 66.8 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.typecheck: run 1 exit 2, 2 tsc error(s) in 8.2 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 2, 2 tsc error(s) in 8.5 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.build: not set in apps.json (skipped). Every result matches tests.baselines (tests.safe[0], commands.typecheck: recorded by R2-C, cmd added in R3-C from the commands those runs executed, which equal the current ones). Reports in rollout/tooling/r3-c-runs/final-1 and final-2"
         }
       ]
     },
@@ -1079,6 +1091,10 @@
         {
           "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
           "reason": "bun run test:apps --root /Users/Ford/workspace-ds twice, under the final sandbox (rollout-r2-a1 5d0cf5a: writes only in the app's checked checkouts and the run tmp, loopback except owner and already-listening ports, no .env reads) with the write check (git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): run 1: exit 1, 77 pass, 2 fail in 6.5 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2: exit 1, 77 pass, 2 fail in 6.1 s, 0 unexpected writes, 0 cache writes, 0 strays. tests.baselines[\"tests.safe[0]\"] records the result (failing names of both runs united); reports in rollout/tooling/fix-r2c/final-1 and final-2"
+        },
+        {
+          "what": "test:apps re-run under the round-3 sandbox (R3-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds --commands typecheck,build twice, under the round-3 sandbox (rollout-r3-a d24a159: writes only in the app's own checkouts, checkouts.ts appScope, and the run tmp; a suite connects only to its block and 49152-65535 on loopback, minus the listeners at start and the owner's ports; a named command gets no port; no .env reads) with the write check over the app's own checkouts (git status pinned to their git dirs, find -newer/-cnewer, .git entries): tests.safe[0]: run 1 exit 1, 77 pass, 2 fail in 5.9 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 1, 77 pass, 2 fail in 5.9 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.typecheck: run 1 exit 0 in 3.1 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0 in 3.1 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.build: run 1 exit 0 in 2.0 s, 0 unexpected writes, 1 cache writes, 0 strays; run 2 exit 0 in 2.0 s, 0 unexpected writes, 1 cache writes, 0 strays. Every result matches tests.baselines (tests.safe[0], commands.typecheck: recorded by R2-C, cmd added in R3-C from the commands those runs executed, which equal the current ones). Reports in rollout/tooling/r3-c-runs/final-1 and final-2"
         }
       ]
     },
@@ -1366,6 +1382,10 @@
         {
           "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
           "reason": "bun run test:apps --root /Users/Ford/workspace-ds twice, under the final sandbox (rollout-r2-a1 5d0cf5a: writes only in the app's checked checkouts and the run tmp, loopback except owner and already-listening ports, no .env reads) with the write check (git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): run 1: exit 1, 1186 pass, 13 fail, 9 errors in 10.3 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2: exit 1, 1186 pass, 13 fail, 9 errors in 9.7 s, 0 unexpected writes, 0 cache writes, 0 strays. tests.baselines[\"tests.safe[0]\"] records the result (failing names of both runs united); reports in rollout/tooling/fix-r2c/final-1 and final-2"
+        },
+        {
+          "what": "test:apps re-run under the round-3 sandbox (R3-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds --commands typecheck,build twice, under the round-3 sandbox (rollout-r3-a d24a159: writes only in the app's own checkouts, checkouts.ts appScope, and the run tmp; a suite connects only to its block and 49152-65535 on loopback, minus the listeners at start and the owner's ports; a named command gets no port; no .env reads) with the write check over the app's own checkouts (git status pinned to their git dirs, find -newer/-cnewer, .git entries): tests.safe[0]: run 1 exit 1, 1186 pass, 13 fail, 9 errors in 9.3 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 1, 1186 pass, 13 fail, 9 errors in 9.0 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.typecheck: run 1 exit 0 in 2.9 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0 in 2.5 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.build: not set in apps.json (skipped). Every result matches tests.baselines (tests.safe[0], commands.typecheck: recorded by R2-C, cmd added in R3-C from the commands those runs executed, which equal the current ones). Reports in rollout/tooling/r3-c-runs/final-1 and final-2"
         }
       ]
     },
@@ -1595,6 +1615,10 @@
         {
           "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
           "reason": "bun run test:apps --root /Users/Ford/workspace-ds twice, under the final sandbox (rollout-r2-a1 5d0cf5a: writes only in the app's checked checkouts and the run tmp, loopback except owner and already-listening ports, no .env reads) with the write check (git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): run 1: exit 0, 4 pass, 0 fail in 5.4 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2: exit 0, 4 pass, 0 fail in 5.3 s, 0 unexpected writes, 0 cache writes, 0 strays. tests.baselines[\"tests.safe[0]\"] records the result (failing names of both runs united); reports in rollout/tooling/fix-r2c/final-1 and final-2"
+        },
+        {
+          "what": "test:apps re-run under the round-3 sandbox (R3-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds --commands typecheck,build twice, under the round-3 sandbox (rollout-r3-a d24a159: writes only in the app's own checkouts, checkouts.ts appScope, and the run tmp; a suite connects only to its block and 49152-65535 on loopback, minus the listeners at start and the owner's ports; a named command gets no port; no .env reads) with the write check over the app's own checkouts (git status pinned to their git dirs, find -newer/-cnewer, .git entries): tests.safe[0]: run 1 exit 0, 4 pass, 0 fail in 5.1 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0, 4 pass, 0 fail in 5.1 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.typecheck: run 1 exit 0 in 6.8 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0 in 6.7 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.build: not set in apps.json (skipped). Every result matches tests.baselines (tests.safe[0], commands.typecheck: recorded by R2-C, cmd added in R3-C from the commands those runs executed, which equal the current ones). Reports in rollout/tooling/r3-c-runs/final-1 and final-2"
         }
       ]
     },
@@ -1827,6 +1851,10 @@
         {
           "what": "typecheck baseline errors",
           "reason": "bun run test:apps --no-tests --commands typecheck (2026-10-05, final sandbox, no network port): exit 2 with 2 tsc error(s) at the owner HEAD, outside the app's own code: ../docs-server/src/agent-tools.ts: TS2322: Type '(InteractiveCanvasObject | { id: string; style: CanvasObjectStyle | undefined; type: InteractiveCanvasObjectType; ... 9 more ...; author?: string | ... 1 more ... | undefined; })[]' is not assignable to type 'InteractiveCanvasObject[]'. | ../docs-server/src/agent-tools.ts: TS2322: Type '{ id: string; label?: string | null | undefined; color?: Canvas; tests.baselines[\"commands.typecheck\"] records them, so only a new error fails test:apps"
+        },
+        {
+          "what": "test:apps re-run under the round-3 sandbox (R3-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds --commands typecheck,build twice, under the round-3 sandbox (rollout-r3-a d24a159: writes only in the app's own checkouts, checkouts.ts appScope, and the run tmp; a suite connects only to its block and 49152-65535 on loopback, minus the listeners at start and the owner's ports; a named command gets no port; no .env reads) with the write check over the app's own checkouts (git status pinned to their git dirs, find -newer/-cnewer, .git entries): tests.safe[0]: run 1 exit 0, 4 pass, 0 fail in 5.1 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0, 4 pass, 0 fail in 5.1 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.typecheck: run 1 exit 2, 2 tsc error(s) in 3.1 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 2, 2 tsc error(s) in 3.1 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.build: not set in apps.json (skipped). Every result matches tests.baselines (tests.safe[0], commands.typecheck: recorded by R2-C, cmd added in R3-C from the commands those runs executed, which equal the current ones). Reports in rollout/tooling/r3-c-runs/final-1 and final-2"
         }
       ]
     },
@@ -2118,6 +2146,10 @@
         {
           "what": "flaky baseline failure",
           "reason": "DocEditor save boundary > the DOM-mutation + input-event pipeline reaches ProseMirror state (dom-sync) timed out at 10 s in 1 of 2 sandboxed runs (352/352 in the other); tests.baselines[\"tests.safe[0]\"] lists it, so the flake does not fail test:apps while any other failure does"
+        },
+        {
+          "what": "test:apps re-run under the round-3 sandbox (R3-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds --commands typecheck,build twice, under the round-3 sandbox (rollout-r3-a d24a159: writes only in the app's own checkouts, checkouts.ts appScope, and the run tmp; a suite connects only to its block and 49152-65535 on loopback, minus the listeners at start and the owner's ports; a named command gets no port; no .env reads) with the write check over the app's own checkouts (git status pinned to their git dirs, find -newer/-cnewer, .git entries): tests.safe[0]: run 1 exit 0, 352 pass, 0 fail in 7.0 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0, 352 pass, 0 fail in 7.1 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.typecheck: run 1 exit 2, 2 tsc error(s) in 8.2 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 2, 2 tsc error(s) in 8.2 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.build: not set in apps.json (skipped). Every result matches tests.baselines (tests.safe[0], commands.typecheck: recorded by R2-C, cmd added in R3-C from the commands those runs executed, which equal the current ones). Reports in rollout/tooling/r3-c-runs/final-1 and final-2"
         }
       ]
     },
@@ -2268,6 +2300,10 @@
         {
           "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
           "reason": "bun run test:apps --root /Users/Ford/workspace-ds twice, under the final sandbox (rollout-r2-a1 5d0cf5a: writes only in the app's checked checkouts and the run tmp, loopback except owner and already-listening ports, no .env reads) with the write check (git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): run 1: exit 0, 11 pass, 0 fail in 5.4 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2: exit 0, 11 pass, 0 fail in 5.4 s, 0 unexpected writes, 0 cache writes, 0 strays. tests.baselines[\"tests.safe[0]\"] records the result (failing names of both runs united); reports in rollout/tooling/fix-r2c/final-1 and final-2"
+        },
+        {
+          "what": "test:apps re-run under the round-3 sandbox (R3-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds --commands typecheck,build twice, under the round-3 sandbox (rollout-r3-a d24a159: writes only in the app's own checkouts, checkouts.ts appScope, and the run tmp; a suite connects only to its block and 49152-65535 on loopback, minus the listeners at start and the owner's ports; a named command gets no port; no .env reads) with the write check over the app's own checkouts (git status pinned to their git dirs, find -newer/-cnewer, .git entries): tests.safe[0]: run 1 exit 0, 11 pass, 0 fail in 5.0 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0, 11 pass, 0 fail in 5.3 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.typecheck: not set in apps.json (skipped); commands.build: not set in apps.json (skipped). Every result matches tests.baselines (tests.safe[0]: recorded by R2-C, cmd added in R3-C from the commands those runs executed, which equal the current ones). Reports in rollout/tooling/r3-c-runs/final-1 and final-2"
         }
       ]
     },
@@ -2501,6 +2537,10 @@
         {
           "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
           "reason": "bun run test:apps --root /Users/Ford/workspace-ds twice, under the final sandbox (rollout-r2-a1 5d0cf5a: writes only in the app's checked checkouts and the run tmp, loopback except owner and already-listening ports, no .env reads) with the write check (git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): run 1: exit 0, 35 pass, 0 fail in 5.3 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2: exit 0, 35 pass, 0 fail in 5.2 s, 0 unexpected writes, 0 cache writes, 0 strays. tests.baselines[\"tests.safe[0]\"] records the result (failing names of both runs united); reports in rollout/tooling/fix-r2c/final-1 and final-2"
+        },
+        {
+          "what": "test:apps re-run under the round-3 sandbox (R3-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds --commands typecheck,build twice, under the round-3 sandbox (rollout-r3-a d24a159: writes only in the app's own checkouts, checkouts.ts appScope, and the run tmp; a suite connects only to its block and 49152-65535 on loopback, minus the listeners at start and the owner's ports; a named command gets no port; no .env reads) with the write check over the app's own checkouts (git status pinned to their git dirs, find -newer/-cnewer, .git entries): tests.safe[0]: run 1 exit 0, 35 pass, 0 fail in 5.1 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0, 35 pass, 0 fail in 5.1 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.typecheck: run 1 exit 0 in 3.1 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0 in 2.8 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.build: not set in apps.json (skipped). Every result matches tests.baselines (tests.safe[0], commands.typecheck: recorded by R2-C, cmd added in R3-C from the commands those runs executed, which equal the current ones). Reports in rollout/tooling/r3-c-runs/final-1 and final-2"
         }
       ]
     },
@@ -2671,6 +2711,10 @@
         {
           "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
           "reason": "bun run test:apps --root /Users/Ford/workspace-ds twice, under the final sandbox (rollout-r2-a1 5d0cf5a: writes only in the app's checked checkouts and the run tmp, loopback except owner and already-listening ports, no .env reads) with the write check (git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): run 1: exit 0, 318 pass, 0 fail in 6.3 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2: exit 0, 318 pass, 0 fail in 6.0 s, 0 unexpected writes, 0 cache writes, 0 strays. tests.baselines[\"tests.safe[0]\"] records the result (failing names of both runs united); reports in rollout/tooling/fix-r2c/final-1 and final-2"
+        },
+        {
+          "what": "test:apps re-run under the round-3 sandbox (R3-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds --commands typecheck,build twice, under the round-3 sandbox (rollout-r3-a d24a159: writes only in the app's own checkouts, checkouts.ts appScope, and the run tmp; a suite connects only to its block and 49152-65535 on loopback, minus the listeners at start and the owner's ports; a named command gets no port; no .env reads) with the write check over the app's own checkouts (git status pinned to their git dirs, find -newer/-cnewer, .git entries): tests.safe[0]: run 1 exit 0, 318 pass, 0 fail in 5.9 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0, 318 pass, 0 fail in 5.7 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.typecheck: run 1 exit 0 in 6.2 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0 in 5.6 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.build: not set in apps.json (skipped). Every result matches tests.baselines (tests.safe[0], commands.typecheck: recorded by R2-C, cmd added in R3-C from the commands those runs executed, which equal the current ones). Reports in rollout/tooling/r3-c-runs/final-1 and final-2"
         }
       ]
     },
@@ -2904,6 +2948,10 @@
         {
           "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
           "reason": "bun run test:apps --root /Users/Ford/workspace-ds twice, under the final sandbox (rollout-r2-a1 5d0cf5a: writes only in the app's checked checkouts and the run tmp, loopback except owner and already-listening ports, no .env reads) with the write check (git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): run 1: exit 0, 7 pass, 0 fail in 5.2 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2: exit 0, 7 pass, 0 fail in 5.3 s, 0 unexpected writes, 0 cache writes, 0 strays. tests.baselines[\"tests.safe[0]\"] records the result (failing names of both runs united); reports in rollout/tooling/fix-r2c/final-1 and final-2"
+        },
+        {
+          "what": "test:apps re-run under the round-3 sandbox (R3-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds --commands typecheck,build twice, under the round-3 sandbox (rollout-r3-a d24a159: writes only in the app's own checkouts, checkouts.ts appScope, and the run tmp; a suite connects only to its block and 49152-65535 on loopback, minus the listeners at start and the owner's ports; a named command gets no port; no .env reads) with the write check over the app's own checkouts (git status pinned to their git dirs, find -newer/-cnewer, .git entries): tests.safe[0]: run 1 exit 0, 7 pass, 0 fail in 5.1 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0, 7 pass, 0 fail in 5.0 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.typecheck: run 1 exit 0 in 6.0 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0 in 5.6 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.build: not set in apps.json (skipped). Every result matches tests.baselines (tests.safe[0], commands.typecheck: recorded by R2-C, cmd added in R3-C from the commands those runs executed, which equal the current ones). Reports in rollout/tooling/r3-c-runs/final-1 and final-2"
         }
       ]
     },
@@ -3066,6 +3114,10 @@
         {
           "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
           "reason": "bun run test:apps --root /Users/Ford/workspace-ds twice, under the final sandbox (rollout-r2-a1 5d0cf5a: writes only in the app's checked checkouts and the run tmp, loopback except owner and already-listening ports, no .env reads) with the write check (git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): run 1: exit 0, 749 pass, 0 fail in 8.8 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2: exit 0, 749 pass, 0 fail in 9.8 s, 0 unexpected writes, 0 cache writes, 0 strays. tests.baselines[\"tests.safe[0]\"] records the result (failing names of both runs united); reports in rollout/tooling/fix-r2c/final-1 and final-2"
+        },
+        {
+          "what": "test:apps re-run under the round-3 sandbox (R3-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds --commands typecheck,build twice, under the round-3 sandbox (rollout-r3-a d24a159: writes only in the app's own checkouts, checkouts.ts appScope, and the run tmp; a suite connects only to its block and 49152-65535 on loopback, minus the listeners at start and the owner's ports; a named command gets no port; no .env reads) with the write check over the app's own checkouts (git status pinned to their git dirs, find -newer/-cnewer, .git entries): tests.safe[0]: run 1 exit 0, 749 pass, 0 fail in 8.7 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0, 749 pass, 0 fail in 8.6 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.typecheck: run 1 exit 0 in 2.5 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0 in 2.5 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.build: not set in apps.json (skipped). Every result matches tests.baselines (tests.safe[0], commands.typecheck: recorded by R2-C, cmd added in R3-C from the commands those runs executed, which equal the current ones). Reports in rollout/tooling/r3-c-runs/final-1 and final-2"
         }
       ]
     },
@@ -3269,6 +3321,14 @@
         {
           "what": "native window colors in src/main/index.ts",
           "reason": "outside the scan path (main process BrowserWindow backgroundColor); keep them in step with the tokens by hand"
+        },
+        {
+          "what": "test:apps re-run under the round-3 sandbox (R3-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds --commands typecheck,build twice, under the round-3 sandbox (rollout-r3-a d24a159: writes only in the app's own checkouts, checkouts.ts appScope, and the run tmp; a suite connects only to its block and 49152-65535 on loopback, minus the listeners at start and the owner's ports; a named command gets no port; no .env reads) with the write check over the app's own checkouts (git status pinned to their git dirs, find -newer/-cnewer, .git entries): commands.typecheck: run 1 exit 0 in 1.7 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0 in 1.4 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.build: run 1 exit 0 in 1.4 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0 in 1.1 s, 0 unexpected writes, 0 cache writes, 0 strays. Every result matches tests.baselines (commands.typecheck: recorded by R2-C, cmd added in R3-C from the commands those runs executed, which equal the current ones). Reports in rollout/tooling/r3-c-runs/final-1 and final-2"
+        },
+        {
+          "what": "commands.build writes into {tmp}",
+          "reason": "bun --no-env-file run build --outDir {tmp}/system-view-out: electron-vite 5 passes --outDir to every build (main/, preload/ and renderer/ land under it), so nothing goes to the checkout's out/. Under test:apps (R3-C, round-3 sandbox, no network port): run 1 exit 0 in 1.4 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0 in 1.1 s, 0 unexpected writes, 0 cache writes, 0 strays"
         }
       ]
     },
@@ -3541,6 +3601,10 @@
         {
           "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
           "reason": "bun run test:apps --root /Users/Ford/workspace-ds twice, under the final sandbox (rollout-r2-a1 5d0cf5a: writes only in the app's checked checkouts and the run tmp, loopback except owner and already-listening ports, no .env reads) with the write check (git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): run 1: exit 0, 92 pass, 0 fail in 6.4 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2: exit 0, 92 pass, 0 fail in 6.9 s, 0 unexpected writes, 0 cache writes, 0 strays. tests.baselines[\"tests.safe[0]\"] records the result (failing names of both runs united); reports in rollout/tooling/fix-r2c/final-1 and final-2"
+        },
+        {
+          "what": "test:apps re-run under the round-3 sandbox (R3-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds --commands typecheck,build twice, under the round-3 sandbox (rollout-r3-a d24a159: writes only in the app's own checkouts, checkouts.ts appScope, and the run tmp; a suite connects only to its block and 49152-65535 on loopback, minus the listeners at start and the owner's ports; a named command gets no port; no .env reads) with the write check over the app's own checkouts (git status pinned to their git dirs, find -newer/-cnewer, .git entries): tests.safe[0]: run 1 exit 0, 92 pass, 0 fail in 5.9 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0, 92 pass, 0 fail in 5.9 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.typecheck: run 1 exit 0 in 1.4 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0 in 1.4 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.build: not set in apps.json (skipped). Every result matches tests.baselines (tests.safe[0], commands.typecheck: recorded by R2-C, cmd added in R3-C from the commands those runs executed, which equal the current ones). Reports in rollout/tooling/r3-c-runs/final-1 and final-2"
         }
       ]
     },
@@ -3784,6 +3848,10 @@
         {
           "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
           "reason": "bun run test:apps --root /Users/Ford/workspace-ds twice, under the final sandbox (rollout-r2-a1 5d0cf5a: writes only in the app's checked checkouts and the run tmp, loopback except owner and already-listening ports, no .env reads) with the write check (git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): run 1: exit 0, 10 pass, 0 fail in 5.4 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2: exit 0, 10 pass, 0 fail in 5.5 s, 0 unexpected writes, 0 cache writes, 0 strays. tests.baselines[\"tests.safe[0]\"] records the result (failing names of both runs united); reports in rollout/tooling/fix-r2c/final-1 and final-2"
+        },
+        {
+          "what": "test:apps re-run under the round-3 sandbox (R3-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds --commands typecheck,build twice, under the round-3 sandbox (rollout-r3-a d24a159: writes only in the app's own checkouts, checkouts.ts appScope, and the run tmp; a suite connects only to its block and 49152-65535 on loopback, minus the listeners at start and the owner's ports; a named command gets no port; no .env reads) with the write check over the app's own checkouts (git status pinned to their git dirs, find -newer/-cnewer, .git entries): tests.safe[0]: run 1 exit 0, 10 pass, 0 fail in 5.4 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0, 10 pass, 0 fail in 5.3 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.typecheck: not set in apps.json (skipped); commands.build: not set in apps.json (skipped). Every result matches tests.baselines (tests.safe[0]: recorded by R2-C, cmd added in R3-C from the commands those runs executed, which equal the current ones). Reports in rollout/tooling/r3-c-runs/final-1 and final-2"
         }
       ]
     },
@@ -3994,6 +4062,10 @@
         {
           "what": "dormant since 2026-04-08",
           "reason": "audit risk; MDXEditor overrides target hashed class names (globals.css)"
+        },
+        {
+          "what": "test:apps re-run under the round-3 sandbox (R3-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds --commands typecheck,build twice, under the round-3 sandbox (rollout-r3-a d24a159: writes only in the app's own checkouts, checkouts.ts appScope, and the run tmp; a suite connects only to its block and 49152-65535 on loopback, minus the listeners at start and the owner's ports; a named command gets no port; no .env reads) with the write check over the app's own checkouts (git status pinned to their git dirs, find -newer/-cnewer, .git entries): commands.typecheck: run 1 exit 0 in 1.4 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0 in 1.4 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.build: not set in apps.json (skipped). Every result matches tests.baselines (commands.typecheck: recorded by R2-C, cmd added in R3-C from the commands those runs executed, which equal the current ones). Reports in rollout/tooling/r3-c-runs/final-1 and final-2"
         }
       ]
     },
@@ -5233,6 +5305,10 @@
         {
           "what": "tests.safe not run: blocked",
           "reason": "the app is blocked by uncommitted owner work (STATE.md app_ledger), so test:apps did not run it and tests.baselines has no entry; when it unblocks, the managing agent runs bun run test:apps <app> (twice) and records the baseline before the tests gate counts it"
+        },
+        {
+          "what": "commands.build writes into {tmp} (not run: blocked)",
+          "reason": "bun --no-env-file run build --outDir {tmp}/pen-plotter-out: electron-vite build (^5.0.0, the CLI system-view's build is proven with) passes --outDir to the main, preload and renderer builds, so nothing goes to apps/desktop/out/. Not run: the app is blocked (STATE.md app_ledger) and has no install in the mirror; prove it with test:apps --no-tests --commands build when it unblocks"
         }
       ]
     },
@@ -5672,6 +5748,10 @@
         {
           "what": "tests.safe not run: blocked",
           "reason": "the app is blocked by uncommitted owner work (STATE.md app_ledger), so test:apps did not run it and tests.baselines has no entry; when it unblocks, the managing agent runs bun run test:apps <app> (twice) and records the baseline before the tests gate counts it"
+        },
+        {
+          "what": "commands.build writes into {tmp} (not run: blocked)",
+          "reason": "bun --no-env-file run ui:build --outDir {tmp}/gamecube-dist: vite build's CLI --outDir overrides apps/frontend/vite.config.ts's build.outDir (apps/frontend/dist). Not run: the app is blocked (STATE.md app_ledger) and has no install in the mirror; prove it with test:apps --no-tests --commands build when it unblocks"
         }
       ]
     },
