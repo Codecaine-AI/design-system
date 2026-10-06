@@ -60,6 +60,12 @@ switch (mode) {
     console.log(problems.join("\n") + "\n" + bunSummary(problems.length ? 0 : 1, problems.length ? 1 : 0));
     process.exit(problems.length ? 1 : 0);
   }
+  case "bind": {
+    let bound = false;
+    try { Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: () => new Response("") }).stop(true); bound = true; } catch {}
+    console.log(bound ? "a build command could listen on a port" : "no port, as expected");
+    process.exit(bound ? 1 : 0);
+  }
   case "hang": write(arg, String(process.pid)); await new Promise((r) => setTimeout(r, 120_000)); break;
 }
 `;
@@ -67,7 +73,7 @@ switch (mode) {
 const req = { required: true } as const;
 const na = { required: false, reason: "stand-in" } as const;
 
-function app(id: string, cmd: string, extra: { baselines?: Record<string, TestBaseline>; typecheck?: string; env?: Record<string, string> } = {}): AppEntry {
+function app(id: string, cmd: string, extra: { baselines?: Record<string, TestBaseline>; typecheck?: string; build?: string; env?: Record<string, string> } = {}): AppEntry {
   return {
     id,
     name: id,
@@ -88,7 +94,7 @@ function app(id: string, cmd: string, extra: { baselines?: Record<string, TestBa
     checks: { resolution: req, wiring: req, literals: req, names: req, shell: na, structure: na },
     gates: { lint: req, verify: na, snapshot: na, pixelDiff: na, tests: req },
     run: { mode: "none", reason: "stand-in" },
-    commands: { cwd: "core/member/app", ...(extra.typecheck ? { typecheck: extra.typecheck } : {}) },
+    commands: { cwd: "core/member/app", ...(extra.typecheck ? { typecheck: extra.typecheck } : {}), ...(extra.build ? { build: extra.build } : {}) },
     tests: { safe: cmd ? [{ cmd, cwd: "core/member/app" }] : [], ...(extra.baselines ? { baselines: extra.baselines } : {}) },
     routes: [],
     runProfile: { env: extra.env ?? {}, unsetEnv: [], tempHome: true, fixtures: [], flags: [], ports: {}, proof: { status: "unproven", method: "" } },
@@ -112,7 +118,7 @@ const APPS: AppEntry[] = [
   app("vitest-new", run("vitest-new"), { baselines: { "tests.safe[0]": known(["src/a.test.ts > s > old"]) } }),
   app("unittest-known", run("unittest-known"), { baselines: { "tests.safe[0]": known(["m.C.test_x"]) } }),
   // The baseline's tsc error sits on another line now (line numbers are not compared); the second error is new.
-  app("tsc", "", { typecheck: run("tsc"), baselines: { "commands.typecheck": known(["src/a.ts: TS2322: Type 'x' is not assignable to type 'y'."], { exit: 2 }) } }),
+  app("tsc", "", { typecheck: run("tsc"), build: run("bind"), baselines: { "commands.typecheck": known(["src/a.ts: TS2322: Type 'x' is not assignable to type 'y'."], { exit: 2 }) } }),
   app("write-tracked", run("write-tracked")),
   app("write-ignored", run("write-ignored")),
   app("write-enclosing", run("write-enclosing")),
@@ -199,7 +205,7 @@ describe.skipIf(!!noSandbox)("bun run test:apps", () => {
   const ids = APPS.map((a) => a.id).filter((id) => id !== "hang" && id !== "tsc");
   beforeAll(() => {
     main = testApps(["--json", ...ids]);
-    typecheck = testApps(["--json", "--no-tests", "--commands", "typecheck", "tsc"]);
+    typecheck = testApps(["--json", "--no-tests", "--commands", "typecheck,build", "tsc"]);
   }, 180_000);
   const result = (id: string) => (id === "tsc" ? typecheck : main).reports[id]?.commands?.[0];
 
@@ -255,6 +261,12 @@ describe.skipIf(!!noSandbox)("bun run test:apps", () => {
   test("a test command reaches its own ephemeral servers but no port that was listening before it started", () => {
     expect({ ok: result("connect").ok, log: readFileSync(result("connect").log, "utf8") }).toMatchObject({ ok: true });
     expect(preExistingHits()).toBe(0);
+  });
+
+  test("a named command (build, typecheck) gets no network port at all", () => {
+    const build = typecheck.reports["tsc"].commands[1];
+    expect(build.label).toBe("commands.build");
+    expect({ ok: build.ok, log: readFileSync(build.log, "utf8") }).toMatchObject({ ok: true });
   });
 
   test("each report proposes the baseline the managing agent records", () => {

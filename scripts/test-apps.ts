@@ -403,8 +403,9 @@ async function runOne(app: AppEntry, planned: PlannedCommand, opts: TestAppOptio
     const cwd = resolvePath(root, planned.cwd);
     // Test suites start their own servers on ephemeral ports: any loopback port but the owner's and every port
     // already listened on (decision 22). Named commands (typecheck, build) need no port.
-    const deniedPorts = planned.label.startsWith("tests.") ? [...new Set([...OWNER_PORTS, ...listeningPorts()])].sort((a, b) => a - b) : undefined;
-    const policy = deniedPorts ? runPolicy({ root, tmp, outDir: opts.outDir, anyLoopback: true, deniedPorts }) : runPolicy({ root, tmp, outDir: opts.outDir });
+    const listening = planned.label.startsWith("tests.") ? listeningPorts() : undefined;
+    const policy = listening ? runPolicy({ root, tmp, outDir: opts.outDir, anyLoopback: true, extraDeniedPorts: listening }) : runPolicy({ root, tmp, outDir: opts.outDir });
+    const deniedPorts = listening ? [...new Set([...OWNER_PORTS, ...listening])].sort((a, b) => a - b) : undefined;
     const argv = sandboxCommand(policy, ["/bin/sh", "-c", withWatchdog(expanded)]);
     writeFileSync(
       log,
