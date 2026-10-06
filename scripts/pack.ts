@@ -21,6 +21,10 @@
  * Scratch folders (npm's staging folder, its HOME, cache and TMPDIR) go under safeTempBase(), never under
  * the owner's tree, the home itself, ~/Library or a credential store, whatever TMPDIR says.
  *
+ * npm is resolved once through PATH (`Bun.which`) and run by that absolute path. It is not a system binary:
+ * on this machine it lives in ~/.nvm, a user-writable dir. Known limit: pack trusts that npm. No rollout run
+ * can plant one there: the run sandbox denies every write outside --root and the run's temp dir.
+ *
  * On success it prints two lines, and a third when the tgz was already there:
  *   tgz: <absolute path>
  *   tokens.css sha256: <hex of the dist/css/tokens.css bytes inside the tgz>
@@ -356,7 +360,9 @@ export async function pack(opts: PackOptions = {}): Promise<PackResult> {
 
 /** Runs `npm pack` from the package root into `dest`. Returns the path of the tgz it wrote. */
 function npmPack(root: string, dest: string, base: string): string {
-  const npm = spawnSync("npm", ["pack", "--ignore-scripts", "--pack-destination", dest, "--json"], {
+  const bin = Bun.which("npm");
+  if (!bin) throw new PackError("design-system: npm is not on PATH; nothing packed");
+  const npm = spawnSync(bin, ["pack", "--ignore-scripts", "--pack-destination", dest, "--json"], {
     cwd: root,
     encoding: "utf8",
     env: npmEnv(process.env, base),

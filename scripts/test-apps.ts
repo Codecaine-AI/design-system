@@ -62,6 +62,7 @@ import { OWNER_PORTS } from "./lib/owner";
 import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, REGISTRY_PATH, resolvePath, type AppEntry, type Registry, type TestBaseline } from "./lib/registry";
 import { safeAppId, safeChildPath, safeOutputPath, safeTempBase } from "./lib/safe-paths";
 import { runPolicy, sandboxCommand, sandboxUnavailable, SANDBOX_EXEC } from "./lib/sandbox";
+import { SYSTEM_BIN, SYSTEM_PATH } from "./lib/system-bin";
 
 /** Build caches: writes there are listed, never failed. Matched against root-relative paths. */
 export const BUILD_CACHES: ReadonlyArray<{ pattern: RegExp; what: string }> = [
@@ -199,8 +200,8 @@ export function compareWithBaseline(exit: number, parsed: ParsedResult, baseline
 // Write checks
 // ---------------------------------------------------------------------------
 
-/** System binaries by absolute path: a run could write a PATH dir (/usr/local/bin) the tool then calls. */
-export const TOOLS = { git: "/usr/bin/git", find: "/usr/bin/find", netstat: "/usr/sbin/netstat" } as const;
+/** System binaries by absolute path (SYSTEM_BIN, plus find and netstat): never through PATH. */
+export const TOOLS = { git: SYSTEM_BIN.git, ps: SYSTEM_BIN.ps, sh: SYSTEM_BIN.sh, find: "/usr/bin/find", netstat: "/usr/sbin/netstat" } as const;
 
 /**
  * git as the write check runs it: no system or global config, no fsmonitor, no optional locks, a minimal
@@ -208,7 +209,7 @@ export const TOOLS = { git: "/usr/bin/git", find: "/usr/bin/find", netstat: "/us
  * rewrote cannot point git at a repository (and its config) the run made.
  */
 function git(dir: string, args: string[], pin?: { gitDir: string }): { status: number | null; stdout: string } {
-  const env: Record<string, string> = { PATH: "/usr/bin:/bin", GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: "/dev/null", GIT_OPTIONAL_LOCKS: "0", HOME: "/var/empty", LANG: "C" };
+  const env: Record<string, string> = { PATH: SYSTEM_PATH, GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: "/dev/null", GIT_OPTIONAL_LOCKS: "0", HOME: "/var/empty", LANG: "C" };
   if (pin) Object.assign(env, { GIT_DIR: pin.gitDir, GIT_WORK_TREE: dir });
   const result = spawnSync(TOOLS.git, ["-c", "core.fsmonitor=false", "-c", "core.untrackedCache=false", "-C", dir, ...args], { encoding: "utf8", env, maxBuffer: 256 << 20, timeout: 120_000 });
   return { status: result.status, stdout: result.stdout ?? "" };
@@ -451,7 +452,7 @@ const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
  * python) are found this way.
  */
 function killTagged(tag: string): number[] {
-  const out = spawnSync("/bin/ps", ["-A", "-E", "-ww", "-o", "pid=,command="], { encoding: "utf8", maxBuffer: 64 << 20, timeout: 30_000 }).stdout ?? "";
+  const out = spawnSync(TOOLS.ps, ["-A", "-E", "-ww", "-o", "pid=,command="], { encoding: "utf8", maxBuffer: 64 << 20, timeout: 30_000 }).stdout ?? "";
   const pids = out
     .split("\n")
     .filter((line) => line.includes(`DS_TEST_APPS_RUN=${tag}`))
@@ -529,7 +530,7 @@ async function runOne(app: AppEntry, planned: PlannedCommand, opts: TestAppOptio
     const gitGuard = opts.scope.checkouts.flatMap((dir) => [join(dir, ".git"), ...(inside(opts.scope.gitDirs[dir]!, root) ? [opts.scope.gitDirs[dir]!] : [])]);
     const policy = { ...base, writable: [...opts.scope.scan, tmp], readOnly: [...(base.readOnly ?? []), ...opts.scope.prune, ...new Set(gitGuard)] };
     const deniedPorts = listening ? [...new Set([...OWNER_PORTS, ...listening])].sort((a, b) => a - b) : undefined;
-    const argv = sandboxCommand(policy, ["/bin/sh", "-c", withWatchdog(expanded)]);
+    const argv = sandboxCommand(policy, [TOOLS.sh, "-c", withWatchdog(expanded)]);
     writeFileSync(
       log,
       `$ ${expanded}\n  (cwd ${cwd}, sandboxed, HOME ${tmp}, writes only in ${opts.scope.scan.join(", ")} and HOME; ${deniedPorts ? `loopback except ${deniedPorts.length} owner or listening ports: ${deniedPorts.join(",")}` : "no network port"})\n`,
