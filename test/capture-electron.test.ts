@@ -23,7 +23,12 @@ const electronDir = (() => {
     return null;
   }
 })();
-const skip = playwrightUnavailable(mirror) ?? (electronDir ? null : "electron does not resolve from the mirror's system-view");
+// Opt-in, like app-runner's Electron tests: macOS cfprefsd writes ~/Library/Preferences/com.github.Electron.plist
+// for any Electron launch, outside the run's sandbox.
+const skip =
+  process.env.DS_TEST_ELECTRON !== "1"
+    ? "set DS_TEST_ELECTRON=1 to run it (an Electron launch writes ~/Library/Preferences/com.github.Electron.plist)"
+    : (playwrightUnavailable(mirror) ?? (electronDir ? null : "electron does not resolve from the mirror's system-view"));
 if (skip) console.warn(`skipping the electron capture test: ${skip}`);
 
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-capture-electron-")));
