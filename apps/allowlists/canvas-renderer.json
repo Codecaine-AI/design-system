@@ -8,6 +8,54 @@
       "file": "codecaine/core/canvas/packages/canvas/src/theme/canvas-style.ts",
       "match": "^(#(f5f5f5|d9d9d9|000000|5c5c5c|757575|d5322f|eb7500|e8a302|019142|369e94|1a5cdf|9747ff|b74d85|757980|ffffff)|rgba\\(0, 0, 0, 0\\.25\\))$",
       "reason": "FIGJAM_PRESET (canvas-style.ts 219-280) stays canvas-owned (audit 'Not included'): 20 hits. #ffffff also appears in the schematic presets, which migrate; the literal floor caps the total at the FigJam count"
+    },
+    {
+      "file": "codecaine/core/canvas/packages/canvas/src/theme/canvas-style.ts",
+      "match": "^#32363e$",
+      "category": "hex",
+      "reason": "schematic-dark raised cards (SCHEMATIC_DARK_CARD_FILL): no dark surface token sits above the section tints, and inverting the card depth is a product change the owner has not made; token gap (decision 64) (1 hit)"
+    },
+    {
+      "file": "codecaine/core/canvas/packages/canvas/src/stage/editor/components/TopBar.tsx",
+      "match": "^max-w-\\[calc\\(100vw-2rem\\)\\]$",
+      "category": "twArbitrary",
+      "reason": "viewport clamp on a floating panel so it stays inside narrow windows; layout geometry with no token, kept (decision 43; canvas-studio precedent): the floating top bar (1 hit)"
+    },
+    {
+      "file": "codecaine/core/canvas/packages/canvas/src/stage/editor/components/TopBar.tsx",
+      "match": "^max-w-\\[45vw\\]$",
+      "category": "twArbitrary",
+      "reason": "viewport clamp that truncates the board title in the top bar; layout geometry with no token, kept (decision 43; canvas-studio's max-w-[50vw] precedent) (2 hits)"
+    },
+    {
+      "file": "codecaine/core/canvas/packages/canvas/src/stage/editor/features/inspector/Inspector.tsx",
+      "match": "^max-w-\\[calc\\(100vw-2rem\\)\\]$",
+      "category": "twArbitrary",
+      "reason": "viewport clamp on a floating panel so it stays inside narrow windows; layout geometry with no token, kept (decision 43; canvas-studio precedent): the floating w-80 inspector (canvas-studio note 5) (1 hit)"
+    },
+    {
+      "file": "codecaine/core/canvas/packages/canvas/src/ui/badge.tsx",
+      "match": "^transition-\\[color,box-shadow\\]$",
+      "category": "twArbitrary",
+      "reason": "transition property list (which properties animate), not a design value; no token or exact built-in utility (decision 59) (1 hit)"
+    },
+    {
+      "file": "codecaine/core/canvas/packages/canvas/src/ui/input.tsx",
+      "match": "^transition-\\[color,box-shadow\\]$",
+      "category": "twArbitrary",
+      "reason": "transition property list (which properties animate), not a design value; no token or exact built-in utility (decision 59) (1 hit)"
+    },
+    {
+      "file": "codecaine/core/canvas/packages/canvas/src/ui/textarea.tsx",
+      "match": "^transition-\\[color,box-shadow\\]$",
+      "category": "twArbitrary",
+      "reason": "transition property list (which properties animate), not a design value; no token or exact built-in utility (decision 59) (1 hit)"
+    },
+    {
+      "file": "codecaine/core/canvas/packages/canvas/src/objects/sticky/def.tsx",
+      "match": "^rgba\\(0, 0, 0, 0\\.15\\)$",
+      "category": "rgb",
+      "reason": "FigJam paper-sticky drop shadow (STICKY_GEOMETRY.shadow): painted only when stickyStyle is \"paper\", which only FIGJAM_PRESET sets; schematic card stickies override it inline (canvas-owned FigJam art, audit 'Not included') (1 hit)"
     }
   ],
   "twClasses": []
