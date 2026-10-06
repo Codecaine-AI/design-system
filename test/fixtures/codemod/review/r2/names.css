@@ -3,3 +3,4 @@
   --connector-label-background: #f8f8f7;
   --label-color: #666562;
 }
+.modal { --bg-mask: rgba(0, 0, 0, 0.45); mask-image: linear-gradient(#000000, transparent); }

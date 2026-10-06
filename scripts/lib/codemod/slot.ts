@@ -4,12 +4,13 @@
  * JS: the holder of the literal's whole expression (walking out through ternaries, `||`, `??`,
  * `&&` and parentheses): an object key, an assignment, a call argument, a JSX attribute, a return
  * value. A value reaches CSS only in a CSS template, a JSX style object (`style={{…}}`), an object a
- * style-named holder or a CSSProperties type holds, `el.style.x = …`, `style.setProperty(…)`, or a
- * color attribute of a DOM/SVG element. Everything else (settings, palettes, chart options, canvas
- * 2D, comparisons, call arguments, text) is not known to reach CSS.
+ * style-named holder or a CSSProperties type holds, `el.style.x = …`, `style.setProperty(…)`, or an
+ * SVG presentation attribute of a DOM element. Everything else (settings, palettes, chart options,
+ * canvas 2D, comparisons, call arguments, text) is not known to reach CSS.
  *
- * Markup (HTML, Vue, Svelte, Astro, Markdown): only <style> bodies, style attributes and color
- * attributes; never element text, other attributes, script blocks or Markdown code.
+ * Markup (HTML, Vue, Svelte, Astro, Markdown): only <style> bodies, style attributes, class
+ * attributes and SVG presentation attributes; never element text, other attributes, HTML's own
+ * bgcolor or <font color>, script blocks or Markdown prose and code.
  */
 
 import { attributeAt } from "./context.ts";

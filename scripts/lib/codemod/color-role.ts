@@ -414,7 +414,7 @@ const isHue = (p: string) => HUES.some((x) => p.startsWith(`color.${x}.`));
 export function pickColor(data: TokenData, literal: Rgba, ctx: Context, opts: Allow & { ringShadow?: boolean }): ColorPick {
   if (literal.a <= INVISIBLE_ALPHA) return { path: null, method: null, deltaE: null, why: `transparent (alpha ${round2(literal.a)}): keep \`transparent\`, or drop the declaration` };
   // A mask reads only alpha, and an SVG filter's flood or light color is filter input: neither is a color anyone sees as a role.
-  if (/mask/i.test(ctx.property ?? "")) return { path: null, method: null, deltaE: null, why: "a mask: only its alpha counts, so no color token; keep it" };
+  if (/^(?:-webkit-)?mask(?:-image|-border|-border-source)?$|^(?:Webkit)?[mM]ask(?:Image|Border|BorderSource)?$/.test(ctx.property ?? "")) return { path: null, method: null, deltaE: null, why: "a mask: only its alpha counts, so no color token; keep it" };
   if (/^(?:flood|lighting)-?color$/i.test(ctx.property ?? "")) return { path: null, method: null, deltaE: null, why: "an SVG filter input (flood or lighting color): no color token; keep it" };
   const theme = ctx.theme;
   const page = data.page[theme];

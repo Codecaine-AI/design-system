@@ -115,7 +115,8 @@ export function toMarkdown(t: Table, jsonPath: string): string {
   out.push(`- ${s.rows} rows: ${s.role} by role, ${s.nearest} by nearest color, ${s.unmapped} unmapped, ${s.handEdit} mapped but need a hand edit.`);
   const dropped = droppedText(t.dropped);
   if (dropped) out.push(`- Not in this table (soft categories; \`propose --all\` adds them): ${dropped}.`);
-  out.push(`- To apply: set \`"approve": "yes"\` on rows in \`${jsonPath}\` (edit \`replacement\` to change a proposal), then run \`bun run codemod:literals --app ${t.app} --root ${t.root} apply --table ${jsonPath}\`.`);
+  if (t.tailwind) out.push(`- Classes target ${t.tailwind === "uno" ? "UnoCSS: no class rewrites" : t.tailwind === "none" ? "Tailwind v4 (the app has no Tailwind build)" : `Tailwind ${t.tailwind}`}.`);
+  out.push(`- To apply: set \`"approve": "yes"\` on rows in \`${jsonPath}\` (edit \`replacement\` to change a proposal), then run \`bun run codemod:literals --app ${t.app} --root ${t.root} apply --table ${jsonPath}\`. A file edited since this table was written keeps all its rows: propose again.`);
   out.push("- ΔE is OKLab × 100 between the literal and the token, both drawn over the page surface; about 2 is the smallest visible step.");
   out.push("");
   out.push("| # | file:line | literal | context | proposed | replacement | how | ΔE | why | approve |");

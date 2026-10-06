@@ -537,6 +537,9 @@ describe("propose: radius, names and types", () => {
     const rows = r2Rows("names.css");
     expect(r2(rows, 3, "#f8f8f7").proposed).toBe("color.surface.panel"); // --connector-label-background
     expect(r2(rows, 4, "#666562").proposed).toBe("color.text.muted"); // --label-color
+    // Only a CSS mask property is a mask: a variable named for a mask scrim still reads by role.
+    expect(r2(rows, 6, "#000000").why).toContain("a mask");
+    expect(r2(rows, 6, "rgba(0, 0, 0, 0.45)").why).not.toContain("a mask");
   });
 
   test("a literal type alias, an annotation and a type argument are hand edits", () => {
