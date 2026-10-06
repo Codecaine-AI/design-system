@@ -22,6 +22,7 @@ import { userInfo } from "node:os";
 import { join } from "node:path";
 
 import { OWNER_PORTS, OWNER_TREE } from "./owner";
+import { DESIGN_SYSTEM_ROOT } from "./registry";
 import { canonicalPath, sameDir } from "./safe-paths";
 
 export const SANDBOX_EXEC = "/usr/bin/sandbox-exec";
@@ -37,6 +38,8 @@ export interface SandboxPolicy {
   writable: string[];
   /** Paths the run may neither read nor write (checked after `writable`, so they win). */
   hidden: string[];
+  /** Paths inside `hidden` the run may still read (not write): the design-system checkout the tool runs from. */
+  readable?: string[];
   /** Loopback ports the run may never connect to. */
   deniedPorts: readonly number[];
 }
@@ -66,9 +69,11 @@ export function sandboxProfile(policy: SandboxPolicy): string {
     `(deny file-write* ${subpaths([policy.home])})`,
   ];
   if (policy.writable.length) lines.push(`(allow file-write* ${subpaths(policy.writable)})`);
-  // A #"..." regex literal takes the pattern as written: backslashes are not string escapes there.
-  lines.push(";; reads: no .env files, nothing hidden", `(deny file-read* file-write* (regex #"${ENV_FILE_REGEX}"))`);
+  lines.push(";; reads: nothing hidden except the readable dirs, and no .env file anywhere (last, so it always wins)");
   if (policy.hidden.length) lines.push(`(deny file-read* file-write* ${subpaths(policy.hidden)})`);
+  if (policy.hidden.length && policy.readable?.length) lines.push(`(allow file-read* ${subpaths(policy.readable)})`);
+  // A #"..." regex literal takes the pattern as written: backslashes are not string escapes there.
+  lines.push(`(deny file-read* file-write* (regex #"${ENV_FILE_REGEX}"))`);
   return `${lines.join("\n")}\n`;
 }
 
@@ -82,14 +87,29 @@ const HIDDEN_IN_HOME = [".ssh", ".aws", ".gnupg", ".netrc", ".npmrc", ".docker",
 
 /**
  * The run policy: writes only in `root`, the run's temp dir and the run folder (out dir); the owner's
- * tree hidden unless `root` is that tree; owner ports denied.
+ * tree hidden unless `root` is that tree, except the design-system checkout the tool runs from (its
+ * fixture servers and Electron preload), which stays readable; owner ports denied.
  */
-export function runPolicy(opts: { root: string; tmp: string; outDir: string; home?: string; ownerTree?: string; deniedPorts?: readonly number[] }): SandboxPolicy {
+export function runPolicy(opts: {
+  root: string;
+  tmp: string;
+  outDir: string;
+  home?: string;
+  ownerTree?: string;
+  deniedPorts?: readonly number[];
+  designSystem?: string;
+}): SandboxPolicy {
   const home = opts.home ?? realHome();
   const owner = opts.ownerTree ?? OWNER_TREE;
   const hidden = HIDDEN_IN_HOME.map((rel) => join(home, rel));
   if (!sameDir(opts.root, owner)) hidden.push(owner);
-  return { home, writable: [opts.root, opts.tmp, opts.outDir], hidden, deniedPorts: opts.deniedPorts ?? OWNER_PORTS };
+  return {
+    home,
+    writable: [opts.root, opts.tmp, opts.outDir],
+    hidden,
+    readable: [opts.designSystem ?? DESIGN_SYSTEM_ROOT],
+    deniedPorts: opts.deniedPorts ?? OWNER_PORTS,
+  };
 }
 
 const selfTests = new Map<string, string | null>();
