@@ -355,13 +355,29 @@ export function withExtensions(base: string): string | null {
   return null;
 }
 
+/** The URL prefix a host serves the app's resolved design-system package under (decision 30). */
+export const DS_URL_PREFIX = "/@codecaine-ai/design-system/";
+
+/**
+ * The package path of a root-absolute design-system URL (`/@codecaine-ai/design-system/css/fonts.css`
+ * gives `css/fonts.css`), or null for any other specifier. Query and fragment are dropped.
+ */
+export function designSystemUrlPath(spec: string): string | null {
+  const clean = spec.replace(/[?#].*$/, "");
+  if (!clean.startsWith(DS_URL_PREFIX)) return null;
+  const rest = clean.slice(DS_URL_PREFIX.length);
+  return rest && !rest.split("/").includes("..") ? rest : null;
+}
+
 /**
  * Resolves an import specifier from a file. Relative specifiers resolve against the importing
  * file; root-absolute ones ("/src/main.tsx" from an HTML page) against `serveRoot`, the app's web
  * root (an absolute file-system path when nothing is there); bare ones through node_modules.
  * `relativeFirst` (HTML and CSS references) tries a bare-looking path against the file first.
+ * A root-absolute `/@codecaine-ai/design-system/<package path>` URL is that file in `designSystem`,
+ * the package the app resolves (decision 30: the host serves the prefix from it).
  */
-export function resolveSpecifier(spec: string, fromFile: string, relativeFirst = false, serveRoot?: string): string | null {
+export function resolveSpecifier(spec: string, fromFile: string, relativeFirst = false, serveRoot?: string, designSystem?: string | null): string | null {
   const clean = spec.replace(/[?#].*$/, "");
   if (!clean || /^(?:https?:|data:|\/\/)/i.test(clean)) return null;
   if (clean.startsWith(".")) return withExtensions(resolve(dirname(fromFile), clean));
@@ -369,6 +385,11 @@ export function resolveSpecifier(spec: string, fromFile: string, relativeFirst =
   if (relativeFirst && !clean.startsWith("/")) {
     const local = withExtensions(resolve(dirname(fromFile), clean));
     if (local) return local;
+  }
+  const dsPath = designSystemUrlPath(clean);
+  if (dsPath !== null && designSystem) {
+    const file = join(designSystem, dsPath);
+    return isFile(file) ? file : null;
   }
   if (clean.startsWith("/")) return (serveRoot ? withExtensions(join(serveRoot, clean)) : null) ?? withExtensions(clean);
   const parsed = splitSpecifier(clean);

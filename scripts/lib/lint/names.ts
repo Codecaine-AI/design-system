@@ -14,6 +14,11 @@
  *   `--ds-x:` (CSS, SCSS, Less, HTML `<style>` and `style=""`, CSS in JS strings, a Tailwind
  *   arbitrary property `[--ds-x:…]`), `setProperty("--ds-x", …)`, and a style-object key
  *   `"--ds-x":` or `["--ds-x"]:`. A reference (`var(--ds-x)`, `cssVar("…")`) is fine.
+ *   One exception (decision 32, guide/layout.md): a `--ds-layout-*` override scoped to the shell,
+ *   in a rule whose selectors' subjects carry `ds-shell` (`.docs-app.ds-shell { … }`), on the shell
+ *   element itself (its `style`, a Tailwind arbitrary property in its class string), or set at run
+ *   time on the shell element or `document.documentElement` (shell-scope.ts). The name must still
+ *   exist. Colors, pinned `--ds-light-*`/`--ds-dark-*` and any token on bare `:root` stay violations.
  * - JS token paths: `cssVar("…")`/`cssVarName("…")` arguments, `flat.<group>["…"]` keys,
  *   `tokens.<group>.a.b` and `tokens["…"]` chains (also through the default export, a
  *   namespace or json/tokens.json) must exist in dist/json/tokens.json. The names come
@@ -22,11 +27,12 @@
  *   re-exports them (`export { cssVar as v } from …`, `export * from …`, an import it
  *   exports again), through chains of such modules (relative, root-absolute and tsconfig
  *   `paths` specifiers).
- * - String literals shaped like a token path (`"color.surface.page"`: typed `TokenPath`
- *   values) must exist, in every JS file of the app. In a file with no design-system
- *   binding only a near miss counts: its first two segments name a real token group
- *   (`"color.surface.nope"`), so an app's own keys (`"layout.radius"`) pass. A file name
- *   (`font.woff2`) is not a token path.
+ * - Other string literals shaped like a token path (`"color.surface.page"`: typed `TokenPath`
+ *   values), in every JS file of the app, count only as near misses of a real path (a leaf or a
+ *   group of dist/json/tokens.json): within edit distance 2 of one (`"color.surfce.page"`,
+ *   `"space.9"`), or, with three or more segments, one segment away from one
+ *   (`"color.surface.nope"`). An app's own keys (`"layout.radius"`, docs-workbench's Style Rail)
+ *   pass. A file name (`font.woff2`) is not a token path.
  * - `color.notion.*` (`--ds-color-notion-*`) is docs-system compat: only apps whose
  *   repo is codecaine/core/docs-system may use it.
  */
@@ -35,9 +41,10 @@ import { lexJs, stripCss, stripHtml } from "../../scan-literals";
 import { resolvePath } from "../registry";
 import type { TokenGroup } from "./design-system";
 import { resolveModule } from "./modules";
+import { cssInString, inShellClassString, inShellStyleAttribute, inShellStyleObject, makeReceiverCheck, ruleIsShell } from "./shell-scope";
 import type { AppContext, CheckOutput, Finding } from "./types";
 import { PACKAGE_NAME } from "./types";
-import { fileKindOf, isInside, lineFinder, readText, realpathOrNull } from "./workspace";
+import { designSystemUrlPath, fileKindOf, isInside, lineFinder, readText, realpathOrNull } from "./workspace";
 
 export const NOTION_REPO = "codecaine/core/docs-system";
 const NOTION_NAME = /^--ds-(?:(?:light|dark)-)?color-notion(?:-|$)/;
@@ -68,24 +75,109 @@ const DECL_KEY = new RegExp(String.raw`([{,]\s*)(["'\`])(${DECL_NAME})\2\s*:`, "
 /** Computed style-object key: `["--ds-x"]:`, `["--ds-x" as string]:`. */
 const DECL_COMPUTED = new RegExp(String.raw`\[\s*(["'\`])(${DECL_NAME})\1\s*(?:as\s+[\w$.]+\s*)?\]\s*:`, "g");
 
+interface Declaration {
+  /** Offset of the name. */
+  index: number;
+  name: string;
+  /** A CSS property, a `setProperty` call (`at`: offset of `setProperty`), or a style-object key. */
+  via: "css" | "set" | "key";
+  at: number;
+}
+
 /** Start offset and source text of every `--ds-*` declaration in a file's text. */
-function declarations(text: string, inStr: Uint8Array | null): Array<{ index: number; name: string }> {
-  const out: Array<{ index: number; name: string }> = [];
+function declarations(text: string, inStr: Uint8Array | null): Declaration[] {
+  const out: Declaration[] = [];
   const real = (quote: number) => !inStr || !inStr[quote];
-  for (const m of text.matchAll(DECL_CSS)) out.push({ index: m.index!, name: m[1] });
+  for (const m of text.matchAll(DECL_CSS)) out.push({ index: m.index!, name: m[1], via: "css", at: m.index! });
   for (const m of text.matchAll(DECL_SET)) {
     const quote = m.index! + m[0].length - m[2].length - 1;
-    if (real(quote)) out.push({ index: quote + 1, name: m[2] });
+    if (real(quote)) out.push({ index: quote + 1, name: m[2], via: "set", at: m.index! });
   }
   for (const m of text.matchAll(DECL_KEY)) {
     const quote = m.index! + m[1].length;
-    if (real(quote)) out.push({ index: quote + 1, name: m[3] });
+    if (real(quote)) out.push({ index: quote + 1, name: m[3], via: "key", at: quote });
   }
   for (const m of text.matchAll(DECL_COMPUTED)) {
     const quote = m.index! + m[0].indexOf(m[1]);
-    if (real(quote)) out.push({ index: quote + 1, name: m[2] });
+    if (real(quote)) out.push({ index: quote + 1, name: m[2], via: "key", at: quote });
   }
   return out;
+}
+
+/** Layout tokens: the only ones an app may override, and only on the shell (decision 32). */
+const LAYOUT_NAME = /^--ds-layout-/;
+
+/** The offset just after the `<style…>` tag that opens the block around `index` in HTML text; -1 outside a block. */
+function styleBlockStart(text: string, index: number): number {
+  const before = text.slice(0, index).toLowerCase();
+  const open = before.lastIndexOf("<style");
+  if (open === -1 || before.indexOf("</style", open) !== -1) return -1;
+  const end = before.indexOf(">", open);
+  return end === -1 ? -1 : end + 1;
+}
+
+/** Is a `--ds-layout-*` declaration scoped to the shell (shell-scope.ts)? */
+function shellScoped(d: Declaration, kind: string, text: string, inStr: Uint8Array | null, receiverIsShell: () => (at: number) => boolean): boolean {
+  if (d.via === "set") return receiverIsShell()(d.at);
+  if (d.via === "key") return inStr !== null && inShellStyleObject(text, inStr, d.at);
+  if (inShellClassString(text, inStr, d.index)) return true;
+  if (kind === "js") {
+    if (!inStr || !inStr[d.index]) return false;
+    if (inShellStyleAttribute(text, inStr, d.index)) return true;
+    const css = cssInString(text, inStr, d.index);
+    return ruleIsShell(css, css.length);
+  }
+  if (kind === "html") {
+    const lo = styleBlockStart(text, d.index);
+    return lo === -1 ? inShellStyleAttribute(text, null, d.index) : ruleIsShell(text, d.index, lo);
+  }
+  return ruleIsShell(text, d.index);
+}
+
+/** Levenshtein distance, stopping early once it exceeds `max`. */
+function editDistance(a: string, b: string, max: number): number {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    let best = i;
+    for (let j = 1; j <= b.length; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      if (cur[j] < best) best = cur[j];
+    }
+    if (best > max) return max + 1;
+    prev = cur;
+  }
+  return prev[b.length];
+}
+
+/**
+ * The real path (leaf or group below the top level) a token-path-shaped string nearly is: within
+ * edit distance 2, or, with three or more segments, one segment away; the closest one when several
+ * are. Null when it is no near miss: an app's own key. Two-segment strings are judged by edit distance
+ * only: one of two segments away from some group (`layout.content`) is every `layout.<key>`, which
+ * says nothing; a top-level group (`space`) is no target either (`space.9` is near `space.8`, not `space`).
+ */
+function nearMissOf(s: string, prefixes: Set<string>): string | null {
+  const segs = s.split(".");
+  let best: string | null = null;
+  let bestDistance = Infinity;
+  for (const p of prefixes) {
+    const ps = p.split(".");
+    if (ps.length < 2) continue;
+    let near = false;
+    if (segs.length >= 3 && ps.length === segs.length) {
+      let diff = 0;
+      for (let i = 0; i < segs.length && diff < 2; i++) if (segs[i] !== ps[i]) diff++;
+      near = diff === 1;
+    }
+    const d = editDistance(s, p, near ? 64 : 2);
+    if ((near || d <= 2) && d < bestDistance) {
+      best = p;
+      bestDistance = d;
+    }
+  }
+  return best;
 }
 
 // ---------------------------------------------------------------------------
@@ -105,6 +197,14 @@ const EMPTY: Members = new Map();
 
 /** What a package specifier exports: the root, json/*.json, nothing for other subpaths. Undefined when the specifier is not the package. */
 function packageMembers(spec: string): Members | undefined {
+  // A `/@codecaine-ai/design-system/<package path>` URL is that file of the package (decision 30).
+  const urlPath = designSystemUrlPath(spec);
+  if (urlPath !== null) {
+    if (urlPath === "dist/js/index.js") return PKG_MEMBERS;
+    const json = urlPath.match(/^dist\/json\/(tokens|base|light|dark)\.json$/);
+    if (!json) return EMPTY;
+    return new Map<string, Binding>([["default", json[1] === "tokens" ? TREE : { kind: "group", group: json[1] as TokenGroup }]]);
+  }
   if (spec === PACKAGE_NAME) return PKG_MEMBERS;
   if (!spec.startsWith(PACKAGE_NAME + "/")) return undefined;
   const json = spec.slice(PACKAGE_NAME.length + 1).match(/^json\/(tokens|base|light|dark)\.json$/);
@@ -289,12 +389,23 @@ export function checkNames(ctx: AppContext): CheckOutput {
     else if (kind === "html") text = stripHtml(src);
     else if (kind === "css" || kind === "scss") text = stripCss(src, kind === "scss");
 
-    // Declarations: apps never redefine --ds-* tokens.
+    // Declarations: apps never redefine --ds-* tokens; a layout token may be overridden on the shell.
     const declared = new Set<number>();
     if (kind !== "json") {
+      let receivers: ((at: number) => boolean) | null = null;
+      const receiverIsShell = () => (receivers ??= makeReceiverCheck(text, inStr ?? new Uint8Array(text.length)));
       for (const d of declarations(text, inStr)) {
+        const layout = LAYOUT_NAME.test(d.name);
+        // Allowed: the name is then checked like a reference (it must exist).
+        if (layout && shellScoped(d, kind, text, inStr, receiverIsShell)) continue;
         declared.add(d.index);
-        add(rel, line(d.index), `${d.name.slice(0, 80)} is declared here; apps never redefine --ds-* tokens`);
+        add(
+          rel,
+          line(d.index),
+          layout
+            ? `${d.name.slice(0, 80)} is declared here, outside the shell; override --ds-layout-* tokens only on .ds-shell or the shell element (guide/layout.md, decision 32)`
+            : `${d.name.slice(0, 80)} is declared here; apps never redefine --ds-* tokens`,
+        );
       }
     }
 
@@ -383,14 +494,16 @@ export function checkNames(ctx: AppContext): CheckOutput {
       }
     }
 
-    // String literals shaped like token paths (typed TokenPath values), in every JS file.
+    // Other string literals shaped like token paths (typed TokenPath values), in every JS file:
+    // only a near miss of a real path is one (`color.surface.nope`), never an app's own key (`layout.radius`).
     for (const m of src.matchAll(/(["'`])([A-Za-z][\w.-]*)\1/g)) {
       const start = m.index! + 1;
       if (!strs[start] || checked.has(start) || !PATH_STRING.test(m[2]) || FILE_NAME.test(m[2])) continue;
-      // Without a design-system binding, only a near miss of a real path is one: `color.surface.nope`, not `layout.radius`.
-      if (!b && !ds.prefixes.has(m[2].split(".").slice(0, 2).join("."))) continue;
-      if (!notionOk && NOTION_PATH.test(m[2])) add(rel, line(start), `token path "${m[2]}" is docs-system compat (color.notion.*); only ${NOTION_REPO} may use it`);
-      else if (!ds.prefixes.has(m[2])) add(rel, line(start), `token path "${m[2]}" does not exist in the current build`);
+      const real = ds.prefixes.has(m[2]);
+      const near = real ? null : nearMissOf(m[2], ds.prefixes);
+      if (!notionOk && NOTION_PATH.test(m[2]) && (real || near)) {
+        add(rel, line(start), `token path "${m[2]}" is docs-system compat (color.notion.*); only ${NOTION_REPO} may use it`);
+      } else if (near) add(rel, line(start), `token path "${m[2]}" does not exist in the current build (did you mean "${near}"?)`);
     }
   }
   return { violations, warnings: [] };

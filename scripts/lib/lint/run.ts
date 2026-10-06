@@ -22,9 +22,9 @@ import { checkResolution } from "./resolution";
 import { checkShell } from "./shell";
 import { checkStructure } from "./structure";
 import type { AppContext, AppResult, Check, CheckResult, LintReport, PassNumber } from "./types";
-import { CHECK_ORDER, PASS_OF } from "./types";
+import { CHECK_ORDER, PACKAGE_NAME, PASS_OF } from "./types";
 import { checkWiring } from "./wiring";
-import { clearCaches, collectSources, isInside, realpathOrNull, runLiteralScan, scanSetup, toPosix, type LiteralScan, type SourceFile } from "./workspace";
+import { clearCaches, collectSources, findPackageDir, isInside, realpathOrNull, runLiteralScan, scanSetup, toPosix, type LiteralScan, type SourceFile } from "./workspace";
 
 export const CHECKS: Record<CheckId, Check> = {
   resolution: checkResolution,
@@ -59,6 +59,12 @@ function lazy<T>(make: () => T): () => T {
   };
 }
 
+/** Real path of the design-system package an app root resolves; null when none. */
+export function designSystemOf(appRoot: string): string | null {
+  const found = findPackageDir(PACKAGE_NAME, appRoot);
+  return found ? realpathOrNull(found) : null;
+}
+
 /** The app's web root, where a root-absolute URL points: `run.serveRoot ?? run.cwd ?? app.root`. */
 export function serveRootOf(app: AppEntry, root: string): string {
   return resolvePath(root, app.run?.serveRoot ?? app.run?.cwd ?? app.root);
@@ -72,7 +78,12 @@ export function makeContext(app: AppEntry, opts: { root: string; registryDir: st
   };
   const setup = lazy(() => scanSetup(app, root));
   const sources = lazy<SourceFile[]>(() => collectSources(setup(), rel));
-  const loads = lazy<LoadGraph>(() => buildLoadGraph(app.entryStylesheet ? resolvePath(root, app.entryStylesheet) : null, { serveRoot: serveRootOf(app, root) }));
+  const loads = lazy<LoadGraph>(() =>
+    buildLoadGraph(app.entryStylesheet ? resolvePath(root, app.entryStylesheet) : null, {
+      serveRoot: serveRootOf(app, root),
+      designSystem: designSystemOf(resolvePath(root, app.root)),
+    }),
+  );
   const literalScan = lazy<LiteralScan>(() => runLiteralScan(setup()));
   const modules = lazy<ModuleGraph>(() =>
     buildModuleGraph({

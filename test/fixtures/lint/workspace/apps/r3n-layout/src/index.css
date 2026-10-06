@@ -1,0 +1,25 @@
+@import "tailwindcss";
+@import "@codecaine-ai/design-system/tokens.css";
+@import "@codecaine-ai/design-system/layout.css";
+@import "@codecaine-ai/design-system/tailwind-strict.css";
+@import "@codecaine-ai/design-system/tailwind.css";
+
+/* Shell-scoped layout overrides (decision 32): pass. */
+.ds-shell[data-sidebar="collapsed"] { --ds-layout-lane-text: 72ch; }
+@media (max-width: 800px) {
+  .app.ds-shell { --ds-layout-content-padding-x: var(--ds-space-4); }
+}
+.ds-shell {
+  &.wide { --ds-layout-lane-wide: 1200px; }
+}
+
+/* Not on the shell, or not a layout token: fail. */
+:root { --ds-layout-sidebar-width: 300px; }
+.ds-shell .x { --ds-layout-lane-code: 90ch; }
+.ds-shell, .other { --ds-layout-inspector-width: 400px; }
+.app:not(.ds-shell) { --ds-layout-lane-text: 1ch; }
+.ds-shell { --ds-color-surface-page: red; }
+.ds-shell { --ds-light-color-surface-page: #fff; }
+.ds-shell { & .inner { --ds-layout-lane-wide: 1px; } }
+/* On the shell, but no such token. */
+.ds-shell { --ds-layout-nope: 1px; }

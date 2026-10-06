@@ -15,11 +15,14 @@
  * Known limits (static analysis; verify:apps checks runnable apps at runtime):
  * - wiring: a late @import counts in a root whose closure imports any Tailwind stylesheet
  *   (Tailwind 4 inlines quoted @imports wherever they stand), and is never judged inert in
- *   Sass/Less files or in <style> strings of a server-rendered JS entry. A CSS file reached
- *   from two roots is walked once (the first root gets its loads); an @import cycle can hide
- *   Tailwind from the closure check. A Tailwind import after the first tailwind-strict.css in
- *   a root fails even when a later strict clears it again.
+ *   Sass/Less files or in <style> strings of a server-rendered JS entry. An @import cycle can
+ *   hide Tailwind from the closure check. A Tailwind import after the first tailwind-strict.css
+ *   in a root fails even when a later strict clears it again.
  * - wiring: unused HTML strings in a server-rendered entry still count as its page (decision 21c).
+ *   An inlined stylesheet counts only when the entry module itself reads the file (readFileSync,
+ *   Bun.file(…).text(), a `?raw` import) into a module-level binding or right inside the <style>
+ *   block; text returned by a function, held in an object or read in another module is not
+ *   followed, nor is a path built from run-time values (process.cwd(), environment variables).
  * - Tailwind v3 config: writes are read in source order, not run order; `let` reassignments,
  *   getters and `Object.assign({}, a, b)` as the export are not followed; `exports.presets =`
  *   after `module.exports =` counts although Node drops it; a spread inside `theme` that is not
@@ -31,9 +34,14 @@
  *   (`const c = "shadow"; className={c}`) are not class contexts (decision 21c); container
  *   variants (`@md:`) count in any JS string, as palette classes do.
  * - names: bindings by aliasing (`const v = cssVar`), `import(pkg).then(({ cssVar }) => …)` and
- *   nested destructuring are not followed; a re-export cycle can cache a partial export list. In
- *   a file with no design-system binding only near-miss token strings count (first two segments
- *   name a real group), so a typo in the second segment passes. A non-optional TS type key
+ *   nested destructuring are not followed; a re-export cycle can cache a partial export list.
+ *   Token-path strings outside the token API count only as near misses (edit distance 2, or one segment off with three or more
+ *   segments): `"color.surface.page.x"` or a two-segment key far from every path passes. A
+ *   `--ds-layout-*` override counts as on the shell only in a rule whose selector subjects carry
+ *   `.ds-shell` (CSS, HTML <style>, one JS string), on a tag whose class holds `ds-shell` (its
+ *   style, a Tailwind arbitrary property), or through `setProperty` on a receiver the file binds
+ *   to the shell (documentElement, a querySelector/closest of .ds-shell, a ref on the ds-shell
+ *   tag); an element passed in as a parameter or found another way fails. A non-optional TS type key
  *   `{ "--ds-x": string }` or a regex holding `--ds-x:` reads as a declaration. Any file that
  *   opens with the package's header comment is skipped as a copy.
  * - shell: only direct importers of the ds-shell file (through up to two barrels) fill its
