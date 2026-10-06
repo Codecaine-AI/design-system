@@ -71,6 +71,7 @@
     "snapshot:sheet": "bun scripts/snapshot-sheet.ts",
     "codemod:literals": "bun scripts/codemod-literals.ts",
     "progress": "bun scripts/progress.ts",
-    "pack": "bun scripts/pack.ts"
+    "pack": "bun scripts/pack.ts",
+    "test:apps": "bun scripts/test-apps.ts"
   }
 }

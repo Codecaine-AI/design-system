@@ -156,6 +156,8 @@ describe("registry:check keeps runs off the owner's ports and .env files", () =>
     ["a bun test without --no-env-file", safe("bun test src"), "tests.safe[0] runs bun without --no-env-file"],
     ["a bun script without --no-env-file after a cd", safe("cd sub && exec bun run typecheck"), "runs bun without --no-env-file"],
     ["utilityClasses on a Tailwind app", { stack: { summary: "", tailwind: "v4", packageManager: "bun", utilityClasses: true, hostTailwind: "v4" } }, "stack.utilityClasses is redundant"],
+    ["a baseline for a command the entry lacks", { tests: { safe: [], baselines: { "tests.safe[0]": { exit: 1, date: "2026-10-05", method: "test:apps" } } } }, `tests.baselines["tests.safe[0]"] names no command`],
+    ["a baseline without a date", { tests: { safe: [{ cmd: "true", cwd: "app" }], baselines: { "tests.safe[0]": { exit: 1, method: "test:apps" } as never } } }, "needs a YYYY-MM-DD date"],
     ["utilityClasses without the host's Tailwind", { stack: { summary: "", tailwind: "none", packageManager: "bun", utilityClasses: true } }, "stack.utilityClasses needs stack.hostTailwind"],
     ["a hostTailwind that is no Tailwind", { stack: { summary: "", tailwind: "none", packageManager: "bun", utilityClasses: true, hostTailwind: "v2" as never } }, "stack.hostTailwind must be one of v3, v4, uno"],
     ["a hostTailwind without utilityClasses", { stack: { summary: "", tailwind: "none", packageManager: "bun", hostTailwind: "v3" } }, "stack.hostTailwind is set without stack.utilityClasses"],

@@ -1,0 +1,246 @@
+/**
+ * test:apps runs an app's safe tests the one way the rollout allows: profile environment, OS sandbox, a
+ * write check around each command, and a comparison with the registry's recorded baseline. A stand-in app
+ * in a temp workspace (a Core-like checkout holding the app's checkout and a sibling) prints the output of
+ * each runner and makes each kind of write; the CLI is run on it with a stand-in registry.
+ */
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { spawnSync } from "node:child_process";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+import type { AppEntry, TestBaseline } from "../scripts/lib/registry.ts";
+import { sandboxUnavailable } from "../scripts/lib/sandbox.ts";
+import { PKG } from "./support.ts";
+
+const STANDIN = String.raw`
+import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
+const [mode, arg] = process.argv.slice(2);
+const write = (path, text = "x") => (mkdirSync(dirname(path), { recursive: true }), writeFileSync(path, text));
+const bunSummary = (pass, fail) => " " + pass + " pass\n " + fail + " fail\nRan " + (pass + fail) + " tests across 1 file. [5.00ms]";
+switch (mode) {
+  case "pass": console.log("(pass) s > a [0.10ms]\n" + bunSummary(3, 0)); break;
+  case "known-fail": console.error("(fail) s > a [0.10ms]\n" + bunSummary(2, 1)); process.exit(1);
+  case "new-fail": console.error("(fail) s > a [0.10ms]\n(fail) s > b [0.20ms]\n" + bunSummary(1, 2)); process.exit(1);
+  case "vitest-new": console.log(" FAIL  src/a.test.ts > s > old\n FAIL  src/a.test.ts > s > fresh\n\n      Tests  2 failed | 5 passed (7)"); process.exit(1);
+  case "unittest-known": console.error("FAIL: test_x (m.C.test_x)\n----\nRan 4 tests in 0.010s\n\nFAILED (failures=1)"); process.exit(1);
+  case "tsc": console.log("src/a.ts(40,3): error TS2322: Type 'x' is not assignable to type 'y'.\nsrc/b.ts(1,1): error TS2304: Cannot find name 'z'."); process.exit(2);
+  case "write-tracked": appendFileSync("tracked.txt", "more\n"); console.log(bunSummary(1, 0)); break;
+  case "write-ignored": write("dist/new.txt"); console.log(bunSummary(1, 0)); break;
+  case "write-enclosing": write("../../stray.txt"); console.log(bunSummary(1, 0)); break;
+  case "quiet-writes":
+    write("../../node_modules/.vite/deps/chunk.js");
+    write("tsconfig.tsbuildinfo");
+    write("../../sibling/edit.txt");
+    console.log(bunSummary(1, 0));
+    break;
+  case "env": {
+    const problems = [];
+    if (process.env.HOME !== arg) problems.push("HOME " + process.env.HOME + " is not the run's temp dir " + arg);
+    if (!/--no-env-file/.test(process.env.BUN_OPTIONS ?? "")) problems.push("BUN_OPTIONS " + process.env.BUN_OPTIONS);
+    if (process.env.DS_TEST_SECRET !== undefined) problems.push("DS_TEST_SECRET crossed into the run");
+    if (process.env.FROM_PROFILE !== "yes") problems.push("runProfile.env missing");
+    try { readFileSync(".env", "utf8"); problems.push(".env was readable: no sandbox"); } catch (error) { if (error.code !== "EPERM") problems.push(".env read failed with " + error.code + ", not the sandbox's EPERM"); }
+    console.log(problems.join("\n") + "\n" + bunSummary(problems.length ? 0 : 1, problems.length ? 1 : 0));
+    process.exit(problems.length ? 1 : 0);
+  }
+  case "hang": write(arg, String(process.pid)); await new Promise((r) => setTimeout(r, 120_000)); break;
+}
+`;
+
+const req = { required: true } as const;
+const na = { required: false, reason: "stand-in" } as const;
+
+function app(id: string, cmd: string, extra: { baselines?: Record<string, TestBaseline>; typecheck?: string; env?: Record<string, string> } = {}): AppEntry {
+  return {
+    id,
+    name: id,
+    wave: 1,
+    kind: "app",
+    repo: "core/member",
+    root: "core/member/app",
+    scan: { paths: ["core/member/app"], exclude: [] },
+    stack: { summary: "", tailwind: "none", packageManager: "bun" },
+    consume: { via: "workspace", detail: "" },
+    entryStylesheet: null,
+    theme: { rule: "light-dark" },
+    literalFloor: 0,
+    allowlist: null,
+    shell: false,
+    folderStandard: false,
+    passes: { "1": req, "2": na, "3": na },
+    checks: { resolution: req, wiring: req, literals: req, names: req, shell: na, structure: na },
+    gates: { lint: req, verify: na, snapshot: na, pixelDiff: na, tests: req },
+    run: { mode: "none", reason: "stand-in" },
+    commands: { cwd: "core/member/app", ...(extra.typecheck ? { typecheck: extra.typecheck } : {}) },
+    tests: { safe: cmd ? [{ cmd, cwd: "core/member/app" }] : [], ...(extra.baselines ? { baselines: extra.baselines } : {}) },
+    routes: [],
+    runProfile: { env: extra.env ?? {}, unsetEnv: [], tempHome: true, fixtures: [], flags: [], ports: {}, proof: { status: "unproven", method: "" } },
+    exceptions: [],
+  };
+}
+
+const run = (mode: string) => `bun --no-env-file standin.mjs ${mode}`;
+const known = (failing: string[], over: Partial<TestBaseline> = {}): TestBaseline => ({ exit: 1, fail: failing.length, failing, date: "2026-10-05", method: "test", ...over });
+
+const APPS: AppEntry[] = [
+  app("pass", run("pass")),
+  app("known-fail", run("known-fail"), { baselines: { "tests.safe[0]": known(["s > a"]) } }),
+  app("new-fail", run("new-fail"), { baselines: { "tests.safe[0]": known(["s > a"]) } }),
+  app("no-baseline", run("known-fail")),
+  app("baseline-green", run("known-fail"), { baselines: { "tests.safe[0]": { exit: 0, pass: 3, fail: 0, date: "2026-10-05", method: "test" } } }),
+  app("vitest-new", run("vitest-new"), { baselines: { "tests.safe[0]": known(["src/a.test.ts > s > old"]) } }),
+  app("unittest-known", run("unittest-known"), { baselines: { "tests.safe[0]": known(["m.C.test_x"]) } }),
+  // The baseline's tsc error sits on another line now (line numbers are not compared); the second error is new.
+  app("tsc", "", { typecheck: run("tsc"), baselines: { "commands.typecheck": known(["src/a.ts: TS2322: Type 'x' is not assignable to type 'y'."], { exit: 2 }) } }),
+  app("write-tracked", run("write-tracked")),
+  app("write-ignored", run("write-ignored")),
+  app("write-enclosing", run("write-enclosing")),
+  app("quiet-writes", run("quiet-writes")),
+  app("env", `${run("env")} {tmp}`, { env: { FROM_PROFILE: "yes" } }),
+  app("hang", `${run("hang")} {root}/pids/hang.pid`),
+];
+
+function sh(cwd: string, ...argv: string[]) {
+  const result = spawnSync(argv[0]!, argv.slice(1), { cwd, encoding: "utf8" });
+  if (result.status !== 0) throw new Error(`${argv.join(" ")}: ${result.stderr}`);
+}
+
+function gitRepo(dir: string, files: Record<string, string>) {
+  for (const [path, text] of Object.entries(files)) {
+    mkdirSync(join(dir, path, ".."), { recursive: true });
+    writeFileSync(join(dir, path), text);
+  }
+  sh(dir, "git", "init", "-q");
+  sh(dir, "git", "add", "-A");
+  sh(dir, "git", "-c", "user.email=t@example.com", "-c", "user.name=t", "commit", "-qm", "init");
+}
+
+/** Runs the CLI against the stand-in workspace; `--json` reports by app id. */
+function testApps(args: string[]) {
+  const result = spawnSync(process.execPath, ["scripts/test-apps.ts", "--root", root, "--registry", registry, "--out-dir", out, ...args], {
+    cwd: PKG,
+    encoding: "utf8",
+    env: { ...process.env, DS_TEST_SECRET: "must-not-cross" },
+    timeout: 120_000,
+  });
+  let reports: Record<string, any> = {};
+  if (args.includes("--json") && result.stdout.trim().startsWith("["))
+    reports = Object.fromEntries((JSON.parse(result.stdout) as any[]).map((report) => [report.app, report]));
+  return { status: result.status, stdout: result.stdout, stderr: result.stderr, reports };
+}
+
+let scratch: string;
+let root: string;
+let registry: string;
+let out: string;
+const noSandbox = sandboxUnavailable();
+
+beforeAll(() => {
+  scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-test-apps-")));
+  root = join(scratch, "workspace");
+  out = join(scratch, "out");
+  registry = join(scratch, "apps.json");
+  // core/ is the enclosing checkout (a bun workspace root that ignores its member checkouts), core/member the
+  // app's own checkout, core/sibling a checkout the app does not touch.
+  gitRepo(join(root, "core"), { ".gitignore": "node_modules/\nmember/\nsibling/\n", "package.json": "{}\n" });
+  gitRepo(join(root, "core/member"), {
+    ".gitignore": "dist/\n.env\n",
+    "app/standin.mjs": STANDIN,
+    "app/tracked.txt": "tracked\n",
+    "app/dist/old.txt": "ignored output from an earlier build\n",
+    "app/.env": "SECRET=from-dotenv\n",
+  });
+  gitRepo(join(root, "core/sibling"), { "README.md": "sibling\n" });
+  writeFileSync(registry, `${JSON.stringify({ version: 1, apps: APPS }, null, 2)}\n`);
+});
+
+afterAll(() => rmSync(scratch, { recursive: true, force: true }));
+
+describe.skipIf(!!noSandbox)("bun run test:apps", () => {
+  let main: ReturnType<typeof testApps>;
+  let typecheck: ReturnType<typeof testApps>;
+  const ids = APPS.map((a) => a.id).filter((id) => id !== "hang" && id !== "tsc");
+  beforeAll(() => {
+    main = testApps(["--json", ...ids]);
+    typecheck = testApps(["--json", "--no-tests", "--commands", "typecheck", "tsc"]);
+  }, 180_000);
+  const result = (id: string) => (id === "tsc" ? typecheck : main).reports[id]?.commands?.[0];
+
+  test("exits 1 when any command fails its baseline or writes unexpectedly", () => {
+    expect(main.stderr).toBe("");
+    expect(main.status).toBe(1);
+    expect(Object.keys(main.reports).sort()).toEqual([...ids].sort());
+  });
+
+  test.each<[string, boolean]>([
+    ["pass", true],
+    ["known-fail", true],
+    ["unittest-known", true],
+    ["new-fail", false],
+    ["no-baseline", false],
+    ["baseline-green", false],
+  ])("%s: ok %p against its baseline", (id, ok) => {
+    expect(result(id)?.ok).toBe(ok);
+  });
+
+  test("a failure the baseline does not list is named, for bun test, vitest and tsc output", () => {
+    expect(result("new-fail").verdict.newFailures).toEqual(["s > b"]);
+    expect(result("vitest-new").verdict.newFailures).toEqual(["src/a.test.ts > s > fresh"]);
+    // The known tsc error moved lines and still counts as known; only the new one fails the run.
+    expect(result("tsc").label).toBe("commands.typecheck");
+    expect(result("tsc").verdict.newFailures).toEqual(["src/b.ts: TS2304: Cannot find name 'z'."]);
+  });
+
+  test("writes in the app's checkouts fail the run: a tracked file, a new file in an existing ignored folder, a file in the enclosing checkout", () => {
+    expect(result("write-tracked").writes.unexpected).toEqual(["core/member/app/tracked.txt", "core/member/app/tracked.txt (git status: M new)"]);
+    expect(result("write-ignored").writes.unexpected).toEqual(["core/member/app/dist/new.txt"]);
+    expect(result("write-enclosing").writes.unexpected).toEqual(["core/stray.txt", "core/stray.txt (git status: ?? new)"]);
+    for (const id of ["write-tracked", "write-ignored", "write-enclosing"]) expect(result(id).ok).toBe(false);
+  });
+
+  test("build caches are listed but pass, and a sibling checkout the app does not touch is not watched", () => {
+    expect(result("quiet-writes").writes.unexpected).toEqual([]);
+    expect(result("quiet-writes").ok).toBe(true);
+    expect(result("quiet-writes").writes.caches).toEqual([
+      "core/member/app/tsconfig.tsbuildinfo",
+      "core/member/app/tsconfig.tsbuildinfo (git status: ?? new)",
+      "core/node_modules/ (git status: !! new)",
+      "core/node_modules/.vite/deps/chunk.js",
+    ]);
+  });
+
+  test("the command runs with the profile env (temp HOME, BUN_OPTIONS=--no-env-file, nothing else inherited) inside the sandbox (.env unreadable)", () => {
+    // The stand-in checks each and prints what is wrong; the log shows it when this fails.
+    expect({ ok: result("env").ok, log: readFileSync(result("env").log, "utf8") }).toMatchObject({ ok: true });
+  });
+
+  test("each report proposes the baseline the managing agent records", () => {
+    expect(result("known-fail").proposedBaseline).toMatchObject({ exit: 1, pass: 2, fail: 1, errors: 0, failing: ["s > a"] });
+    expect(existsSync(main.reports["pass"].reportPath)).toBe(true);
+  });
+
+  test("a command that outlives --timeout fails and its whole process group is killed", () => {
+    const hung = testApps(["--json", "--timeout", "3", "hang"]);
+    expect(hung.status).toBe(1);
+    expect(hung.reports["hang"].commands[0].timedOut).toBe(true);
+    const pid = Number(readFileSync(join(root, "pids/hang.pid"), "utf8"));
+    expect(() => process.kill(pid, 0)).toThrow();
+  }, 60_000);
+
+  test("exits 0 when every command passes", () => {
+    const green = testApps(["pass", "known-fail"]);
+    expect(green.status).toBe(0);
+    expect(green.stdout).toContain("pass: ok");
+  }, 60_000);
+});
+
+test("refuses install and unknown commands before running anything", () => {
+  const elsewhere = join(scratch, "out-refused");
+  const refused = testApps(["--out-dir", elsewhere, "--commands", "install", "pass"]);
+  expect(refused.status).toBe(1);
+  expect(refused.stderr).toContain(`"install" is not one of typecheck, build`);
+  expect(existsSync(elsewhere)).toBe(false);
+});

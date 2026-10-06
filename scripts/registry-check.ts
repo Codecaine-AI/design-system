@@ -33,6 +33,7 @@
  *     or path, after any VAR=value, exec, env, time or nice;
  *   - `stack.utilityClasses` is a boolean and only set where `stack.tailwind` is "none", and comes with
  *     `stack.hostTailwind` (v3, v4 or uno: the host Tailwind that compiles its classes);
+ *   - every `tests.baselines` key names one of the entry's commands, with an integer exit, a date and a method;
  *   - every allowlist file and fixture exists in this design-system checkout, an allowlist has the
  *     Allowlist shape with a reason on every entry, and no fixture is a .env file;
  *   - every `{ds}/...` script a run starts exists in this checkout.
@@ -230,6 +231,31 @@ export function stackProblems(app: AppEntry): string[] {
   return problems;
 }
 
+/**
+ * `tests.baselines` (what test:apps compares a run with): every key names a command the entry has
+ * ("tests.safe[<i>]", "commands.typecheck", "commands.build"), and every baseline has an integer exit, a
+ * YYYY-MM-DD date, a method, non-negative integer counts and a string list of failing names.
+ */
+export function baselineProblems(app: AppEntry): string[] {
+  const problems: string[] = [];
+  for (const [key, baseline] of Object.entries(app.tests?.baselines ?? {})) {
+    const where = `${app.id}: tests.baselines["${key}"]`;
+    const safe = /^tests\.safe\[(\d+)\]$/.exec(key);
+    const named = /^commands\.(typecheck|build)$/.exec(key);
+    if (safe ? Number(safe[1]) >= (app.tests?.safe?.length ?? 0) : named ? !app.commands?.[named[1] as "typecheck" | "build"] : true)
+      problems.push(`${where} names no command of the entry (keys: tests.safe[<i>], commands.typecheck, commands.build)`);
+    const b = baseline as unknown as Record<string, unknown>;
+    if (!Number.isInteger(b?.exit)) problems.push(`${where} needs an integer exit`);
+    if (typeof b?.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(b.date)) problems.push(`${where} needs a YYYY-MM-DD date`);
+    if (typeof b?.method !== "string" || !b.method.trim()) problems.push(`${where} needs a method`);
+    for (const count of ["pass", "fail", "errors"])
+      if (b?.[count] !== undefined && !(Number.isInteger(b[count]) && (b[count] as number) >= 0)) problems.push(`${where}.${count} must be a non-negative integer`);
+    if (b?.failing !== undefined && !(Array.isArray(b.failing) && b.failing.every((name) => typeof name === "string")))
+      problems.push(`${where}.failing must be a list of names`);
+  }
+  return problems;
+}
+
 /** Workspace-relative paths an entry promises exist under the root, labelled for messages. */
 function workspacePaths(app: AppEntry): Array<[label: string, path: string]> {
   const out: Array<[string, string]> = [
@@ -294,7 +320,7 @@ export function checkRegistry(registry: Registry, opts: { root: string; dsRoot: 
       if (other) problems.push(`${where} is also used by ${other}`);
       else portOwner.set(port, `${app.id}.${name}`);
     }
-    problems.push(...portProblems(app, { start: blockStart, size: PROFILE_PORTS.block }), ...bunEnvFileProblems(app), ...stackProblems(app));
+    problems.push(...portProblems(app, { start: blockStart, size: PROFILE_PORTS.block }), ...bunEnvFileProblems(app), ...stackProblems(app), ...baselineProblems(app));
 
     if (app.allowlist) {
       const file = join(opts.dsRoot, app.allowlist);
