@@ -81,6 +81,24 @@ describe.skipIf(Boolean(unavailable))("sandbox profile", () => {
     expect(reads.output.trim().split("\n")).toEqual(["denied .env", "denied .env.local", "ok config.json", `denied ${join(owner, "data.json")}`]);
   });
 
+  test("the design-system checkout the tool runs from stays readable inside a hidden owner tree, never writable", () => {
+    const ds = join(owner, "design-system");
+    mkdirSync(join(ds, "apps"), { recursive: true });
+    writeFileSync(join(ds, "apps", "serve.ts"), "// fixture server");
+    writeFileSync(join(ds, ".env"), "SECRET=3");
+    const p = runPolicy({ root, tmp: runTmp, outDir: out, home, ownerTree: owner, deniedPorts: [DENIED], designSystem: ds });
+    const result = sandboxed(
+      [
+        `cat '${join(ds, "apps", "serve.ts")}' >/dev/null 2>&1 && echo "read ok" || echo "read denied"`,
+        `cat '${join(ds, ".env")}' >/dev/null 2>&1 && echo "env ok" || echo "env denied"`,
+        `(echo x > '${join(ds, "apps", "planted")}') 2>/dev/null && echo "write ok" || echo "write denied"`,
+        `cat '${join(owner, "data.json")}' >/dev/null 2>&1 && echo "owner ok" || echo "owner denied"`,
+      ].join("; "),
+      p,
+    );
+    expect(result.output.trim().split("\n")).toEqual(["read ok", "env denied", "write denied", "owner denied"]);
+  });
+
   test("a run whose --root is the owner's tree may read and write it", () => {
     const ownerRun = runPolicy({ root: owner, tmp: runTmp, outDir: out, home, ownerTree: owner, deniedPorts: [DENIED] });
     expect(sandboxed(`cat '${join(owner, "data.json")}' && echo x > '${join(owner, "written")}' && echo done`, ownerRun).output).toContain("done");

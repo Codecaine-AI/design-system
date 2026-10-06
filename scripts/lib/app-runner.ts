@@ -461,11 +461,15 @@ interface Internal {
   sockets: Set<string>;
 }
 const internals = new WeakMap<RunningApp, Internal>();
+/** Runs this process started and has not finished stopping (a run leaves only when its stop() is done). */
 const live = new Set<RunningApp>();
 /** Set by the signal and crash handlers and at exit: no new run may start. */
 let shuttingDown = false;
 
-/** For CLI signal handlers: stop every app this process started and has not stopped. */
+/**
+ * For CLI signal handlers: stop every app this process started and has not stopped, and wait for stops
+ * already in flight (a tool's own stop() racing the signal), so nothing is left when the process exits.
+ */
 export async function stopAllApps(): Promise<void> {
   await Promise.allSettled([...live].map((running) => running.stop()));
 }
@@ -747,7 +751,6 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
   };
 
   const doStop = async () => {
-    live.delete(running);
     sampling = false;
     wake?.();
     await sampler;
@@ -772,6 +775,9 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
     if (leftover.length === 0) rmSync(recordPath, { force: true });
     if (busy.length) throw new Error(`${app.id}: ports still bound after stop, not by this run's processes: ${busy.join(", ")}`);
   };
+  // The run stays in `live` until its stop is done: stopAllApps then waits for it, and the exit hook
+  // still kills its processes if the process exits mid-stop.
+  const stopOnce = () => doStop().finally(() => live.delete(running));
 
   const running: RunningApp = {
     app,
@@ -783,7 +789,7 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
     logPath,
     egress,
     // Memoized: a second caller (a signal handler during a failed start) waits for the same stop.
-    stop: () => (stopping ??= doStop()),
+    stop: () => (stopping ??= stopOnce()),
   };
   if (unproven) running.unproven = true;
   if (noSandbox) running.unsandboxed = true;
