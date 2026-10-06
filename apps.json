@@ -2778,7 +2778,7 @@
       "entryStylesheet": "codecaine/core/agent-kernel/examples/simple-research-kernel/src/main.tsx",
       "theme": {
         "rule": "light-dark",
-        "storageKey": "simpleResearchStyleSettings.v1"
+        "storageKey": "simpleResearchStyleSettings.v2"
       },
       "literalFloor": 0,
       "allowlist": null,
@@ -2945,7 +2945,7 @@
             "token": "color.surface.page"
           },
           {
-            "selector": "section.rounded-lg.border",
+            "selector": "section.research-run-grid",
             "property": "background-color",
             "token": "color.surface.panel"
           },
@@ -2955,7 +2955,7 @@
             "token": "color.text.body"
           },
           {
-            "selector": "section.rounded-lg.border",
+            "selector": "section.research-run-grid",
             "property": "border-top-color",
             "token": "color.border.default"
           }
