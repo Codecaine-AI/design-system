@@ -3,7 +3,9 @@
  * line format and the --json report shape from rollout/TOOLING_CONTRACT.md.
  */
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { OWNER_TREE } from "../scripts/lib/owner";
 import { materialize, REAL_TOKENS_CSS, sha256, type Workspace } from "./lint-support";
 import { PKG } from "./support";
 
@@ -47,5 +49,25 @@ test("an app id the registry does not have exits 2", () => {
   const { code, stdout, stderr } = lintCli("no-such-app");
   expect(code).toBe(2);
   expect(stderr).toContain("no-such-app");
+  expect(stdout).toBe("");
+});
+
+test("an invalid registry exits 2 before any check runs", () => {
+  const bad = join(ws.root, "registry/invalid.json");
+  const apps = ws.registry.apps.map((a) => (a.id === "connected" ? { ...a, checks: { ...a.checks, shell: { required: false } } } : a));
+  writeFileSync(bad, JSON.stringify({ version: 1, apps }));
+  const r = Bun.spawnSync([process.execPath, "scripts/lint-apps.ts", "--root", ws.root, "--registry", bad, "connected"], { cwd: PKG });
+  expect(r.exitCode).toBe(2);
+  expect(r.stderr.toString()).toContain("connected: checks.shell is n/a without a reason");
+  expect(r.stdout.toString()).toBe("");
+});
+
+// A path under a file in the owner's tree: refused by the validator, and unwritable (ENOTDIR) without it,
+// so the test can never create anything there.
+const ownerFile = join(OWNER_TREE, ".git/HEAD");
+test.skipIf(!existsSync(ownerFile) || !statSync(ownerFile).isFile())("an --out-dir in the owner's tree exits 2 and writes nothing", () => {
+  const { code, stdout, stderr } = lintCli("--out-dir", join(ownerFile, "lint-out"), "connected");
+  expect(code).toBe(2);
+  expect(stderr).toContain("resolves into the owner's tree");
   expect(stdout).toBe("");
 });

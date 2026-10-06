@@ -5,7 +5,8 @@
  * should not live in git: the node_modules link to the fake design-system package, files
  * over the 400-line limit, copies of the real AppShell template and tokens.css, vendored
  * tgz files, and registry/apps.json (built here, so every entry carries the full AppEntry
- * shape). Allowlists live in registry/allowlists/, beside apps.json.
+ * shape and passes validateRegistry). Allowlists live in registry/apps/allowlists/, resolved
+ * beside apps.json as the registry convention says.
  */
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
@@ -23,6 +24,7 @@ const APPSHELL_TEMPLATE = join(PKG, "templates/react-app-shell/src/_components/A
 export const REAL_TOKENS_CSS = join(PKG, "dist/css/tokens.css");
 
 const REQUIRED = { required: true } as const;
+const NEVER_RUN = { required: false, reason: "fixture app: never started" } as const;
 
 type EntryInput = Omit<Partial<AppEntry>, "checks"> & {
   id: string;
@@ -49,7 +51,7 @@ export function appEntry(input: EntryInput): AppEntry {
     shell: true,
     folderStandard: true,
     passes: { "1": REQUIRED, "2": REQUIRED, "3": REQUIRED },
-    gates: { lint: REQUIRED, verify: REQUIRED, snapshot: REQUIRED, pixelDiff: REQUIRED, tests: REQUIRED },
+    gates: { lint: REQUIRED, verify: NEVER_RUN, snapshot: NEVER_RUN, pixelDiff: NEVER_RUN, tests: REQUIRED },
     run: { mode: "none", reason: "fixture app: never started" },
     commands: { cwd: root },
     tests: { safe: [] },
@@ -81,6 +83,7 @@ export function appEntry(input: EntryInput): AppEntry {
 export const NA_REASONS = {
   libraryResolution: "widgets ships no CSS: its host app resolves the design system",
   libraryWiring: "widgets has no entry stylesheet: its host app loads the tokens",
+  libraryShell: "widgets is a component library: its host renders the shell",
 };
 
 const UNCONNECTED = "apps/unconnected";
@@ -91,7 +94,7 @@ export const APPS: AppEntry[] = [
   appEntry({ id: "connected-no-shell", root: "apps/connected", shell: false }),
   appEntry({ id: "unconnected", root: UNCONNECTED, entryStylesheet: `${UNCONNECTED}/src/index.css` }),
   // The same sources with an allowlist, a floor at the hard count, and the docs-system repo.
-  appEntry({ id: "unconnected-allowlisted", root: UNCONNECTED, entryStylesheet: `${UNCONNECTED}/src/index.css`, allowlist: "allowlists/unconnected.json" }),
+  appEntry({ id: "unconnected-allowlisted", root: UNCONNECTED, entryStylesheet: `${UNCONNECTED}/src/index.css`, allowlist: "apps/allowlists/unconnected-allowlisted.json" }),
   appEntry({ id: "unconnected-at-floor", root: UNCONNECTED, entryStylesheet: `${UNCONNECTED}/src/index.css`, literalFloor: 2 }),
   appEntry({ id: "unconnected-docs-system", root: UNCONNECTED, repo: "codecaine/core/docs-system", entryStylesheet: `${UNCONNECTED}/src/index.css` }),
   appEntry({ id: "misordered", root: WIRING, scan: { paths: [WIRING], exclude: [] }, entryStylesheet: `${WIRING}/misordered.css` }),
@@ -115,6 +118,7 @@ export const APPS: AppEntry[] = [
     checks: {
       resolution: { required: false, reason: NA_REASONS.libraryResolution },
       wiring: { required: false, reason: NA_REASONS.libraryWiring },
+      shell: { required: false, reason: NA_REASONS.libraryShell },
     },
   }),
   // Registry requires resolution, but consume.via host-css leaves the check nothing to resolve.
@@ -126,6 +130,7 @@ export const APPS: AppEntry[] = [
     entryStylesheet: null,
     shell: false,
     folderStandard: false,
+    checks: { shell: { required: false, reason: NA_REASONS.libraryShell } },
   }),
   // The widgets sources, with a host that compiles their class strings.
   appEntry({
@@ -140,6 +145,7 @@ export const APPS: AppEntry[] = [
     checks: {
       resolution: { required: false, reason: NA_REASONS.libraryResolution },
       wiring: { required: false, reason: NA_REASONS.libraryWiring },
+      shell: { required: false, reason: NA_REASONS.libraryShell },
     },
   }),
   // Literals: Tailwind default-scale classes in and out of class contexts.

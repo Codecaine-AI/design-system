@@ -2,13 +2,16 @@
  * The current design-system build the linter compares apps against: the checkout
  * the script runs from (DESIGN_SYSTEM_ROOT). Its generated CSS defines the valid
  * --ds-* names, dist/json/tokens.json the valid JS token paths, and
- * templates/react-app-shell the AppShell structure.
+ * templates/react-app-shell the AppShell structure. A dist/ that differs from what
+ * tokens/ builds today (build.ts staleFiles) is refused: the linter would compare
+ * apps against names and hashes that are not current.
  */
 
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
+import { staleFiles } from "../../build";
 import { DESIGN_SYSTEM_ROOT } from "../registry";
 import { lexJs } from "../../scan-literals";
 import { isDir, isFile, toPosix } from "./workspace";
@@ -79,6 +82,12 @@ export function loadDesignSystem(dir: string = DESIGN_SYSTEM_ROOT): DesignSystem
   const tokensCss = join(dir, "dist/css/tokens.css");
   const tokensSha = fileSha256(tokensCss);
   if (!tokensSha) throw new Error(`no build at ${tokensCss}: run \`bun run build\` in ${dir}`);
+  // Names and hashes are compared against dist/, so dist/ must be what tokens/ builds today.
+  const stale = staleFiles(dir);
+  if (stale.length) {
+    const shown = stale.slice(0, 5).join(", ") + (stale.length > 5 ? `, and ${stale.length - 5} more` : "");
+    throw new Error(`the build in ${dir} is stale (${shown}): run \`bun run build\` there`);
+  }
 
   const definedNames = new Set<string>();
   for (const f of [...walk(join(dir, "dist")), ...walk(join(dir, "css"))]) {

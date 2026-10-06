@@ -4,9 +4,10 @@
  * Which checks run: `--pass n` selects the checks whose pass is at most n (1: resolution,
  * wiring, literals, names; 2: + shell; 3: + structure); without `--pass`, all six.
  * The registry's `checks` decides each one: n/a reports the registry's reason, required
- * runs. A check can also report n/a from app data (resolution for host-css apps, shell
- * for `shell: false`). A check that throws becomes one violation, so one broken app does
- * not stop the others.
+ * runs. A required check that finds nothing to check in the app data (resolution for a
+ * host-css app, shell for `shell: false`) fails with "registry requires <check> but …":
+ * the registry and the app disagree, and only the registry may mark a check n/a.
+ * A check that throws becomes one violation, so one broken app does not stop the others.
  */
 
 import { dirname, relative, resolve } from "node:path";
@@ -88,7 +89,10 @@ export function lintApp(app: AppEntry, opts: Omit<LintOptions, "registry" | "app
     if (req && !req.required) return { id, status: "n/a", reason: req.reason, violations: [], warnings: [] };
     try {
       const out = CHECKS[id](ctx);
-      if (out.na) return { id, status: "n/a", reason: out.na, violations: [], warnings: out.warnings };
+      if (out.na) {
+        const message = `registry requires ${id} but ${out.na}; mark checks.${id} n/a with that reason in apps.json, or fix the app`;
+        return { id, status: "fail", violations: [{ file: app.root ?? app.id, line: 0, message }], warnings: out.warnings };
+      }
       const status = out.violations.length ? "fail" : out.warnings.length ? "warn" : "pass";
       return { id, status, violations: out.violations, warnings: out.warnings };
     } catch (err) {

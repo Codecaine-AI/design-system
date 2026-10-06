@@ -5,11 +5,14 @@
  * template come from this checkout's real build.
  */
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { appendFileSync, cpSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { loadDesignSystem, type DesignSystemBuild } from "../scripts/lib/lint/design-system";
 import type { Finding } from "../scripts/lib/lint/types";
 import type { CheckId } from "../scripts/lib/registry";
 import { checkOf, lint, materialize, NA_REASONS, REAL_TOKENS_CSS, sha256, STALE_SUFFIX, type Workspace } from "./lint-support";
+import { PKG } from "./support";
 
 let ws: Workspace;
 let ds: DesignSystemBuild;
@@ -40,6 +43,18 @@ test("a connected app passes every check at pass 3, a 400-line file included", (
   expect(app.literals).toEqual({ hard: 0, floor: 0 });
 });
 
+test("the linter refuses a design-system build whose dist/ is stale against tokens/", () => {
+  const copy = mkdtempSync(join(tmpdir(), "lint-ds-stale-"));
+  try {
+    for (const p of ["tokens", "dist", "css", "templates", "guide/tokens.md"]) cpSync(join(PKG, p), join(copy, p), { recursive: true });
+    expect(loadDesignSystem(copy).tokensCssSha256).toBe(sha256(readFileSync(REAL_TOKENS_CSS, "utf8")));
+    appendFileSync(join(copy, "dist/css/tokens.css"), STALE_SUFFIX);
+    expect(() => loadDesignSystem(copy)).toThrow("dist/css/tokens.css (out of date)");
+  } finally {
+    rmSync(copy, { recursive: true, force: true });
+  }
+});
+
 describe("pass selection", () => {
   test.each([
     [1, ALL_CHECKS.slice(0, 4)],
@@ -54,6 +69,18 @@ describe("pass selection", () => {
     // Without the n/a mark, wiring runs and fails: a library has no entry stylesheet.
     expect(check("widgets-resolution-required", "wiring").status).toBe("fail");
     expect(check("widgets", "wiring")).toEqual({ id: "wiring", status: "n/a", reason: NA_REASONS.libraryWiring, violations: [], warnings: [] });
+    expect(check("widgets", "resolution")).toMatchObject({ status: "n/a", reason: NA_REASONS.libraryResolution });
+  });
+
+  test("a check the registry requires but the app data leaves nothing to check fails: only the registry marks n/a", () => {
+    expect(check("widgets-resolution-required", "resolution")).toMatchObject({
+      status: "fail",
+      violations: [at("libs/widgets", 0, "registry requires resolution but widgets-resolution-required consumes the tokens through its host's CSS")],
+    });
+    expect(check("connected-no-shell", "shell")).toMatchObject({
+      status: "fail",
+      violations: [at("apps/connected", 0, "registry requires shell but connected-no-shell is not a shell app (shell: false in apps.json)")],
+    });
   });
 });
 
@@ -62,14 +89,6 @@ describe("resolution", () => {
     expect(check("unconnected", "resolution").violations).toEqual([
       at("apps/unconnected/package.json", 1, "does not declare @codecaine-ai/design-system"),
     ]);
-  });
-
-  test("a host-css library is n/a: with the registry's reason, or from consume.via when the registry requires it", () => {
-    const marked = check("widgets", "resolution");
-    expect([marked.status, marked.reason]).toEqual(["n/a", NA_REASONS.libraryResolution]);
-    const required = check("widgets-resolution-required", "resolution");
-    expect(required.status).toBe("n/a");
-    expect(required.reason).toContain("consume.via host-css");
   });
 
   test("a vendored tgz passes when its tokens.css matches the build and fails with both hashes when not", () => {
@@ -162,7 +181,7 @@ describe("literals", () => {
   });
 
   test("allowlist entries suppress the hits they match; an entry without a reason fails and an unused one warns", () => {
-    const allowlist = "registry/allowlists/unconnected.json";
+    const allowlist = "registry/apps/allowlists/unconnected-allowlisted.json";
     const { violations, warnings } = check("unconnected-allowlisted", "literals");
     const hits = messages(violations);
     expect(hits.some((m) => m.includes("#ff0000"))).toBe(false);
@@ -242,12 +261,6 @@ describe("names", () => {
 describe("shell", () => {
   test("an app without .ds-shell markup or an AppShell copy fails", () => {
     expect(messages(check("unconnected", "shell").violations)).toEqual([expect.stringContaining("renders no .ds-shell markup")]);
-  });
-
-  test("an app with shell: false is n/a", () => {
-    const result = check("connected-no-shell", "shell");
-    expect(result.status).toBe("n/a");
-    expect(result.reason).toContain("shell: false");
   });
 
   test(".ds-shell markup without .ds-topbar names the missing class", () => {
