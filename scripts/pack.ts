@@ -18,12 +18,19 @@
  * Destinations: a checkout outside the owner's tree (the rollout mirror) never writes into the owner's tree
  * (`/Users/Ford/workspace`), directly or through a symlink. A checkout inside the owner's tree (the owner's
  * own design-system after merge) may: `bun run pack --out ../<app>/vendor` is the vendoring flow there.
- * Scratch folders (npm's staging folder, its HOME, cache and TMPDIR) go under safeTempBase(), never under
- * the owner's tree, the home itself, ~/Library or a credential store, whatever TMPDIR says.
+ * Scratch folders (npm's staging folder, its HOME, cache and TMPDIR) and the default destination go under
+ * safeTempBase(): pack refuses (exit 1, nothing created) when TMPDIR resolves into the owner's tree, is the
+ * home itself, or lies in ~/Library or a credential store.
  *
- * npm is resolved once through PATH (`Bun.which`) and run by that absolute path. It is not a system binary:
- * on this machine it lives in ~/.nvm, a user-writable dir. Known limit: pack trusts that npm. No rollout run
- * can plant one there: the run sandbox denies every write outside --root and the run's temp dir.
+ * npm and node: each is resolved once, the first on PATH (absolute entries only), and run by its real path
+ * (symlinks resolved). Both must sit in the nvm dir (~/.nvm, which the run sandbox never lets a run write) or
+ * in a directory this user cannot write (nor any directory on the way to it): a `npm` or `node` found first
+ * in a user-writable PATH dir that comes before the nvm dir (~/.local/bin, ~/.bun/bin, /usr/local/bin on this
+ * machine) is refused before anything runs, because an unsandboxed process could have planted it there.
+ * npm runs inside the OS sandbox (packPolicy): writes only in its staging folder and its temp HOME, reads
+ * under the home only the checkout, those two and ~/.nvm, no network at all, credential stores and the owner's
+ * tree hidden (the checkout itself stays readable). Its PATH is pinned to the real dirs of node and npm and
+ * the system dirs (SYSTEM_PATH). No sandbox-exec, no pack.
  *
  * On success it prints two lines, and a third when the tgz was already there:
  *   tgz: <absolute path>
@@ -36,13 +43,15 @@
 
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { constants, copyFileSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { accessSync, closeSync, constants, copyFileSync, lstatSync, mkdirSync, mkdtempSync, openSync, readFileSync, readSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { basename, join, posix } from "node:path";
+import { basename, dirname, isAbsolute, join, posix } from "node:path";
 import { gunzipSync } from "node:zlib";
 import { ROOT, staleFiles, TokenError } from "./build.ts";
-import { OWNER_TREE } from "./lib/owner.ts";
-import { isWithin, safeOutputPath, safeTempBase, UnsafePathError } from "./lib/safe-paths.ts";
+import { HOME_SECRETS, OWNER_PORTS, OWNER_TREE } from "./lib/owner.ts";
+import { canonicalPath, isWithin, realHome, safeOutputPath, safeTempBase, UnsafePathError } from "./lib/safe-paths.ts";
+import { sandboxCommand, SandboxUnavailable, type SandboxPolicy } from "./lib/sandbox.ts";
+import { SYSTEM_PATH } from "./lib/system-bin.ts";
 
 /** Every path in an npm-packed tgz starts with this folder. */
 export const TGZ_ROOT = "package/";
@@ -254,9 +263,13 @@ export function tgzProblems(files: Map<string, Uint8Array>): string[] {
 // Packing
 // ---------------------------------------------------------------------------
 
-/** `$DS_RUN/pack` during the rollout, else a temp folder. Never a git checkout by default. */
+/**
+ * `$DS_RUN/pack` during the rollout, else `ds-rollout/pack` under the temp base, which must pass
+ * safeTempBase (TMPDIR outside the owner's tree, not the home itself, not in ~/Library or a credential
+ * store). Never a git checkout by default. Throws UnsafePathError.
+ */
 export function defaultOutDir(env: NodeJS.ProcessEnv = process.env): string {
-  return env.DS_RUN ? join(env.DS_RUN, "pack") : join(tmpdir(), "ds-rollout", "pack");
+  return env.DS_RUN ? join(env.DS_RUN, "pack") : join(safeTempBase({ tmp: env.TMPDIR || tmpdir() }), "ds-rollout", "pack");
 }
 
 export interface PackOptions {
@@ -266,6 +279,120 @@ export interface PackOptions {
   root?: string;
   /** The owner's tree; tests pass a temp dir. Default OWNER_TREE. */
   ownerTree?: string;
+  /** The real home (its ~/.nvm is where npm and node may live); tests pass a temp dir. Default realHome(). */
+  home?: string;
+  /** The PATH npm and node are resolved through. Default process.env.PATH. */
+  pathEnv?: string;
+}
+
+// ---------------------------------------------------------------------------
+// npm and node: resolved once, refused from a plantable place, run sandboxed
+// ---------------------------------------------------------------------------
+
+/** A tool found on PATH. */
+export interface ResolvedTool {
+  name: string;
+  /** The PATH entry it was found in, canonical. */
+  dir: string;
+  /** `<entry>/<name>` as found. */
+  found: string;
+  /** Its real path (symlinks resolved): what runs. */
+  real: string;
+}
+
+/**
+ * Whether this user could replace `path`: it, or a directory on the way up to `/`, is owned by this user or
+ * writable by them (an owner can chmod; a writable parent can rename the entry away).
+ */
+export function userWritable(path: string): boolean {
+  const uid = process.getuid?.();
+  for (let current = path; ; current = dirname(current)) {
+    try {
+      if (uid !== undefined && statSync(current).uid === uid) return true;
+      accessSync(current, constants.W_OK);
+      return true;
+    } catch {
+      // not ours, not writable: look further up
+    }
+    if (dirname(current) === current) return false;
+  }
+}
+
+/**
+ * The first `name` on `pathEnv` (absolute entries only: a relative entry names another dir in every cwd),
+ * with its real path. Throws PackError, before anything runs, when it or its real path sits in a directory
+ * this user can write that is not inside the nvm dir (`<home>/.nvm`): there, an unsandboxed process could
+ * have planted it ahead of the nvm one. Also when PATH holds no `name`.
+ */
+export function resolveTool(name: "npm" | "node", opts: { pathEnv: string; home: string }): ResolvedTool {
+  const nvm = canonicalPath(join(opts.home, ".nvm"));
+  const entries = opts.pathEnv.split(":").filter((entry) => isAbsolute(entry));
+  const nvmEntry = entries.find((entry) => isWithin(entry, nvm));
+  for (const entry of entries) {
+    const found = join(entry, name);
+    let real: string;
+    try {
+      if (!statSync(found).isFile()) continue;
+      accessSync(found, constants.X_OK);
+      real = realpathSync(found);
+    } catch {
+      continue;
+    }
+    const dir = canonicalPath(entry);
+    const trusted = (path: string) => isWithin(path, nvm) || !userWritable(path);
+    if (!trusted(dir) || !trusted(real)) {
+      const where = nvmEntry === undefined ? `PATH has no entry in the nvm dir ${nvm}` : entries.indexOf(entry) < entries.indexOf(nvmEntry) ? `before the nvm dir ${nvmEntry} on PATH` : `not the nvm dir ${nvmEntry}`;
+      throw new PackError(
+        `design-system: refusing to run ${name}: the first ${name} on PATH is ${found}${real === found ? "" : ` (really ${real})`}, in a directory this user can write, ${where}. ` +
+          `An unsandboxed process could have planted it there. Remove it, or put the nvm bin dir first on PATH; nothing packed`,
+      );
+    }
+    return { name, dir, found, real };
+  }
+  throw new PackError(`design-system: ${name} is not on PATH (absolute entries); nothing packed`);
+}
+
+/** Whether `file` is a script node runs (`.js`, or a `#!` line naming node): npm-cli.js is one. */
+function nodeScript(file: string): boolean {
+  if (/\.[cm]?js$/.test(file)) return true;
+  const fd = openSync(file, "r");
+  try {
+    const head = Buffer.alloc(128);
+    const n = readSync(fd, head, 0, head.length, 0);
+    return /^#!.*\bnode\b/.test(head.subarray(0, n).toString("utf8").split("\n")[0] ?? "");
+  } finally {
+    closeSync(fd);
+  }
+}
+
+/**
+ * npm's argv and PATH: npm's real file run by node's real path when it is a node script (so its
+ * `#!/usr/bin/env node` never resolves node through PATH), else npm's real path. PATH is node's and npm's
+ * real dirs, then the system dirs, for whatever npm starts in turn.
+ */
+export function npmCommand(npm: ResolvedTool, node: ResolvedTool): { argv: string[]; path: string } {
+  const argv = nodeScript(npm.real) ? [node.real, npm.real] : [npm.real];
+  return { argv, path: [...new Set([dirname(node.real), dirname(npm.real)]), SYSTEM_PATH].join(":") };
+}
+
+/**
+ * The sandbox npm pack runs in: writes only in its staging folder and its temp HOME (plus the devices every
+ * runtime opens); reads under the home only the checkout, those two and ~/.nvm; credential stores and the
+ * owner's tree hidden, the checkout itself readable inside it; no network at all (no IP, no Unix socket, no
+ * listening).
+ */
+export function packPolicy(opts: { root: string; staging: string; npmHome: string; home: string; ownerTree?: string }): SandboxPolicy {
+  return {
+    home: opts.home,
+    writable: [opts.staging, opts.npmHome],
+    readable: [opts.root, opts.staging, opts.npmHome, join(opts.home, ".nvm")],
+    hidden: [...HOME_SECRETS.map((rel) => join(opts.home, rel)), opts.ownerTree ?? OWNER_TREE],
+    readableInHidden: [opts.root],
+    connectPorts: [],
+    bindPorts: [],
+    unixSockets: { paths: [], dirs: [] },
+    deniedPorts: OWNER_PORTS,
+  };
 }
 
 /**
@@ -283,17 +410,18 @@ export function packOutput(dest: string, opts: { root?: string; ownerTree?: stri
 const npmHomes: string[] = [];
 
 /**
- * The only environment npm pack gets: PATH, LANG and TERM from `from`, and a fresh temp HOME under the
- * validated temp base (removed at exit) holding the XDG dirs, the npm cache, npm's TMPDIR and empty user and
- * global npmrc files. So npm never reads the owner's ~/.npmrc or tokens, never writes ~/.npm or the caller's
- * TMPDIR, and runs no lifecycle scripts.
+ * The only environment npm pack gets: `path` as PATH (npmCommand's pinned one; default the system dirs),
+ * LANG and TERM from `from`, and a fresh temp HOME under the validated temp base (removed at exit) holding
+ * the XDG dirs, the npm cache, npm's TMPDIR and empty user and global npmrc files. So npm never reads the
+ * owner's ~/.npmrc or tokens, never writes ~/.npm or the caller's TMPDIR, never finds a tool through the
+ * caller's PATH, and runs no lifecycle scripts.
  */
-export function npmEnv(from: NodeJS.ProcessEnv = process.env, base: string = safeTempBase()): Record<string, string> {
+export function npmEnv(from: NodeJS.ProcessEnv = process.env, base: string = safeTempBase(), path: string = SYSTEM_PATH): Record<string, string> {
   const home = mkdtempSync(join(base, "ds-pack-npm-"));
   if (!npmHomes.length) process.once("exit", () => npmHomes.forEach((dir) => rmSync(dir, { recursive: true, force: true })));
   npmHomes.push(home);
-  const env: Record<string, string> = {};
-  for (const name of ["PATH", "LANG", "TERM"]) {
+  const env: Record<string, string> = { PATH: path };
+  for (const name of ["LANG", "TERM"]) {
     const value = from[name];
     if (value !== undefined) env[name] = value;
   }
@@ -346,27 +474,41 @@ export async function pack(opts: PackOptions = {}): Promise<PackResult> {
   }
   if (stale.length) throw new PackError("design-system: build outputs are stale (run `bun run build`); nothing packed:", stale);
 
+  const home = opts.home ?? realHome();
+  // Before anything is created: a planted npm or node refuses the pack.
+  const pathEnv = opts.pathEnv ?? process.env.PATH ?? "";
+  const tools = { npm: resolveTool("npm", { pathEnv, home }), node: resolveTool("node", { pathEnv, home }) };
   const out = packOutput(opts.out ?? defaultOutDir(), { root, ownerTree: opts.ownerTree });
-  const base = safeTempBase({ ownerTree: opts.ownerTree });
+  const base = safeTempBase({ ownerTree: opts.ownerTree, home });
   mkdirSync(out, { recursive: true });
   // npm writes into a private folder, so a tgz already in `out` is never overwritten by npm itself.
   const staging = mkdtempSync(join(base, "ds-pack-"));
   try {
-    return place(npmPack(root, staging, base), out, root);
+    return place(npmPack(root, staging, base, { ...tools, home, ownerTree: opts.ownerTree }), out, root);
   } finally {
     rmSync(staging, { recursive: true, force: true });
   }
 }
 
-/** Runs `npm pack` from the package root into `dest`. Returns the path of the tgz it wrote. */
-function npmPack(root: string, dest: string, base: string): string {
-  const bin = Bun.which("npm");
-  if (!bin) throw new PackError("design-system: npm is not on PATH; nothing packed");
-  const npm = spawnSync(bin, ["pack", "--ignore-scripts", "--pack-destination", dest, "--json"], {
-    cwd: root,
-    encoding: "utf8",
-    env: npmEnv(process.env, base),
-  });
+/** Runs `npm pack` from the package root into `dest`, inside the sandbox (packPolicy). Returns the path of the tgz it wrote. */
+function npmPack(root: string, dest: string, base: string, tools: { npm: ResolvedTool; node: ResolvedTool; home: string; ownerTree?: string }): string {
+  const { argv, path } = npmCommand(tools.npm, tools.node);
+  const env = npmEnv(process.env, base, path);
+  let command: string[];
+  try {
+    command = sandboxCommand(packPolicy({ root, staging: dest, npmHome: env.HOME!, home: tools.home, ownerTree: tools.ownerTree }), [
+      ...argv,
+      "pack",
+      "--ignore-scripts",
+      "--pack-destination",
+      dest,
+      "--json",
+    ]);
+  } catch (error) {
+    if (error instanceof SandboxUnavailable) throw new PackError(`design-system: npm runs only inside the OS sandbox: ${error.message}; nothing packed`);
+    throw error;
+  }
+  const npm = spawnSync(command[0]!, command.slice(1), { cwd: root, encoding: "utf8", env });
   if (npm.error) throw new PackError(`design-system: could not run npm: ${npm.error.message}`);
   if (npm.status !== 0) throw new PackError(`design-system: npm pack exited ${npm.status}:\n${npm.stderr.trim()}`);
   let filename: unknown;
