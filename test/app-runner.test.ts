@@ -557,6 +557,27 @@ describe("a tool that ends without stopping its apps", () => {
     expect(await portsClosed([46927, 46928, 46932, 46933], 1_000)).toBe(true);
   }, 40_000);
 
+  test("a signal while the tool's own stop() is in flight: the handler waits for it, nothing is left", async () => {
+    const { tool, tmp } = await lifecycle("stop-race", [46934, 46935]);
+    expect(tmp).toBeDefined();
+    expect(await tool.exited).toBe(130);
+    expect(await portsClosed([46934, 46935], 1_000)).toBe(true);
+    expect(existsSync(tmp!)).toBe(false);
+  }, 40_000);
+
+  test("a signal while startApp waits for the ready line: the spawned server is stopped", async () => {
+    const tool = Bun.spawn(["bun", join(import.meta.dir, "fixtures/runner/lifecycle.ts"), "before-ready", makeRoot(), outDir, "46936", "46929"], {
+      stdout: "ignore",
+      stderr: "ignore",
+    });
+    const deadline = Date.now() + 20_000;
+    while (!(await portOpen(46936)) && Date.now() < deadline) await Bun.sleep(50);
+    expect(await portOpen(46936)).toBe(true);
+    tool.kill("SIGINT");
+    expect(await tool.exited).toBe(130);
+    expect(await portsClosed([46936, 46929], 1_000)).toBe(true);
+  }, 40_000);
+
   test("SIGKILL: the run record lets --cleanup stop exactly the orphans", async () => {
     const records = join(scratch, "cleanup-out");
     const { tool, tmp } = await lifecycle("kill", [46907, 46908], records);
