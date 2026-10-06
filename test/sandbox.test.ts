@@ -269,6 +269,33 @@ describe.skipIf(Boolean(unavailable))("sandbox profile", () => {
     expect(sandboxProfile(policy())).toContain(`(deny file-write* (literal "${join(app, "external")}"))`);
   });
 
+  test("the app's checkout itself cannot be renamed away and back (Opus R4 P0-1): its .git and the read-only checkout nested in it stay out of reach; writes inside it still work", () => {
+    writeFileSync(join(vendor, "kept.txt"), "original");
+    const moved = join(runTmp, "moved-top");
+    // The reviewer's probe: move the whole checkout into the run's temp dir, rewrite what the path rules
+    // guard (its .git, the nested read-only checkout) at the new path, move it back.
+    const said = sandboxed(
+      [
+        `mv '${app}' '${moved}' && echo ESCAPE_MOVED_TOP`,
+        `rm -rf '${join(moved, ".git")}' 2>/dev/null && echo 'gitdir: ${join(app, "evil")}' > '${join(moved, ".git")}' && echo ESCAPE_REWROTE_GIT`,
+        `echo pwned > '${join(moved, "external", "vendor", "kept.txt")}' 2>/dev/null && echo ESCAPE_WROTE_NESTED`,
+        `mv '${moved}' '${app}' 2>/dev/null`,
+        `mv '${runTmp}' '${join(app, "moved-tmp")}' 2>/dev/null && echo ESCAPE_MOVED_TMP`,
+        `echo x > '${join(app, "inside.txt")}' && mkdir -p '${app}' && mkdir -p '${join(app, "newdir")}' && mv '${join(app, "newdir")}' '${join(app, "newdir2")}' && rmdir '${join(app, "newdir2")}' && echo inside-ok`,
+        `echo x > '${join(runTmp, "inside.txt")}' && echo tmp-ok`,
+        "true",
+      ].join("; "),
+    ).output;
+    for (const line of ["ESCAPE_MOVED_TOP", "ESCAPE_REWROTE_GIT", "ESCAPE_WROTE_NESTED", "ESCAPE_MOVED_TMP"]) expect(said).not.toContain(line);
+    expect(said).toContain("inside-ok");
+    expect(said).toContain("tmp-ok");
+    expect(readFileSync(join(app, ".git", "config"), "utf8")).toBe("[core]\n");
+    expect(readFileSync(join(vendor, "kept.txt"), "utf8")).toBe("original");
+    expect(existsSync(moved)).toBe(false);
+    const profile = sandboxProfile(policy());
+    for (const top of [app, runTmp]) expect(profile).toContain(`(literal "${top}")`);
+  });
+
   test("without `writable` a run writes only its temp dir, not even an app checkout", () => {
     expect(
       verdicts(

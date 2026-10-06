@@ -14,7 +14,8 @@
  *   writes   nowhere (deny file-write* under "/") except the app's own checkouts (checkouts.ts appScope:
  *            decision 29), the run's temp dir and the device files runtimes open. Inside those, never a
  *            `.git` entry or anything under one, never a git dir inside --root, never another repository's
- *            checkout nested there. Everything else under --root is read-only: the run folder and the
+ *            checkout nested there; and none of those dirs itself can be renamed or removed (a rename
+ *            would carry what it holds past every path rule). Everything else under --root is read-only: the run folder and the
  *            tool's out dir, .tooling/*, .bun-global, every design-system checkout, Core's node_modules
  *            with Playwright and Electron (also listed by name, toolPackageDirs). Nothing on PATH
  *            (/usr/local/bin is the owner's), no other temp dir, no cache dir: a run can plant nothing an
@@ -218,12 +219,20 @@ export function sandboxProfile(policy: SandboxPolicy): string {
   const writable = [...(policy.writable.length ? [filters("subpath", policy.writable)] : []), ...(policy.writableParams ?? []).map((name) => `(subpath (param ${sbString(name)}))`)];
   if (writable.length) lines.push(`(allow file-write* ${writable.join(" ")})`);
   lines.push(`(allow file-write* ${WRITABLE_DEVICES})`);
+  // Seatbelt checks a rename by its two paths only, so a writable dir renamed away carries everything in
+  // it past every path rule below (its `.git`, the read-only checkouts nested in it): move it, rewrite,
+  // move it back. So no writable dir and no gitProtected dir can itself be renamed, replaced or removed.
+  // A `literal` rule covers the dir's own entry only: what it holds stays writable (checked by its own
+  // path), and creating it again where it exists still fails with EEXIST, not EPERM (mkdir -p works).
+  const tops = canonicalAll([...policy.writable, ...(policy.gitProtected ?? [])]);
+  if (tops.length) lines.push(`(deny file-write* ${filters("literal", tops)})`);
   if (policy.readOnly?.length) {
     lines.push(`(deny file-write* ${filters("subpath", policy.readOnly)})`);
     // Seatbelt checks a rename's two paths, never what the moved dir holds: renaming an ancestor of a
     // read-only dir (inside a writable one) away, writing into it and renaming it back would get past the
     // rule above. So every dir between a writable dir and a read-only dir in it can be neither renamed
-    // nor removed (entries in it stay writable: they are checked by their own paths).
+    // nor removed (entries in it stay writable: they are checked by their own paths). The writable dir
+    // itself is guarded above.
     const writableDirs = canonicalAll(policy.writable);
     const ancestors = new Set<string>();
     for (const dir of canonicalAll(policy.readOnly))

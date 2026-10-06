@@ -11,6 +11,8 @@
  *                               checkouts nested in an enclosing one are pruned. Throws when a dir is in no
  *                               checkout inside --root: the write check needs one.
  *   gitEntries(scope)           each checkout's `.git` entry (git.ts gitEntryState)
+ *   checkoutStates(dirs)        each dir's identity (device:inode) and `.git` entry: what an app run must
+ *                               leave as it found it (app-runner stop(), registry-prove)
  *   statusSnapshot(scope, skip) `git status --ignored --porcelain` per checkout, pinned to its recorded git dir
  *   nestedCheckouts(dir)        checkouts below `dir` (a `.git` file or folder), node_modules skipped
  *
@@ -19,12 +21,14 @@
  * and a nested checkout's git dir is read from its `.git` entry the way git reads it.
  */
 import { spawnSync } from "node:child_process";
-import { existsSync, lstatSync, readFileSync } from "node:fs";
-import { dirname, isAbsolute, join, resolve, sep } from "node:path";
+import { existsSync, statSync } from "node:fs";
+import { dirname, join, sep } from "node:path";
 
-import { appsHaveStarted, discoverRepo, gitAt, gitEntryState, pinFor } from "./git";
+import { appsHaveStarted, discoverRepo, gitAt, gitDirsOf, gitEntryState, pinFor } from "./git";
 import { resolvePath, type AppEntry } from "./registry";
 import { canonicalPath } from "./safe-paths";
+
+export { gitDirsOf };
 
 /** find by absolute path (never PATH). */
 export const FIND = "/usr/bin/find";
@@ -38,34 +42,6 @@ const inside = (path: string, dir: string) => path === dir || path.startsWith(di
 export function toplevel(dir: string): string | null {
   if (appsHaveStarted()) return pinFor(dir, { optional: true })?.workTree ?? null;
   return discoverRepo(dir)?.workTree ?? null;
-}
-
-/**
- * A checkout's git dir and common dir, read from its `.git` entry without running git: the `.git` dir
- * itself, or the dir a `gitdir: <path>` file names, plus that dir's `commondir` file. Canonical; [] when
- * the entry is neither.
- */
-export function gitDirsOf(workTree: string): string[] {
-  const entry = join(workTree, ".git");
-  try {
-    const stat = lstatSync(entry);
-    let gitDir: string | null = null;
-    if (stat.isDirectory()) gitDir = entry;
-    else if (stat.isFile()) {
-      const named = /^gitdir:\s*(.+?)\s*$/m.exec(readFileSync(entry, "utf8"))?.[1];
-      if (named) gitDir = isAbsolute(named) ? named : resolve(workTree, named);
-    }
-    if (!gitDir) return [];
-    const dirs = [canonicalPath(gitDir)];
-    const common = join(gitDir, "commondir");
-    if (existsSync(common)) {
-      const text = readFileSync(common, "utf8").trim();
-      if (text) dirs.push(canonicalPath(isAbsolute(text) ? text : resolve(gitDir, text)));
-    }
-    return [...new Set(dirs)];
-  } catch {
-    return [];
-  }
 }
 
 function find(args: string[]): string[] {
@@ -179,6 +155,30 @@ export function writeScope(root: string, dirs: string[], opts: { enclosing?: boo
 /** What a run must not change in a checkout's git setup: each `.git` entry (git.ts gitEntryState). */
 export function gitEntries(scope: Pick<WriteScope, "checkouts">): Map<string, string> {
   return new Map(scope.checkouts.map((dir) => [join(dir, ".git"), gitEntryState(dir)]));
+}
+
+/** A dir's identity: "<device>:<inode>", or "missing". */
+function dirIdentity(dir: string): string {
+  try {
+    const stat = statSync(dir);
+    return `${stat.dev}:${stat.ino}`;
+  } catch {
+    return "missing";
+  }
+}
+
+/**
+ * What an app run must leave as it found it (verify:apps, snapshot, registry-prove): for each checkout
+ * of its scope, the checkout dir itself (device:inode: not renamed away and replaced) and its `.git`
+ * entry (gitEntries). Keyed by checkout.
+ */
+export function checkoutStates(checkouts: readonly string[]): Map<string, string> {
+  return new Map(checkouts.map((dir) => [dir, `dir ${dirIdentity(dir)}; .git ${gitEntryState(dir)}`]));
+}
+
+/** The checkouts whose state (checkoutStates) differs between `before` and `after`, with what they were and are. */
+export function changedCheckouts(before: ReadonlyMap<string, string>, after: ReadonlyMap<string, string>): string[] {
+  return [...before].filter(([dir, state]) => after.get(dir) !== state).map(([dir, state]) => `${dir} (${state.split("\n")[0]} -> ${(after.get(dir) ?? "missing").split("\n")[0]})`);
 }
 
 /** `git status --ignored --porcelain` lines of each checkout, git pinned to its recorded git dir (hook-free, git.ts). */

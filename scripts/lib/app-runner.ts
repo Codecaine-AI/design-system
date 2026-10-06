@@ -18,6 +18,9 @@
  *     hashes Playwright (playwright.ts pinPlaywright; Electron too when opted in);
  *   - samples its processes' TCP connections with lsof from before the first spawn until stop(); every
  *     connection that leaves the run, and every failed sample, goes into running.violations;
+ *   - records each dir the run may write (its identity and `.git` entry, checkouts.ts checkoutStates)
+ *     before the first process starts; stop() compares once the processes are gone, and a change goes
+ *     into running.violations (verify:apps, snapshot and registry-prove fail on any violation);
  *   - binds only its profile's ports (46900-47999, never an owner port) and refuses a busy port;
  *   - starts every process in its own process group and records the roots' and every process's identity
  *     (pid, group, start time) in <outDir>/runs/<id>.json, where no run process can write, so
@@ -72,7 +75,7 @@ import { tmpdir } from "node:os";
 import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
 
 import { CONTEXT_OPTIONS, DETERMINISM_CSS, installStyleInitScript, LAUNCH_OPTIONS } from "./capture";
-import { appScope } from "./checkouts";
+import { appScope, changedCheckouts, checkoutStates } from "./checkouts";
 import { describeConnection, egressConnections, isExposedListener, lsofConnections } from "./egress";
 import { markAppsStarted, pinRepos } from "./git";
 import { OWNER_PORTS } from "./owner";
@@ -1015,6 +1018,9 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
   // starts, with the repositories every git call of this tool is pinned to and Playwright loaded and hashed.
   const scope = appScope(root, app);
   pinRepos([...scope.checkouts, join(root, "design-system"), DESIGN_SYSTEM_ROOT]);
+  // Each dir the run may write, as it is now (the dir itself and its `.git` entry): stop() compares, and a
+  // change is a violation, so no later tool process pins a repository a run swapped in (Opus R4 P0-1).
+  const scopeBefore = checkoutStates(scope.writable);
   if (playwrightDirs(root).length || mode === "electron") pinPlaywright(root);
   // Electron (opt-in) too: resolved, its package hashed, before anything of the run starts.
   if (mode === "electron") {
@@ -1155,6 +1161,9 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
     server?.stop(true);
     internal.staticPort = undefined;
     const kill = await killRun(roots, 8_000, [...internal.known.values()]);
+    // The run's processes are gone: its checkouts must be the dirs they were, with the same `.git` entries.
+    for (const change of changedCheckouts(scopeBefore, checkoutStates([...scopeBefore.keys()])))
+      addViolation(running, `the run replaced a checkout it may write, or its .git entry: ${change}`);
     const check = [...new Set([...running.startedPorts, ...Object.values(ports)])];
     let busy: string[] = [];
     for (let i = 0; i < 20; i++) {
