@@ -190,12 +190,11 @@
             "selector": "svg.sequence-diagram .seq-participants > .seq-participant--box[data-participant-id=\"p1\"] > .seq-participant-label",
             "property": "fill",
             "token": "color.text.body"
-          }
-        ],
-        "waivedRoles": [
+          },
           {
-            "role": "border",
-            "reason": "the fixture routes render no neutral chrome border: participant boxes, lifelines, messages and notes stroke the accent (packages/sequence/src/theme.ts:98 participantStroke → --seq-accent #C77D2E, render/svg.ts:155), fragments the fragment accent #5B7FBD, and these stay product colors. The one neutral stroke is an activation box (theme.ts:104 activationStroke → --seq-activation-stroke, else --seq-muted #9AA0A6; render/svg.ts:283), and no fixture route renders an activation (none of the loginFlow, combinedFragments and minimal programs activates a participant). The waiver holds only while that is so: a route that renders an activation needs a border probe on its stroke."
+            "selector": "svg.sequence-diagram .seq-activations > rect:first-child",
+            "property": "stroke",
+            "token": "color.border.default"
           }
         ],
         "darkSwitch": {
@@ -216,6 +215,14 @@
         {
           "what": "test:apps re-run under the round-3 sandbox (R3-C, 2026-10-05)",
           "reason": "bun run test:apps --root /Users/Ford/workspace-ds --commands typecheck,build twice, under the round-3 sandbox (rollout-r3-a d24a159: writes only in the app's own checkouts, checkouts.ts appScope, and the run tmp; a suite connects only to its block and 49152-65535 on loopback, minus the listeners at start and the owner's ports; a named command gets no port; no .env reads) with the write check over the app's own checkouts (git status pinned to their git dirs, find -newer/-cnewer, .git entries): tests.safe[0]: run 1 exit 0, 79 pass, 0 fail in 5.4 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0, 79 pass, 0 fail in 5.4 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.typecheck: run 1 exit 0 in 1.4 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0 in 1.4 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.build: not set in apps.json (skipped). Every result matches tests.baselines (tests.safe[0], commands.typecheck: recorded by R2-C, cmd added in R3-C from the commands those runs executed, which equal the current ones). Reports in rollout/tooling/r3-c-runs/final-1 and final-2"
+        },
+        {
+          "what": "activation bar tokens (pass 1 review round 1, 2026-10-06)",
+          "reason": "every fixture route renders activation bars, so the old border waiver was false. Disputed role (Codex P1: color.text.faint is a guide role; Opus: no hex mid-gray border token) ruled by Codex xhigh: fill color.gray.solid (same hex as before the ruling), stroke color.border.default, both #rrggbb in both themes for img/PDF exports; the border probe checks the stroke"
+        },
+        {
+          "what": "SEQUENCE_TYPOGRAPHY title size 16",
+          "reason": "no font.size token equals 16 and the owner keeps size and density (owner decisions); the 12 and 11 sizes and the weights come from font.size.ui-xs, font.size.ui-2xs and font.weight.*. The scanner does not see TS sizes; review checks them"
         }
       ]
     },
