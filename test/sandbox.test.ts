@@ -229,21 +229,73 @@ describe.skipIf(Boolean(unavailable))("sandbox profile", () => {
   });
 });
 
+const python = Bun.which("python3");
+
+describe.skipIf(Boolean(unavailable) || !python)("network rule shapes (Seatbelt workarounds)", () => {
+  test("every tool-test port block: its own ports bind and connect, other ports, port 0 and foreign Unix sockets do not", () => {
+    // Per-port allow rules in other shapes made the kernel deny some allowed ports (see sandbox.ts).
+    // Only 46900-46939 (this suite's own range) are touched; the scan over 47000-47259 is in the report.
+    const outsideSocket = join(scratch, "foreign.sock");
+    const listener = Bun.listen({ unix: outsideSocket, socket: { data() {} } });
+    const failures: string[] = [];
+    try {
+      for (const start of [46900, 46910, 46920, 46930]) {
+        const block = Array.from({ length: 10 }, (_, i) => start + i);
+        const outside = [start === 46930 ? 46929 : start + 10, start === 46900 ? 46939 : start - 1];
+        const p = policy({ blockPorts: block, allowedLocalPorts: [], deniedPorts: [] });
+        const probe = Bun.spawnSync(sandboxCommand(p, [python!, join(import.meta.dir, "fixtures/runner/portprobe.py"), block.join(","), outside.join(","), runTmp, outsideSocket]), {
+          cwd: runTmp,
+          stdout: "pipe",
+          stderr: "pipe",
+        });
+        const verdict = probe.stdout.toString().trim() || probe.stderr.toString().trim();
+        if (verdict !== "all-ok") failures.push(`${start}: ${verdict}`);
+      }
+    } finally {
+      listener.stop(true);
+    }
+    expect(failures).toEqual([]);
+  }, 60_000);
+
+  test("Unix-socket rules come before the IP rules; binding is one negated deny rule", () => {
+    const lines = sandboxProfile(policy()).split("\n");
+    const lastUnix = lines.findLastIndex((line) => line.includes("(remote unix-socket"));
+    const firstIp = lines.findIndex((line) => line.includes("(remote ip "));
+    expect(lastUnix).toBeGreaterThan(-1);
+    expect(lastUnix).toBeLessThan(firstIp);
+    const bind = lines.filter((line) => line.includes("network-bind"));
+    expect(bind).toEqual([expect.stringMatching(/^\(deny network-bind \(require-not \(require-any \(local ip "localhost:46931"\)/)]);
+  });
+});
+
 test("the profile lists the block's ports and never an owner port among them", () => {
   const text = sandboxProfile(policy());
   expect(text).toContain(`(allow network-outbound (remote ip "localhost:${OWN}"))`);
   expect(text).toContain(`(allow network-outbound (remote ip "localhost:${ALLOWED}"))`);
   expect(text).not.toContain(`localhost:${OWNER}"))`);
-  expect(text).toContain(`(allow network-bind (local ip "localhost:${FREE_IN_BLOCK}"))`);
-  expect(text).not.toContain(`(allow network-bind (local ip "localhost:${ALLOWED}"))`);
+  expect(text).toContain(`(local ip "localhost:${FREE_IN_BLOCK}")`);
+  expect(text).not.toContain(`(local ip "localhost:${ALLOWED}")`);
 });
 
-test("anyLoopback (test suites with their own servers) still denies owner ports and non-loopback hosts", () => {
-  const text = sandboxProfile(policy({ anyLoopback: true }));
-  expect(text).toContain('(allow network-outbound (remote ip "localhost:*"))');
-  expect(text).toContain(`(deny network-outbound (remote ip "localhost:${OWNER}"))`);
-  expect(text).toContain(`(deny network-bind (local ip "localhost:${OWNER}"))`);
-  expect(text).toContain('(deny network-outbound (remote ip "*:*"))');
+describe.skipIf(Boolean(unavailable) || !Bun.which("python3"))("anyLoopback (test suites that start their own servers)", () => {
+  test("a suite binds and reaches its own ephemeral port; owner ports and the listeners it found at start stay denied", () => {
+    // STRAY stands in for a listener test:apps saw before the run started: it passes it as extraDeniedPorts.
+    const p = policy({ anyLoopback: true, extraDeniedPorts: [STRAY] });
+    const selfServe = `python3 -c "import socket; s = socket.socket(); s.bind(('127.0.0.1', 0)); s.listen(); c = socket.socket(); c.connect(s.getsockname())"`;
+    expect(
+      verdicts(
+        [
+          ["own ephemeral server", selfServe],
+          ["block port", `/usr/bin/nc -z -G 2 127.0.0.1 ${OWN}`],
+          ["listener found at start", `/usr/bin/nc -z -G 2 127.0.0.1 ${STRAY}`],
+          ["owner port", `/usr/bin/nc -z -G 2 127.0.0.1 ${OWNER}`],
+          ["non-loopback", "/usr/bin/nc -z -G 2 192.0.2.1 9"],
+        ],
+        p,
+      ),
+    ).toEqual(["ok own ephemeral server", "ok block port", "denied listener found at start", "denied owner port", "denied non-loopback"]);
+    expect(sandboxProfile(p)).toContain(`(deny network-bind (local ip "localhost:${STRAY}"))`);
+  });
 });
 
 test("realHome reads the user database, not $HOME", () => {

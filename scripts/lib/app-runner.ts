@@ -4,24 +4,34 @@
  * Shared by snapshot (screenshots), verify:apps (runtime check) and registry-prove. Every run:
  *   - gets a fresh temp dir that is HOME and the XDG dirs, with the profile's fixtures copied in;
  *   - runs with a sanitized environment built from an allowlist, never from the full process.env;
- *   - runs every process it starts inside the OS sandbox (sandbox.ts): outbound network only to
- *     loopback and never an owner port, no writes under the real home outside --root, the out dir and
- *     its temp dir, no `.env` reads. Without a working sandbox-exec startApp throws, unless the caller
- *     passes allowUnsandboxed (proof/debug only; running.unsandboxed is then set);
+ *   - runs every process it starts inside the OS sandbox, a profile generated per run (sandbox.ts):
+ *     network only to its own port block and allowedLocalPorts on loopback (listening only on the
+ *     block), no Unix socket but DNS/syslog and its temp dir, no reads under the real home but --root and
+ *     the runtimes, writes only in --root (never the design-system checkout or the out dir) and its temp
+ *     dir, no `.env*` reads, signals only to its own processes; TMPDIR is its temp dir. Without a working
+ *     sandbox-exec startApp throws, unless the caller passes allowUnsandboxed (proof/debug only;
+ *     running.unsandboxed is then set);
  *   - samples its processes' TCP connections with lsof from before the first spawn until stop(); every
  *     connection that leaves the run, and every failed sample, goes into running.violations;
  *   - binds only its profile's ports (46900-47999, never an owner port) and refuses a busy port;
- *   - starts every process in its own process group and records each process's identity (pid, group,
- *     start time) in <outDir>/runs/<id>.json, so `bun scripts/lib/app-runner.ts --cleanup` can stop
- *     exactly those after a crash; stop() kills only this run's processes, revalidating each one's start
- *     time before every signal, then confirms every port the run bound is free.
+ *   - starts every process in its own process group and records the roots' and every process's identity
+ *     (pid, group, start time) in <outDir>/runs/<id>.json, where no run process can write, so
+ *     `bun scripts/lib/app-runner.ts --cleanup` can stop what a crashed tool left: only processes under an
+ *     identity-checked runner root; stop() kills only this run's processes, revalidating each one's start
+ *     time before every signal, then confirms they are gone and every port the run bound is free (a stop it
+ *     cannot confirm rejects, and the run stays for the exit hook);
+ *   - installs SIGINT/SIGTERM/SIGHUP handlers (graceful stop, then exit 130/143/129; a second signal
+ *     SIGKILLs every live run at once), and an exit hook that SIGKILLs what is still live; a watchdog in
+ *     every run's process group kills it when the tool dies by SIGKILL.
  *
  * Run modes (registry `run.mode`):
  *   browser   spawn `run.start`, read the bound URL from its output with `run.readyPattern`; served
  *             URL paths map under `run.serveRoot` (the Vite/web root), default `run.cwd`
  *   static    `run.start` set: same as browser (a fixture server that builds into {tmp});
  *             otherwise run `commands.build`, then serve `run.staticDir` on the app's port
- *   electron  run `run.electron.build`, then Playwright `_electron.launch` against `run.electron.main`
+ *   electron  refused unless the tool runs with DS_ALLOW_ELECTRON=1 (cfprefsd writes the owner's
+ *             ~/Library/Preferences/com.github.Electron.plist, which no sandbox stops). Then: run
+ *             `run.electron.build`, then Playwright `_electron.launch` against `run.electron.main`
  *             through a launcher that starts Electron inside the sandbox (with `--no-sandbox`: Chromium
  *             cannot nest its own sandbox in ours). The app's `ready` event waits until the request
  *             guard is on electronApp.context(). The guard covers renderer traffic; main-process Node
@@ -1204,9 +1214,9 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
           // and --user-data-dir covers Chromium's own early use of the profile dir.
           args: ["-r", ELECTRON_LOADER, `--user-data-dir=${join(tmp, "electron-user-data")}`, main, ...flags],
           cwd,
-          // CFFIXED_USER_HOME points CoreFoundation's preferences at the run's temp dir. Unproven: whether
-          // cfprefsd then leaves the owner's ~/Library/Preferences alone is not verified (see ELECTRON_OPT_IN).
-          env: { ...env, CFFIXED_USER_HOME: tmp, DS_PW_ELECTRON_LOADER: playwrightElectronLoader(root) },
+          // No CFFIXED_USER_HOME: cfprefsd ignores it (`CFFIXED_USER_HOME=<dir> defaults read <domain>` does not
+          // read <dir>/Library/Preferences on macOS 26), so it cannot keep the owner's plist safe; hence the opt-in.
+          env: { ...env, DS_PW_ELECTRON_LOADER: playwrightElectronLoader(root) },
           timeout: timeoutMs,
           handleSIGINT: false,
           handleSIGTERM: false,

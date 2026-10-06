@@ -400,8 +400,8 @@ describe("startApp", () => {
       const probes = [
         `/usr/bin/nc -v -z -G 2 127.0.0.1 46939 > "$HOME/stray.txt" 2>&1`,
         `ls '${realHome()}' > "$HOME/home.txt" 2>&1`,
-        `echo '{}' > '${join(outDir, "runs", "forged.json")}' 2> "$HOME/record.txt"`,
-        `echo x > '${join(outDir, "runner-fixture", "logs", "planted.log")}' 2> "$HOME/log.txt"`,
+        `echo '{}' 2> "$HOME/record.txt" > '${join(outDir, "runs", "forged.json")}'`,
+        `echo x 2> "$HOME/log.txt" > '${join(outDir, "runner-fixture", "logs", "planted.log")}'`,
       ];
       const running = await start(fixtureApp({ ui: 46901, helper: 46902 }, {}, { start: `(${probes.join("; ")}); bun serve.ts` }), makeRoot());
       for (const file of ["stray.txt", "home.txt", "record.txt", "log.txt"]) expect(`${file}: ${readFileSync(join(running.tmp, file), "utf8")}`).toContain("Operation not permitted");

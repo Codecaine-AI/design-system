@@ -26,6 +26,15 @@
  * too. A denied operation surfaces only as EPERM in the run's own output; the egress sampling stays the
  * independent evidence for network traffic.
  *
+ * NETWORK RULE SHAPES. Scanning every run port block (46900-46939, 47000-47259) under generated profiles
+ * showed two Seatbelt bugs: with any `(remote unix-socket ...)` rule after the per-port
+ * `(allow network-outbound (remote ip "localhost:<port>"))` rules, connects to some allowed ports fail
+ * with EPERM; and per-port `(allow network-bind ...)` rules after `(deny network-bind (local ip "*:*"))`
+ * deny some allowed ports whatever the address form (localhost, *, tcp, ip4). Which ports fail depends on
+ * the profile text. Deny rules were reliable in every shape. So the Unix-socket rules come before the IP
+ * rules, and binding is a single `(deny network-bind (require-not (require-any <the allowed ports and the
+ * run's socket dir>)))`; test/sandbox.test.ts re-scans every block with the generated profile.
+ *
  * Fail closed: sandboxCommand throws SandboxUnavailable when sandbox-exec is missing or cannot apply a
  * profile (for example when the tool itself already runs inside a sandbox that forbids nesting).
  */
@@ -117,27 +126,33 @@ export function sandboxProfile(policy: SandboxPolicy): string {
 
   lines.push(";; signals: only this sandbox's own processes", "(deny signal)", "(allow signal (target same-sandbox))");
 
+  // Rule order and shape below work around Seatbelt bugs found on macOS 26.5 by scanning every port block
+  // (see NETWORK RULE SHAPES in the header): a Unix-socket rule placed after the IP allow rules, or a
+  // per-port `(allow network-bind ...)` after a `(deny network-bind (local ip "*:*"))`, makes the kernel
+  // deny some allowed ports. Unix-socket rules come first, and binding is one negated deny rule.
   lines.push(";; network: deny by default; the run's own loopback ports only, never a denied port");
-  lines.push('(deny network-outbound (remote ip "*:*"))');
-  if (policy.connectPorts === undefined) {
-    lines.push('(allow network-outbound (remote ip "localhost:*"))');
-    for (const port of policy.deniedPorts) lines.push(`(deny network-outbound (remote ip "localhost:${port}"))`);
-  } else for (const port of [...new Set(policy.connectPorts)].filter((p) => !denied.has(p)).sort((a, b) => a - b)) lines.push(`(allow network-outbound (remote ip "localhost:${port}"))`);
+  const tmpSockets = policy.unixSockets ? canonicalAll(policy.unixSockets.dirs) : [];
   if (policy.unixSockets) {
     lines.push("(deny network-outbound (remote unix-socket))");
     const allowed = [
       // A socket's own realpath fails (EOPNOTSUPP): canonicalize its directory.
       ...[...new Set(policy.unixSockets.paths.map((path) => join(canonicalPath(dirname(path)), basename(path))))].map((path) => `(path-literal ${sbString(path)})`),
-      ...canonicalAll(policy.unixSockets.dirs).map((path) => `(subpath ${sbString(path)})`),
+      ...tmpSockets.map((path) => `(subpath ${sbString(path)})`),
     ];
     for (const filter of allowed) lines.push(`(allow network-outbound (remote unix-socket ${filter}))`);
   }
-  if (policy.bindPorts !== undefined) {
-    lines.push('(deny network-bind (local ip "*:*"))');
-    if (policy.bindPorts === "any") {
-      lines.push('(allow network-bind (local ip "localhost:*"))');
-      for (const port of policy.deniedPorts) lines.push(`(deny network-bind (local ip "localhost:${port}"))`);
-    } else for (const port of [...new Set(policy.bindPorts)].filter((p) => !denied.has(p)).sort((a, b) => a - b)) lines.push(`(allow network-bind (local ip "localhost:${port}"))`);
+  lines.push('(deny network-outbound (remote ip "*:*"))');
+  if (policy.connectPorts === undefined) {
+    lines.push('(allow network-outbound (remote ip "localhost:*"))');
+    for (const port of policy.deniedPorts) lines.push(`(deny network-outbound (remote ip "localhost:${port}"))`);
+  } else for (const port of [...new Set(policy.connectPorts)].filter((p) => !denied.has(p)).sort((a, b) => a - b)) lines.push(`(allow network-outbound (remote ip "localhost:${port}"))`);
+  if (policy.bindPorts === "any") {
+    lines.push('(allow network-bind (local ip "localhost:*"))');
+    for (const port of policy.deniedPorts) lines.push(`(deny network-bind (local ip "localhost:${port}"))`);
+  } else if (policy.bindPorts !== undefined) {
+    const ports = [...new Set(policy.bindPorts)].filter((p) => !denied.has(p)).sort((a, b) => a - b);
+    const keep = [...ports.map((port) => `(local ip "localhost:${port}")`), ...tmpSockets.map((path) => `(local unix-socket (subpath ${sbString(path)}))`)];
+    lines.push(keep.length ? `(deny network-bind (require-not (require-any ${keep.join(" ")})))` : "(deny network-bind)");
   }
 
   lines.push(";; writes: only the writable dirs, never their read-only parts");
@@ -188,7 +203,13 @@ export interface RunPolicyOptions {
    * loopback port except `deniedPorts`. The deny-list policy runs had before decision 22; never for app runs.
    */
   anyLoopback?: boolean;
+  /** The ports never contacted or bound (default OWNER_PORTS; tests pass stand-ins). */
   deniedPorts?: readonly number[];
+  /**
+   * Denied on top of `deniedPorts`: with `anyLoopback`, every loopback port that already has a listener
+   * when the run starts (decision 22: a listener the run did not start is an owner service).
+   */
+  extraDeniedPorts?: readonly number[];
 }
 
 /**
@@ -217,7 +238,7 @@ export function runPolicy(opts: RunPolicyOptions): SandboxPolicy {
     connectPorts: opts.anyLoopback ? undefined : [...block, ...(opts.allowedLocalPorts ?? [])],
     bindPorts: opts.anyLoopback || opts.bindAnyPort ? "any" : block,
     unixSockets: { paths: SYSTEM_UNIX_SOCKETS, dirs: [opts.tmp] },
-    deniedPorts: opts.deniedPorts ?? OWNER_PORTS,
+    deniedPorts: [...new Set([...(opts.deniedPorts ?? OWNER_PORTS), ...(opts.extraDeniedPorts ?? [])])],
   };
 }
 
