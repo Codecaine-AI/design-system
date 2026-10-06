@@ -27,6 +27,24 @@
       "match": "^14(px)?$",
       "category": "pxFontSize",
       "reason": "LEGACY_STOCK_METRICS: the old stock size the rail migrates saved settings from; a data constant, not a style"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-workbench/web/src/shell/StyleRail.tsx",
+      "match": "^transition-\\[width\\]$",
+      "category": "twArbitrary",
+      "reason": "the Style rail's collapse animates its width: a transition property list names what animates, not a design value, and Tailwind has no built-in width transition (decision 59)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-workbench/web/src/pages/CanvasEmbed.tsx",
+      "match": "^z-\\[100\\]$",
+      "category": "twArbitrary",
+      "reason": "the full-screen canvas viewer (a fixed div; the sequence viewer uses the <dialog> top layer) must stack above every layer, the grain at z.top (60) included; no token names a modal layer (token gap)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-workbench/web/src/theme/style-rail.css",
+      "match": "^#f{3}(f{3})?$",
+      "category": "hex",
+      "reason": "fill of the grain overlay's noise rect: its feTurbulence filter replaces the paint, so only the rect's geometry is used; not a color (like the grain mask's #000)"
     }
   ],
   "twClasses": []
