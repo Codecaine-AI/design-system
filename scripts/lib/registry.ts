@@ -170,6 +170,37 @@ export interface Exception {
 export type ProbeRole = "page" | "panel" | "text" | "border";
 export const PROBE_ROLES: readonly ProbeRole[] = ["page", "panel", "text", "border"];
 
+/** How the tools put an app in one theme (verify.darkSwitch, verify.lightSwitch). */
+export type ThemeSwitch =
+  /** Sets data-theme to the theme on `target` (default html). */
+  | { kind: "attribute"; target?: string }
+  | { kind: "storage"; key: string; value: string }
+  | { kind: "click"; selector: string }
+  | { kind: "query"; param: string; value: string }
+  /** Navigation/view-only steps (for example open the style rail, click its dark-mode toggle). Writes may land only in the run's temp state. */
+  | { kind: "steps"; steps: NonNullable<RouteSpec["steps"]> };
+
+/** The switch's own problems (shape only), one message each; `where` names it (verify.lightSwitch). */
+export function themeSwitchProblems(sw: unknown, where: string): string[] {
+  if (sw === null || typeof sw !== "object" || Array.isArray(sw)) return [`${where} must be an object with a kind`];
+  const s = sw as Record<string, unknown>;
+  const text = (key: string) => (typeof s[key] === "string" && (s[key] as string).length > 0 ? [] : [`${where}.${key} must be a non-empty string`]);
+  switch (s.kind) {
+    case "attribute":
+      return s.target === undefined ? [] : text("target");
+    case "storage":
+      return [...text("key"), ...text("value")];
+    case "click":
+      return text("selector");
+    case "query":
+      return [...text("param"), ...text("value")];
+    case "steps":
+      return Array.isArray(s.steps) && s.steps.length > 0 ? [] : [`${where}.steps must be a non-empty list of steps`];
+    default:
+      return [`${where}.kind ${JSON.stringify(s.kind)} is not one of attribute, storage, click, query, steps`];
+  }
+}
+
 /** How verify:apps proves the app is connected (runtime check). */
 export interface VerifySpec {
   /** Route id to verify on; default the first route. */
@@ -190,13 +221,15 @@ export interface VerifySpec {
    */
   waivedRoles?: Array<{ role: ProbeRole; reason: string; themes?: Array<"light" | "dark"> }>;
   /** How to switch to dark. On dark-first surfaces dark is the default; the check confirms it instead. */
-  darkSwitch:
-    | { kind: "attribute"; target?: string }
-    | { kind: "storage"; key: string; value: string }
-    | { kind: "click"; selector: string }
-    | { kind: "query"; param: string; value: string }
-    /** Navigation/view-only steps (for example open the style rail, click its dark-mode toggle). Writes may land only in the run's temp state. */
-    | { kind: "steps"; steps: NonNullable<RouteSpec["steps"]> };
+  darkSwitch: ThemeSwitch;
+  /**
+   * How to reach light, for apps that boot dark with empty storage although their rule is light-dark
+   * (the product default is dark). Same shapes as darkSwitch; `attribute` sets data-theme="light".
+   * When present, verify, snapshot capture, use:app and registry:prove apply it for every light read
+   * the way they apply darkSwitch for dark; prefers-color-scheme still matches the theme. Omit it when
+   * the app boots light: then light is the app as it boots, as before.
+   */
+  lightSwitch?: ThemeSwitch;
   /** Shell apps: the sidebar toggle (default ".ds-sidebar-toggle") and the storage key (default "<app>.sidebar"). */
   sidebar?: { toggle?: string; storageKey?: string };
 }
@@ -432,6 +465,7 @@ export function validateRegistry(registry: Registry): string[] {
     if (runnable && !app.routes?.length) problems.push(`${app.id}: run mode ${app.run.mode} needs at least one route`);
     if (runnable && app.gates?.verify?.required && !app.verify) problems.push(`${app.id}: gates.verify is required but verify is missing`);
     if (app.verify) for (const problem of verifySpecProblems(app.verify, app.theme?.rule)) problems.push(`${app.id}: ${problem}`);
+    if (app.verify?.lightSwitch !== undefined) for (const problem of themeSwitchProblems(app.verify.lightSwitch, "verify.lightSwitch")) problems.push(`${app.id}: ${problem}`);
     if (!runnable) {
       for (const g of ["verify", "snapshot"] as const)
         if (app.gates?.[g]?.required) problems.push(`${app.id}: gates.${g} is required but run mode is none`);

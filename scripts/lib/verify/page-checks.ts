@@ -5,7 +5,7 @@
  * guarding its requests is the runner's job (scripts/lib/app-runner.ts).
  */
 import { runSteps } from "../capture";
-import { type AppEntry, type PassId, probeActive, probeRole, switchRoles, verifySpecProblems, type VerifySpec } from "../registry";
+import { type AppEntry, type PassId, probeActive, probeRole, switchRoles, type ThemeSwitch, verifySpecProblems, type VerifySpec } from "../registry";
 import { type Assertion, fail, pass, type ResponseLog } from "./assertions";
 import { fontAssertions, fontProbeSelectors, type FontSourceJudge, readFonts } from "./fonts";
 import { checkSidebar } from "./sidebar";
@@ -100,29 +100,37 @@ export function probeAssertions(readings: ProbeReading[], theme: Theme, label: s
 
 /** Applies the registry's dark switch. Returns true when it reloaded or navigated the page. */
 export async function switchToDark(page: any, darkSwitch: VerifySpec["darkSwitch"]): Promise<boolean> {
-  switch (darkSwitch.kind) {
+  return switchTheme(page, darkSwitch, "dark");
+}
+
+/** Applies a registry theme switch (darkSwitch or lightSwitch) for `theme`. Returns true when it reloaded or navigated the page. */
+export async function switchTheme(page: any, sw: ThemeSwitch, theme: Theme): Promise<boolean> {
+  switch (sw.kind) {
     case "attribute":
-      await page.evaluate((target: string | null) => {
-        const element = target ? document.querySelector(target) : document.documentElement;
-        if (!element) throw new Error(`dark switch target ${target} is not on the page`);
-        element.setAttribute("data-theme", "dark");
-      }, darkSwitch.target ?? null);
+      await page.evaluate(
+        ([target, value]: [string | null, string]) => {
+          const element = target ? document.querySelector(target) : document.documentElement;
+          if (!element) throw new Error(`${value} switch target ${target} is not on the page`);
+          element.setAttribute("data-theme", value);
+        },
+        [sw.target ?? null, theme],
+      );
       return false;
     case "storage":
-      await page.evaluate(([key, value]: [string, string]) => localStorage.setItem(key, value), [darkSwitch.key, darkSwitch.value]);
+      await page.evaluate(([key, value]: [string, string]) => localStorage.setItem(key, value), [sw.key, sw.value]);
       await page.reload({ waitUntil: "load", timeout: 60_000 });
       return true;
     case "click":
-      await page.locator(darkSwitch.selector).first().click({ timeout: 15_000 });
+      await page.locator(sw.selector).first().click({ timeout: 15_000 });
       return false;
     case "query": {
       const url = new URL(page.url());
-      url.searchParams.set(darkSwitch.param, darkSwitch.value);
+      url.searchParams.set(sw.param, sw.value);
       await page.goto(url.href, { waitUntil: "load", timeout: 60_000 });
       return true;
     }
     case "steps":
-      await runSteps(page, darkSwitch.steps);
+      await runSteps(page, sw.steps);
       return false;
   }
 }
@@ -170,7 +178,8 @@ const probeKey = (p: { selector: string; property: string; token: string }) => `
 
 /**
  * Every runtime assertion on a page that shows the verify route: the spec covers every role, token
- * probes in the default theme, web fonts, the dark switch (light-dark apps) and, for shell apps,
+ * probes in the default theme (light-dark apps with a lightSwitch: after it), web fonts, the dark switch
+ * (light-dark apps) and, for shell apps,
  * sidebar persistence. A probe is read only in the themes it lists (default both).
  */
 export async function checkPage(page: any, opts: PageCheckOptions): Promise<Assertion[]> {
@@ -181,6 +190,12 @@ export async function checkPage(page: any, opts: PageCheckOptions): Promise<Asse
   await settle(page);
 
   const first: Theme = darkFirst ? "dark" : "light";
+  // An app that boots dark reaches light through its lightSwitch before the light reads.
+  if (!darkFirst && verify.lightSwitch) {
+    const reloaded = await switchTheme(page, verify.lightSwitch, "light");
+    if (reloaded && opts.prepare) await opts.prepare(page);
+    await settle(page);
+  }
   const firstReadings = await readProbes(page, verify.probes.filter((probe) => probeActive(probe, first)), opts.values, first);
   out.push(...probeAssertions(firstReadings, first, darkFirst ? "dark (default)" : "light"));
   // Nothing before this forces a font load: readFonts reads what the page loaded, then forces only IBM Plex Mono's regular face when the route does not render it or renders it only in other faces.

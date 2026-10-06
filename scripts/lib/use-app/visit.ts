@@ -7,7 +7,8 @@
  * cleared, the route's URL, the theme's color scheme, then a reload.
  *
  * In capture's order: load the route, wait for waitFor (when the route has no steps), switch the theme
- * the way the registry's verify.darkSwitch says, run the route's steps, wait for waitFor, screenshot.
+ * the way the registry's verify.darkSwitch (light: verify.lightSwitch, when set) says, run the route's
+ * steps, wait for waitFor, screenshot.
  * Shell apps (verify.sidebar) then get the sidebar toggle clicked, a screenshot, and the toggle clicked
  * again. Last, up to MAX_HOVERS visible, enabled buttons and links outside any form are hovered. Every
  * click and Enter or Space press goes through the safety rules first (safety.ts); a refused step is
@@ -203,11 +204,13 @@ export async function visitRoute(target: VisitTarget, route: RouteSpec, theme: T
     const steps = route.steps ?? [];
     if (!steps.length && route.waitFor && !(await waitFor())) return await stop();
 
-    // The theme, the way capture switches it: darkSwitch clicks and steps go through the safety rules.
-    const sw = plan.method === "click" || plan.method === "steps" ? app.verify?.darkSwitch : undefined;
+    // The theme, the way capture switches it (darkSwitch for dark, lightSwitch for light): switch clicks
+    // and steps go through the safety rules.
+    const sw = plan.method === "click" || plan.method === "steps" ? plan.switch : undefined;
+    const origin = `${theme}Switch `;
     const switchSteps: Step[] = sw?.kind === "click" ? [{ action: "click", target: sw.selector }] : sw?.kind === "steps" ? sw.steps : [];
-    for (const s of switchSteps) if (!(await step(s, "darkSwitch "))) return await stop();
-    if (plan.method === "attribute" && !(await act("step", "darkSwitch attribute data-theme=dark", () => plan.afterLoad(page, undefined as never)))) return await stop();
+    for (const s of switchSteps) if (!(await step(s, origin))) return await stop();
+    if (plan.method === "attribute" && !(await act("step", `${origin}attribute data-theme=${theme}`, () => plan.afterLoad(page, undefined as never)))) return await stop();
 
     for (const s of steps) if (!(await step(s, ""))) return await stop();
     if (steps.length && route.waitFor && !(await waitFor())) return await stop();

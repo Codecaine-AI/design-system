@@ -10,16 +10,17 @@
  * navigation-only steps, then shoots until two frames 250 ms apart are byte-identical (up to 12).
  *
  * Theme: the registry's `verify.darkSwitch` (attribute, storage, click, query or navigation-only steps)
- * switches away from the app's default theme (light, or dark on dark-first surfaces); the context's
- * prefers-color-scheme always matches the theme. Without a darkSwitch, prefers-color-scheme is the
- * only switch.
+ * switches away from the app's default theme (light, or dark on dark-first surfaces); an optional
+ * `verify.lightSwitch` (same shapes) reaches light in every light shot, for apps that boot dark. The
+ * context's prefers-color-scheme always matches the theme. Without a switch for the theme,
+ * prefers-color-scheme is the only switch.
  *
  * Time: every capture context gets a fixed clock (FIXED_TIME) before the page loads, so "5 minutes
  * ago" and today's date render the same in every run. Electron: each shot resets the window (storage
  * cleared, the route's URL, prefers-color-scheme of the shot's theme, the fixed clock) and reloads it,
  * so no shot inherits the previous one's theme or state.
  */
-import type { AppEntry, RouteSpec } from "./registry";
+import type { AppEntry, RouteSpec, ThemeSwitch } from "./registry";
 import { guardedContext, splitBlocked, type RunningApp } from "./app-runner";
 import { safeSegment } from "./safe-paths";
 import type { Box, Theme } from "./snapshot-set";
@@ -405,19 +406,29 @@ async function settleAndShoot(page: any, network: ReturnType<typeof trackNetwork
 
 interface ThemePlan {
   method: string;
+  /** The registry switch the plan applies (verify.darkSwitch or verify.lightSwitch), if any. */
+  switch?: ThemeSwitch;
   url: (url: string) => string;
   init?: { storage: Record<string, string> };
   afterLoad: (page: any, network: Network) => Promise<void>;
   verify: (page: any) => Promise<void>;
 }
 
-/** How to put the app in `theme`. Only the non-default theme is switched; the default is left as the app boots. */
+/**
+ * How to put the app in `theme`. Dark: the non-default dark is reached with verify.darkSwitch. Light:
+ * verify.lightSwitch when the entry has one (an app that boots dark), in every light shot; without it
+ * light is left as the app boots, or reached by prefers-color-scheme alone on dark-first surfaces.
+ */
 export function themePlan(app: AppEntry, theme: Theme): ThemePlan {
   const none: ThemePlan = { method: "default", url: (url) => url, afterLoad: async () => undefined, verify: async () => undefined };
-  if (theme === defaultTheme(app)) return none;
-  const sw = app.verify?.darkSwitch;
+  const lightSwitch = theme === "light" ? app.verify?.lightSwitch : undefined;
+  if (theme === defaultTheme(app) && !lightSwitch) return none;
+  const sw = theme === "dark" ? app.verify?.darkSwitch : lightSwitch;
   if (!sw) return { ...none, method: "prefers-color-scheme" };
-  if (theme !== "dark") return { ...none, method: "prefers-color-scheme" }; // darkSwitch only knows how to reach dark
+  return { ...switchPlan(none, sw, theme), switch: sw };
+}
+
+function switchPlan(none: ThemePlan, sw: ThemeSwitch, theme: Theme): ThemePlan {
   switch (sw.kind) {
     case "attribute": {
       const target = sw.target ?? "html";

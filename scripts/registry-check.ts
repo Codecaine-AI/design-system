@@ -12,8 +12,8 @@
  *   - every allowedLocalPorts entry is inside the app's block (never an owner port): a run may reach
  *     only processes it starts itself;
  *   - no port string (commands, flags, env values, every route's path, waitFor and string step
- *     target/value, and verify.darkSwitch's target, selector, param, value, key and string step
- *     target/value) names
+ *     target/value, and verify.darkSwitch's and verify.lightSwitch's target, selector, param, value, key
+ *     and string step target/value) names
  *       - an owner port, as a bare 4-5 digit number (also right after a %XX escape);
  *       - a loopback `host:<port>` or `host%3A<port>` outside the app's block. Loopback hosts, any case:
  *         localhost and *.localhost (trailing dot allowed), 127.x in any dotted form (127.1, 127.0.1,
@@ -62,7 +62,7 @@ function commandTexts(app: AppEntry): Array<[label: string, text: string]> {
   return out.filter((e): e is [string, string] => typeof e[1] === "string" && e[1].length > 0);
 }
 
-/** Route and dark-switch strings a run navigates to or acts on. Numeric step values (offsets, waits) carry no port. */
+/** Route and theme-switch (dark and light) strings a run navigates to or acts on. Numeric step values (offsets, waits) carry no port. */
 function routeTexts(app: AppEntry): Array<[label: string, text: string]> {
   const out: Array<[string, unknown]> = [];
   const steps = (prefix: string, list: RouteSpec["steps"]) =>
@@ -71,10 +71,11 @@ function routeTexts(app: AppEntry): Array<[label: string, text: string]> {
     out.push([`routes[${i}].path`, route.path], [`routes[${i}].waitFor`, route.waitFor]);
     steps(`routes[${i}]`, route.steps);
   });
-  const dark = app.verify?.darkSwitch as Record<string, unknown> | undefined;
-  for (const key of ["target", "selector", "param", "value", "key"]) out.push([`verify.darkSwitch.${key}`, dark?.[key]]);
-  const darkSteps = dark?.steps;
-  if (Array.isArray(darkSteps)) steps("verify.darkSwitch", darkSteps);
+  for (const name of ["darkSwitch", "lightSwitch"] as const) {
+    const sw = app.verify?.[name] as Record<string, unknown> | undefined;
+    for (const key of ["target", "selector", "param", "value", "key"]) out.push([`verify.${name}.${key}`, sw?.[key]]);
+    if (Array.isArray(sw?.steps)) steps(`verify.${name}`, sw.steps as RouteSpec["steps"]);
+  }
   return out.filter((e): e is [string, string] => typeof e[1] === "string" && e[1].length > 0);
 }
 

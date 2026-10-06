@@ -1,7 +1,8 @@
 /**
  * captureRoute puts the app in the theme it was asked for, through every registry darkSwitch kind,
  * and leaves the default theme alone. The stand-in server's /themed page (test/fixtures/runner/serve.ts)
- * is white in light and black in dark; each shot's top-left pixel tells which theme it captured.
+ * is white in light and black in dark; each shot's top-left pixel tells which theme it captured. Its
+ * /themed-dark page boots dark: a verify.lightSwitch reaches light through each kind.
  */
 import { afterAll, expect, test } from "bun:test";
 import { cpSync, mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
@@ -12,7 +13,7 @@ import { startApp, type RunningApp } from "../scripts/lib/app-runner.ts";
 import { captureRoute, LAUNCH_OPTIONS } from "../scripts/lib/capture.ts";
 import { loadPlaywright, playwrightUnavailable } from "../scripts/lib/playwright.ts";
 import { decodePng } from "../scripts/lib/png.ts";
-import type { AppEntry, RouteSpec, VerifySpec } from "../scripts/lib/registry.ts";
+import type { AppEntry, RouteSpec, ThemeSwitch, VerifySpec } from "../scripts/lib/registry.ts";
 import { finishScratch } from "./leaks.ts";
 
 const mirror = process.env.DS_MIRROR ?? "/Users/Ford/workspace-ds";
@@ -75,6 +76,45 @@ test.skipIf(Boolean(noPlaywright))(
         return [cases[i]![0], result.themeMethod, pixel[0] === 0 ? "dark" : pixel[0] === 255 ? "light" : `rgb ${pixel[0]}`];
       });
       expect(seen).toEqual(cases.map(([name, , , theme, method]) => [name, method, theme]));
+    } finally {
+      await browser.close();
+      await running.stop();
+    }
+  },
+  30_000,
+);
+
+test.skipIf(Boolean(noPlaywright))(
+  "captures light through each lightSwitch kind on an app that boots dark, and dark through its darkSwitch",
+  async () => {
+    const root = mkdtempSync(join(scratch, "root-"));
+    mkdirSync(join(root, "app"));
+    cpSync(join(import.meta.dir, "fixtures/runner/serve.ts"), join(root, "app/serve.ts"));
+    const running = await startApp(app, { root, outDir: join(scratch, "out"), timeoutMs: 20_000 });
+    const browser = await loadPlaywright(mirror).chromium.launch(LAUNCH_OPTIONS);
+    try {
+      // The dark switch writes the same key the light switch does; the page boots dark without either.
+      const darkSwitch: ThemeSwitch = { kind: "storage", key: "mode", value: "dark" };
+      const withLight = (lightSwitch?: ThemeSwitch): RunningApp => ({
+        ...running,
+        app: { ...app, verify: { probes: [], darkSwitch, ...(lightSwitch ? { lightSwitch } : {}) } },
+      });
+      const storage = withLight({ kind: "storage", key: "mode", value: "light" });
+      const cases: Array<[string, RunningApp, "light" | "dark", string, "light" | "dark"]> = [
+        ["no lightSwitch (the bug: light reads dark)", withLight(), "light", "default", "dark"],
+        ["storage", storage, "light", "storage", "light"],
+        ["attribute", withLight({ kind: "attribute" }), "light", "attribute", "light"],
+        ["query", withLight({ kind: "query", param: "mode", value: "light" }), "light", "query", "light"],
+        ["click", withLight({ kind: "click", selector: "#light" }), "light", "click", "light"],
+        ["steps", withLight({ kind: "steps", steps: [{ action: "click", target: "#light" }] }), "light", "steps", "light"],
+        ["dark with a lightSwitch", storage, "dark", "storage", "dark"],
+      ];
+      const results = await Promise.all(cases.map(([, target, theme]) => captureRoute(browser, target, route("/themed-dark"), theme)));
+      const seen = results.map((result, i) => {
+        const pixel = decodePng(result.png).data.subarray(0, 4);
+        return [cases[i]![0], result.themeMethod, pixel[0] === 0 ? "dark" : pixel[0] === 255 ? "light" : `rgb ${pixel[0]}`];
+      });
+      expect(seen).toEqual(cases.map(([name, , , method, expected]) => [name, method, expected]));
     } finally {
       await browser.close();
       await running.stop();

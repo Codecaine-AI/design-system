@@ -307,3 +307,41 @@ describe("the committed apps.json", () => {
     expect(checkRegistry(loadRegistry(), { root: root!, dsRoot: DESIGN_SYSTEM_ROOT })).toEqual([]);
   });
 });
+
+describe("verify.lightSwitch (an app that boots dark reaches light through it)", () => {
+  const verify = (lightSwitch: unknown) => ({ verify: { probes: PROBES, darkSwitch: { kind: "storage" as const, key: "theme", value: "dark" }, lightSwitch: lightSwitch as never } });
+
+  test.each<[string, unknown]>([
+    ["storage", { kind: "storage", key: "theme", value: "light" }],
+    ["attribute", { kind: "attribute" }],
+    ["attribute on a target", { kind: "attribute", target: "#root" }],
+    ["click", { kind: "click", selector: "#light" }],
+    ["query", { kind: "query", param: "theme", value: "light" }],
+    ["steps", { kind: "steps", steps: [{ action: "click", target: "#light" }] }],
+  ])("accepts a %s lightSwitch", (_, lightSwitch) => {
+    expect(check([entry(verify(lightSwitch))])).toEqual([]);
+  });
+
+  test("an entry without one is unchanged", () => {
+    expect(check([entry()])).toEqual([]);
+  });
+
+  test.each<[string, unknown, string]>([
+    ["a storage switch without a value", { kind: "storage", key: "theme" }, "demo: verify.lightSwitch.value must be a non-empty string"],
+    ["a click switch without a selector", { kind: "click" }, "demo: verify.lightSwitch.selector must be a non-empty string"],
+    ["a query switch without a param", { kind: "query", value: "light" }, "demo: verify.lightSwitch.param must be a non-empty string"],
+    ["an empty steps switch", { kind: "steps", steps: [] }, "demo: verify.lightSwitch.steps must be a non-empty list of steps"],
+    ["an unknown kind", { kind: "media" }, 'demo: verify.lightSwitch.kind "media" is not one of attribute, storage, click, query, steps'],
+    ["a non-object", "light", "demo: verify.lightSwitch must be an object with a kind"],
+    ["a port in a storage lightSwitch value", { kind: "storage", key: "api", value: '{"port":47130}' }, "verify.lightSwitch.value names port 47130 outside its block"],
+    ["an owner port in a lightSwitch query value", { kind: "query", param: "next", value: "http://localhost:4840" }, "verify.lightSwitch.value names owner port 4840"],
+    [
+      "a loopback URL in a lightSwitch step",
+      { kind: "steps", steps: [{ action: "click", target: 'a[href="https://localhost"]' }] },
+      "verify.lightSwitch.steps[0].target names loopback URL https://localhost without an explicit port",
+    ],
+  ])("reports %s", (_, lightSwitch, message) => {
+    const problems = check([entry(verify(lightSwitch))]);
+    expect(problems.some((p) => p.includes(message))).toBe(true);
+  });
+});
