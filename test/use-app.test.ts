@@ -14,6 +14,7 @@ import { join } from "node:path";
 import type { Step } from "../scripts/lib/capture.ts";
 import type { AppEntry, RouteSpec } from "../scripts/lib/registry.ts";
 import { DESIGN_SYSTEM_ROOT } from "../scripts/lib/registry.ts";
+import { decodePng } from "../scripts/lib/png.ts";
 import { judge, stampOf, type Visit, visitPlan } from "../scripts/lib/use-app/log.ts";
 import { type ElementInfo, hoverTargets, stepRefusal } from "../scripts/lib/use-app/safety.ts";
 import { main } from "../scripts/use-app.ts";
@@ -300,6 +301,48 @@ test.skipIf(Boolean(browserSkip))(
     }
     expect(log.totals).toMatchObject({ visits: 5, refused: 2, failedActions: 0, blocked: 0, violations: 0 });
     expect(log.isolation.ok).toBe(true);
+  },
+  120_000,
+);
+
+/** Boots dark (black) on purpose; light (white) when localStorage mode is "light". `next` links to the second page. */
+const bootsDark = (next: boolean) => `<!doctype html><html><head><title>boots dark</title><style>
+  html, body { margin: 0; height: 100%; background: #000; color: #888; }
+  html[data-theme="light"] body { background: #fff; }
+</style><script>if (localStorage.getItem("mode") === "light") document.documentElement.setAttribute("data-theme", "light");</script></head>
+<body style="padding-top: 40px">${next ? '<a class="next" href="/next.html">Next page</a>' : '<p class="next-page">second page</p>'}</body></html>`;
+
+test.skipIf(Boolean(browserSkip))(
+  "a storage lightSwitch holds across a navigation-only route step: light reads light, dark reads dark",
+  () => {
+    const root = tree({ "index.html": bootsDark(true), "next.html": bootsDark(false) });
+    const out = join(scratch, "light-seed-out");
+    const app = snapshotApp({
+      routes: [{ id: "home", path: "/", steps: [{ action: "click", target: "a.next" }], waitFor: ".next-page" }],
+      verify: { probes: [], waivedRoles: waived, darkSwitch: { kind: "storage", key: "mode", value: "dark" }, lightSwitch: { kind: "storage", key: "mode", value: "light" } },
+      runProfile: { ...snapshotApp().runProfile, ports: { ui: 46926 } },
+    });
+    const result = cli(["--app", "demo", "--root", root, "--registry", registryFile([app]), "--out-dir", out]);
+    const { log } = readLog(out, "demo");
+    const seen = log.visits.map((visit: Visit) => {
+      const loaded = visit.screenshots.find((path) => path.endsWith("-loaded.png"))!;
+      const pixel = decodePng(readFileSync(loaded)).data[0];
+      return [
+        visit.theme,
+        visit.themeMethod,
+        visit.actions.filter((a) => a.kind === "step").map((a) => [a.target, a.ok]),
+        pixel === 0 ? "dark" : pixel === 255 ? "light" : `rgb ${pixel}`,
+      ];
+    });
+    const steps = [
+      ["click a.next", true],
+      ["waitFor .next-page", true],
+    ];
+    expect(seen).toEqual([
+      ["light", "storage", steps, "light"],
+      ["dark", "storage", steps, "dark"],
+    ]);
+    expect([result.exitCode, log.ok]).toEqual([0, true]);
   },
   120_000,
 );

@@ -5,7 +5,7 @@
  * run never started (stray), a named profile port nothing binds (dead), and a non-loopback host, and
  * records which requests succeeded. GET /themed is a
  * page that turns dark through data-theme, localStorage, ?theme=dark, a #dark button, or (with
- * ?follow=system) prefers-color-scheme; GET /themed-dark boots dark and turns light the same ways. GET /csp is a page under `style-src 'self'` with a 2 s transition.
+ * ?follow=system) prefers-color-scheme; GET /themed-dark boots dark, turns light from localStorage, and links to its next page. GET /csp is a page under `style-src 'self'` with a 2 s transition.
  * GET /ws-probe opens WebSockets to this server's /ws (which greets) and to the stray port, and records
  * which ones opened and greeted. GET /hop?to=<url>&status=<3xx> redirects; GET /redirect-probe?foreign=<port>
  * is a page whose image, fetches and a two-hop chain are redirected to that port, plus one redirect that
@@ -53,19 +53,14 @@ const themed = `<!doctype html><html><head><style>
   document.getElementById("dark").onclick = () => root.setAttribute("data-theme", "dark");
 </script></body></html>`;
 
-// GET /themed-dark: boots dark (black) on purpose; light (white) through localStorage mode=light,
-// ?mode=light, data-theme="light", a #light button, or (with ?follow=system) prefers-color-scheme.
+// GET /themed-dark: boots dark (black) on purpose; light (white) when localStorage mode is "light".
+// #next (bottom left) is a plain link to /themed-dark?page=2: a navigation-only route step loads a new document.
 const themedDark = `<!doctype html><html><head><style>
   html, body { margin: 0; height: 100%; background: #000; }
   html[data-theme="light"] body { background: #fff; }
-  @media (prefers-color-scheme: light) { html.follow-system body { background: #fff; } }
-  #light { position: absolute; right: 0; bottom: 0; width: 8px; height: 8px; padding: 0; border: 0; }
-</style></head><body><button id="light"></button><script>
-  const params = new URLSearchParams(location.search);
-  const root = document.documentElement;
-  if (params.get("follow") === "system") root.classList.add("follow-system");
-  if (localStorage.getItem("mode") === "light" || params.get("mode") === "light") root.setAttribute("data-theme", "light");
-  document.getElementById("light").onclick = () => root.setAttribute("data-theme", "light");
+  #next { position: absolute; left: 0; bottom: 0; width: 8px; height: 8px; }
+</style></head><body><a id="next" href="/themed-dark?page=2"></a><script>
+  if (localStorage.getItem("mode") === "light") document.documentElement.setAttribute("data-theme", "light");
 </script></body></html>`;
 
 const wsProbe = `<!doctype html><html><body><script>

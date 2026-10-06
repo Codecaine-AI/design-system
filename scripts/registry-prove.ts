@@ -40,7 +40,7 @@ import { cleanupRuns, guardedContext, installSignalHandlers, launchBrowser, star
 import { appScope, changedCheckouts, checkoutStates } from "./lib/checkouts";
 import { pinRepos } from "./lib/git";
 import { toolOutputDir } from "./lib/output-dir";
-import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, resolvePath, type AppEntry, type Registry, type RouteSpec, type ThemeSwitch } from "./lib/registry";
+import { DESIGN_SYSTEM_ROOT, getApp, lightSeed, loadRegistry, resolvePath, type AppEntry, type Registry, type RouteSpec } from "./lib/registry";
 import { safeChildPath } from "./lib/safe-paths";
 
 /** The connection classifier lives in scripts/lib/egress.ts (the runner samples with it). */
@@ -218,9 +218,13 @@ async function loadRoute(browser: any, running: RunningApp, route: RouteSpec, th
   page.on("pageerror", (e: any) => consoleErrors.push(String(e)));
   try {
     await page.goto(url, { waitUntil: "load", timeout: 60_000 });
-    if (theme === "dark" && app.theme.rule !== "dark-first" && app.verify?.darkSwitch) await applySwitch(page, app.verify.darkSwitch, "dark", url);
-    // An app that boots dark reaches light through its lightSwitch, in every light load.
-    if (theme === "light" && app.verify?.lightSwitch) await applySwitch(page, app.verify.lightSwitch, "light", url);
+    if (theme === "dark" && app.theme.rule !== "dark-first" && app.verify?.darkSwitch) await applyDark(page, app, url);
+    // A light-dark app that boots dark: its storage lightSwitch, before the route's steps, in every light load.
+    const light = theme === "light" ? lightSeed(app) : undefined;
+    if (light) {
+      await page.evaluate(([k, v]: string[]) => localStorage.setItem(k!, v!), [light.key, light.value]);
+      await page.reload({ waitUntil: "load" });
+    }
     for (const step of route.steps ?? []) await runStep(page, step);
     if (route.waitFor) await (await one(page, route.waitFor)).waitFor({ state: "visible", timeout: 30_000 });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
@@ -253,17 +257,14 @@ async function loadRoute(browser: any, running: RunningApp, route: RouteSpec, th
   }
 }
 
-/** Applies a registry theme switch (verify.darkSwitch or verify.lightSwitch) for `theme`. */
-async function applySwitch(page: any, sw: ThemeSwitch, theme: "light" | "dark", url: string) {
+async function applyDark(page: any, app: AppEntry, url: string) {
+  const sw = app.verify!.darkSwitch;
   if (sw.kind === "attribute") {
-    await page.evaluate(
-      ([target, value]: [string, string]) => {
-        const el = document.querySelector(target) ?? document.documentElement;
-        el.setAttribute("data-theme", value);
-        el.classList.toggle("dark", value === "dark");
-      },
-      [sw.target ?? "html", theme],
-    );
+    await page.evaluate((target: string) => {
+      const el = document.querySelector(target) ?? document.documentElement;
+      el.setAttribute("data-theme", "dark");
+      el.classList.add("dark");
+    }, sw.target ?? "html");
   } else if (sw.kind === "storage") {
     await page.evaluate(([k, v]: string[]) => localStorage.setItem(k!, v!), [sw.key, sw.value]);
     await page.reload({ waitUntil: "load" });

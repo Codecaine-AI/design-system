@@ -8,8 +8,8 @@
  * Starts the app under its run profile and the OS sandbox (app-runner startApp) and visits it with a
  * sandboxed Chromium (launchBrowser) through guarded contexts, as verify:apps and snapshot do. For every
  * route, in each theme it is checked in (light then dark; dark only on a dark-first surface), it loads
- * the route, switches the theme with the registry's verify.darkSwitch (light: verify.lightSwitch, when
- * set), runs the route's steps, waits for
+ * the route, switches the theme with the registry's verify.darkSwitch (light: a storage verify.lightSwitch,
+ * when set), runs the route's steps, waits for
  * waitFor and takes a screenshot; shell apps (verify.sidebar) get the sidebar toggled, shot and toggled
  * back; then up to 30 buttons and links are hovered (lib/use-app/visit.ts). Every click and Enter or
  * Space press is checked first: a submit control, anything in a <form>, or a target named like a write is

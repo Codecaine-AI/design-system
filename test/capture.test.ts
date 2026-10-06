@@ -2,7 +2,7 @@
  * captureRoute puts the app in the theme it was asked for, through every registry darkSwitch kind,
  * and leaves the default theme alone. The stand-in server's /themed page (test/fixtures/runner/serve.ts)
  * is white in light and black in dark; each shot's top-left pixel tells which theme it captured. Its
- * /themed-dark page boots dark: a verify.lightSwitch reaches light through each kind.
+ * /themed-dark page boots dark: a storage verify.lightSwitch reaches light, also after a navigation-only step.
  */
 import { afterAll, expect, test } from "bun:test";
 import { cpSync, mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
@@ -85,7 +85,7 @@ test.skipIf(Boolean(noPlaywright))(
 );
 
 test.skipIf(Boolean(noPlaywright))(
-  "captures light through each lightSwitch kind on an app that boots dark, and dark through its darkSwitch",
+  "captures light through a storage lightSwitch on an app that boots dark, also after a navigation-only step; an attribute switch does not survive one",
   async () => {
     const root = mkdtempSync(join(scratch, "root-"));
     mkdirSync(join(root, "app"));
@@ -93,32 +93,34 @@ test.skipIf(Boolean(noPlaywright))(
     const running = await startApp(app, { root, outDir: join(scratch, "out"), timeoutMs: 20_000 });
     const browser = await loadPlaywright(mirror).chromium.launch(LAUNCH_OPTIONS);
     try {
-      // The dark switch writes the same key the light switch does; the page boots dark without either.
-      const darkSwitch: ThemeSwitch = { kind: "storage", key: "mode", value: "dark" };
-      const withLight = (lightSwitch?: ThemeSwitch): RunningApp => ({
+      const withSwitches = (darkSwitch: ThemeSwitch, lightSwitch?: VerifySpec["lightSwitch"]): RunningApp => ({
         ...running,
         app: { ...app, verify: { probes: [], darkSwitch, ...(lightSwitch ? { lightSwitch } : {}) } },
       });
-      const storage = withLight({ kind: "storage", key: "mode", value: "light" });
-      const cases: Array<[string, RunningApp, "light" | "dark", string, "light" | "dark"]> = [
-        ["no lightSwitch (the bug: light reads dark)", withLight(), "light", "default", "dark"],
-        ["storage", storage, "light", "storage", "light"],
-        ["attribute", withLight({ kind: "attribute" }), "light", "attribute", "light"],
-        ["query", withLight({ kind: "query", param: "mode", value: "light" }), "light", "query", "light"],
-        ["click", withLight({ kind: "click", selector: "#light" }), "light", "click", "light"],
-        ["steps", withLight({ kind: "steps", steps: [{ action: "click", target: "#light" }] }), "light", "steps", "light"],
-        ["dark with a lightSwitch", storage, "dark", "storage", "dark"],
+      // The dark switch writes the same key the light switch does; the page boots dark without either.
+      const darkStorage: ThemeSwitch = { kind: "storage", key: "mode", value: "dark" };
+      const seeded = withSwitches(darkStorage, { kind: "storage", key: "mode", value: "light" });
+      const navigate: RouteSpec = { ...route("/themed-dark"), steps: [{ action: "click", target: "#next" }] };
+      const cases: Array<[string, RunningApp, RouteSpec, "light" | "dark", string, "light" | "dark", boolean]> = [
+        ["no lightSwitch (the bug: light reads dark)", withSwitches(darkStorage), route("/themed-dark"), "light", "default", "dark", false],
+        ["storage lightSwitch", seeded, route("/themed-dark"), "light", "storage", "light", false],
+        ["storage lightSwitch, then a navigation-only step", seeded, navigate, "light", "storage", "light", true],
+        ["dark with a lightSwitch, after the same step", seeded, navigate, "dark", "storage", "dark", true],
       ];
-      const results = await Promise.all(cases.map(([, target, theme]) => captureRoute(browser, target, route("/themed-dark"), theme)));
+      const results = await Promise.all(cases.map(([, target, r, theme]) => captureRoute(browser, target, r, theme)));
       const seen = results.map((result, i) => {
         const pixel = decodePng(result.png).data.subarray(0, 4);
-        return [cases[i]![0], result.themeMethod, pixel[0] === 0 ? "dark" : pixel[0] === 255 ? "light" : `rgb ${pixel[0]}`];
+        return [cases[i]![0], result.themeMethod, pixel[0] === 0 ? "dark" : pixel[0] === 255 ? "light" : `rgb ${pixel[0]}`, result.reloads > 0];
       });
-      expect(seen).toEqual(cases.map(([name, , , method, expected]) => [name, method, expected]));
+      expect(seen).toEqual(cases.map(([name, , , , method, expected, navigated]) => [name, method, expected, navigated]));
+
+      // Why lightSwitch takes storage only: a data-theme attribute is set on the first document and is gone
+      // after a navigation-only step (shown here with an attribute darkSwitch; capture's theme check refuses the shot).
+      await expect(captureRoute(browser, withSwitches({ kind: "attribute" }), navigate, "dark")).rejects.toThrow(/theme check failed: html\[data-theme\]=null, expected dark/);
     } finally {
       await browser.close();
       await running.stop();
     }
   },
-  30_000,
+  60_000,
 );
