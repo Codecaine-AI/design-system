@@ -15,9 +15,10 @@
  * Only the owner's tree is refused. Writing into a checkout in the mirror (`pack --out <app>/vendor`)
  * is intended.
  */
+import { spawnSync } from "node:child_process";
 import { existsSync, lstatSync, readlinkSync, realpathSync, statSync } from "node:fs";
-import { tmpdir, userInfo } from "node:os";
-import { basename, dirname, join, resolve, sep } from "node:path";
+import { tmpdir } from "node:os";
+import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
 
 import { HOME_FORBIDDEN, OWNER_TREE } from "./owner";
 
@@ -25,6 +26,36 @@ export { OWNER_TREE };
 
 export class UnsafePathError extends Error {
   override name = "UnsafePathError";
+}
+
+let cachedHome: string | undefined;
+
+/**
+ * The real user's home, from the user database, never from $HOME (under bun, os.userInfo().homedir and
+ * os.homedir() both return $HOME). macOS: `id -P` (the passwd entry, field 9), else `dscl`; elsewhere
+ * `getent passwd`. Read once and cached. Throws when no lookup works: every check that protects the home
+ * fails closed rather than guarding the wrong directory.
+ */
+export function realHome(): string {
+  if (cachedHome) return cachedHome;
+  const run = (cmd: string, args: string[]) => {
+    const result = spawnSync(cmd, args, { encoding: "utf8", timeout: 5_000, env: { PATH: "/usr/bin:/bin:/usr/sbin:/sbin" } });
+    return result.status === 0 && !result.error ? (result.stdout ?? "").trim() : "";
+  };
+  const uid = String(process.getuid?.() ?? "");
+  const candidates = [
+    () => (existsSync("/usr/bin/id") ? run("/usr/bin/id", ["-P"]).split(":")[8] : undefined),
+    () => {
+      const name = run("/usr/bin/id", ["-un"]);
+      return name && existsSync("/usr/bin/dscl") ? /^NFSHomeDirectory:\s*(\S.*)$/m.exec(run("/usr/bin/dscl", [".", "-read", `/Users/${name}`, "NFSHomeDirectory"]))?.[1] : undefined;
+    },
+    () => (uid ? run("getent", ["passwd", uid]).split(":")[5] : undefined),
+  ];
+  for (const candidate of candidates) {
+    const home = candidate()?.trim();
+    if (home && isAbsolute(home)) return (cachedHome = home);
+  }
+  throw new UnsafePathError("cannot read the real home directory from the user database (id -P, dscl, getent all failed)");
 }
 
 /** Registry app ids: lowercase letters, digits and hyphens, starting with a letter or digit. */
@@ -42,7 +73,7 @@ export function canonicalPath(path: string): string {
   const rest: string[] = [];
   for (let hops = 0; ; hops++) {
     if (hops > 64) throw new UnsafePathError(`${path}: too many symlinks`);
-    if (existsSync(current)) return rest.length ? join(realpathSync(current), ...rest.reverse()) : realpathSync(current);
+    if (existsSync(current)) return rest.length ? join(realpathOf(current), ...rest.reverse()) : realpathOf(current);
     let link: string | undefined;
     try {
       if (lstatSync(current).isSymbolicLink()) link = readlinkSync(current);
@@ -57,6 +88,22 @@ export function canonicalPath(path: string): string {
     if (parent === current) return join(current, ...rest.reverse());
     rest.push(basename(current));
     current = parent;
+  }
+}
+
+/**
+ * realpathSync, except for an existing path realpath may not open: a TCC-protected dir (~/Library/Cookies
+ * gives EPERM) or a Unix socket (EOPNOTSUPP). Such a path that is not itself a symlink is its canonical
+ * parent plus its own name.
+ */
+function realpathOf(path: string): string {
+  try {
+    return realpathSync(path);
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    const parent = dirname(path);
+    if (!["EPERM", "EACCES", "EOPNOTSUPP"].includes(code ?? "") || parent === path || lstatSync(path).isSymbolicLink()) throw error;
+    return join(realpathOf(parent), basename(path));
   }
 }
 
@@ -199,7 +246,7 @@ export interface SafeTempOptions {
  */
 export function safeTempBase(opts: SafeTempOptions = {}): string {
   const given = opts.tmp ?? tmpdir();
-  const home = opts.home ?? userInfo().homedir;
+  const home = opts.home ?? realHome();
   const owner = opts.ownerTree ?? OWNER_TREE;
   if (!given) throw new UnsafePathError("temp base is empty");
   const canonical = canonicalPath(given);

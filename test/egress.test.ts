@@ -4,7 +4,7 @@
  */
 import { describe, expect, test } from "bun:test";
 
-import { egressConnections, lsofResult, parseLsof } from "../scripts/lib/egress.ts";
+import { egressConnections, lsofConnections, lsofResult, parseLsof } from "../scripts/lib/egress.ts";
 
 const HEADER = "COMMAND   PID USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME";
 const ESTABLISHED = "bun     101 Ford   22u  IPv4 0xed9c65a12aae4e7f      0t0  TCP 127.0.0.1:49700->127.0.0.1:47020 (ESTABLISHED)";
@@ -36,5 +36,12 @@ describe("egressConnections", () => {
   test("an outbound connection to a port the run gave up leaves the run; inbound ones to it do not", () => {
     const egress = egressConnections(conns, { inbound: new Set([47020, 47021]), outbound: new Set([47021]) });
     expect(egress.map((c) => c.raw)).toEqual([ESTABLISHED]);
+  });
+});
+
+describe("lsofConnections", () => {
+  test("a sample that runs past its timeout is killed and counts as failed, never as no connections", async () => {
+    const result = await lsofConnections([process.pid], "-iTCP", 1);
+    expect(result).toEqual({ ok: false, reason: "lsof timed out after 1 ms" });
   });
 });
