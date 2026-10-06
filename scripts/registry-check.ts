@@ -34,7 +34,8 @@
  *     command or timeout N (a bun inside a quoted `sh -c '...'` is not seen; BUN_OPTIONS covers it);
  *   - `stack.utilityClasses` is a boolean and only set where `stack.tailwind` is "none", and comes with
  *     `stack.hostTailwind` (v3, v4 or uno: the host Tailwind that compiles its classes);
- *   - every `tests.baselines` key names one of the entry's commands, with an integer exit, a date and a method;
+ *   - every `tests.baselines` key names one of the entry's commands, and its baseline records that command's
+ *     text as `cmd`, an integer exit, a date and a method;
  *   - every allowlist file and fixture exists in this design-system checkout, an allowlist has the
  *     Allowlist shape with a reason on every entry, and no fixture is a .env file;
  *   - every `{ds}/...` script a run starts exists in this checkout.
@@ -244,9 +245,10 @@ export function stackProblems(app: AppEntry): string[] {
 
 /**
  * `tests.baselines` (what test:apps compares a run with): every key names a command the entry has
- * ("tests.safe[<i>]", "commands.typecheck", "commands.build"), a baseline's `cmd` is that command's text
- * (else it is stale), and every baseline has an integer exit, a YYYY-MM-DD date, a method, non-negative
- * integer counts and a string list of failing names.
+ * ("tests.safe[<i>]", "commands.typecheck", "commands.build"), every baseline records `cmd` and it is that
+ * command's text (missing: a stale baseline could not be told apart; another text: it is stale), and every
+ * baseline has an integer exit, a YYYY-MM-DD date, a method, non-negative integer counts and a string list
+ * of failing names.
  */
 export function baselineProblems(app: AppEntry): string[] {
   const problems: string[] = [];
@@ -257,8 +259,8 @@ export function baselineProblems(app: AppEntry): string[] {
     const command = safe ? app.tests?.safe?.[Number(safe[1])]?.cmd : named ? app.commands?.[named[1] as "typecheck" | "build"] : undefined;
     if (!command) problems.push(`${where} names no command of the entry (keys: tests.safe[<i>], commands.typecheck, commands.build)`);
     const b = baseline as unknown as Record<string, unknown>;
-    if (b?.cmd !== undefined && typeof b.cmd !== "string") problems.push(`${where}.cmd must be the command text`);
-    else if (command && typeof b?.cmd === "string" && b.cmd !== command)
+    if (typeof b?.cmd !== "string") problems.push(`${where} needs cmd, the command text it was recorded for (without it a stale baseline cannot be told apart); re-record it with test:apps`);
+    else if (command && b.cmd !== command)
       problems.push(`${where} was recorded for another command (${b.cmd}); re-record it with test:apps (the managing agent)`);
     if (!Number.isInteger(b?.exit)) problems.push(`${where} needs an integer exit`);
     if (typeof b?.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(b.date)) problems.push(`${where} needs a YYYY-MM-DD date`);

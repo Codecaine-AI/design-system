@@ -106,6 +106,7 @@
         ],
         "baselines": {
           "tests.safe[0]": {
+            "cmd": "bun --no-env-file test packages/sequence/src",
             "exit": 0,
             "pass": 79,
             "fail": 0,
@@ -114,6 +115,7 @@
             "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs"
           },
           "commands.typecheck": {
+            "cmd": "bun --no-env-file run typecheck:sequence",
             "exit": 0,
             "date": "2026-10-05",
             "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
@@ -193,7 +195,7 @@
         "waivedRoles": [
           {
             "role": "border",
-            "reason": "the diagram has no neutral chrome border: every SVG stroke is a content color, the accent (participant boxes, lifelines, messages, notes: packages/sequence/src/theme.ts:98 participantStroke → --seq-accent #C77D2E, render/svg.ts:155) or the fragment accent #5B7FBD; these stay product colors"
+            "reason": "the fixture routes render no neutral chrome border: participant boxes, lifelines, messages and notes stroke the accent (packages/sequence/src/theme.ts:98 participantStroke → --seq-accent #C77D2E, render/svg.ts:155), fragments the fragment accent #5B7FBD, and these stay product colors. The one neutral stroke is an activation box (theme.ts:104 activationStroke → --seq-activation-stroke, else --seq-muted #9AA0A6; render/svg.ts:283), and no fixture route renders an activation (none of the loginFlow, combinedFragments and minimal programs activates a participant). The waiver holds only while that is so: a route that renders an activation needs a border probe on its stroke."
           }
         ],
         "darkSwitch": {
@@ -308,6 +310,7 @@
         "unsafe": [],
         "baselines": {
           "commands.typecheck": {
+            "cmd": "bun x --no-env-file --bun tsc -p tsconfig.json --noEmit",
             "exit": 0,
             "date": "2026-10-05",
             "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
@@ -529,6 +532,7 @@
         ],
         "baselines": {
           "tests.safe[0]": {
+            "cmd": "bun --no-env-file test ./packages/docs-workbench/src/__tests__/serve-fs-watch.test.ts ./packages/docs-workbench/src/__tests__/shared-api.test.ts ./packages/docs-workbench/src/pdf-export.test.ts ./packages/docs-workbench/web/src/__tests__/annotate-range.test.ts ./packages/docs-workbench/web/src/__tests__/api.test.ts ./packages/docs-workbench/web/src/__tests__/block-selection-wash.test.ts ./packages/docs-workbench/web/src/__tests__/canvas-embed.test.tsx ./packages/docs-workbench/web/src/__tests__/code-theme.test.tsx ./packages/docs-workbench/web/src/__tests__/default-fonts.test.ts ./packages/docs-workbench/web/src/__tests__/doc-peek.test.tsx ./packages/docs-workbench/web/src/__tests__/doc-title.test.ts ./packages/docs-workbench/web/src/__tests__/global-theme.test.tsx ./packages/docs-workbench/web/src/__tests__/grain-code-mask.test.ts ./packages/docs-workbench/web/src/__tests__/inline-svg.test.ts ./packages/docs-workbench/web/src/__tests__/layout-metrics-drift.test.ts ./packages/docs-workbench/web/src/__tests__/pdf-export.test.tsx ./packages/docs-workbench/web/src/__tests__/sequence-embed.test.tsx ./packages/docs-workbench/web/src/__tests__/shared-events.test.ts ./packages/docs-workbench/web/src/__tests__/sidebar.test.tsx ./packages/docs-workbench/web/src/__tests__/style-rail-static-head.test.ts ./packages/docs-workbench/web/src/__tests__/style-rail-token-wiring.test.ts ./packages/docs-workbench/web/src/__tests__/style-rail.test.tsx ./packages/docs-workbench/web/src/__tests__/workbench.test.tsx ./packages/docs-workbench/web/src/lab/__tests__/DocLab.test.tsx ./packages/docs-workbench/web/src/lab/__tests__/doc-lab-changeset-messages.test.ts ./packages/docs-workbench/web/src/lab/__tests__/doc-lab-changesets.test.ts ./packages/docs-workbench/web/src/lab/__tests__/doc-lab-controller.test.tsx ./packages/docs-workbench/web/src/lab/__tests__/doc-lab-projection.test.ts ./packages/docs-workbench/web/src/lab/__tests__/docs-kernel-client.test.ts ./packages/docs-workbench/web/src/lab/__tests__/docs-kernel-session-source.test.ts",
             "exit": 1,
             "pass": 342,
             "fail": 54,
@@ -593,6 +597,7 @@
             "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs (failing names united)"
           },
           "commands.typecheck": {
+            "cmd": "bunx --no-env-file --bun tsc --noEmit",
             "exit": 2,
             "fail": 2,
             "failing": [
@@ -917,6 +922,7 @@
         ],
         "baselines": {
           "tests.safe[0]": {
+            "cmd": "bun --no-env-file test packages/studio",
             "exit": 1,
             "pass": 77,
             "fail": 2,
@@ -929,6 +935,7 @@
             "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs (failing names united)"
           },
           "commands.typecheck": {
+            "cmd": "bun x --no-env-file --bun tsc -p tsconfig.json --noEmit",
             "exit": 0,
             "date": "2026-10-05",
             "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
@@ -1193,6 +1200,7 @@
         ],
         "baselines": {
           "tests.safe[0]": {
+            "cmd": "bun --no-env-file test packages/canvas/src",
             "exit": 1,
             "pass": 1186,
             "fail": 13,
@@ -1216,6 +1224,7 @@
             "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs (failing names united)"
           },
           "commands.typecheck": {
+            "cmd": "bun --no-env-file run typecheck:canvas",
             "exit": 0,
             "date": "2026-10-05",
             "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
@@ -1474,6 +1483,7 @@
         ],
         "baselines": {
           "tests.safe[0]": {
+            "cmd": "bun --no-env-file test test/viewer-extension.test.ts",
             "exit": 0,
             "pass": 4,
             "fail": 0,
@@ -1482,6 +1492,7 @@
             "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs"
           },
           "commands.typecheck": {
+            "cmd": "bun --no-env-file run typecheck:canvas-agent",
             "exit": 0,
             "date": "2026-10-05",
             "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
@@ -1607,7 +1618,7 @@
       },
       "consume": {
         "via": "workspace",
-        "detail": "Core workspace member: the page must load the package's fonts.css and tokens-dark-first.css (inlined or served by the docs service) before its own inline styles."
+        "detail": "Core workspace member. Pass 1 links the design-system files at /@codecaine-ai/design-system/<package path> (decision 30): the docs service serves that prefix from the package docs-mcp resolves, and the page links /@codecaine-ai/design-system/css/fonts.css and /@codecaine-ai/design-system/dist/css/tokens-dark-first.css before its own inline styles. lint:apps maps that URL prefix to the resolved package."
       },
       "entryStylesheet": "codecaine/core/docs-system/packages/docs-mcp/src/background/home.ts",
       "theme": {
@@ -1700,6 +1711,7 @@
         ],
         "baselines": {
           "tests.safe[0]": {
+            "cmd": "bun --no-env-file test src/__tests__/device-discovery.test.ts",
             "exit": 0,
             "pass": 4,
             "fail": 0,
@@ -1708,6 +1720,7 @@
             "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs"
           },
           "commands.typecheck": {
+            "cmd": "bun --no-env-file run typecheck",
             "exit": 2,
             "fail": 2,
             "failing": [
@@ -1802,6 +1815,10 @@
         {
           "what": "the run is a fixture server, not the docs service",
           "reason": "apps/fixtures/docs-mcp-home/serve.ts renders the real directoryHtml with 4 synthetic projects and answers the page's /api/projects, /api/discovery and /api/status polls in memory; the supervisor (which reads ~/.local/state and binds :4820) is never imported"
+        },
+        {
+          "what": "the fixture serves the design-system package, never a font",
+          "reason": "apps/fixtures/docs-mcp-home/serve.ts serves the page exactly as directoryHtml renders it (no link, font or style added) and the package docs-mcp resolves at /@codecaine-ai/design-system/<package path> (package.json, css/, fonts/, dist/: byte copies in the package layout), the URL the docs service serves once pass 1 wires the page (decision 30). Until pass 1 links the package the page loads no fonts.css, so verify:apps' font check fails on the real page, not on fixture wiring."
         },
         {
           "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
@@ -1925,6 +1942,7 @@
         ],
         "baselines": {
           "tests.safe[0]": {
+            "cmd": "bun --no-env-file test src/components src/editor src/lab src/peek src/transitions",
             "exit": 1,
             "pass": 351,
             "fail": 1,
@@ -1936,6 +1954,7 @@
             "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs (failing names united)"
           },
           "commands.typecheck": {
+            "cmd": "bunx --no-env-file --bun tsc --noEmit",
             "exit": 2,
             "fail": 2,
             "failing": [
@@ -2191,8 +2210,7 @@
         "reason": "its stylesheet exists only after `bun build.ts`, which always writes packages/docs-publish/dist inside the repo (the output dir is hard-coded); a fixture that publishes the docs-system corpus into {tmp} is follow-up work. Its output is seen through personal-site's blog pages"
       },
       "commands": {
-        "cwd": "codecaine/core/docs-system/packages/docs-publish",
-        "build": "bun --no-env-file build.ts"
+        "cwd": "codecaine/core/docs-system/packages/docs-publish"
       },
       "tests": {
         "safe": [
@@ -2203,6 +2221,7 @@
         ],
         "baselines": {
           "tests.safe[0]": {
+            "cmd": "bun --no-env-file test src",
             "exit": 0,
             "pass": 11,
             "fail": 0,
@@ -2243,8 +2262,8 @@
           "reason": "src/editor.css .docs-draft-editor host fallbacks only (lines 68-76): 7 custom-property definitions var(--color-*, <literal>) (#fff, #222, #2563eb, #f1f1ef) so the draft editor renders on a host without the site palette; scoped to that file, kind definition, category hex and those 4 values; the floor of 7 caps them, so any new definition in the file fails the check. Not excused: the status and accent palette at 82-103 (--destructive, --status-*, --color-bg-blue, --color-text-blue; 15 hits, the same in light and dark), which pass 1 maps to color.status.*, the fallback at editor.css:171 and the inline literals in styles.css:44-46"
         },
         {
-          "what": "commands.build writes the package's own dist/",
-          "reason": "the publish build output (gitignored); every token change needs a rebuild, npm pack and a version bump in personal-site"
+          "what": "commands.build is not set",
+          "reason": "the publish build (bun --no-env-file build.ts in packages/docs-publish) has no out-dir option: build.ts removes and rewrites the package's own dist/ (Bun.build, vite build into dist/styles, the measured fonts, dist/provenance.json from git), so under test:apps it would always fail the write check. Run it outside test:apps when personal-site needs a new tgz (the publish output is gitignored; every token change needs a rebuild, npm pack and a version bump in personal-site)."
         },
         {
           "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
@@ -2357,6 +2376,7 @@
         ],
         "baselines": {
           "tests.safe[0]": {
+            "cmd": "bun --no-env-file test ./packages/viewer-shell/src",
             "exit": 0,
             "pass": 35,
             "fail": 0,
@@ -2365,6 +2385,7 @@
             "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs"
           },
           "commands.typecheck": {
+            "cmd": "bun --no-env-file run typecheck:viewer-shell",
             "exit": 0,
             "date": "2026-10-05",
             "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
@@ -2596,6 +2617,7 @@
         ],
         "baselines": {
           "tests.safe[0]": {
+            "cmd": "bun --no-env-file test ./src/agent-viewer/catalog-client.test.ts ./src/agent-viewer/prompt-edit-client.test.ts ./src/agent-viewer/prompt-edit-loop.e2e.test.ts ./src/agent-viewer/prompt-edit-session-view.test.ts ./src/agent-viewer/prompt-lab-session-controller.test.ts ./src/agent-viewer/prompt-lab-session-mode.test.ts ./src/kernel-route-parity.test.ts ./src/trace-viewer/SpanCard/span-indent.test.tsx ./src/trace-viewer/detail-panel/DetailShell.test.tsx ./src/trace-viewer/detail-panel/DetailShellExtensions.test.tsx ./src/trace-viewer/detail-panel/DetailsView.test.tsx ./src/trace-viewer/detail-panel/blocks.test.tsx ./src/trace-viewer/detail-panel/contract-conformance.test.tsx ./src/trace-viewer/detail-panel/doc-figure/Clamped.test.tsx ./src/trace-viewer/detail-panel/doc-figure/DocFigure.test.tsx ./src/trace-viewer/detail-panel/doc-figure/rendered-height.test.ts ./src/trace-viewer/detail-panel/doc-figure/tokenize.test.ts ./src/trace-viewer/detail-panel/renderers/AggregateBodies.test.tsx ./src/trace-viewer/detail-panel/renderers/ContextBuildBody.test.tsx ./src/trace-viewer/detail-panel/renderers/FactCard.test.tsx ./src/trace-viewer/detail-panel/renderers/MessageBody.test.tsx ./src/trace-viewer/detail-panel/renderers/ToolBody.test.tsx ./src/trace-viewer/detail-panel/renderers/TurnBody.test.tsx ./src/trace-viewer/detail-panel/renderers/json-document.test.ts ./src/trace-viewer/detail-panel/renderers/real-snapshot-render.test.tsx ./src/trace-viewer/detail-panel/renderers/request-snapshot-api.test.tsx ./src/trace-viewer/detail-panel/renderers/snapshot-message-view.test.tsx ./src/trace-viewer/detail-panel/renderers/turn-sections.test.tsx ./src/trace-viewer/detail-panel/renderers/turn/ToolsSection.test.tsx ./src/trace-viewer/detail-panel/renderers/turn/turn-block-content.test.tsx ./src/trace-viewer/icons/span-icons.test.tsx ./src/trace-viewer/selection.test.tsx ./src/trace-viewer/trace-tree-utils.test.ts ./src/trace-viewer/usage-summary.test.ts",
             "exit": 0,
             "pass": 318,
             "fail": 0,
@@ -2604,6 +2626,7 @@
             "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs"
           },
           "commands.typecheck": {
+            "cmd": "bun --no-env-file run typecheck:viewer-ui",
             "exit": 0,
             "date": "2026-10-05",
             "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
@@ -2760,6 +2783,7 @@
         ],
         "baselines": {
           "tests.safe[0]": {
+            "cmd": "bun --no-env-file test ./examples/simple-research-kernel/src",
             "exit": 0,
             "pass": 7,
             "fail": 0,
@@ -2768,6 +2792,7 @@
             "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs"
           },
           "commands.typecheck": {
+            "cmd": "bun --no-env-file run typecheck",
             "exit": 0,
             "date": "2026-10-05",
             "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
@@ -2988,6 +3013,7 @@
         ],
         "baselines": {
           "tests.safe[0]": {
+            "cmd": "bun --no-env-file test tests",
             "exit": 0,
             "pass": 749,
             "fail": 0,
@@ -2996,6 +3022,7 @@
             "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs"
           },
           "commands.typecheck": {
+            "cmd": "bun --no-env-file run typecheck",
             "exit": 0,
             "date": "2026-10-05",
             "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
@@ -3136,7 +3163,7 @@
       "commands": {
         "cwd": "system-view",
         "typecheck": "bun --no-env-file run typecheck",
-        "build": "bun --no-env-file run build"
+        "build": "bun --no-env-file run build --outDir {tmp}/system-view-out"
       },
       "tests": {
         "safe": [],
@@ -3152,6 +3179,7 @@
         ],
         "baselines": {
           "commands.typecheck": {
+            "cmd": "bun --no-env-file run typecheck",
             "exit": 0,
             "date": "2026-10-05",
             "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
@@ -3370,6 +3398,7 @@
         ],
         "baselines": {
           "tests.safe[0]": {
+            "cmd": "./node_modules/.bin/vitest run --root . --config {ds}/apps/fixtures/personal-site/vitest.config.mjs --configLoader runner --no-cache",
             "exit": 0,
             "pass": 92,
             "fail": 0,
@@ -3378,6 +3407,7 @@
             "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs"
           },
           "commands.typecheck": {
+            "cmd": "./node_modules/.bin/tsc -p tsconfig.json --noEmit",
             "exit": 0,
             "date": "2026-10-05",
             "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
@@ -3617,6 +3647,7 @@
         ],
         "baselines": {
           "tests.safe[0]": {
+            "cmd": "PYTHONDONTWRITEBYTECODE=1 python3 manager/test_server.py",
             "exit": 0,
             "pass": 10,
             "fail": 0,
@@ -3858,6 +3889,7 @@
         ],
         "baselines": {
           "commands.typecheck": {
+            "cmd": "./node_modules/.bin/tsc --noEmit",
             "exit": 0,
             "date": "2026-10-05",
             "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
@@ -5087,7 +5119,7 @@
       "commands": {
         "cwd": "apps/pen-plotter/apps/desktop",
         "typecheck": "bun --no-env-file run typecheck",
-        "build": "bun --no-env-file run build"
+        "build": "bun --no-env-file run build --outDir {tmp}/pen-plotter-out"
       },
       "tests": {
         "safe": [
@@ -5517,7 +5549,7 @@
       "commands": {
         "cwd": "harnesses/gamecube-decomp-harness",
         "typecheck": "bun --no-env-file run ui:check",
-        "build": "bun --no-env-file run ui:build"
+        "build": "bun --no-env-file run ui:build --outDir {tmp}/gamecube-dist"
       },
       "tests": {
         "safe": [
