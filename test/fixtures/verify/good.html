@@ -28,6 +28,7 @@
         localStorage.setItem("fixture.sidebar", next);
       });
       for (const port of new URLSearchParams(location.search).getAll("fetch")) fetch(`http://127.0.0.1:${port}/`).catch(() => {});
+      for (const port of new URLSearchParams(location.search).getAll("bind")) fetch(`/bind?port=${port}`).catch(() => {});
     </script>
   </body>
 </html>

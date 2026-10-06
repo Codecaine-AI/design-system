@@ -91,6 +91,9 @@ describe("registry:check", () => {
     expect(check([entry({ verify: { probes: [...PROBES.slice(0, 3), border], darkSwitch: { kind: "attribute" } } })])).toEqual([]);
     const waived = { probes: PROBES.slice(0, 3), waivedRoles: [{ role: "border" as const, reason: "a canvas app with no bordered chrome" }], darkSwitch: { kind: "attribute" as const } };
     expect(check([entry({ verify: waived })])).toEqual([]);
+    // A probe limited to one theme still covers its role; the page needs a probe in each checked theme.
+    const lightOnlyPanel = [PROBES[0]!, { ...PROBES[1]!, themes: ["light" as const] }, ...PROBES.slice(2)];
+    expect(check([entry({ verify: { probes: lightOnlyPanel, darkSwitch: { kind: "attribute" } } })])).toEqual([]);
   });
 
   const profile = (over: Partial<AppEntry["runProfile"]>) => ({ ...entry().runProfile, ...over });
@@ -116,6 +119,11 @@ describe("registry:check", () => {
       "verify probes that miss a role",
       [entry({ verify: { probes: PROBES.slice(0, 3), darkSwitch: { kind: "attribute" } } })],
       "verify.probes has no border probe",
+    ],
+    [
+      "a page probe limited to light on a light-dark app",
+      [entry({ verify: { probes: [{ ...PROBES[0]!, themes: ["light"] }, ...PROBES.slice(1)], darkSwitch: { kind: "attribute" } } })],
+      "verify.probes has no page probe checked in dark",
     ],
     [
       "a role waiver without a reason",

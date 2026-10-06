@@ -5,9 +5,9 @@
  * guarding its requests is the runner's job (scripts/lib/app-runner.ts).
  */
 import { runSteps } from "../capture";
-import type { AppEntry, PassId, VerifySpec } from "../registry";
+import { type AppEntry, type PassId, probeActive, probeCoverageProblems, probeRole, type VerifySpec } from "../registry";
 import { type Assertion, fail, pass, type ResponseLog } from "./assertions";
-import { fontAssertions, readFonts } from "./fonts";
+import { fontAssertions, type FontSourceJudge, readFonts } from "./fonts";
 import { checkSidebar } from "./sidebar";
 import { type BuildValues, buildValue, sameComputedValue, type Theme, tokenCssVar } from "./tokens";
 
@@ -143,32 +143,49 @@ export interface PageCheckOptions {
   app: Pick<AppEntry, "id" | "shell" | "theme" | "verify">;
   values: BuildValues;
   responses: ResponseLog;
+  /** Where a fetched font url() came from (font-source.ts): only the package's fonts/ (or a copy of them) passes. */
+  fontSource: FontSourceJudge;
   /** --pass; undefined means every check (final acceptance). */
   pass?: PassId;
   /** The route's waitFor and steps; re-run after anything that reloads the page. */
   prepare?: (page: any) => Promise<void>;
 }
 
+/** The verify spec covers every chrome role (page, panel, text, border), each by a probe or a waiver with a reason. */
+export function verifySpecAssertion(app: Pick<AppEntry, "theme" | "verify">): Assertion {
+  const verify = app.verify!;
+  const roles = Object.fromEntries(verify.probes.map((probe) => [`${probe.selector} ${probe.property}`, probeRole(probe)]));
+  const detail = { roles, waivedRoles: verify.waivedRoles ?? [] };
+  if (verify.probes.length === 0) return fail("verify-spec", "verify.probes is empty: nothing shows the app renders with the tokens", detail);
+  const problems = probeCoverageProblems(verify, app.theme?.rule);
+  return problems.length ? fail("verify-spec", problems.join("; "), detail) : pass("verify-spec", `${verify.probes.length} probe(s) cover page, panel, text and border (or waive them with a reason)`, detail);
+}
+
+const probeKey = (p: { selector: string; property: string; token: string }) => `${p.selector}\u0000${p.property}\u0000${p.token}`;
+
 /**
- * Every runtime assertion on a page that shows the verify route: token probes in the default theme,
- * web fonts, the dark switch (light-dark apps) and, for shell apps, sidebar persistence.
+ * Every runtime assertion on a page that shows the verify route: the spec covers every role, token
+ * probes in the default theme, web fonts, the dark switch (light-dark apps) and, for shell apps,
+ * sidebar persistence. A probe is read only in the themes it lists (default both).
  */
 export async function checkPage(page: any, opts: PageCheckOptions): Promise<Assertion[]> {
   const verify = opts.app.verify;
   if (!verify) return [fail("verify-spec", "apps.json has no verify spec (probes, darkSwitch) for this app")];
   const darkFirst = opts.app.theme.rule === "dark-first";
-  const out: Assertion[] = [];
+  const out: Assertion[] = [verifySpecAssertion(opts.app)];
   await settle(page);
 
   const first: Theme = darkFirst ? "dark" : "light";
-  const firstReadings = await readProbes(page, verify.probes, opts.values, first);
+  const firstReadings = await readProbes(page, verify.probes.filter((probe) => probeActive(probe, first)), opts.values, first);
   out.push(...probeAssertions(firstReadings, first, darkFirst ? "dark (default)" : "light"));
-  out.push(...fontAssertions(await readFonts(page), opts.responses));
+  out.push(...fontAssertions(await readFonts(page), opts.responses, opts.fontSource));
 
   if (!darkFirst) {
+    // theme.switch judges only probes checked in both themes.
+    const both = new Set(verify.probes.filter((probe) => probeActive(probe, "light") && probeActive(probe, "dark")).map(probeKey));
     // Probes whose token differs between the themes; the switch may apply asynchronously (a saved setting, a re-render).
     const watch = firstReadings
-      .filter((r) => r.found && r.buildValue !== buildValue(opts.values, r.token, "dark"))
+      .filter((r) => r.found && both.has(probeKey(r)) && r.buildValue !== buildValue(opts.values, r.token, "dark"))
       .map((r) => ({ selector: r.selector, property: r.property, before: r.actual! }));
     const reloaded = await switchToDark(page, verify.darkSwitch);
     if (reloaded && opts.prepare) await opts.prepare(page);
@@ -186,18 +203,22 @@ export async function checkPage(page: any, opts: PageCheckOptions): Promise<Asse
         .catch(() => undefined); // nothing changed: the dark assertions report it
     }
     await settle(page);
-    const darkReadings = await readProbes(page, verify.probes, opts.values, "dark");
+    const darkReadings = await readProbes(page, verify.probes.filter((probe) => probeActive(probe, "dark")), opts.values, "dark");
     const markers = await themeMarkers(page);
     out.push(...probeAssertions(darkReadings, "dark"));
-    const shouldChange = firstReadings.filter((r, i) => r.found && darkReadings[i]?.found && !sameComputedValue(r.build!, darkReadings[i]!.build!));
-    const changed = shouldChange.filter((r) => {
-      const dark = darkReadings[firstReadings.indexOf(r)]!;
-      return !sameComputedValue(r.actual!, dark.actual!);
-    });
+    const darkByKey = new Map(darkReadings.map((r) => [probeKey(r), r]));
+    const pairs = firstReadings.filter((r) => both.has(probeKey(r))).map((light) => ({ light, dark: darkByKey.get(probeKey(light))! }));
+    const shouldChange = pairs.filter(({ light, dark }) => light.found && dark?.found && !sameComputedValue(light.build!, dark.build!));
+    const changed = shouldChange.filter(({ light, dark }) => !sameComputedValue(light.actual!, dark.actual!));
+    const kind = verify.darkSwitch.kind;
     out.push(
-      shouldChange.length === 0 || changed.length > 0
-        ? pass("theme.switch", `${verify.darkSwitch.kind} switch changed ${changed.length} of ${shouldChange.length} probe(s)`, { markers })
-        : fail("theme.switch", `the ${verify.darkSwitch.kind} switch changed none of the ${shouldChange.length} probe(s) whose token differs in dark`, { markers }),
+      pairs.length === 0
+        ? fail("theme.switch", "no probe is checked in both themes: nothing shows the dark switch works", { markers })
+        : shouldChange.length === 0
+          ? fail("theme.switch", `none of the ${pairs.length} probe(s) checked in both themes is on the page with a token that differs in dark: the ${kind} switch is unchecked`, { markers })
+          : changed.length > 0
+            ? pass("theme.switch", `${kind} switch changed ${changed.length} of ${shouldChange.length} probe(s)`, { markers })
+            : fail("theme.switch", `the ${kind} switch changed none of the ${shouldChange.length} probe(s) whose token differs in dark`, { markers }),
     );
   }
 

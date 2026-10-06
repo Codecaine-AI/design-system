@@ -1,0 +1,27 @@
+<!doctype html>
+<!-- verify:apps fixture: a wired page whose sidebar toggle writes and restores "undefined" (a broken state that round-trips). -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>sidebar-undefined</title>
+    <link rel="stylesheet" href="/tokens.css" />
+    <style>
+      body { margin: 0; background: var(--ds-color-surface-page); color: var(--ds-color-text-body); }
+    </style>
+  </head>
+  <body>
+    <div class="ds-shell" data-sidebar="expanded">
+      <button class="ds-sidebar-toggle" type="button">Toggle sidebar</button>
+    </div>
+    <script>
+      const shell = document.querySelector(".ds-shell");
+      const saved = localStorage.getItem("fixture.sidebar");
+      if (saved !== null) shell.dataset.sidebar = saved;
+      document.querySelector(".ds-sidebar-toggle").addEventListener("click", () => {
+        const next = String(undefined);
+        shell.dataset.sidebar = next;
+        localStorage.setItem("fixture.sidebar", next);
+      });
+    </script>
+  </body>
+</html>

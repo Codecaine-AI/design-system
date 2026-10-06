@@ -15,8 +15,11 @@ import { loadPlaywright } from "../scripts/lib/playwright.ts";
 import { type AppEntry, DESIGN_SYSTEM_ROOT, type Registry } from "../scripts/lib/registry.ts";
 import { sentinelAssertions } from "../scripts/lib/verify/page-checks.ts";
 import {
+  buildHashes,
   eligibleApps,
+  hashChanges,
   OWNER_TREE,
+  propagateBlocker,
   readJournal,
   runPackageScript,
   SENTINEL_COMPUTED,
@@ -234,11 +237,22 @@ describe("refusals", () => {
 });
 
 describe("eligibleApps", () => {
-  const app = (id: string, mode: AppEntry["run"]["mode"], via: AppEntry["consume"]["via"]) =>
-    ({ id, run: { mode, reason: mode === "none" ? "a library" : undefined }, consume: { via, detail: "" } }) as AppEntry;
+  const app = (id: string, mode: AppEntry["run"]["mode"], via: AppEntry["consume"]["via"], passes?: AppEntry["passes"]) =>
+    ({ id, run: { mode, reason: mode === "none" ? "a library" : undefined }, consume: { via, detail: "" }, ...(passes ? { passes } : {}) }) as AppEntry;
+  const req = { required: true } as const;
   const registry: Registry = {
     version: 1,
-    apps: [app("web", "browser", "workspace"), app("deployed", "browser", "vendor-tgz"), app("lib", "none", "link"), app("half", "browser", "link"), app("desk", "electron", "npm-file")],
+    apps: [
+      app("web", "browser", "workspace"),
+      app("deployed", "browser", "vendor-tgz"),
+      app("lib", "none", "link"),
+      app("half", "browser", "link"),
+      app("desk", "electron", "npm-file"),
+      // apps.json requires p2, which the ledger calls n/a: not done.
+      app("strict", "browser", "workspace", { "1": req, "2": req, "3": req }),
+      // apps.json marks p3 n/a, which the ledger still has as todo: done.
+      app("lenient", "browser", "workspace", { "1": req, "2": req, "3": { required: false, reason: "library" } }),
+    ],
   };
   const state = [
     "## app_ledger",
@@ -252,6 +266,8 @@ describe("eligibleApps", () => {
     "| desk | 2 | x | done | done | done | 0 / 0 |",
     "| ghost | 2 | x | done | done | done | 0 / 0 |",
     "| idle | 2 | x | n/a | n/a | n/a | 0 / 0 |",
+    "| strict | 2 | x | done | n/a | done | 0 / 0 |",
+    "| lenient | 2 | x | done | done | todo | 0 / 0 |",
     "",
     "## tooling",
     "",
@@ -260,18 +276,70 @@ describe("eligibleApps", () => {
     "| half | done |",
   ].join("\n");
 
-  test("by default: every ledger app whose passes are all done or n/a, that runs and consumes the package live", () => {
+  test("by default: every ledger app that is done by the progress rule (apps.json decides which passes count), runs and consumes the package live; every other row is reported", () => {
     const result = eligibleApps(registry, [], state);
-    expect(result.apps.map((a) => a.id)).toEqual(["web", "desk"]);
+    expect(result.apps.map((a) => a.id)).toEqual(["web", "desk", "lenient"]);
     expect(result.skipped).toEqual([
-      { id: "deployed", reason: expect.stringMatching(/vendor-tgz, not live/) },
-      { id: "lib", reason: expect.stringMatching(/run mode none/) },
-      { id: "ghost", reason: expect.stringMatching(/not in apps\.json/) },
+      { id: "deployed", reason: "consumes the package via vendor-tgz, not live" },
+      { id: "lib", reason: "run mode none: a library" },
+      { id: "half", reason: "not done (in flight: p1 done, p2 working, p3 todo)" },
+      { id: "ghost", reason: "done in the ledger but not in apps.json" },
+      { id: "idle", reason: "not done (todo: p1 n/a, p2 n/a, p3 n/a)" },
+      { id: "strict", reason: "not done (in flight: p1 done, p2 n/a, p3 done)" },
     ]);
+    expect(result.problems).toEqual([]);
   });
 
   test("listed apps are eligible whatever the ledger says; no list and no STATE.md is refused", () => {
     expect(eligibleApps(registry, ["half"], null).apps.map((a) => a.id)).toEqual(["half"]);
     expect(() => eligibleApps(registry, [], null)).toThrow(/STATE\.md/);
   });
+});
+
+describe("safety around a propagate run", () => {
+  test("the restore build runs in its own process group, out of reach of a terminal's Ctrl-C", () => {
+    const ds = mkdtempSync(join(scratch, "pgid-"));
+    writeFileSync(join(ds, "package.json"), JSON.stringify({ scripts: { build: "ps -o pgid= -p $$" } }));
+    const own = spawnSync("ps", ["-o", "pgid=", "-p", String(process.pid)], { encoding: "utf8" }).stdout.trim();
+    const result = runPackageScript(ds, "build");
+    expect(result.ok).toBe(true);
+    expect(result.output.trim().split("\n").pop()!.trim()).not.toBe(own);
+  });
+
+  test("before/after hashes catch a change to a file that was already modified before the run", () => {
+    const { ds } = scratchRoot();
+    writeFileSync(join(ds, "dist/json/light.json"), `${readFileSync(join(ds, "dist/json/light.json"), "utf8")} `);
+    const before = buildHashes(ds);
+    writeFileSync(join(ds, "dist/json/light.json"), `${readFileSync(join(ds, "dist/json/light.json"), "utf8")} `);
+    rmSync(join(ds, "dist/json/dark.json"));
+    writeFileSync(join(ds, "dist/new.txt"), "x");
+    expect(hashChanges(before, buildHashes(ds))).toEqual(["dist/json/dark.json removed", "dist/json/light.json changed", "dist/new.txt added"]);
+    expect(Object.keys(before)).toContain("tokens/themes/light.tokens.json");
+  }, 30_000);
+
+  test("propagateBlocker: an unrestored journal or a sentinel build blocks; a restored journal does not", () => {
+    const { ds, out, journal } = scratchRoot();
+    expect(propagateBlocker({ outDirs: [out], dsDirs: [ds] })).toBeNull();
+    writeJournal(ds, journal);
+    expect(propagateBlocker({ outDirs: [out], dsDirs: [ds] })).toMatch(/unrestored propagate journal/);
+    writeFileSync(join(journal, "manifest.json"), JSON.stringify({ ...readJournal(journal), restoredAt: new Date().toISOString() }));
+    expect(propagateBlocker({ outDirs: [out], dsDirs: [ds] })).toBeNull();
+    const light = join(ds, "dist/json/light.json");
+    writeFileSync(light, JSON.stringify({ ...JSON.parse(readFileSync(light, "utf8")), [SENTINEL_TOKEN]: "#FF00FF" }));
+    expect(propagateBlocker({ outDirs: [out], dsDirs: [ds] })).toMatch(/light\.json sets color\.surface\.page to the propagate sentinel/);
+  }, 30_000);
+
+  test("snapshot and verify:apps refuse to run while a propagate journal is unrestored, before starting anything", () => {
+    const { root, ds, out, journal } = scratchRoot();
+    writeJournal(ds, journal);
+    const registry = join(root, "apps.json");
+    const entry = { ...runnableFixtureApp({ ui: 46975 }), id: "blocked-app", gates: { verify: { required: true }, snapshot: { required: true } } };
+    writeFileSync(registry, JSON.stringify({ version: 1, apps: [entry] }));
+    const env = { ...process.env, DS_RUN: out };
+    const verify = spawnSync(process.execPath, [join(DESIGN_SYSTEM_ROOT, "scripts/verify-apps.ts"), "--root", root, "--out-dir", out, "--registry", registry], { encoding: "utf8", env });
+    expect([verify.status, verify.stderr]).toEqual([1, expect.stringMatching(/refusing to verify: an unrestored propagate journal/)]);
+    const snapshot = spawnSync(process.execPath, [join(DESIGN_SYSTEM_ROOT, "scripts/snapshot.ts"), "--app", "blocked-app", "--set", "s", "--root", root, "--out-dir", out, "--registry", registry], { encoding: "utf8", env });
+    expect([snapshot.status, snapshot.stderr]).toEqual([2, expect.stringMatching(/refusing to capture: an unrestored propagate journal/)]);
+    expect(existsSync(join(out, "blocked-app"))).toBe(false);
+  }, 30_000);
 });

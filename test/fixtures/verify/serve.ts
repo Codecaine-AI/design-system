@@ -1,6 +1,7 @@
 /**
  * Stand-in app server for the verify:apps tests (not an app): serves its own directory on
- * $FIXTURE_PORT ("/" is index.html) and prints a Vite-style ready line.
+ * $FIXTURE_PORT ("/" is index.html) and prints a Vite-style ready line. GET /bind?port=N makes it
+ * listen on port N as well (a service the app opens after it is ready).
  */
 import { existsSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -13,7 +14,12 @@ Bun.serve({
   hostname: "127.0.0.1",
   port,
   fetch(request) {
-    const pathname = decodeURIComponent(new URL(request.url).pathname);
+    const url = new URL(request.url);
+    if (url.pathname === "/bind") {
+      Bun.serve({ hostname: "127.0.0.1", port: Number(url.searchParams.get("port")), fetch: () => new Response("late") });
+      return new Response("bound");
+    }
+    const pathname = decodeURIComponent(url.pathname);
     let file = resolve(dir, `.${pathname}`);
     if (!file.startsWith(dir)) return new Response("not found", { status: 404 });
     if (existsSync(file) && statSync(file).isDirectory()) file = join(file, "index.html");

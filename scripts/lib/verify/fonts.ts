@@ -1,6 +1,9 @@
 /**
- * Inter and IBM Plex Mono load as web fonts: a loaded FontFace whose @font-face url() the page fetched,
- * not a local() face or a fallback.
+ * Inter and IBM Plex Mono load as the package's web fonts: the regular face (weight 400, normal style)
+ * of each family is loaded, the @font-face rule that declares it (the last one, which wins) had its
+ * url() fetched, and that url() comes from the design-system package's fonts/ directory (or a byte
+ * copy of a package font where the app copies or bundles them). A local() face, a fallback, or the
+ * same font from another package (text-measure's fonts) fails.
  */
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -11,11 +14,22 @@ export const FONT_FAMILIES = ["Inter", "IBM Plex Mono"] as const;
 export interface FontReading {
   family: string;
   faces: Array<{ weight: string; style: string; status: string }>;
-  /** @font-face rules for the family: their src, the resolved url()s, and whether a local() source is listed. */
-  rules: Array<{ src: string; urls: string[]; local: boolean }>;
+  /** @font-face rules for the family, in cascade order: descriptors, src, the resolved url()s, and whether a local() source is listed. */
+  rules: Array<{ weight: string; style: string; src: string; urls: string[]; local: boolean }>;
   /** Stylesheets whose rules the page could not read (cross-origin). */
   unreadableSheets: number;
 }
+
+/** Where a fetched font url() came from. */
+export interface FontSourceVerdict {
+  ok: boolean;
+  /** "the package's fonts/", "a copy of a package font", or why it does not count. */
+  how: string;
+  path?: string;
+}
+
+/** Judges a fetched font url(); built by font-source.ts from the run (served paths, the resolved package). */
+export type FontSourceJudge = (url: string) => FontSourceVerdict;
 
 /** Asks the page to load each family at 400, then lists its faces and the @font-face rules that declare them. */
 export async function readFonts(page: any, families: readonly string[] = FONT_FAMILIES): Promise<FontReading[]> {
@@ -23,12 +37,19 @@ export async function readFonts(page: any, families: readonly string[] = FONT_FA
     const clean = (family: string) => family.replace(/["']/g, "").trim();
     await Promise.all(names.map((name) => document.fonts.load(`400 16px "${name}"`).catch(() => undefined)));
     await Promise.race([document.fonts.ready, new Promise((resolve) => setTimeout(resolve, 10_000))]);
-    const rules: Array<{ family: string; src: string; base: string }> = [];
+    const rules: Array<{ family: string; weight: string; style: string; src: string; base: string }> = [];
     let unreadableSheets = 0;
     const walk = (list: CSSRuleList, base: string) => {
       for (const rule of Array.from(list)) {
         if (rule instanceof CSSFontFaceRule) {
-          rules.push({ family: clean(rule.style.getPropertyValue("font-family")), src: rule.style.getPropertyValue("src"), base });
+          const style = rule.style;
+          rules.push({
+            family: clean(style.getPropertyValue("font-family")),
+            weight: style.getPropertyValue("font-weight").trim(),
+            style: style.getPropertyValue("font-style").trim(),
+            src: style.getPropertyValue("src"),
+            base,
+          });
         } else if (rule instanceof CSSImportRule) {
           try {
             if (rule.styleSheet) walk(rule.styleSheet.cssRules, rule.styleSheet.href ?? base);
@@ -55,6 +76,8 @@ export async function readFonts(page: any, families: readonly string[] = FONT_FA
       rules: rules
         .filter((rule) => rule.family === family)
         .map((rule) => ({
+          weight: rule.weight,
+          style: rule.style,
           src: rule.src,
           urls: [...rule.src.matchAll(/url\(\s*(['"]?)(.*?)\1\s*\)/g)].map((m) => {
             try {
@@ -77,21 +100,60 @@ function fetched(url: string, responses: ResponseLog): boolean {
   return status !== undefined && ((status >= 200 && status < 300) || status === 304);
 }
 
-/** Each family is a web font the page loaded over the run's server: a loaded face whose @font-face url() was fetched. */
-export function fontAssertions(readings: FontReading[], responses: ResponseLog): Assertion[] {
+const KEYWORD_WEIGHT: Record<string, number> = { normal: 400, bold: 700, "": 400 };
+
+/** Whether a font-weight descriptor ("400", "normal", "100 900") covers `weight`. */
+export function weightCovers(descriptor: string, weight = 400): boolean {
+  const parts = descriptor.trim().split(/\s+/).filter(Boolean).map((part) => KEYWORD_WEIGHT[part] ?? Number(part));
+  if (parts.length === 0) return weight === 400;
+  if (parts.some((n) => Number.isNaN(n))) return false;
+  const [low, high = low] = parts as [number, number?];
+  return weight >= low! && weight <= high!;
+}
+
+/** Whether a font-style descriptor is the upright style ("normal", or not set). */
+export function styleIsNormal(descriptor: string): boolean {
+  const value = descriptor.trim();
+  return value === "" || value === "normal";
+}
+
+/**
+ * Per family, the regular face (400, normal) is a package web font: loaded, its winning @font-face
+ * rule's url() fetched, and the fetched file judged by `judge` to come from the package.
+ */
+export function fontAssertions(readings: FontReading[], responses: ResponseLog, judge: FontSourceJudge): Assertion[] {
   return readings.map((r) => {
     const id = `font: ${r.family}`;
-    const loaded = r.faces.filter((face) => face.status === "loaded");
-    const urls = r.rules.flatMap((rule) => rule.urls);
-    const got = urls.filter((url) => fetched(url, responses));
-    const detail = { ...r, fetched: got };
+    const regular = r.faces.filter((face) => weightCovers(face.weight) && styleIsNormal(face.style));
+    const rules = r.rules.filter((rule) => weightCovers(rule.weight) && styleIsNormal(rule.style));
+    const detail: Record<string, unknown> = { ...r };
     if (r.faces.length === 0) return fail(id, `no @font-face for ${r.family}: text renders in a local or fallback font`, detail);
-    if (loaded.length === 0) return fail(id, `${r.faces.length} face(s) declared, none loaded (${r.faces.map((f) => `${f.weight} ${f.status}`).join(", ")})`, detail);
-    if (got.length > 0) return pass(id, `${loaded.length} face(s) loaded from ${got[0]}${got.length > 1 ? ` (+${got.length - 1})` : ""}`, detail);
-    if (r.rules.length > 0 && urls.length === 0) return fail(id, `@font-face lists only local() sources: a local font, not the package's web font`, detail);
-    if (r.rules.length === 0) {
-      return fail(id, `faces are loaded but no readable @font-face declares ${r.family}${r.unreadableSheets ? ` (${r.unreadableSheets} stylesheet(s) unreadable)` : ""}`, detail);
+    if (regular.length === 0) return fail(id, `no regular face (400, normal) of ${r.family} is declared (${r.faces.map((f) => `${f.weight} ${f.style}`).join(", ")})`, detail);
+    if (!regular.some((face) => face.status === "loaded"))
+      return fail(id, `the regular face of ${r.family} is declared but not loaded (${regular.map((f) => `${f.weight} ${f.status}`).join(", ")})`, detail);
+    if (rules.length === 0) {
+      return fail(
+        id,
+        r.rules.length === 0
+          ? `faces are loaded but no readable @font-face declares ${r.family}${r.unreadableSheets ? ` (${r.unreadableSheets} stylesheet(s) unreadable)` : ""}`
+          : `no readable @font-face rule declares the regular face (400, normal) of ${r.family}`,
+        detail,
+      );
     }
-    return fail(id, `faces are loaded but none of their url()s was fetched (${urls.slice(0, 2).join(", ")}): a local() source won or the request failed`, detail);
+    // Of several rules with the same descriptors, the last one declared is the face the page uses.
+    const winner = rules[rules.length - 1]!;
+    detail.rule = winner;
+    if (winner.urls.length === 0) return fail(id, `the regular face's @font-face lists only local() sources: a local font, not the package's web font`, detail);
+    const got = winner.urls.filter((url) => fetched(url, responses));
+    detail.fetched = got;
+    if (got.length === 0) {
+      return fail(id, `the regular face is loaded but none of its url()s was fetched (${winner.urls.slice(0, 2).join(", ")}): a local() source won or the request failed`, detail);
+    }
+    const verdicts = got.map((url) => ({ url, ...judge(url) }));
+    detail.sources = verdicts;
+    const good = verdicts.find((v) => v.ok);
+    if (good) return pass(id, `regular face loaded from ${good.url} (${good.how})`, detail);
+    const bad = verdicts[0]!;
+    return fail(id, `the regular face loads from ${bad.path ?? bad.url}: ${bad.how}`, detail);
   });
 }

@@ -2,10 +2,11 @@
  * One app, one runtime session: start it with its run profile (scripts/lib/app-runner.ts), open the
  * verify route in a fresh guarded browser context (or its Electron window), run a page check, then
  * check the bound URL, the served files and the blocked requests, and stop only what this run started.
+ * The page sees the fixed clock (capture.ts FIXED_TIME) and prefers-color-scheme light from its first load.
  */
 import { fileURLToPath } from "node:url";
-import { runSteps } from "../capture";
-import { guardedContext, OWNER_PORTS, type RunningApp, servedFromRoot, splitBlocked, startApp } from "../app-runner";
+import { fixClock, runSteps } from "../capture";
+import { guardedContext, OWNER_PORTS, refreshStartedPorts, type RunningApp, servedFromRoot, splitBlocked, startApp } from "../app-runner";
 import type { AppEntry, RouteSpec } from "../registry";
 import { type Assertion, fail, pass, type ResponseLog, trackResponses, warn } from "./assertions";
 
@@ -26,12 +27,16 @@ export interface RuntimeReport {
   expectedBlocked: string[];
   servedFiles?: { checked: number; ok: boolean; outside: string[]; unresolved: string[] };
   consoleErrors: string[];
+  /** "fixed" when the page saw the fixed clock, else why not. */
+  clock?: string;
 }
 
 export interface PageContext {
   responses: ResponseLog;
   /** The route's waitFor and steps; re-run after a reload. */
   prepare: (page: any) => Promise<void>;
+  /** The running app (served-path mapping, its temp dir). */
+  running: RunningApp;
 }
 
 /** The route verify:apps checks: verify.route, else the first route. */
@@ -142,6 +147,7 @@ export async function inRunningApp(
       blocked = running.blocked ?? (() => []);
     } else {
       ({ context, blocked } = await guardedContext(session.browser, running, { colorScheme: "light" }));
+      report.clock = await fixClock(context);
       page = await context.newPage();
     }
     const responses = trackResponses(page);
@@ -153,14 +159,17 @@ export async function inRunningApp(
     const route = verifyRoute(app);
     const prepare = routePreparer(route);
     if (app.run.mode === "electron") {
-      await page.waitForLoadState("load", { timeout: 60_000 });
+      // The window loaded at launch: load it again under light and the fixed clock, with the response log attached.
+      await page.emulateMedia({ colorScheme: "light" });
+      report.clock = await fixClock(running.electron!.app.context());
+      await page.reload({ waitUntil: "load", timeout: 60_000 });
     } else {
       report.assertions.push(boundUrlAssertion(running));
       await page.goto(`${running.baseUrl}${route?.path ?? "/"}`, { waitUntil: "load", timeout: 60_000 });
     }
     try {
       await prepare(page);
-      report.assertions.push(...(await check(page, { responses, prepare })));
+      report.assertions.push(...(await check(page, { responses, prepare, running })));
     } catch (error) {
       report.assertions.push(fail("page", `the verify route did not finish: ${(error as Error).message.split("\n")[0]}`));
     }
@@ -192,6 +201,8 @@ export async function inRunningApp(
     report.assertions.push(fail("session", (error as Error).message.split("\n")[0]));
   } finally {
     await context?.close().catch(() => undefined);
+    // A port bound after the start (an owner port included) is only known after a fresh read.
+    refreshStartedPorts(running);
     report.startedPorts = [...running.startedPorts];
     for (const violation of running.violations ?? []) report.assertions.push(fail("owner-port-bound", violation));
     try {

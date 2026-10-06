@@ -1,16 +1,20 @@
 /**
  * Runtime check: proves in a real browser that each app renders from the design-system tokens.
  *
- *   bun run verify:apps [--root <dir>] [--out-dir <dir>] [--pass <1|2|3>] [app...]
+ *   bun run verify:apps [--root <dir>] [--out-dir <dir>] [--pass <1|2|3>] [--registry <apps.json>] [app...]
  *   bun run verify:apps --propagate --root <dir> [--out-dir <dir>] [app...]
  *   bun run verify:apps --restore --root <dir> [--out-dir <dir>]
  *
  * Each app starts with its run profile (scripts/lib/app-runner.ts) and a fresh browser context.
- * Assertions: token probes compute to the current build's values in the default theme and after the
- * dark switch (dark-first: dark is the default), Inter and IBM Plex Mono load as web fonts, the
- * sidebar state survives a reload (shell apps; n/a at --pass 1 unless the shell renders), the URL
+ * Assertions: the design-system package the app uses resolves inside --root with the current
+ * tokens.css (every run mode), the verify spec probes page, panel, text and border, token probes
+ * compute to the current build's values in the default theme and after the dark switch (dark-first:
+ * dark is the default), the regular faces of Inter and IBM Plex Mono load from the package's fonts/,
+ * the sidebar state survives a reload (shell apps; n/a at --pass 1 unless the shell renders), the URL
  * came from the server output, every served file is inside --root, and no request was blocked.
- * Run mode none: a static check, reported as not runtime-verified.
+ * Run mode none: always the static check (package and entry stylesheet), reported as not
+ * runtime-verified; the verify gate's n/a reason covers only the runtime part.
+ * Refuses to run while a propagate journal is unrestored or a build holds the sentinel color.
  *
  * Writes <out-dir>/<app>/verify/<ISO timestamp>.json per app and prints a summary. Exit 1 on any failure.
  */
@@ -18,12 +22,16 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { type AppEntry, DESIGN_SYSTEM_ROOT, getApp, loadRegistry, type PassId, type Registry } from "./lib/registry";
+import { type AppEntry, DESIGN_SYSTEM_ROOT, getApp, loadRegistry, type PassId, REGISTRY_PATH, type Registry, resolvePath } from "./lib/registry";
+import { safeAppId, safeOutputPath } from "./lib/safe-paths";
 import { type Assertion, fail, na, pass } from "./lib/verify/assertions";
 import { checkPage, sentinelAssertions } from "./lib/verify/page-checks";
 import {
+  buildHashes,
   checkPropagateRoot,
   eligibleApps,
+  hashChanges,
+  propagateBlocker,
   readJournal,
   Refusal,
   type RestoreResult,
@@ -34,14 +42,16 @@ import {
   withSentinel,
 } from "./lib/verify/propagate";
 import type { RuntimeReport, Session } from "./lib/verify/run-app";
-import { staticCheck } from "./lib/verify/static-check";
+import { fontSourceJudge, servedDiskPath } from "./lib/verify/font-source";
+import { PACKAGE, packageCheck, staticCheck } from "./lib/verify/static-check";
 import { type BuildValues, loadBuildValues } from "./lib/verify/tokens";
 
-const USAGE = `usage: bun run verify:apps [--root <dir>] [--out-dir <dir>] [--pass <1|2|3>] [--propagate | --restore] [app...]`;
+const USAGE = `usage: bun run verify:apps [--root <dir>] [--out-dir <dir>] [--pass <1|2|3>] [--registry <apps.json>] [--propagate | --restore] [app...]`;
 
 interface Args {
   root?: string;
   outDir: string;
+  registry: string;
   pass?: PassId;
   propagate: boolean;
   restore: boolean;
@@ -49,7 +59,7 @@ interface Args {
 }
 
 function parseArgs(argv: string[]): Args {
-  const args: Args = { outDir: process.env.DS_RUN || join(tmpdir(), "ds-rollout"), propagate: false, restore: false, apps: [] };
+  const args: Args = { outDir: process.env.DS_RUN || join(tmpdir(), "ds-rollout"), registry: REGISTRY_PATH, propagate: false, restore: false, apps: [] };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     const value = () => {
@@ -59,6 +69,7 @@ function parseArgs(argv: string[]): Args {
     };
     if (arg === "--root") args.root = value();
     else if (arg === "--out-dir") args.outDir = value();
+    else if (arg === "--registry") args.registry = resolve(value());
     else if (arg === "--pass") {
       const p = value();
       if (p !== "1" && p !== "2" && p !== "3") throw new Error(`--pass must be 1, 2 or 3, not ${p}`);
@@ -69,7 +80,8 @@ function parseArgs(argv: string[]): Args {
     else args.apps.push(arg);
   }
   if (args.propagate && args.restore) throw new Error("--propagate and --restore are exclusive");
-  args.outDir = resolve(args.outDir);
+  // Never the owner's tree (unless --root is that tree): the shared destination check.
+  args.outDir = safeOutputPath(args.outDir, { root: args.root, label: "--out-dir" });
   return args;
 }
 
@@ -141,7 +153,7 @@ function absorb(result: AppResult, report: RuntimeReport) {
 
 function writeResult(outDir: string, result: AppResult): string {
   result.ok = !result.assertions.some((a) => a.status === "fail");
-  const dir = join(outDir, result.app, "verify");
+  const dir = join(outDir, safeAppId(result.app), "verify");
   mkdirSync(dir, { recursive: true });
   const path = join(dir, `${result.timestamp}.json`);
   writeFileSync(path, `${JSON.stringify(result, null, 2)}\n`);
@@ -185,8 +197,20 @@ async function runtime(app: AppEntry, session: Session, check: Parameters<typeof
 
 // -- modes ----------------------------------------------------------------------------
 
+/** The design-system checkouts whose fonts/ count for an app without a resolved package (host-css): the root's own. */
+function rootPackageDir(root: string): string | null {
+  const dir = join(root, "design-system");
+  try {
+    return JSON.parse(readFileSync(join(dir, "package.json"), "utf8")).name === PACKAGE ? realpathSync(dir) : null;
+  } catch {
+    return null;
+  }
+}
+
 async function verifyMode(args: Args, registry: Registry): Promise<number> {
   const root = realpathSync(resolve(args.root ?? join(DESIGN_SYSTEM_ROOT, "..")));
+  const blocker = propagateBlocker({ outDirs: [args.outDir, process.env.DS_RUN], dsDirs: [join(root, "design-system"), DESIGN_SYSTEM_ROOT] });
+  if (blocker) throw new Refusal(`refusing to verify: ${blocker}`);
   const values = loadBuildValues(DESIGN_SYSTEM_ROOT);
   const meta = designSystemMeta(values);
   const unknown = args.apps.filter((id) => !registry.apps.some((app) => app.id === id));
@@ -204,15 +228,40 @@ async function verifyMode(args: Args, registry: Registry): Promise<number> {
     for (const app of apps) {
       const result = newResult(app, args, root, meta);
       result.playwright = version;
-      if (!app.gates.verify.required) {
-        result.assertions.push(na("gate", `verify gate is n/a: ${app.gates.verify.reason}`));
-      } else if (app.run.mode === "none") {
+      if (app.run.mode === "none") {
+        // Static, whatever the gate says: the gate's n/a reason covers only the runtime part.
         result.assertions.push(...staticCheck(app, root, values));
-      } else if (!browser && app.run.mode !== "electron") {
-        result.assertions.push(fail("playwright", error ?? "no browser"));
+        if (!app.gates.verify.required) result.assertions.push(na("gate", `runtime verify gate is n/a: ${app.gates.verify.reason}`));
+      } else if (!app.gates.verify.required) {
+        result.assertions.push(na("gate", `verify gate is n/a: ${app.gates.verify.reason}`));
       } else {
-        console.error(`verify:apps: ${app.id}: starting (${app.run.mode})`);
-        absorb(result, await runtime(app, session, (page, ctx) => checkPage(page, { app, values, responses: ctx.responses, pass: args.pass, prepare: ctx.prepare })));
+        // Every run mode: the package the app uses is inside the root and carries the current build.
+        const pkg = packageCheck(app, root, values);
+        result.assertions.push(...pkg.assertions);
+        if (!browser && app.run.mode !== "electron") {
+          result.assertions.push(fail("playwright", error ?? "no browser"));
+        } else {
+          console.error(`verify:apps: ${app.id}: starting (${app.run.mode})`);
+          const packageDirs = [pkg.dir ?? (app.consume.via === "host-css" ? rootPackageDir(root) : null)].filter((dir): dir is string => dir !== null);
+          absorb(
+            result,
+            await runtime(app, session, (page, ctx) =>
+              checkPage(page, {
+                app,
+                values,
+                responses: ctx.responses,
+                pass: args.pass,
+                prepare: ctx.prepare,
+                fontSource: fontSourceJudge({
+                  packageDirs,
+                  buildFontsDir: join(DESIGN_SYSTEM_ROOT, "fonts"),
+                  copyDirs: [ctx.running.tmp, ...(app.consume.via === "copy" ? [resolvePath(root, app.repo)] : [])],
+                  diskPath: (url) => servedDiskPath(ctx.running, url),
+                }),
+              }),
+            ),
+          );
+        }
       }
       results.push({ result, path: writeResult(args.outDir, result) });
     }
@@ -229,6 +278,7 @@ async function propagateMode(args: Args, registry: Registry): Promise<number> {
   const journalDir = join(args.outDir, "propagate-journal");
   const statePath = join(process.env.DS_RUN || args.outDir, "STATE.md");
   const eligibility = eligibleApps(registry, args.apps, existsSync(statePath) ? readFileSync(statePath, "utf8") : null);
+  for (const problem of eligibility.problems) console.error(`verify:apps: --propagate: ledger: ${problem}`);
   for (const skip of eligibility.skipped) console.error(`verify:apps: --propagate skips ${skip.id}: ${skip.reason}`);
   if (eligibility.apps.length === 0) {
     console.error("verify:apps: --propagate found no eligible app (none listed, none done in the ledger with a live link); nothing changed");
@@ -238,7 +288,8 @@ async function propagateMode(args: Args, registry: Registry): Promise<number> {
   const meta = designSystemMeta(values);
   const { browser, version, error } = await openBrowser(root, eligibility.apps);
   const session: Session = { browser, root, outDir: args.outDir };
-  const statusBefore = git(dsDir, "status", "--porcelain");
+  // Content, not git status: a file already modified before the run must come back byte-for-byte too.
+  const hashesBefore = buildHashes(dsDir);
   const pending: AppResult[] = [];
   let restore: RestoreResult;
   try {
@@ -264,16 +315,14 @@ async function propagateMode(args: Args, registry: Registry): Promise<number> {
   } finally {
     await browser?.close().catch(() => undefined);
   }
-  const statusAfter = git(dsDir, "status", "--porcelain");
+  const changes = hashChanges(hashesBefore, buildHashes(dsDir));
   const restoreAssertions: Assertion[] = [
     restore.ok
       ? pass("restore", `restored ${restore.restored.length} theme file(s); bun run build and bun run check passed in ${restore.dsDir}`)
       : fail("restore", `restore incomplete: build ${restore.build.ok ? "ok" : "FAILED"}, check ${restore.check.ok ? "ok" : "FAILED"}\n${restore.check.output}`),
-    statusBefore === null
-      ? na("restore.git", `${dsDir} is not a git checkout`)
-      : statusBefore === statusAfter
-        ? pass("restore.git", "git status of the design-system is unchanged")
-        : fail("restore.git", `git status of ${dsDir} changed:\nbefore:\n${statusBefore}\nafter:\n${statusAfter}`),
+    changes.length === 0
+      ? pass("restore.files", `tokens/themes and dist are byte-identical to before the run (${Object.keys(hashesBefore).length} files, sha256)`)
+      : fail("restore.files", `${changes.length} file(s) under tokens/themes or dist differ from before the run: ${changes.slice(0, 5).join(", ")}`, { changes }),
   ];
   console.error(`verify:apps: restored ${dsDir} (${restore.restored.join(", ")}); build ${restore.build.ok ? "ok" : "FAILED"}, check ${restore.check.ok ? "ok" : "FAILED"}`);
   const results = pending.map((result) => {
@@ -316,7 +365,7 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
   installSignalHandlers();
   try {
     if (args.restore) return restoreMode(args);
-    const registry = loadRegistry();
+    const registry = loadRegistry(args.registry);
     return args.propagate ? await propagateMode(args, registry) : await verifyMode(args, registry);
   } catch (error) {
     if (error instanceof Refusal) {

@@ -3,9 +3,11 @@
  * Playwright root, and a registry entry whose probes cover page, panel, text, border and font.
  */
 import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { playwrightUnavailable } from "../scripts/lib/playwright.ts";
 import { type AppEntry, DESIGN_SYSTEM_ROOT, type VerifySpec } from "../scripts/lib/registry.ts";
+import { fontSourceJudge } from "../scripts/lib/verify/font-source.ts";
+import type { FontSourceJudge } from "../scripts/lib/verify/fonts.ts";
 
 export const FIXTURES = join(import.meta.dir, "fixtures/verify");
 /** Playwright and the fonts resolve from the mirror, like every rollout tool. */
@@ -45,6 +47,19 @@ export function fixtureResponse(pathname: string): Response {
   const page = join(FIXTURES, pathname.slice(1));
   if (pathname.endsWith(".html") && existsSync(page)) return new Response(Bun.file(page), { headers: { "content-type": "text/html" } });
   return new Response("not found", { status: 404 });
+}
+
+/** The font judge for pages fixtureResponse serves: /fonts/<file> is FONT_DIR/<file>, the package's fonts/. */
+export function fixtureFontSource(): FontSourceJudge {
+  return fontSourceJudge({
+    packageDirs: [dirname(FONT_DIR!)],
+    buildFontsDir: join(DESIGN_SYSTEM_ROOT, "fonts"),
+    copyDirs: [],
+    diskPath: (url) => {
+      const { pathname } = new URL(url);
+      return pathname.startsWith("/fonts/") ? join(FONT_DIR!, pathname.slice("/fonts/".length)) : null;
+    },
+  });
 }
 
 /** A registry entry for a fixture app; tests override what they exercise. */

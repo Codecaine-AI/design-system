@@ -13,6 +13,7 @@ import { loadPlaywright } from "../scripts/lib/playwright.ts";
 import { type AppEntry, DESIGN_SYSTEM_ROOT } from "../scripts/lib/registry.ts";
 import type { Assertion } from "../scripts/lib/verify/assertions.ts";
 import { checkPage } from "../scripts/lib/verify/page-checks.ts";
+import { fontSourceJudge, servedDiskPath } from "../scripts/lib/verify/font-source.ts";
 import { inRunningApp } from "../scripts/lib/verify/run-app.ts";
 import { loadBuildValues } from "../scripts/lib/verify/tokens.ts";
 import { browserSkip, MIRROR, makeFixtureRoot, runnableFixtureApp } from "./verify-support.ts";
@@ -21,6 +22,8 @@ const UI_PORT = 46963;
 const STRAY_PORT = 46969;
 /** A named profile port the run never binds (like a dead service URL the profile points at). */
 const DEAD_PORT = 46968;
+/** A port the stand-in server binds only when the page asks it to (after the run is ready). */
+const LATE_PORT = 46967;
 const values = loadBuildValues(DESIGN_SYSTEM_ROOT);
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-verify-run-")));
 afterAll(() => rmSync(scratch, { recursive: true, force: true }));
@@ -37,9 +40,16 @@ describe.skipIf(Boolean(browserSkip))("inRunningApp", () => {
     await browser?.close();
   });
 
+  // The fixture app serves byte copies of the package's fonts from its own folder (like consume.via copy).
   const verify = (app: AppEntry, root: string) =>
     inRunningApp(app, { browser, root, outDir: join(scratch, "out") }, (page, ctx) =>
-      checkPage(page, { app, values, responses: ctx.responses, prepare: ctx.prepare }),
+      checkPage(page, {
+        app,
+        values,
+        responses: ctx.responses,
+        prepare: ctx.prepare,
+        fontSource: fontSourceJudge({ packageDirs: [], buildFontsDir: join(DESIGN_SYSTEM_ROOT, "fonts"), copyDirs: [root], diskPath: (url) => servedDiskPath(ctx.running, url) }),
+      }),
     );
   const byId = (assertions: Assertion[]) => Object.fromEntries(assertions.map((a) => [a.id, a]));
 
@@ -50,6 +60,12 @@ describe.skipIf(Boolean(browserSkip))("inRunningApp", () => {
     for (const id of ["bound-url", "served-from-root", "requests", "font: Inter", "sidebar.reload"]) expect([id, found[id]?.status]).toEqual([id, "pass"]);
     expect(report.baseUrl).toBe(`http://127.0.0.1:${UI_PORT}`);
     expect(report.blockedRequests).toEqual([]);
+    expect(report.clock).toBe("fixed");
+  }, 60_000);
+
+  test("a port the app binds after it is ready is read again before the report: it shows in startedPorts", async () => {
+    const report = await verify(runnableApp(`/?bind=${LATE_PORT}`), makeRoot());
+    expect(report.startedPorts).toContain(LATE_PORT);
   }, 60_000);
 
   test("a stylesheet served from outside the root and a request to a port the run did not start fail; a request to an unbound named port is expected-blocked", async () => {

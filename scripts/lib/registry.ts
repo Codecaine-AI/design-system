@@ -150,9 +150,10 @@ export interface VerifySpec {
    * Representative chrome elements and the token each CSS property must compute to
    * in the active theme: page background, a panel, body text, a border (one probe per role at least).
    * Example: { selector: "body", property: "background-color", token: "color.surface.page" }.
-   * `role` overrides the role the token family gives (see probeRole).
+   * `role` overrides the role the token family gives (see probeRole). `themes` limits the probe to
+   * those themes (board data drawn the same in both, say); default every theme the app is checked in.
    */
-  probes: Array<{ selector: string; property: string; token: string; role?: ProbeRole }>;
+  probes: Array<{ selector: string; property: string; token: string; role?: ProbeRole; themes?: Array<"light" | "dark"> }>;
   /** Roles the app has no element for, each with the reason. A role needs a probe or a waiver. */
   waivedRoles?: Array<{ role: ProbeRole; reason: string }>;
   /** How to switch to dark. On dark-first surfaces dark is the default; the check confirms it instead. */
@@ -237,11 +238,37 @@ export function probeRole(probe: VerifySpec["probes"][number]): ProbeRole | null
   return null;
 }
 
-/** Roles with neither a probe nor a waiver that gives a reason. */
-export function missingProbeRoles(verify: Pick<VerifySpec, "probes" | "waivedRoles">): ProbeRole[] {
-  const covered = new Set((verify.probes ?? []).map(probeRole));
+/** The themes verify:apps checks an app in: dark only on a dark-first surface, else light then dark. */
+export function checkedThemes(rule: ThemeRule | undefined): Array<"light" | "dark"> {
+  return rule === "dark-first" ? ["dark"] : ["light", "dark"];
+}
+
+/** Whether a probe is checked in a theme: its own `themes`, else every theme. */
+export function probeActive(probe: VerifySpec["probes"][number], theme: "light" | "dark"): boolean {
+  return !probe.themes || probe.themes.includes(theme);
+}
+
+/**
+ * What a verify spec lacks: roles with neither a probe active in a checked theme nor a waiver that
+ * gives a reason, and checked themes without an active page probe (unless the page role is waived).
+ */
+export function probeCoverage(verify: Pick<VerifySpec, "probes" | "waivedRoles">, rule: ThemeRule | undefined): { missingRoles: ProbeRole[]; themesWithoutPage: Array<"light" | "dark"> } {
+  const themes = checkedThemes(rule);
+  const probes = verify.probes ?? [];
+  const covered = new Set(probes.filter((probe) => themes.some((theme) => probeActive(probe, theme))).map(probeRole));
   const waived = new Set((verify.waivedRoles ?? []).filter((w) => w.reason?.trim()).map((w) => w.role));
-  return PROBE_ROLES.filter((role) => !covered.has(role) && !waived.has(role));
+  const missingRoles = PROBE_ROLES.filter((role) => !covered.has(role) && !waived.has(role));
+  const themesWithoutPage = waived.has("page") || missingRoles.includes("page") ? [] : themes.filter((theme) => !probes.some((probe) => probeRole(probe) === "page" && probeActive(probe, theme)));
+  return { missingRoles, themesWithoutPage };
+}
+
+/** probeCoverage as messages, empty when the spec covers every role. */
+export function probeCoverageProblems(verify: Pick<VerifySpec, "probes" | "waivedRoles">, rule: ThemeRule | undefined): string[] {
+  const { missingRoles, themesWithoutPage } = probeCoverage(verify, rule);
+  return [
+    ...(missingRoles.length ? [`verify.probes has no ${missingRoles.join(", ")} probe (add one, or a verify.waivedRoles entry with a reason)`] : []),
+    ...themesWithoutPage.map((theme) => `verify.probes has no page probe checked in ${theme} (a page probe's themes leave ${theme} out)`),
+  ];
 }
 
 export const DESIGN_SYSTEM_ROOT = resolve(import.meta.dir, "..", "..");
@@ -289,10 +316,7 @@ export function validateRegistry(registry: Registry): string[] {
     if (app.run?.mode === "electron" && !app.run.electron) problems.push(`${app.id}: run mode electron needs run.electron`);
     if (runnable && !app.routes?.length) problems.push(`${app.id}: run mode ${app.run.mode} needs at least one route`);
     if (runnable && app.gates?.verify?.required && !app.verify) problems.push(`${app.id}: gates.verify is required but verify is missing`);
-    if (app.verify) {
-      const missing = missingProbeRoles(app.verify);
-      if (missing.length) problems.push(`${app.id}: verify.probes has no ${missing.join(", ")} probe (add one, or a verify.waivedRoles entry with a reason)`);
-    }
+    if (app.verify) for (const problem of probeCoverageProblems(app.verify, app.theme?.rule)) problems.push(`${app.id}: ${problem}`);
     if (!runnable) {
       for (const g of ["verify", "snapshot"] as const)
         if (app.gates?.[g]?.required) problems.push(`${app.id}: gates.${g} is required but run mode is none`);
