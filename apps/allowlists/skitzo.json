@@ -2,7 +2,7 @@
   "literals": [
     {
       "file": "apps/skitzo/apps/frontend/src/app/(guest)/page.tsx",
-      "reason": "owner decision and audit wave 3: skitzo migrates its app screens only; the landing (hero, serif display, brass accent) is brand and stays (141 hits; includes the system sans stack the landing actually rendered in, since Outfit never applied on :root)"
+      "reason": "owner decision and audit wave 3: skitzo migrates its app screens only; the landing (hero, serif display, brass accent) is brand and stays (142 hits; includes the landing-route scrollbar radius; includes the system sans stack the landing actually rendered in, since Outfit never applied on :root)"
     },
     {
       "file": "apps/skitzo/apps/frontend/src/app/(app)/**",

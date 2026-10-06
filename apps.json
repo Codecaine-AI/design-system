@@ -3940,7 +3940,7 @@
       "theme": {
         "rule": "dark-first"
       },
-      "literalFloor": 164,
+      "literalFloor": 165,
       "allowlist": "apps/allowlists/skitzo.json",
       "shell": true,
       "folderStandard": true,
@@ -4115,7 +4115,7 @@
       "exceptions": [
         {
           "what": "allowlist",
-          "reason": "owner decision: the landing hero src/app/(guest)/page.tsx is brand and stays (141 literal hits and every class in that file). The serif display face Cormorant Garamond loads through next/font (src/app/layout.tsx:3,10-15; --font-display in globals.css:19), which is not a literal hit, so the allowlist has no entry for it"
+          "reason": "owner decision: the landing hero src/app/(guest)/page.tsx is brand and stays (142 literal hits and every class in that file). The serif display face Cormorant Garamond loads through next/font (src/app/layout.tsx:3,10-15; --font-display in globals.css:19), which is not a literal hit, so the allowlist has no entry for it"
         },
         {
           "what": "dormant since 2026-04-08",
