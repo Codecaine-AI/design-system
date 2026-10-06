@@ -32,6 +32,7 @@ import {
   type RunningApp,
 } from "../scripts/lib/app-runner.ts";
 import { adoptStyleSheet, DETERMINISM_CSS } from "../scripts/lib/capture.ts";
+import { pinRepos, resetPinsForTests } from "../scripts/lib/git.ts";
 import { loadPlaywright, playwrightAnchor, playwrightUnavailable } from "../scripts/lib/playwright.ts";
 import { realHome } from "../scripts/lib/safe-paths.ts";
 import { SYSTEM_BIN } from "../scripts/lib/system-bin.ts";
@@ -464,6 +465,36 @@ describe("startApp", () => {
       foreign.stop(true);
     }
     expect(await portOpen(46903)).toBe(false);
+  });
+
+  test("a checkout the run may write whose .git entry, or the dir itself, changed by the time it stopped is a violation (Opus R4 P0-1)", async () => {
+    // The sandbox keeps a run from doing either; this stands in for a gap in it. The test (unsandboxed)
+    // makes the change while the run is up, and stop() must report it so verify, snapshot and
+    // registry-prove fail the run.
+    const gitCheckout = (root: string) => {
+      const git = (...args: string[]) => Bun.spawnSync([SYSTEM_BIN.git, "-c", "user.email=t@example.invalid", "-c", "user.name=t", "-C", join(root, "app"), ...args], { env: { PATH: "/usr/bin:/bin", HOME: scratch } });
+      git("init", "-q");
+      git("add", ".");
+      git("commit", "-q", "-m", "fixture");
+      return join(root, "app");
+    };
+    const rewritten = gitCheckout(makeRoot());
+    const swapped = gitCheckout(makeRoot());
+    resetPinsForTests(); // a fresh tool process: earlier tests in this file started apps
+    pinRepos([rewritten, swapped]); // as a tool does before its first app starts
+    const running = await start(fixtureApp({ ui: 46985, helper: 46986 }), dirname(rewritten));
+    cpSync(join(rewritten, ".git"), join(rewritten, "..", "elsewhere-git"), { recursive: true });
+    rmSync(join(rewritten, ".git"), { recursive: true, force: true });
+    writeFileSync(join(rewritten, ".git"), `gitdir: ${join(rewritten, "..", "elsewhere-git")}\n`);
+    await running.stop();
+    expect(running.violations ?? []).toEqual([expect.stringMatching(/the run replaced a checkout it may write, or its \.git entry: .*\/app \(dir \d+:\d+; \.git dir \d+:\d+ -> dir \d+:\d+; \.git file gitdir: /)]);
+
+    const again = await start(fixtureApp({ ui: 46985, helper: 46986 }), dirname(swapped));
+    cpSync(swapped, `${swapped}-copy`, { recursive: true });
+    rmSync(swapped, { recursive: true, force: true });
+    Bun.spawnSync(["/bin/mv", `${swapped}-copy`, swapped]);
+    await again.stop();
+    expect(again.violations ?? []).toEqual([expect.stringMatching(/the run replaced a checkout it may write, or its \.git entry: .*\/app \(dir (\d+:\d+); \.git dir \d+:\d+ -> dir (?!\1)\d+:\d+/)]);
   });
 });
 

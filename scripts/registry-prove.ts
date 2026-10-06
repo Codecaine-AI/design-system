@@ -37,7 +37,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { cleanupRuns, guardedContext, installSignalHandlers, launchBrowser, startApp, validateLoadedRegistry, type RunningApp } from "./lib/app-runner";
-import { appScope, gitEntries } from "./lib/checkouts";
+import { appScope, changedCheckouts, checkoutStates } from "./lib/checkouts";
 import { pinRepos } from "./lib/git";
 import { toolOutputDir } from "./lib/output-dir";
 import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, resolvePath, type AppEntry, type Registry, type RouteSpec } from "./lib/registry";
@@ -134,7 +134,7 @@ let openBrowser: any;
 async function prove(app: AppEntry, opts: { root: string; outDir: string; registry: Registry }): Promise<ProofResult> {
   const proofDir = () => proofPath(opts.outDir, opts.root);
   mkdirSync(proofDir(), { recursive: true });
-  // The app's checkouts' `.git` entries now (before it starts), compared after it stopped.
+  // The app's checkouts now (each dir and its `.git` entry, before it starts), compared after it stopped.
   const checkouts = (() => {
     try {
       return { checkouts: appScope(opts.root, app).checkouts };
@@ -142,7 +142,7 @@ async function prove(app: AppEntry, opts: { root: string; outDir: string; regist
       return { checkouts: [] };
     }
   })();
-  const gitBefore = gitEntries(checkouts);
+  const gitBefore = checkoutStates(checkouts.checkouts);
   const result: ProofResult = {
     app: app.id,
     date: new Date().toISOString(),
@@ -194,9 +194,8 @@ async function prove(app: AppEntry, opts: { root: string; outDir: string; regist
       } catch {}
     }
   }
-  // Every app checkout's `.git` entry must be what it was before the app started.
-  const gitAfter = gitEntries(checkouts);
-  const gitChanged = [...gitBefore].filter(([entry, state]) => gitAfter.get(entry) !== state).map(([entry]) => entry);
+  // Every app checkout (the dir and its `.git` entry) must be what it was before the app started.
+  const gitChanged = changedCheckouts(gitBefore, checkoutStates(checkouts.checkouts));
   if (gitChanged.length) result.gitChanged = gitChanged;
   if (running && (!result.egress || result.egress.samples === 0)) result.inconclusive = "egress sampling took no sample";
   else if (result.egress?.failures.length) result.inconclusive = `egress sampling failed: ${result.egress.failures[0]}`;
@@ -346,7 +345,7 @@ if (import.meta.main) {
     for (const [origin, n] of Object.entries(r.blockedTargets ?? {})) console.log(`  blocked ${n}x ${origin}`);
     for (const f of r.foreign) console.log(`  foreign ${f}`);
     if (!r.stoppedClean) console.log(`  NOT STOPPED CLEAN: ${r.stopError ?? ""}`);
-    if (r.gitChanged) console.log(`  .git entries changed while it ran: ${r.gitChanged.join(", ")}`);
+    if (r.gitChanged) console.log(`  checkouts or their .git entries changed while it ran: ${r.gitChanged.join(", ")}`);
     console.log(`  proof: ${join(outDir, "tooling/registry/proofs", `${id}.json`)}`);
   }
   process.exit(failed ? 1 : 0);
