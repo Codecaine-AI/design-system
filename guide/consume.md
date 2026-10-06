@@ -47,11 +47,13 @@ These builds cannot see a folder outside the repo. The app commits a packed copy
 1. In design-system, run `bun run pack --out <app>/vendor`. It refuses a stale build, packs, checks the tgz and prints two lines:
 
    ```text
-   tgz: <app>/vendor/codecaine-ai-design-system-0.1.0.tgz
+   tgz: <app>/vendor/codecaine-ai-design-system-0.2.0.tgz
    tokens.css sha256: <hex>
    ```
 
-2. In the app's `package.json`, under `dependencies`: `"@codecaine-ai/design-system": "file:vendor/codecaine-ai-design-system-0.1.0.tgz"`. A Dockerfile that runs `npm ci --omit=dev` skips `devDependencies`.
+   It never overwrites a tgz of the same name. If `vendor/` already holds the same bytes, it leaves the file and prints a third line, `unchanged: the same bytes were already at this path`. If it holds different bytes, it exits 1 and writes nothing: bump the version first (below).
+
+2. In the app's `package.json`, under `dependencies`: `"@codecaine-ai/design-system": "file:vendor/codecaine-ai-design-system-0.2.0.tgz"`. A Dockerfile that runs `npm ci --omit=dev` skips `devDependencies`.
 3. Run `npm install` (or `bun install`) in the app. The lockfile records the tgz path and its `integrity` hash.
 4. Make sure the build context holds `vendor/`. personal-site's Dockerfile copies it before the install:
 
@@ -66,7 +68,7 @@ These builds cannot see a folder outside the repo. The app commits a packed copy
 
 ### Repack after a token change
 
-Never repack under the same file name. The lockfile pins the old bytes by `integrity`. Measured with npm 10.9 and bun 1.4, offline, after a repack that kept the name:
+Never repack under the same file name: `bun run pack` refuses to overwrite a same-name tgz with different bytes. The lockfile pins the old bytes by `integrity`. Measured with npm 10.9 and bun 1.4, offline, after a repack that kept the name:
 
 | Install | npm | bun |
 | --- | --- | --- |
@@ -75,7 +77,7 @@ Never repack under the same file name. The lockfile pins the old bytes by `integ
 
 So a same-name repack looks fine locally and breaks the deployed build. These steps work for both package managers:
 
-1. In design-system, bump `version` in `package.json`, for example `0.1.0` to `0.1.1` (or a prerelease such as `0.1.0-rollout.2`). The tgz name follows the version. During the rollout, do not bump it yourself. Ask the managing agent.
+1. In design-system, bump the patch version in `package.json`. Every repack of a changed build bumps it: `0.2.0` to `0.2.1` on the next repack, then `0.2.2`. The tgz name follows the version. During the rollout, do not bump it yourself. Ask the managing agent.
 2. Run `bun run build`, then `bun run pack --out <app>/vendor`.
 3. Delete the old tgz from `<app>/vendor`, and change the dependency line to the new file name.
 4. Run `npm install` (or `bun install`) in the app. The lockfile gets the new path and `integrity`.
@@ -83,7 +85,7 @@ So a same-name repack looks fine locally and breaks the deployed build. These st
 
 After these steps, npm and bun install the new tokens, and a clean `npm ci` or `bun install --frozen-lockfile` with an empty cache passes.
 
-- Repacking an unchanged build writes identical bytes, even after a `touch` of its files, so it is safe.
+- Packing an unchanged build produces identical bytes, even after a `touch` of its files. `bun run pack` then leaves the existing tgz in place and prints `unchanged`, so it is safe and needs no bump.
 - npm only: `npm install "@codecaine-ai/design-system@file:vendor/<same name>.tgz"` also refreshes the lock entry. `bun add` with the same spec kept the old tokens.
 - Deleting the whole lockfile also works, but it re-resolves every other dependency. Do not do it.
 
@@ -92,7 +94,7 @@ After these steps, npm and bun install the new tokens, and a clean `npm ci` or `
 The conformance linter compares the sha256 of `package/dist/css/tokens.css` inside the vendored tgz with the current build's `dist/css/tokens.css`. `bun run pack` prints the hash of the copy it packed. By hand:
 
 ```sh
-tar -xzOf vendor/codecaine-ai-design-system-0.1.1.tgz package/dist/css/tokens.css | shasum -a 256
+tar -xzOf vendor/codecaine-ai-design-system-0.2.1.tgz package/dist/css/tokens.css | shasum -a 256
 shasum -a 256 <design-system>/dist/css/tokens.css
 ```
 
@@ -123,6 +125,8 @@ The linter's wiring check reads the app's entry stylesheet. Put the imports ther
 2. `tokens.css`, or `tokens-dark-first.css` on a dark-first surface (MainMenu, skitzo, gamecube, CircleSnakesWeb panels, the docs-mcp home page)
 3. `host-contract.css` (or `host-contract-dark-first.css`), only in a host of the agent viewer
 4. `layout.css`, only in an app with the shell
+
+On a dark-first surface, set `data-theme="dark"` on `<html>` if the app uses Tailwind's `dark:`. `dark:` then also matches inside a `data-theme="light"` region, because the dark `<html>` is still an ancestor. Token utilities (`dark:bg-panel`) follow the nearest theme and stay correct. Do not use a `dark:` utility whose value is not `var(--ds-*)` (`dark:hidden`, `dark:invert`, `dark:bg-[#0d1117]`) inside a light region. See Theming in [tokens.md](tokens.md).
 
 ### Plain CSS
 
@@ -177,6 +181,7 @@ A host of viewer-ui, viewer-shell or prompt-kit (simple-research-kernel, observa
 | `radius` | length | `--radius-sm: var(--radius);` (also `-md`, `-lg`) | `borderRadius: { sm: "var(--radius)" }` |
 
 - v4 hosts (observatory, gamecube) map the shadcn names as `var(--background)` today, because their copies hold hex values. Switch those lines to `rgb(var(--background))`.
+- `--editor-bg` and `--editor-gutter-bg` are always opaque (the build fails otherwise): viewer-ui paints its sticky line-number gutter with them, and code scrolls under it.
 - Do not keep `calc(var(--radius) - 4px)`: the radius is 2px, so it falls to 0 or below.
 - Non-color knobs (`--band-*-opacity`, `--selection-width`, `--zebra-opacity`, `--research-*`) are not in the sheet. Keep their defaults in the host or in the viewer-shell style engine.
 

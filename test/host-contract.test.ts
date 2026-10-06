@@ -7,6 +7,7 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { buildOutputs, ROOT, readSources, TokenError } from "../scripts/build.ts";
+import { evaluateColor } from "../scripts/lib/color.ts";
 import { cascade, type El, parseCss, readJson, readText, type Theme, workspaceRoot } from "./support.ts";
 
 type Format = "rgb" | "color" | "length";
@@ -53,7 +54,7 @@ const CONTRACT: Array<[string, Format, string]> = [
   ["syntax-number", "rgb", "color.syntax.number"],
   ["syntax-boolean", "rgb", "color.syntax.boolean"],
   // editor surface
-  ["editor-bg", "color", "color.code.bg"],
+  ["editor-bg", "color", "color.code.gutter-bg"],
   ["editor-fg", "color", "color.code.chip.ink"],
   ["editor-line-number", "color", "color.code.gutter-fg"],
   ["editor-line-number-active", "color", "color.code.header-fg"],
@@ -128,6 +129,27 @@ describe("dist/css/host-contract.css", () => {
       }
     }
     expect(wrong).toEqual([]);
+  });
+
+  test.each(PAIRS)("%s: --editor-bg and --editor-gutter-bg compute to opaque colors in both themes (viewer-ui paints a sticky gutter with them)", (host, tokens, first) => {
+    const sheets = [parseCss(readText(tokens)), parseCss(readText(host))];
+    const other: Theme = first === "light" ? "dark" : "light";
+    const translucent: string[] = [];
+    for (const chain of [[{ root: true }], [{ root: true }, { theme: other }]] as El[][]) {
+      const get = cascade(sheets, chain);
+      for (const name of ["--editor-bg", "--editor-gutter-bg"]) {
+        const value = get(name);
+        if (evaluateColor(value).a !== 1) translucent.push(`${name}: ${value}`);
+      }
+    }
+    expect(translucent).toEqual([]);
+  });
+
+  test.each(["editor-bg", "editor-gutter-bg"])("a translucent token behind --%s fails the build, naming the alias and the token", (name) => {
+    const sources = readSources(ROOT);
+    const light = sources.themes.find((s) => s.file.endsWith("/light.tokens.json"))!.json as any;
+    light.color.code["gutter-bg"].$value = "color-mix(in srgb, {color.gray.soft} 30%, transparent)";
+    expect(() => buildOutputs(ROOT, sources)).toThrow(new RegExp(`--${name} must be opaque .*color\\.code\\.gutter-bg \\(light\\)`));
   });
 
   test("a contract triplet on a translucent token fails the build, naming the token", () => {

@@ -7,7 +7,7 @@
  * styles.css). This sheet is the one copy, generated from tokens/.
  */
 import { cssName, GENERATED_NOTE, type Model, PREFIX, TokenError, themeOrder, themeSelector } from "../build.ts";
-import { rgbTriplet } from "./color.ts";
+import { evaluateColor, rgbTriplet } from "./color.ts";
 
 /**
  * How a host contract variable is written, by what its readers do with it:
@@ -23,10 +23,16 @@ export interface HostAlias {
   /** The token it reads. */
   token: string;
   format: HostFormat;
+  /**
+   * A color its readers paint as a solid surface, such as viewer-ui's sticky line-number gutter, which
+   * code scrolls under. The build fails when the token is translucent in any theme. Triplets are always opaque.
+   */
+  opaque?: true;
 }
 
 const rgb = (name: string, token: string): HostAlias => ({ name, token, format: "rgb" });
 const color = (name: string, token: string): HostAlias => ({ name, token, format: "color" });
+const solid = (name: string, token: string): HostAlias => ({ name, token, format: "color", opaque: true });
 
 /** The contract, grouped as the hosts declare it. Names are the readers' API: never rename one. */
 export const HOST_CONTRACT: ReadonlyArray<{ group: string; aliases: HostAlias[] }> = [
@@ -81,11 +87,12 @@ export const HOST_CONTRACT: ReadonlyArray<{ group: string; aliases: HostAlias[] 
   {
     group: "editor surface (prompt-kit)",
     aliases: [
-      color("editor-bg", "color.code.bg"),
+      // color.code.bg is translucent in light; gutter-bg is the same panel composited over the page.
+      solid("editor-bg", "color.code.gutter-bg"),
       color("editor-fg", "color.code.chip.ink"),
       color("editor-line-number", "color.code.gutter-fg"),
       color("editor-line-number-active", "color.code.header-fg"),
-      color("editor-gutter-bg", "color.code.gutter-bg"),
+      solid("editor-gutter-bg", "color.code.gutter-bg"),
       color("editor-rule", "color.border.subtle"),
       color("editor-guide", "color.border.guide"),
       color("editor-landmark", "color.surface.sunken"),
@@ -128,7 +135,10 @@ function hostValue(model: Model, alias: HostAlias, theme: string): string {
   return `var(${cssName(alias.token)})`;
 }
 
-/** Every alias's token exists, with a type that fits its format. Throws TokenError listing the problems. */
+/**
+ * Every alias's token exists, with a type that fits its format, and an `opaque` alias resolves to an
+ * opaque color in every theme. Throws TokenError listing the problems.
+ */
 function checkContract(model: Model): void {
   const problems: string[] = [];
   const seen = new Set<string>();
@@ -141,6 +151,20 @@ function checkContract(model: Model): void {
       if (!token) problems.push(`host contract: --${alias.name} reads ${alias.token}, which is not a token`);
       else if (alias.format === "length" ? token.type !== "dimension" || themed : token.type !== "color" || !themed) {
         problems.push(`host contract: --${alias.name} needs a ${alias.format === "length" ? "base dimension" : "theme color"}, but ${alias.token} is a ${themed ? "theme" : "base"} ${token.type}`);
+      } else if (alias.opaque) {
+        for (const theme of model.themes) {
+          const value = String(model.resolved.theme[theme].get(alias.token));
+          let alpha: number;
+          try {
+            alpha = evaluateColor(value).a;
+          } catch (error) {
+            problems.push(`host contract: --${alias.name} must be opaque, but ${alias.token} (${theme}): ${(error as Error).message}`);
+            continue;
+          }
+          if (Math.abs(alpha - 1) > 1e-9) {
+            problems.push(`host contract: --${alias.name} must be opaque (its readers paint it as a solid surface), but ${alias.token} (${theme}) is "${value}" with alpha ${+alpha.toFixed(4)}`);
+          }
+        }
       }
     }
   }
@@ -164,7 +188,7 @@ export function renderHostContractCss(model: Model, first: string = model.themes
     " * Formats, as the readers use them today:",
     " *   RGB triplet \"r g b\": the shadcn names, --trace-*, --status-*, --syntax-*, --agentprism-*,",
     " *     --tree-caret, --tree-connector, --selection-color, --zebra-color. Read as rgb(var(--x) / <alpha>).",
-    " *   Color: --editor-*. Read as var(--x).",
+    " *   Color: --editor-*. Read as var(--x). --editor-bg and --editor-gutter-bg are always opaque.",
     " *   Length: --radius, the one design-system radius.",
     " *",
     " * A triplet cannot be computed from a var() in CSS, so the build writes it from the token's resolved",
