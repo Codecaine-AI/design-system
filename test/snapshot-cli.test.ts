@@ -12,11 +12,18 @@ import { join } from "node:path";
 import { FIXED_TIME } from "../scripts/lib/capture.ts";
 import { decodePng } from "../scripts/lib/png.ts";
 import { DESIGN_SYSTEM_ROOT } from "../scripts/lib/registry.ts";
+import { assertNoLeaks } from "./leaks.ts";
 import { browserSkip, FIXTURES, runnableFixtureApp } from "./verify-support.ts";
 
 const PORT = 46976;
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-snapshot-cli-")));
-afterAll(() => rmSync(scratch, { recursive: true, force: true }));
+afterAll(() => {
+  try {
+    assertNoLeaks(scratch); // no app this file started may still listen
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+});
 
 /** Green when the page's clock reads FIXED_TIME, red otherwise; the same in light and dark. */
 const CLOCK_PAGE = `<!doctype html><html><head><style>html, body { margin: 0; height: 100%; }</style></head><body><script>
