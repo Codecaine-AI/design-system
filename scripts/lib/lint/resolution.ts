@@ -212,7 +212,8 @@ export function checkResolution(ctx: AppContext): CheckOutput {
     return f ? fileSha256(f) : null;
   };
   const graph = ctx.loads();
-  const dsLoads = graph.loads.filter(isDsLoad);
+  // One load per import: a stylesheet two roots share is walked for each (loads.ts).
+  const dsLoads = [...new Map(graph.loads.filter(isDsLoad).map((l) => [`${l.from}\0${l.line}\0${l.spec}\0${l.path}`, l])).values()];
   if (via === "vendor-tgz") {
     const members = dsReal ? shippedMembers(ds, dsReal, dsLoads) : [tokensMember];
     const want = new Map<string, string>();

@@ -19,7 +19,14 @@
  *   Nothing inside `<noscript>` or `<template>` loads.
  *
  * A root-absolute URL (`/src/site/styles.css`) resolves against the app's web root
- * (`run.serveRoot ?? run.cwd ?? app.root`), never against the importing file.
+ * (`run.serveRoot ?? run.cwd ?? app.root`), never against the importing file. A
+ * `/@codecaine-ai/design-system/<package path>` URL is that file in the design-system package
+ * the app resolves (decision 30: the host serves that prefix from it).
+ *
+ * Inlined stylesheets: in the registered server-rendered entry, a file's text read at run time
+ * (readFileSync, Bun.file(…).text(), a `?raw` import) and interpolated into a `<style>` block
+ * loads that file, in that block's root and condition (inline-css.ts, decision 30). Only a
+ * design-system file is recorded; the app's own inlined CSS is not walked.
  *
  * Conditions: a stylesheet loaded under a media query or a `supports(…)` condition
  * keeps that condition on its loads (and on everything it imports): it does not apply
@@ -30,7 +37,10 @@
  *
  * Compilation roots: Tailwind v4 (@tailwindcss/vite and /postcss) compiles each CSS
  * file a JS module imports or a page links, and each `<style>` block, on its own,
- * with its @import closure inlined. Every load records that root (`root`).
+ * with its @import closure inlined. Every load records that root (`root`). A stylesheet
+ * is walked once per root and inherited condition, so one shared by two roots, or loaded
+ * under a condition and then without one, gives its loads to each; an @import cycle stops
+ * at the file already on the walk path. `files` lists each file once.
  *
  * An @import after a rule (anything but `@charset`, another `@import` or an `@layer`
  * statement) is ignored by browsers, postcss-import and Lightning CSS: it is not a
@@ -48,8 +58,9 @@
 
 import { basename, extname, relative } from "node:path";
 import { lexJs, stripCss, stripHtml } from "../../scan-literals";
+import { inlineStylesheets } from "./inline-css";
 import { PACKAGE_NAME } from "./types";
-import { lineAt, owningPackage, readText, realpathOrNull, resolveSpecifier, splitSpecifier, toPosix } from "./workspace";
+import { designSystemUrlPath, isInside, lineAt, owningPackage, readText, realpathOrNull, resolveSpecifier, splitSpecifier, toPosix } from "./workspace";
 
 export type DsKind =
   | "fonts"
@@ -178,6 +189,9 @@ export function classify(spec: string, real: string | null): { kind: LoadKind; c
   if (parsed?.name === "tailwindcss") return pkgKind(tailwindKind(parsed.subpath));
   if (parsed?.name === PACKAGE_NAME) return pkgKind(DS_SUBPATHS[parsed.subpath] ?? "ds-other");
   if (parsed?.name === TEXT_MEASURE && parsed.subpath === "fonts.css") return pkgKind("text-measure-fonts");
+  // `/@codecaine-ai/design-system/<package path>`: a package file by URL (decision 30), resolved or not.
+  const urlPath = designSystemUrlPath(clean);
+  if (urlPath !== null) return pkgKind(DS_FILES[urlPath] ?? (CSS_EXT.test(urlPath) ? "ds-other" : null));
   if (!real) return null;
   const pkg = owningPackage(real);
   if (pkg?.name === PACKAGE_NAME) return pkgKind(DS_FILES[toPosix(relative(pkg.dir, real))] ?? (CSS_EXT.test(real) ? "ds-other" : null));
@@ -207,6 +221,8 @@ interface Ref {
   root?: string;
   /** An @import after a rule: ignored unless Tailwind compiles its root and inlines it. */
   late?: boolean;
+  /** A stylesheet whose text the server-rendered entry inlines into a <style> block: the file's real path (inline-css.ts). */
+  inline?: string;
   /** `@import url(…)`: Tailwind does not inline it, so it stays where it is. */
   urlForm?: boolean;
 }
@@ -412,7 +428,7 @@ function statementStarts(text: string, inStr: Uint8Array): (index: number) => bo
 const INLINE_DOCUMENT = /<!doctype\s+html|<html[\s>]/i;
 
 /** `file` is set for the entry module when it renders a page: its strings' markup is then read too. */
-function jsRefs(src: string, file?: string): Ref[] {
+function jsRefs(src: string, file?: string, designSystem?: string | null): Ref[] {
   const { text, inStr } = lexJs(src);
   const refs: Ref[] = [];
   const atStatement = statementStarts(text, inStr);
@@ -428,6 +444,7 @@ function jsRefs(src: string, file?: string): Ref[] {
     const markup = blankHidden(src);
     for (const r of linkRefs(markup)) if (inStr[r.index]) refs.push(r);
     const inBlock: Array<[number, number]> = [];
+    const inlined = inlineStylesheets(text, inStr, { file, designSystem });
     let n = 0;
     for (const m of markup.matchAll(STYLE_BLOCK)) {
       if (!inStr[m.index!]) continue;
@@ -436,6 +453,10 @@ function jsRefs(src: string, file?: string): Ref[] {
       const media = attrsOf(m[1]).get("media");
       const opts = { root: `${file}#style${++n}`, condition: media === undefined ? undefined : mediaCondition(media) };
       for (const r of cssRefs(m[2], start, opts)) if (inStr[r.index]) refs.push(r);
+      // A file's text interpolated into the block (decision 30): it loads that file.
+      for (const l of inlined(start, start + m[2].length)) {
+        refs.push({ spec: l.spec, index: l.index, as: "css", inline: l.path, root: opts.root, condition: opts.condition });
+      }
     }
     for (const r of cssRefs(markup)) {
       if (inStr[r.index] && !inBlock.some(([s, e]) => r.index >= s && r.index < e)) refs.push({ ...r, root: `${file}#inline` });
@@ -461,7 +482,7 @@ function htmlRefs(src: string, file: string): Ref[] {
   return refs.sort((a, b) => a.index - b.index);
 }
 
-function refsOf(file: string, src: string, isEntry: boolean): Ref[] {
+function refsOf(file: string, src: string, isEntry: boolean, designSystem?: string | null): Ref[] {
   const ext = extname(file).toLowerCase();
   if (CSS_EXT.test(file)) {
     const text = stripCss(src, ext !== ".css");
@@ -473,7 +494,7 @@ function refsOf(file: string, src: string, isEntry: boolean): Ref[] {
       for (const m of src.matchAll(new RegExp(INLINE_DOCUMENT.source, "gi"))) if (inStr[m.index!]) return true;
       return false;
     })();
-    return jsRefs(src, inlineMarkup ? file : undefined);
+    return jsRefs(src, inlineMarkup ? file : undefined, designSystem);
   }
   if (/\.(?:html?|vue|svelte|astro)$/i.test(file)) return htmlRefs(src, file);
   return [];
@@ -482,6 +503,11 @@ function refsOf(file: string, src: string, isEntry: boolean): Ref[] {
 export interface LoadGraphOptions {
   /** The app's web root: where a root-absolute URL (`/src/main.tsx`) points. */
   serveRoot?: string;
+  /**
+   * Real path of the design-system package the app resolves: a root-absolute
+   * `/@codecaine-ai/design-system/<package path>` URL is that file in it (decision 30).
+   */
+  designSystem?: string | null;
 }
 
 export function buildLoadGraph(entry: string | null, opts: LoadGraphOptions = {}): LoadGraph {
@@ -491,9 +517,21 @@ export function buildLoadGraph(entry: string | null, opts: LoadGraphOptions = {}
   if (!real) return graph;
   graph.entry = real;
   graph.entryExists = true;
+  /** Walks done: a stylesheet once per compilation root and inherited condition, a module once. */
   const visited = new Set<string>();
+  /** The files on the current walk path: an @import cycle stops there. */
+  const onPath = new Set<string>();
+  const files = new Set<string>();
+  const unresolvedSeen = new Set<string>();
+  const unresolved = (u: Unresolved) => {
+    const key = `${u.from}\0${u.line}\0${u.spec}`;
+    if (unresolvedSeen.has(key)) return;
+    unresolvedSeen.add(key);
+    graph.unresolved.push(u);
+  };
   const targetOf = (ref: Ref, from: string) => {
-    const resolved = resolveSpecifier(ref.spec, from, ref.url === true, opts.serveRoot);
+    if (ref.inline) return ref.inline;
+    const resolved = resolveSpecifier(ref.spec, from, ref.url === true, opts.serveRoot, opts.designSystem);
     return resolved ? realpathOrNull(resolved) : null;
   };
 
@@ -534,12 +572,26 @@ export function buildLoadGraph(entry: string | null, opts: LoadGraphOptions = {}
 
   /** `root`: the compilation root of a stylesheet; null for a JS module or an HTML page. */
   const visit = (file: string, jsDepth: number, depth: number, inherited: string | undefined, root: string | null) => {
-    if (visited.has(file) || depth > MAX_DEPTH) return;
-    visited.add(file);
-    graph.files.push(file);
+    // A stylesheet shared by two roots, or loaded under a condition and then without one, is
+    // walked for each: its loads belong to each root and condition (Codex r3 P1).
+    const key = root === null ? `\0${file}` : `${root}\0${inherited ?? ""}\0${file}`;
+    if (visited.has(key) || onPath.has(file) || depth > MAX_DEPTH) return;
+    visited.add(key);
+    if (!files.has(file)) {
+      files.add(file);
+      graph.files.push(file);
+    }
     const src = readText(file);
     if (src === null) return;
-    const refs = refsOf(file, src, file === real);
+    onPath.add(file);
+    try {
+      walk(file, src, jsDepth, depth, inherited, root);
+    } finally {
+      onPath.delete(file);
+    }
+  };
+  const walk = (file: string, src: string, jsDepth: number, depth: number, inherited: string | undefined, root: string | null) => {
+    const refs = refsOf(file, src, file === real, opts.designSystem);
     for (const ref of refs) {
       const line = lineAt(src, ref.index);
       const condition = [inherited, ref.condition].filter(Boolean).join(" and ") || undefined;
@@ -549,6 +601,8 @@ export function buildLoadGraph(entry: string | null, opts: LoadGraphOptions = {}
       const refRoot = root ?? ref.root ?? target ?? `${file}:${line}`;
       const inert = ref.late === true && (ref.urlForm === true || !tailwindCompiles(refRoot, refs, file));
       const cls = isCss ? classify(ref.spec, target) : null;
+      // Inlined text is not parsed as a stylesheet of the app: only a design-system file counts.
+      if (ref.inline && !cls) continue;
       if (cls) {
         const load: Load = { kind: cls.kind, spec: ref.spec, from: file, line, path: TAILWIND_KINDS.has(cls.kind) ? null : target, copied: cls.copied, root: refRoot };
         if (condition) load.condition = condition;
@@ -557,16 +611,16 @@ export function buildLoadGraph(entry: string | null, opts: LoadGraphOptions = {}
           continue;
         }
         graph.loads.push(load);
-        if (DS_KINDS.has(cls.kind) && !target) graph.unresolved.push({ spec: ref.spec, from: file, line });
+        if (DS_KINDS.has(cls.kind) && !target) unresolved({ spec: ref.spec, from: file, line });
         continue;
       }
       if (inert) continue;
       if (!target) {
-        if (isCss && !/^(?:https?:)?\/\//i.test(ref.spec)) graph.unresolved.push({ spec: ref.spec, from: file, line });
+        if (isCss && !/^(?:https?:)?\/\//i.test(ref.spec)) unresolved({ spec: ref.spec, from: file, line });
         continue;
       }
-      // Third-party files: recorded only when they are design-system files (above).
-      if (target.includes("/node_modules/")) continue;
+      // Third-party files and the package itself: recorded only when they are design-system files (above).
+      if (target.includes("/node_modules/") || (opts.designSystem && isInside(target, opts.designSystem))) continue;
       if (isCss) visit(target, jsDepth, depth + 1, condition, refRoot);
       else if (JS_EXT.test(target) && (ref.spec.startsWith(".") || ref.spec.startsWith("/")) && jsDepth < JS_DEPTH) {
         visit(target, jsDepth + 1, depth + 1, condition, null);
