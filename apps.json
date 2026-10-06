@@ -1906,13 +1906,13 @@
       },
       "consume": {
         "via": "host-css",
-        "detail": "Host CSS only (docs-workbench, docs-publish). Keeps literal var() fallbacks: the viewer must render without the host stylesheet."
+        "detail": "Host CSS only (docs-workbench, docs-publish). Existing literal var() fallbacks stay; values migrated in pass 1 read var(--ds-*) without fallbacks (decision 55), so every host loads tokens.css first (decision 62)."
       },
       "entryStylesheet": null,
       "theme": {
         "rule": "light-dark"
       },
-      "literalFloor": 386,
+      "literalFloor": 388,
       "allowlist": "apps/allowlists/docs-viewer.json",
       "shell": false,
       "folderStandard": false,
