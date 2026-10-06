@@ -58,6 +58,11 @@ function lazy<T>(make: () => T): () => T {
   };
 }
 
+/** The app's web root, where a root-absolute URL points: `run.serveRoot ?? run.cwd ?? app.root`. */
+export function serveRootOf(app: AppEntry, root: string): string {
+  return resolvePath(root, app.run?.serveRoot ?? app.run?.cwd ?? app.root);
+}
+
 export function makeContext(app: AppEntry, opts: { root: string; registryDir: string; ds: DesignSystemBuild }): AppContext {
   const root = opts.root;
   const rel = (abs: string) => {
@@ -66,7 +71,7 @@ export function makeContext(app: AppEntry, opts: { root: string; registryDir: st
   };
   const setup = lazy(() => scanSetup(app, root));
   const sources = lazy<SourceFile[]>(() => collectSources(setup(), rel));
-  const loads = lazy<LoadGraph>(() => buildLoadGraph(app.entryStylesheet ? resolvePath(root, app.entryStylesheet) : null));
+  const loads = lazy<LoadGraph>(() => buildLoadGraph(app.entryStylesheet ? resolvePath(root, app.entryStylesheet) : null, { serveRoot: serveRootOf(app, root) }));
   const literalScan = lazy<LiteralScan>(() => runLiteralScan(setup()));
   return {
     app,

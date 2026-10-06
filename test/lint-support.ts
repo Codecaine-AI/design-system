@@ -88,6 +88,8 @@ export const NA_REASONS = {
 
 const UNCONNECTED = "apps/unconnected";
 const WIRING = "apps/wiring";
+const HTML_NESTED = "apps/html-nested";
+const FAKE_LOADS = "apps/fake-loads";
 
 export const APPS: AppEntry[] = [
   appEntry({ id: "connected", root: "apps/connected" }),
@@ -151,6 +153,25 @@ export const APPS: AppEntry[] = [
   // Literals: Tailwind default-scale classes in and out of class contexts.
   appEntry({ id: "scale-classes", root: "apps/scale-classes" }),
   appEntry({ id: "templated-unused", root: "apps/templated-unused" }),
+  // Wiring: stylesheets under a media or supports condition; root-absolute links on nested pages.
+  appEntry({ id: "conditional", root: WIRING, scan: { paths: [WIRING], exclude: [] }, entryStylesheet: `${WIRING}/conditional.css` }),
+  appEntry({ id: "html-nested", root: HTML_NESTED, scan: { paths: [HTML_NESTED], exclude: [] }, entryStylesheet: `${HTML_NESTED}/about/index.html` }),
+  appEntry({ id: "html-nested-broken", root: HTML_NESTED, scan: { paths: [HTML_NESTED], exclude: [] }, entryStylesheet: `${HTML_NESTED}/broken/index.html` }),
+  // Wiring: imports that load nothing (?url, a <link> in an export template, an import line in JSX text),
+  // and a server-rendered entry whose returned page links the stylesheets.
+  appEntry({ id: "fonts-url", root: FAKE_LOADS, entryStylesheet: `${FAKE_LOADS}/src/url-entry.tsx` }),
+  appEntry({ id: "fonts-in-string", root: FAKE_LOADS, entryStylesheet: `${FAKE_LOADS}/src/string-entry.tsx` }),
+  appEntry({ id: "fonts-in-jsx", root: FAKE_LOADS, entryStylesheet: `${FAKE_LOADS}/src/jsx-entry.tsx` }),
+  appEntry({
+    id: "ssr-home",
+    root: FAKE_LOADS,
+    stack: { summary: "server-rendered page (fixture)", tailwind: "none", packageManager: "bun" },
+    entryStylesheet: `${FAKE_LOADS}/src/home.ts`,
+    shell: false,
+    checks: { shell: { required: false, reason: "a single server-rendered page" } },
+  }),
+  appEntry({ id: "tw3-unused", root: "apps/tw3-unused", stack: { summary: "Tailwind v3 (fixture)", tailwind: "v3", packageManager: "bun" } }),
+  appEntry({ id: "tw3-bound", root: "apps/tw3-bound", stack: { summary: "Tailwind v3 (fixture)", tailwind: "v3", packageManager: "bun" } }),
   // Structure: component files in every wrong place, and every kind of entry file.
   appEntry({ id: "wrong-folders", root: "apps/wrong-folders" }),
   // Resolution: where each design-system file comes from.

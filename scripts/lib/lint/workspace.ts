@@ -318,11 +318,12 @@ function withExtensions(base: string): string | null {
 }
 
 /**
- * Resolves an import specifier from a file. Relative and root-absolute ("/src/main.tsx" from an
- * HTML page) specifiers resolve against the importing file; bare ones through node_modules.
+ * Resolves an import specifier from a file. Relative specifiers resolve against the importing
+ * file; root-absolute ones ("/src/main.tsx" from an HTML page) against `serveRoot`, the app's web
+ * root (an absolute file-system path when nothing is there); bare ones through node_modules.
  * `relativeFirst` (HTML and CSS references) tries a bare-looking path against the file first.
  */
-export function resolveSpecifier(spec: string, fromFile: string, relativeFirst = false): string | null {
+export function resolveSpecifier(spec: string, fromFile: string, relativeFirst = false, serveRoot?: string): string | null {
   const clean = spec.replace(/[?#].*$/, "");
   if (!clean || /^(?:https?:|data:|\/\/)/i.test(clean)) return null;
   if (clean.startsWith(".")) return withExtensions(resolve(dirname(fromFile), clean));
@@ -331,7 +332,7 @@ export function resolveSpecifier(spec: string, fromFile: string, relativeFirst =
     const local = withExtensions(resolve(dirname(fromFile), clean));
     if (local) return local;
   }
-  if (clean.startsWith("/")) return withExtensions(join(dirname(fromFile), clean)) ?? withExtensions(clean);
+  if (clean.startsWith("/")) return (serveRoot ? withExtensions(join(serveRoot, clean)) : null) ?? withExtensions(clean);
   const parsed = splitSpecifier(clean);
   if (!parsed) return null;
   const pkgDir = findPackageDir(parsed.name, dirname(fromFile));

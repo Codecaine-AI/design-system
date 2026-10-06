@@ -1,0 +1,6 @@
+@import "tailwindcss";
+@import "@codecaine-ai/design-system/fonts.css" all;
+@import "@codecaine-ai/design-system/tokens.css" print;
+@import "@codecaine-ai/design-system/layout.css" layer(base) screen;
+@import "@codecaine-ai/design-system/tailwind-strict.css" supports(display: grid);
+@import "@codecaine-ai/design-system/tailwind.css";

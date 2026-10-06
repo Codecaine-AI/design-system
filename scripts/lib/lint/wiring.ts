@@ -9,9 +9,14 @@
  *   host-contract-dark-first.css).
  * - Tailwind v4: tailwind-strict.css after `tailwindcss` and before tailwind.css.
  * - Tailwind v3: tailwind.config.* (in the app root, else up to the repo root)
- *   uses the preset @codecaine-ai/design-system/tailwind-v3-preset.
- * - A design-system stylesheet that does not resolve is a violation; another
- *   stylesheet that does not resolve (an alias, say) is a warning.
+ *   exports a config whose `presets` array holds the preset
+ *   @codecaine-ai/design-system/tailwind-v3-preset (`require(…)` or a binding of it).
+ * - A design-system stylesheet loaded under a media query or supports condition
+ *   (`@import "…/tokens.css" print`, `<link media="print">`) does not count: it does
+ *   not apply to every view. Each one is a violation.
+ * - A design-system stylesheet that does not resolve is a violation, and so is any
+ *   stylesheet the entry HTML page links itself; another stylesheet that does not
+ *   resolve (an alias, say) is a warning.
  */
 
 import { dirname, join } from "node:path";
@@ -47,15 +52,102 @@ function findTailwindConfig(start: string, stop: string): string | null {
   }
 }
 
+/** Index of the bracket closing the one at `open` (code characters only), or -1. */
+function closeOf(text: string, inStr: Uint8Array, open: number): number {
+  let depth = 0;
+  for (let i = open; i < text.length; i++) {
+    if (inStr[i]) continue;
+    const ch = text[i];
+    if (ch === "(" || ch === "{" || ch === "[") depth++;
+    else if (ch === ")" || ch === "}" || ch === "]") if (--depth === 0) return i;
+  }
+  return -1;
+}
+
+/** Top-level comma-separated parts of the bracket span (open, close). */
+function topLevelParts(text: string, inStr: Uint8Array, open: number, close: number): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let start = open + 1;
+  for (let i = open + 1; i < close; i++) {
+    if (inStr[i]) continue;
+    const ch = text[i];
+    if (ch === "(" || ch === "{" || ch === "[") depth++;
+    else if (ch === ")" || ch === "}" || ch === "]") depth--;
+    else if (ch === "," && depth === 0) {
+      parts.push(text.slice(start, i).trim());
+      start = i + 1;
+    }
+  }
+  parts.push(text.slice(start, close).trim());
+  return parts.filter(Boolean);
+}
+
+const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
+
+/**
+ * True when the config the file exports (`module.exports =`, `export default`, through a
+ * `defineConfig(…)`-style wrapper or a `const config = …` binding) has a `presets` array that
+ * holds the preset: `require("…preset")` or a name bound to it by `require` or `import`.
+ */
+export function exportsPreset(raw: string): boolean {
+  const { text, inStr } = lexJs(raw); // comments blanked: a commented-out preset does not count
+  const code = (i: number) => !inStr[i];
+  const presetSpec = `(?<q>["'])${esc(PRESET)}\\k<q>`;
+  const bindings = new Set<string>();
+  for (const re of [
+    new RegExp(`(?<![\\w$.])(?:const|let|var)\\s+([\\w$]+)\\s*=\\s*require\\(\\s*${presetSpec}\\s*\\)`, "g"),
+    new RegExp(`(?<![\\w$.])import\\s+(?:\\*\\s+as\\s+)?([\\w$]+)\\s+from\\s+${presetSpec}`, "g"),
+  ]) {
+    for (const m of text.matchAll(re)) if (code(m.index!)) bindings.add(m[1]);
+  }
+  const isPreset = (part: string) => {
+    const p = part.replace(/\.default$/, "").replace(/\s+as\s+[\w$.<>]+$/, "").trim();
+    return new RegExp(`^require\\(\\s*${presetSpec}\\s*\\)$`).test(p) || bindings.has(p);
+  };
+
+  // The exported value: skip wrapper calls and follow one binding.
+  const objectAt = (from: number, seen = 0): number => {
+    let i = from;
+    while (/\s/.test(text[i] ?? "")) i++;
+    if (text[i] === "{") return i;
+    if (text[i] === "(") return objectAt(i + 1, seen);
+    const word = /^[\w$.]+/.exec(text.slice(i))?.[0];
+    if (!word || seen > 3) return -1;
+    let j = i + word.length;
+    while (/\s/.test(text[j] ?? "")) j++;
+    if (text[j] === "(") return objectAt(j + 1, seen + 1);
+    const decl = new RegExp(`(?<![\\w$.])(?:const|let|var)\\s+${esc(word)}\\s*(?::[^=]+)?=`, "g").exec(text);
+    return decl && code(decl.index) ? objectAt(decl.index + decl[0].length, seen + 1) : -1;
+  };
+  for (const m of text.matchAll(/(?<![\w$.])(?:module\s*\.\s*exports\s*=|export\s+default\s+)/g)) {
+    if (!code(m.index!)) continue;
+    const open = objectAt(m.index! + m[0].length);
+    if (open === -1) continue;
+    const close = closeOf(text, inStr, open);
+    if (close === -1) continue;
+    for (const part of topLevelParts(text, inStr, open, close)) {
+      const kv = /^(["']?)presets\1\s*:\s*\[/.exec(part);
+      if (!kv) continue;
+      const arrOpen = part.indexOf("[", kv[0].length - 1);
+      const arrClose = part.lastIndexOf("]");
+      const inner = part.slice(arrOpen + 1, arrClose === -1 ? part.length : arrClose);
+      // Re-lex the array body: it holds the only strings that matter here.
+      const lexed = lexJs(`[${inner}]`);
+      if (topLevelParts(lexed.text, lexed.inStr, 0, inner.length + 1).some(isPreset)) return true;
+    }
+  }
+  return false;
+}
+
 function checkPreset(ctx: AppContext): Finding[] {
   const { app, appRoot } = ctx;
   const repoRoot = resolvePath(ctx.root, app.repo);
   const config = findTailwindConfig(appRoot, isInside(appRoot, repoRoot) ? repoRoot : appRoot);
   if (!config) return [{ file: app.root, line: 0, message: "Tailwind v3 app has no tailwind.config.* in the app root or above it in the repo" }];
   const raw = readText(config) ?? "";
-  const text = lexJs(raw).text; // comments blanked: a commented-out preset does not count
-  if (text.includes(PRESET) && /\bpresets\b/.test(text)) return [];
-  return [{ file: ctx.rel(config), line: lineOf(raw, "presets"), message: `does not use the preset: add presets: [require("${PRESET}")]` }];
+  if (exportsPreset(raw)) return [];
+  return [{ file: ctx.rel(config), line: lineOf(raw, "presets"), message: `does not use the preset: add presets: [require("${PRESET}")] to the exported config` }];
 }
 
 export function checkWiring(ctx: AppContext): CheckOutput {
@@ -78,12 +170,21 @@ export function checkWiring(ctx: AppContext): CheckOutput {
   const entryRel = ctx.rel(graph.entry!);
   const at = (l: Load) => ({ file: ctx.rel(l.from), line: l.line });
 
+  const entryIsPage = /\.(?:html?)$/i.test(graph.entry!);
   for (const u of graph.unresolved) {
     const isDs = graph.loads.some((l) => l.from === u.from && l.line === u.line && l.spec === u.spec);
-    (isDs ? violations : warnings).push({ file: ctx.rel(u.from), line: u.line, message: `${u.spec} does not resolve` });
+    if (isDs) violations.push({ file: ctx.rel(u.from), line: u.line, message: `${u.spec} does not resolve` });
+    else if (entryIsPage && u.from === graph.entry) {
+      violations.push({ file: ctx.rel(u.from), line: u.line, message: `${u.spec} does not resolve; the entry page links it, so the page loads no styles from it` });
+    } else warnings.push({ file: ctx.rel(u.from), line: u.line, message: `${u.spec} does not resolve` });
   }
 
-  const first = (...kinds: string[]) => graph.loads.find((l) => kinds.includes(l.kind));
+  for (const l of graph.loads) {
+    if (!l.condition || l.kind === "tailwindcss") continue;
+    violations.push({ ...at(l), message: `${l.spec} loads only under "${l.condition}", so it does not apply to every view; load it without a media or supports condition` });
+  }
+
+  const first = (...kinds: string[]) => graph.loads.find((l) => kinds.includes(l.kind) && !l.condition);
   const fonts = first("fonts");
   const darkFirst = app.theme?.rule === "dark-first";
   const tokens = darkFirst ? first("tokens", "tokens-dark-first") : first("tokens");

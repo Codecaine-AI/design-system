@@ -5,10 +5,22 @@
  * From the entry (CSS, a JS/TS module, or an HTML page) the walk follows, depth
  * first and in source order:
  * - CSS `@import` (local files and workspace packages, any depth)
- * - JS/TS `import`/`export from`/`require` of CSS, plus `<link>` tags and `@import`
- *   inside string literals (pages with inline HTML or CSS)
+ * - JS/TS `import`/`export from` statements (at the top level, where a statement can
+ *   start: an `import` line in JSX text is text) and `require` of CSS. An import with
+ *   `?url`, `?raw` or `?inline` returns the file as a value and injects nothing, so it
+ *   is not a load.
+ * - `<link>` tags and `@import` inside string literals, only in the registered entry
+ *   and only when it is a server-rendered HTML module (its strings hold `<!doctype
+ *   html>` or `<html>`, as docs-mcp's home page does); elsewhere such a string is an
+ *   export template or documentation, not the page's own stylesheet.
  * - local JS/TS imports up to JS_DEPTH modules deep (main.tsx -> App.tsx -> ...)
  * - HTML `<link rel="stylesheet">`, `<style>` and `<script src>` in document order
+ *
+ * A root-absolute URL (`/src/site/styles.css`) resolves against the app's web root
+ * (`run.serveRoot ?? run.cwd ?? app.root`), never against the importing file.
+ * A stylesheet loaded under a media query other than `all`/`screen`, or a
+ * `supports(…)` condition, keeps that condition on its loads (and on everything it
+ * imports): it does not apply to every page view.
  *
  * A design-system file is recognized by the package it resolves into (the nearest
  * package.json named @codecaine-ai/design-system), by its package specifier, or, for
@@ -42,6 +54,8 @@ export interface Load {
   path: string | null;
   /** A local file recognized as a copy of a design-system file by its header, not loaded from the package. */
   copied: boolean;
+  /** The media or supports condition the load sits under (`print`, `supports(display: grid)`); absent when it always applies. */
+  condition?: string;
 }
 
 export interface Unresolved {
@@ -133,17 +147,36 @@ interface Ref {
   as: "css" | "js";
   /** An HTML href/src or a CSS @import: a URL, document-relative before it is a package. */
   url?: boolean;
+  /** Media or supports condition (see conditionOf). */
+  condition?: string;
 }
 
-const CSS_IMPORT = /@import\s+(?:url\(\s*)?(["'])([^"'\n]+)\1/g;
+const CSS_IMPORT = /@import\s+(?:url\(\s*)?(["'])([^"'\n]+)\1(?:\s*\))?/g;
 const CSS_IMPORT_BARE_URL = /@import\s+url\(\s*([^"')\s]+)\s*\)/g;
 const LINK_TAG = /<link\b[^>]*>/gi;
 const ATTR = (name: string) => new RegExp(`\\b${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))`, "i");
+/** Vite query suffixes that return the file as a value (a URL or its text) instead of injecting it. */
+const VALUE_QUERY = /[?&](?:url|raw|inline)(?:[&=#]|$)/;
+
+/**
+ * The condition a stylesheet applies under, from an @import's tail (`layer(x) supports(…) print`)
+ * or a <link>'s media attribute. Undefined when it always applies: no media list, `all` or `screen`.
+ */
+export function conditionOf(tail: string): string | undefined {
+  let t = tail.trim().replace(/;$/, "").trim();
+  t = t.replace(/^layer(?:\([^)]*\))?/i, "").trim();
+  if (!t || /^(?:all|screen)$/i.test(t)) return undefined;
+  return t;
+}
 
 function cssRefs(text: string, offset = 0): Ref[] {
   const refs: Ref[] = [];
-  for (const m of text.matchAll(CSS_IMPORT)) refs.push({ spec: m[2], index: offset + m.index!, as: "css", url: true });
-  for (const m of text.matchAll(CSS_IMPORT_BARE_URL)) refs.push({ spec: m[1], index: offset + m.index!, as: "css", url: true });
+  const tail = (end: number) => {
+    const semi = text.indexOf(";", end);
+    return conditionOf(text.slice(end, semi === -1 ? Math.min(text.length, end + 300) : Math.min(semi, end + 300)));
+  };
+  for (const m of text.matchAll(CSS_IMPORT)) refs.push({ spec: m[2], index: offset + m.index!, as: "css", url: true, condition: tail(m.index! + m[0].length) });
+  for (const m of text.matchAll(CSS_IMPORT_BARE_URL)) refs.push({ spec: m[1], index: offset + m.index!, as: "css", url: true, condition: tail(m.index! + m[0].length) });
   return refs;
 }
 
@@ -155,7 +188,9 @@ function linkRefs(text: string, offset = 0): Ref[] {
     if (!rel || !/stylesheet/i.test(rel[1] ?? rel[2] ?? rel[3] ?? "")) continue;
     const href = tag.match(ATTR("href"));
     const v = href && (href[1] ?? href[2] ?? href[3]);
-    if (v && !v.includes("${")) refs.push({ spec: v, index: offset + m.index!, as: "css", url: true });
+    const media = tag.match(ATTR("media"));
+    const condition = media ? conditionOf(media[1] ?? media[2] ?? media[3] ?? "") : undefined;
+    if (v && !v.includes("${")) refs.push({ spec: v, index: offset + m.index!, as: "css", url: true, condition });
   }
   return refs;
 }
@@ -163,16 +198,46 @@ function linkRefs(text: string, offset = 0): Ref[] {
 const JS_IMPORT =
   /(?<![\w$.])(?:import\s+(?!type\b)(?:[\w$*{}\s,]+?\s+from\s+)?|export\s+(?!type\b)[\w$*{}\s,]+?\s+from\s+)(["'])([^"'\n]+)\1|(?<![\w$.])require\(\s*(["'])([^"'\n]+)\3\s*\)/g;
 
-function jsRefs(src: string): Ref[] {
+/** Characters a statement can follow: none (start of file), `;`, a closing bracket, the end of a string, a word. */
+const ENDS_STATEMENT = /[;})\]"'`\w$]/;
+
+/**
+ * Bracket depth before each offset of a lexed JS source, counting code characters only, and the
+ * offset of the previous significant code character. A static import is a statement only at depth 0.
+ */
+function statementStarts(text: string, inStr: Uint8Array): (index: number) => boolean {
+  const depth = new Int32Array(text.length + 1);
+  const prev = new Int32Array(text.length + 1);
+  let d = 0;
+  let last = -1;
+  for (let i = 0; i < text.length; i++) {
+    depth[i] = d;
+    prev[i] = last;
+    if (inStr[i]) continue;
+    const ch = text[i];
+    if (ch === "(" || ch === "{" || ch === "[") d++;
+    else if (ch === ")" || ch === "}" || ch === "]") d = Math.max(0, d - 1);
+    if (!/\s/.test(ch)) last = i;
+  }
+  return (index) => depth[index] === 0 && (prev[index] === -1 || ENDS_STATEMENT.test(text[prev[index]]));
+}
+
+/** An HTML document in a JS module's strings: the module renders a page on the server. */
+const INLINE_DOCUMENT = /<!doctype\s+html|<html[\s>]/i;
+
+function jsRefs(src: string, inlineMarkup = false): Ref[] {
   const { text, inStr } = lexJs(src);
   const refs: Ref[] = [];
+  const atStatement = statementStarts(text, inStr);
   for (const m of text.matchAll(JS_IMPORT)) {
     if (inStr[m.index!]) continue;
     const spec = m[2] ?? m[4];
+    if (m[2] !== undefined && !atStatement(m.index!)) continue; // `import …` in JSX text or inside an expression
+    if (VALUE_QUERY.test(spec)) continue;
     refs.push({ spec, index: m.index!, as: CSS_EXT.test(spec.replace(/[?#].*$/, "")) ? "css" : "js" });
   }
-  // Inline HTML or CSS in string literals (server-rendered pages).
-  for (const r of [...linkRefs(src), ...cssRefs(src)]) if (inStr[r.index]) refs.push(r);
+  // Inline HTML or CSS in string literals: the page a server-rendered entry module returns.
+  if (inlineMarkup) for (const r of [...linkRefs(src), ...cssRefs(src)]) if (inStr[r.index]) refs.push(r);
   return refs.sort((a, b) => a.index - b.index);
 }
 
@@ -189,40 +254,56 @@ function htmlRefs(src: string): Ref[] {
   return refs.sort((a, b) => a.index - b.index);
 }
 
-function refsOf(file: string, src: string): Ref[] {
+function refsOf(file: string, src: string, isEntry: boolean): Ref[] {
   const ext = extname(file).toLowerCase();
   if (CSS_EXT.test(file)) {
     const text = stripCss(src, ext !== ".css");
     return cssRefs(text);
   }
-  if (JS_EXT.test(file)) return jsRefs(src);
+  if (JS_EXT.test(file)) {
+    const inlineMarkup = isEntry && (() => {
+      const { inStr } = lexJs(src);
+      for (const m of src.matchAll(new RegExp(INLINE_DOCUMENT.source, "gi"))) if (inStr[m.index!]) return true;
+      return false;
+    })();
+    return jsRefs(src, inlineMarkup);
+  }
   if (/\.(?:html?|vue|svelte|astro)$/i.test(file)) return htmlRefs(src);
   return [];
 }
 
-export function buildLoadGraph(entry: string | null): LoadGraph {
+export interface LoadGraphOptions {
+  /** The app's web root: where a root-absolute URL (`/src/main.tsx`) points. */
+  serveRoot?: string;
+}
+
+export function buildLoadGraph(entry: string | null, opts: LoadGraphOptions = {}): LoadGraph {
   const graph: LoadGraph = { entry, entryExists: false, loads: [], unresolved: [], files: [] };
   if (!entry) return graph;
   const real = realpathOrNull(entry);
   if (!real) return graph;
+  graph.entry = real;
   graph.entryExists = true;
   const visited = new Set<string>();
 
-  const visit = (file: string, jsDepth: number, depth: number) => {
+  const visit = (file: string, jsDepth: number, depth: number, inherited: string | undefined) => {
     if (visited.has(file) || depth > MAX_DEPTH) return;
     visited.add(file);
     graph.files.push(file);
     const src = readText(file);
     if (src === null) return;
-    for (const ref of refsOf(file, src)) {
+    for (const ref of refsOf(file, src, file === real)) {
       const line = lineAt(src, ref.index);
-      const resolved = resolveSpecifier(ref.spec, file, ref.url === true);
+      const condition = [inherited, ref.condition].filter(Boolean).join(" and ") || undefined;
+      const resolved = resolveSpecifier(ref.spec, file, ref.url === true, opts.serveRoot);
       const target = resolved ? realpathOrNull(resolved) : null;
       const isCss = ref.as === "css" || (target !== null && CSS_EXT.test(target));
       const cls = isCss ? classify(ref.spec, target) : null;
       const kind = cls?.kind;
       if (cls && kind) {
-        graph.loads.push({ kind, spec: ref.spec, from: file, line, path: kind === "tailwindcss" ? null : target, copied: cls.copied });
+        const load: Load = { kind, spec: ref.spec, from: file, line, path: kind === "tailwindcss" ? null : target, copied: cls.copied };
+        if (condition) load.condition = condition;
+        graph.loads.push(load);
         if (kind !== "tailwindcss" && !target) graph.unresolved.push({ spec: ref.spec, from: file, line });
         continue;
       }
@@ -232,12 +313,12 @@ export function buildLoadGraph(entry: string | null): LoadGraph {
       }
       // Third-party files: recorded only when they are design-system files (above).
       if (target.includes("/node_modules/")) continue;
-      if (isCss) visit(target, jsDepth, depth + 1);
+      if (isCss) visit(target, jsDepth, depth + 1, condition);
       else if (JS_EXT.test(target) && (ref.spec.startsWith(".") || ref.spec.startsWith("/")) && jsDepth < JS_DEPTH) {
-        visit(target, jsDepth + 1, depth + 1);
+        visit(target, jsDepth + 1, depth + 1, condition);
       }
     }
   };
-  visit(real, 0, 0);
+  visit(real, 0, 0, undefined);
   return graph;
 }

@@ -152,9 +152,38 @@ describe("wiring", () => {
     expect(check("html-entry", "wiring")).toMatchObject({ status: "pass", violations: [] });
   });
 
-  test("Tailwind v3 needs the preset in tailwind.config.*; a commented-out preset does not count", () => {
-    expect(messages(check("tw3", "wiring").violations).filter((m) => m.includes("preset"))).toEqual([]);
-    expect(check("tw3-commented", "wiring").violations).toContainEqual(at("apps/tw3-commented/tailwind.config.js", 2, "does not use the preset"));
+  test("Tailwind v3 needs the preset in the exported presets array; commented out, required but unused, or elsewhere does not count", () => {
+    const presetFindings = (app: string) => check(app, "wiring").violations.filter((v) => v.message.includes("preset"));
+    expect(presetFindings("tw3")).toEqual([]);
+    expect(presetFindings("tw3-bound")).toEqual([]);
+    expect(presetFindings("tw3-commented")).toEqual([at("apps/tw3-commented/tailwind.config.js", 2, "does not use the preset")]);
+    expect(presetFindings("tw3-unused")).toEqual([at("apps/tw3-unused/tailwind.config.js", 3, "does not use the preset")]);
+  });
+
+  test("a root-absolute link on a nested page resolves against the app's web root; an unresolved link on the entry page fails", () => {
+    expect(check("html-nested", "wiring")).toMatchObject({ status: "pass", violations: [] });
+    expectExactly(check("html-nested-broken", "wiring").violations, [
+      at("apps/html-nested/broken/index.html", 5, "/styles/missing.css does not resolve; the entry page links it"),
+      // print.css is linked with media="print": the fonts.css it imports applies only when printing.
+      at("apps/html-nested/styles/print.css", 1, '@codecaine-ai/design-system/fonts.css loads only under "print"'),
+    ]);
+  });
+
+  test("a stylesheet imported under a media query or supports condition does not count; all and screen do", () => {
+    expectExactly(check("conditional", "wiring").violations, [
+      at("apps/wiring/conditional.css", 3, '@codecaine-ai/design-system/tokens.css loads only under "print"'),
+      at("apps/wiring/conditional.css", 5, '@codecaine-ai/design-system/tailwind-strict.css loads only under "supports(display: grid)"'),
+      at("apps/wiring/conditional.css", 1, "does not load @codecaine-ai/design-system/tokens.css"),
+      at("apps/wiring/conditional.css", 1, "Tailwind v4 app does not import @codecaine-ai/design-system/tailwind-strict.css"),
+    ]);
+  });
+
+  test.each(["fonts-url", "fonts-in-string", "fonts-in-jsx"])("%s: an import that injects nothing does not load fonts.css", (app) => {
+    expect(messages(check(app, "wiring").violations)).toEqual([expect.stringContaining("does not load fonts.css")]);
+  });
+
+  test("a server-rendered entry module loads the stylesheets its returned page links", () => {
+    expect(check("ssr-home", "wiring")).toMatchObject({ status: "pass", violations: [] });
   });
 
   test("host-contract.css sits between the tokens and layout.css, in the tokens' variant", () => {
