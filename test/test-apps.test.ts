@@ -16,7 +16,8 @@ import { assertNoLeaks } from "./leaks.ts";
 import { PKG } from "./support.ts";
 
 const STANDIN = String.raw`
-import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { spawn } from "node:child_process";
 import { dirname } from "node:path";
 const [mode, arg] = process.argv.slice(2);
 const write = (path, text = "x") => (mkdirSync(dirname(path), { recursive: true }), writeFileSync(path, text));
@@ -24,20 +25,41 @@ const bunSummary = (pass, fail) => " " + pass + " pass\n " + fail + " fail\nRan 
 switch (mode) {
   case "pass": console.log("(pass) s > a [0.10ms]\n" + bunSummary(3, 0)); break;
   case "known-fail": console.error("(fail) s > a [0.10ms]\n" + bunSummary(2, 1)); process.exit(1);
-  case "unhandled": console.error("# Unhandled error between tests\n-------\nerror: Cannot find module './gone.json' from '" + process.cwd() + "/a.test.ts'\n-------\n" + bunSummary(0, 1) + "\n 1 error"); process.exit(1);
+  // bun 1.4's own layout for an error outside a test: the file header, a code frame, then the error line.
+  case "unhandled":
+    console.error("a.test.ts:\n\n# Unhandled error between tests\n-------------------------------\n1 | import { test } from \"bun:test\";\n2 | throw new TypeError(\"boom\");\n              ^\nTypeError: boom in " + process.cwd() + "/a.test.ts\n      at " + process.cwd() + "/a.test.ts:2:11\n-------------------------------\n\n" + bunSummary(0, 1) + "\n 1 error");
+    process.exit(1);
   case "new-fail": console.error("(fail) s > a [0.10ms]\n(fail) s > b [0.20ms]\n" + bunSummary(1, 2)); process.exit(1);
-  case "vitest-new": console.log(" FAIL  src/a.test.ts > s > old\n FAIL  src/a.test.ts > s > fresh\n\n      Tests  2 failed | 5 passed (7)"); process.exit(1);
+  // vitest 3's layout: a file that cannot load is "FAIL  <file> [ <file> ]" and counts only under Test Files.
+  case "vitest-new": console.log(" FAIL  src/b.test.ts [ src/b.test.ts ]\nError: Cannot find module './missing.js'\n FAIL  src/a.test.ts > s > old\n FAIL  src/a.test.ts > s > fresh\n\n Test Files  2 failed (2)\n      Tests  2 failed | 5 passed (7)"); process.exit(1);
   case "unittest-known": console.error("FAIL: test_x (m.C.test_x)\n----\nRan 4 tests in 0.010s\n\nFAILED (failures=1)"); process.exit(1);
   case "tsc": console.log("src/a.ts(40,3): error TS2322: Type 'x' is not assignable to type 'y'.\nsrc/b.ts(1,1): error TS2304: Cannot find name 'z'."); process.exit(2);
   case "write-tracked": appendFileSync("tracked.txt", "more\n"); console.log(bunSummary(1, 0)); break;
   case "write-ignored": write("dist/new.txt"); console.log(bunSummary(1, 0)); break;
   case "write-enclosing": write("../../stray.txt"); console.log(bunSummary(1, 0)); break;
+  case "delete-ignored": rmSync("dist/old.txt"); console.log(bunSummary(1, 0)); break;
   case "quiet-writes":
     write("../../node_modules/.vite/deps/chunk.js");
     write("tsconfig.tsbuildinfo");
-    write("../../sibling/edit.txt");
     console.log(bunSummary(1, 0));
     break;
+  // Writes the sandbox must refuse: a sibling checkout, the app's own .git, a file outside every checkout.
+  case "denied-writes": {
+    const allowed = [];
+    for (const [path, text] of [["../../sibling/edit.txt", "x"], ["../.git/config", "[core]\n\tfsmonitor = touch " + arg + "\n"], [arg, "x"]]) {
+      try { appendFileSync(path, text); allowed.push(path); } catch {}
+    }
+    console.log((allowed.length ? "wrote " + allowed.join(", ") + "\n" : "") + bunSummary(allowed.length ? 0 : 1, allowed.length ? 1 : 0));
+    process.exit(allowed.length ? 1 : 0);
+  }
+  // A child that leaves the command's process group (setsid) and would outlive it.
+  case "stray": {
+    const child = spawn(process.execPath, ["-e", "setTimeout(() => {}, 60000)"], { detached: true, stdio: "ignore" });
+    child.unref();
+    write("node_modules/.cache/stray.pid", String(child.pid));
+    console.log(bunSummary(1, 0));
+    break;
+  }
   case "env": {
     const problems = [];
     if (process.env.HOME !== arg) problems.push("HOME " + process.env.HOME + " is not the run's temp dir " + arg);
@@ -113,7 +135,9 @@ const APPS: AppEntry[] = [
   app("new-fail", run("new-fail"), { baselines: { "tests.safe[0]": known(["s > a"]) } }),
   app("no-baseline", run("known-fail")),
   // The baseline names the file under {root}: recorded on one tree, it matches a run on another.
-  app("unhandled", run("unhandled"), { baselines: { "tests.safe[0]": known(["unhandled: error: Cannot find module './gone.json' from '{root}/core/member/app/a.test.ts'"], { errors: 1 }) } }),
+  app("unhandled", run("unhandled"), { baselines: { "tests.safe[0]": known(["unhandled: a.test.ts: TypeError: boom in {root}/core/member/app/a.test.ts"], { errors: 1 }) } }),
+  // Recorded for another command: the entry's command changed since, so the baseline is stale.
+  app("stale-baseline", run("known-fail"), { baselines: { "tests.safe[0]": known(["s > a"], { cmd: run("an-older-command") }) } }),
   app("baseline-green", run("known-fail"), { baselines: { "tests.safe[0]": { exit: 0, pass: 3, fail: 0, date: "2026-10-05", method: "test" } } }),
   app("vitest-new", run("vitest-new"), { baselines: { "tests.safe[0]": known(["src/a.test.ts > s > old"]) } }),
   app("unittest-known", run("unittest-known"), { baselines: { "tests.safe[0]": known(["m.C.test_x"]) } }),
@@ -121,11 +145,15 @@ const APPS: AppEntry[] = [
   app("tsc", "", { typecheck: run("tsc"), build: run("bind"), baselines: { "commands.typecheck": known(["src/a.ts: TS2322: Type 'x' is not assignable to type 'y'."], { exit: 2 }) } }),
   app("write-tracked", run("write-tracked")),
   app("write-ignored", run("write-ignored")),
+  app("delete-ignored", run("delete-ignored")),
   app("write-enclosing", run("write-enclosing")),
   app("quiet-writes", run("quiet-writes")),
+  app("denied-writes", `${run("denied-writes")} {root}/outside.txt`),
+  app("stray", run("stray")),
   app("env", `${run("env")} {tmp}`, { env: { FROM_PROFILE: "yes" } }),
   app("connect", `${run("connect")} ${PRE_EXISTING_PORT}`),
-  app("hang", `${run("hang")} {root}/pids/hang.pid`),
+  app("hang", `${run("hang")} node_modules/.cache/hang.pid`),
+  { ...app("not-a-checkout", run("pass")), repo: "plain", root: "plain/app", commands: { cwd: "plain/app" }, tests: { safe: [{ cmd: run("pass"), cwd: "plain/app" }] } },
 ];
 
 function sh(cwd: string, ...argv: string[]) {
@@ -186,9 +214,12 @@ beforeAll(async () => {
     "app/standin.mjs": STANDIN,
     "app/tracked.txt": "tracked\n",
     "app/dist/old.txt": "ignored output from an earlier build\n",
+    "app/dist/keep.txt": "more ignored output\n",
     "app/.env": "SECRET=from-dotenv\n",
   });
   gitRepo(join(root, "core/sibling"), { "README.md": "sibling\n" });
+  mkdirSync(join(root, "plain/app"), { recursive: true });
+  writeFileSync(join(root, "plain/app/standin.mjs"), STANDIN);
   writeFileSync(registry, `${JSON.stringify({ version: 1, apps: APPS }, null, 2)}\n`);
 });
 
@@ -202,7 +233,7 @@ afterAll(async () => {
 describe.skipIf(!!noSandbox)("bun run test:apps", () => {
   let main: ReturnType<typeof testApps>;
   let typecheck: ReturnType<typeof testApps>;
-  const ids = APPS.map((a) => a.id).filter((id) => id !== "hang" && id !== "tsc");
+  const ids = APPS.map((a) => a.id).filter((id) => !["hang", "tsc", "not-a-checkout"].includes(id));
   beforeAll(() => {
     main = testApps(["--json", ...ids]);
     typecheck = testApps(["--json", "--no-tests", "--commands", "typecheck,build", "tsc"]);
@@ -223,26 +254,48 @@ describe.skipIf(!!noSandbox)("bun run test:apps", () => {
     ["new-fail", false],
     ["no-baseline", false],
     ["baseline-green", false],
+    ["stale-baseline", false],
   ])("%s: ok %p against its baseline", (id, ok) => {
     expect(result(id)?.ok).toBe(ok);
   });
 
   test("a failure the baseline does not list is named, for bun test, vitest and tsc output", () => {
     expect(result("new-fail").verdict.newFailures).toEqual(["s > b"]);
-    expect(result("vitest-new").verdict.newFailures).toEqual(["src/a.test.ts > s > fresh"]);
+    expect(result("vitest-new").verdict.newFailures).toEqual(["file: src/b.test.ts", "src/a.test.ts > s > fresh"]);
     // The known tsc error moved lines and still counts as known; only the new one fails the run.
     expect(result("tsc").label).toBe("commands.typecheck");
     expect(result("tsc").verdict.newFailures).toEqual(["src/b.ts: TS2304: Cannot find name 'z'."]);
   });
 
-  test("writes in the app's checkouts fail the run: a tracked file, a new file in an existing ignored folder, a file in the enclosing checkout", () => {
+  test("writes in the app's checkouts fail the run: a tracked file, a new file in or a deletion from an existing ignored folder, a file in the enclosing checkout", () => {
     expect(result("write-tracked").writes.unexpected).toEqual(["core/member/app/tracked.txt", "core/member/app/tracked.txt (git status: M new)"]);
     expect(result("write-ignored").writes.unexpected).toEqual(["core/member/app/dist/new.txt"]);
+    expect(result("delete-ignored").writes.unexpected).toEqual(["core/member/app/dist/ (an entry was removed or renamed)"]);
     expect(result("write-enclosing").writes.unexpected).toEqual(["core/stray.txt", "core/stray.txt (git status: ?? new)"]);
-    for (const id of ["write-tracked", "write-ignored", "write-enclosing"]) expect(result(id).ok).toBe(false);
+    for (const id of ["write-tracked", "write-ignored", "delete-ignored", "write-enclosing"]) expect(result(id).ok).toBe(false);
   });
 
-  test("build caches are listed but pass, and a sibling checkout the app does not touch is not watched", () => {
+  test("the sandbox refuses writes the check does not watch: a sibling checkout, the checkout's .git, anything outside the checkouts", () => {
+    expect({ ok: result("denied-writes").ok, log: readFileSync(result("denied-writes").log, "utf8") }).toMatchObject({ ok: true });
+    expect(readFileSync(join(root, "core/member/.git/config"), "utf8")).not.toContain("fsmonitor");
+    expect(existsSync(join(root, "outside.txt"))).toBe(false);
+  });
+
+  test("a process that leaves the command's group is killed and fails the run", () => {
+    const pid = Number(readFileSync(join(root, "core/member/app/node_modules/.cache/stray.pid"), "utf8"));
+    expect(result("stray").strays).toContain(pid);
+    expect(result("stray").ok).toBe(false);
+    expect(() => process.kill(pid, 0)).toThrow();
+  });
+
+  test("an app outside every git checkout is refused: the write check needs one", () => {
+    const refused = testApps(["--json", "not-a-checkout"]);
+    expect(refused.status).toBe(1);
+    expect(refused.reports["not-a-checkout"].refused).toContain("is in no git checkout");
+    expect(refused.reports["not-a-checkout"].commands).toEqual([]);
+  });
+
+  test("build caches are listed but pass", () => {
     expect(result("quiet-writes").writes.unexpected).toEqual([]);
     expect(result("quiet-writes").ok).toBe(true);
     expect(result("quiet-writes").writes.caches).toEqual([
@@ -278,8 +331,28 @@ describe.skipIf(!!noSandbox)("bun run test:apps", () => {
     const hung = testApps(["--json", "--timeout", "3", "hang"]);
     expect(hung.status).toBe(1);
     expect(hung.reports["hang"].commands[0].timedOut).toBe(true);
-    const pid = Number(readFileSync(join(root, "pids/hang.pid"), "utf8"));
+    const pid = Number(readFileSync(join(root, "core/member/app/node_modules/.cache/hang.pid"), "utf8"));
     expect(() => process.kill(pid, 0)).toThrow();
+  }, 60_000);
+
+  test("when the tool dies, its watchdog kills the command", async () => {
+    const pidFile = join(root, "core/member/app/node_modules/.cache/hang.pid");
+    rmSync(pidFile, { force: true });
+    const cli = Bun.spawn([process.execPath, "scripts/test-apps.ts", "--root", root, "--registry", registry, "--out-dir", out, "hang"], { cwd: PKG, stdio: ["ignore", "ignore", "ignore"] });
+    for (let i = 0; i < 200 && !existsSync(pidFile); i++) await Bun.sleep(50);
+    const pid = Number(readFileSync(pidFile, "utf8"));
+    cli.kill("SIGKILL");
+    await cli.exited;
+    let alive = true;
+    for (let i = 0; i < 100 && alive; i++) {
+      try {
+        process.kill(pid, 0);
+        await Bun.sleep(50);
+      } catch {
+        alive = false;
+      }
+    }
+    expect(alive).toBe(false);
   }, 60_000);
 
   test("exits 0 when every command passes", () => {

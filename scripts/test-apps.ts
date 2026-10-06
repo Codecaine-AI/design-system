@@ -9,17 +9,25 @@
  *   - with the app's profile environment (profileEnv: allowlisted variables only, HOME and the XDG dirs in a
  *     fresh temp dir with the profile's fixtures, BUN_OPTIONS=--no-env-file, runProfile.env, unsetEnv removed),
  *     placeholders ({root}, {tmp}, {ds}, {port:<name>}) substituted;
- *   - inside the OS sandbox (sandbox.ts runPolicy: writes only in --root and the temp dir; no `.env` reads;
- *     loopback only). A test command may connect to and listen on any loopback port (suites start their own
- *     servers on ephemeral ports) except the owner's ports and every port something already listens on when
- *     it starts (netstat, every user's sockets): a listener the run did not start counts as an owner service.
- *     A named command (typecheck, build) gets no port at all. Without a working sandbox-exec, or without a
- *     listener snapshot, it refuses to run anything;
+ *   - inside the OS sandbox (sandbox.ts runPolicy), narrowed so a run may write only where the write check
+ *     looks: the checkouts the app touches (below) and its temp dir; never a sibling checkout, a `.git` entry,
+ *     a git dir inside --root, the design-system checkout or the out dir. No `.env` reads; loopback only. A
+ *     test command may connect to and listen on any loopback port (suites start their own servers on
+ *     ephemeral ports) except the owner's ports and every port something already listens on when it starts
+ *     (netstat, every user's sockets): a listener the run did not start counts as an owner service. A named
+ *     command (typecheck, build) gets no port at all. Without a working sandbox-exec, without a listener
+ *     snapshot, or when a touched dir is in no git checkout inside --root, it refuses to run anything;
  *   - in its own process group, with a watchdog that kills the group when this tool dies, and a timeout;
- *   - between two write checks: `git status --ignored --porcelain` of every checkout the app touches (the
- *     checkouts holding its repo, root and command cwds, the checkouts nested in those, and the checkouts
- *     around them below --root), and `find -newer/-cnewer <marker>` over the same checkouts (nested checkouts
- *     the app does not touch are pruned, so a worker in a sibling repo cannot trip it).
+ *     afterwards every process still carrying the run's tag in its environment (one that left the group) is
+ *     killed and fails the run;
+ *   - between two write checks over the checkouts the app touches (those holding its repo, root and command
+ *     cwds, the checkouts nested in those, and the checkouts around them below --root; sibling checkouts
+ *     nested in those are pruned, so a worker in a sibling repo cannot trip it):
+ *       `git status --ignored --porcelain`, git pinned to each checkout's git dir as recorded before the run,
+ *       with no system or global config and fsmonitor off (a checkout whose `.git` entry changed gets no
+ *       status: the change itself is reported); `find -newer/-cnewer <marker>` for new and changed files
+ *       and for folders that lost an entry (a deletion or rename); and each `.git` entry's content.
+ * System tools run by absolute path (TOOLS).
  *
  * Build caches are listed but never fail a run (BUILD_CACHES): node_modules/.vite, node_modules/.vite-temp,
  * node_modules/.vitest, node_modules/.cache, node_modules/.tmp and *.tsbuildinfo (tsc's incremental state).
@@ -30,26 +38,29 @@
  *   exit 0                       pass (baseline failures that now pass are listed as fixed)
  *   exit != 0, no baseline       fail
  *   baseline exit 0              fail (a new failure)
+ *   baseline for another cmd     fail (stale: the entry's command changed since it was recorded)
  *   otherwise                    fail when a failing test or tsc error is not in the baseline, when more
- *                                tests fail or more errors happen than recorded, or when the output names
- *                                no failures to compare
+ *                                tests fail, more errors happen or more failures go unnamed than recorded,
+ *                                or when the output names no failures to compare
  * Exit 1 when any command fails that comparison or writes unexpectedly (or nothing could run), else 0.
  * A report goes to <out-dir>/<app>/test-apps/<stamp>/report.json, with every command's log beside it; each
  * command's `proposedBaseline` is what the managing agent records into the registry (app workers never do).
  *
- * Known limits: a write that keeps an old mtime and ctime, or a deletion inside an ignored folder, is not
- * seen; network use is contained by the sandbox, not sampled; run nothing else in the app's checkouts while
- * this runs (their edits would count as the app's writes).
+ * Known limits: a write that keeps an old mtime and ctime is not seen, nor a deletion in a folder that also
+ * gained an entry; network use is contained by the sandbox, not sampled; a stray platform binary (/bin/sleep)
+ * hides its environment from ps, so only runtime strays (bun, node, python) are found by tag; run nothing else
+ * in the app's checkouts while this runs (their edits would count as the app's writes).
  */
 import { spawn, spawnSync } from "node:child_process";
-import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { appendFileSync, cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 
 import { expandPlaceholders, killRun, profileEnv, rootProc, stripAnsi, validateLoadedRegistry } from "./lib/app-runner";
 import { OWNER_PORTS } from "./lib/owner";
 import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, REGISTRY_PATH, resolvePath, type AppEntry, type Registry, type TestBaseline } from "./lib/registry";
-import { safeAppId, safeOutputPath, safeTempBase } from "./lib/safe-paths";
+import { safeAppId, safeChildPath, safeOutputPath, safeTempBase } from "./lib/safe-paths";
 import { runPolicy, sandboxCommand, sandboxUnavailable, SANDBOX_EXEC } from "./lib/sandbox";
 
 /** Build caches: writes there are listed, never failed. Matched against root-relative paths. */
@@ -86,11 +97,14 @@ export interface ParsedResult {
 const uniqueSorted = (items: string[]) => [...new Set(items)].sort();
 
 /**
- * Reads a test or typecheck summary and the failing names from a command's (ANSI-stripped) output. `root`
- * (the --root) is written `{root}` in names, so a baseline recorded on one tree matches a run on another.
+ * Reads a test or typecheck summary and the failing names from a command's (ANSI-stripped) output. The
+ * run's temp dir is written `{tmp}` and the --root `{root}` in names, so a baseline recorded in one run on
+ * one tree matches a later run on another.
  */
-export function parseOutput(output: string, root?: string): ParsedResult {
-  const text = root ? stripAnsi(output).split(root).join("{root}") : stripAnsi(output);
+export function parseOutput(output: string, paths: { root?: string; tmp?: string } = {}): ParsedResult {
+  let text = stripAnsi(output);
+  if (paths.tmp) text = text.split(paths.tmp).join("{tmp}");
+  if (paths.root) text = text.split(paths.root).join("{root}");
   const lines = text.split("\n");
   const count = (re: RegExp) => {
     let value: number | undefined;
@@ -102,25 +116,29 @@ export function parseOutput(output: string, root?: string): ParsedResult {
   };
 
   // bun test: "(fail) suite > name [1.23ms]" lines, then " 342 pass", " 54 fail", " 9 errors", "Ran N tests across M files".
-  // An error outside a test ("# Unhandled error between tests", e.g. a file that cannot load) is named by its
-  // first "error:" line, as "unhandled: error: ...".
+  // An error outside a test ("# Unhandled error between tests", e.g. a file that cannot load; bun counts it in
+  // fail and errors) is named "unhandled: <file>: <its first Error/error: line>", the file from bun's header.
   if (lines.some((line) => /^Ran \d+ tests? across \d+ files?\b/.test(line.trim()))) {
     const failing = lines.filter((line) => line.startsWith("(fail) ")).map((line) => line.slice(7).replace(/\s*\[[\d.]+m?s\]\s*$/, "").trim());
     lines.forEach((line, i) => {
       if (line.trim() !== "# Unhandled error between tests") return;
-      const error = lines.slice(i + 1, i + 6).find((next) => next.startsWith("error:"));
-      if (error) failing.push(`unhandled: ${error.trim()}`);
+      const file = lines.slice(0, i).reverse().find((prev) => /^\S.*:$/.test(prev) && !prev.startsWith("("))?.slice(0, -1) ?? "?";
+      const end = lines.findIndex((next, j) => j > i + 1 && /^-{5,}$/.test(next.trim()));
+      const error = lines.slice(i + 1, end === -1 ? i + 40 : end).find((next) => /^(?:\w*Error|error)\b[^:]*:/.test(next.trim()));
+      failing.push(`unhandled: ${file}: ${error?.trim() ?? "(no error line)"}`);
     });
     return { parser: "bun", pass: count(/^\s*(\d+) pass\b/), fail: count(/^\s*(\d+) fail\b/), errors: count(/^\s*(\d+) errors?\b/) ?? 0, failing: uniqueSorted(failing) };
   }
 
-  // vitest: "      Tests  2 failed | 90 passed (92)", failures as " FAIL  file > suite > name".
+  // vitest: "      Tests  2 failed | 90 passed (92)", failures as " FAIL  file > suite > name"; a file that fails to
+  // load is " FAIL  file [ file ]" and counts only under "Test Files": named "file: <file>" and added to fail.
   const vitest = lines.map((line) => /^\s*Tests\s+(.*)\(\d+\)\s*$/.exec(line)).find(Boolean);
-  if (vitest) {
-    const part = (word: string) => Number(new RegExp(`(\\d+) ${word}`).exec(vitest[1]!)?.[1] ?? 0);
-    const failing = lines.map((line) => /^\s*FAIL\s+(.+? > .+?)\s*$/.exec(line)?.[1]).filter((name): name is string => !!name);
+  if (vitest || lines.some((line) => /^\s*Test Files\s+\d+ failed/.test(line))) {
+    const part = (word: string) => Number(new RegExp(`(\\d+) ${word}`).exec(vitest?.[1] ?? "")?.[1] ?? 0);
+    const tests = lines.map((line) => /^\s*FAIL\s+(.+? > .+?)\s*$/.exec(line)?.[1]).filter((name): name is string => !!name);
+    const files = uniqueSorted(lines.map((line) => /^\s*FAIL\s+(\S+)\s+\[\s*\S+\s*\]\s*$/.exec(line)?.[1]).filter((name): name is string => !!name)).map((file) => `file: ${file}`);
     const errors = Number(/Errors\s+(\d+) errors?/.exec(text)?.[1] ?? 0);
-    return { parser: "vitest", pass: part("passed"), fail: part("failed"), errors, failing: uniqueSorted(failing) };
+    return { parser: "vitest", pass: part("passed"), fail: part("failed") + files.length, errors, failing: uniqueSorted([...tests, ...files]) };
   }
 
   // Python unittest: "Ran 10 tests in 0.195s", then "OK" or "FAILED (failures=1, errors=2)".
@@ -151,8 +169,13 @@ export interface Verdict {
   fixed: string[];
 }
 
-/** Compares one command's exit and parsed result with its recorded baseline (see the header). */
-export function compareWithBaseline(exit: number, parsed: ParsedResult, baseline: TestBaseline | undefined): Verdict {
+/**
+ * Compares one command's exit and parsed result with its recorded baseline (see the header). `cmd` is the
+ * registry command now: a baseline recorded for another command is stale and compares with nothing.
+ */
+export function compareWithBaseline(exit: number, parsed: ParsedResult, baseline: TestBaseline | undefined, cmd?: string): Verdict {
+  if (baseline?.cmd !== undefined && cmd !== undefined && baseline.cmd !== cmd)
+    return { ok: false, reasons: [`the baseline was recorded for another command (${baseline.cmd}); the managing agent re-records it`], newFailures: [], fixed: [] };
   const known = new Set(baseline?.failing ?? []);
   const fixed = baseline?.failing?.filter((name) => !parsed.failing.includes(name)) ?? [];
   if (exit === 0) return { ok: true, reasons: [], newFailures: [], fixed: baseline?.failing ?? [] };
@@ -163,6 +186,10 @@ export function compareWithBaseline(exit: number, parsed: ParsedResult, baseline
   if (newFailures.length) reasons.push(`${newFailures.length} failure(s) not in the baseline: ${newFailures.slice(0, 10).join("; ")}${newFailures.length > 10 ? "; ..." : ""}`);
   if (parsed.fail !== undefined && baseline.fail !== undefined && parsed.fail > baseline.fail) reasons.push(`${parsed.fail} failing, the baseline has ${baseline.fail}`);
   if ((parsed.errors ?? 0) > (baseline.errors ?? 0)) reasons.push(`${parsed.errors} error(s) outside tests, the baseline has ${baseline.errors ?? 0}`);
+  // Failures the output counts but does not name compare by count only: never more than the baseline had.
+  const unnamed = Math.max(0, (parsed.fail ?? 0) - parsed.failing.length);
+  const unnamedBefore = Math.max(0, (baseline.fail ?? 0) - (baseline.failing?.length ?? 0));
+  if (unnamed > unnamedBefore) reasons.push(`${unnamed} failure(s) the output does not name, the baseline has ${unnamedBefore}`);
   if (parsed.failing.length === 0 && (parsed.fail ?? 0) === 0 && (parsed.errors ?? 0) <= (baseline.errors ?? 0) && reasons.length === 0)
     reasons.push(`exit ${exit} with no failure the output names (reader: ${parsed.parser}); nothing to compare with the baseline`);
   return { ok: reasons.length === 0, reasons, newFailures, fixed };
@@ -172,8 +199,18 @@ export function compareWithBaseline(exit: number, parsed: ParsedResult, baseline
 // Write checks
 // ---------------------------------------------------------------------------
 
-function git(dir: string, args: string[]): { status: number | null; stdout: string } {
-  const result = spawnSync("git", ["-C", dir, "--no-optional-locks", ...args], { encoding: "utf8", maxBuffer: 256 << 20 });
+/** System binaries by absolute path: a run could write a PATH dir (/usr/local/bin) the tool then calls. */
+export const TOOLS = { git: "/usr/bin/git", find: "/usr/bin/find", netstat: "/usr/sbin/netstat" } as const;
+
+/**
+ * git as the write check runs it: no system or global config, no fsmonitor, no optional locks, a minimal
+ * environment. `pin` fixes the git dir and work tree recorded before the run, so a `.git` file the run
+ * rewrote cannot point git at a repository (and its config) the run made.
+ */
+function git(dir: string, args: string[], pin?: { gitDir: string }): { status: number | null; stdout: string } {
+  const env: Record<string, string> = { PATH: "/usr/bin:/bin", GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: "/dev/null", GIT_OPTIONAL_LOCKS: "0", HOME: "/var/empty", LANG: "C" };
+  if (pin) Object.assign(env, { GIT_DIR: pin.gitDir, GIT_WORK_TREE: dir });
+  const result = spawnSync(TOOLS.git, ["-c", "core.fsmonitor=false", "-c", "core.untrackedCache=false", "-C", dir, ...args], { encoding: "utf8", env, maxBuffer: 256 << 20, timeout: 120_000 });
   return { status: result.status, stdout: result.stdout ?? "" };
 }
 
@@ -184,20 +221,25 @@ function toplevel(dir: string): string | null {
   return out.status === 0 && out.stdout.trim() ? out.stdout.trim() : null;
 }
 
+function find(args: string[]): string[] {
+  const out = spawnSync(TOOLS.find, args, { encoding: "utf8", maxBuffer: 256 << 20, timeout: 300_000 });
+  return (out.stdout ?? "").split("\n").filter(Boolean);
+}
+
 /** Git checkouts below `dir` (a `.git` file or folder), not inside node_modules. */
 function nestedCheckouts(dir: string): string[] {
-  const out = spawnSync("find", [dir, "-mindepth", "2", "(", "-name", "node_modules", "-prune", ")", "-o", "(", "-name", ".git", "-print", "-prune", ")"], { encoding: "utf8", maxBuffer: 64 << 20 }).stdout ?? "";
-  return out.split("\n").filter(Boolean).map((path) => dirname(path));
+  return find([dir, "-mindepth", "2", "(", "-name", "node_modules", "-prune", ")", "-o", "(", "-name", ".git", "-print", "-prune", ")"]).map((path) => dirname(path));
 }
 
 const inside = (path: string, dir: string) => path === dir || path.startsWith(dir.endsWith(sep) ? dir : dir + sep);
 
 export interface WriteScope {
-  /** Every checkout whose `git status` is compared. */
+  /** Every checkout whose `git status` is compared, with its git dir (absolute, recorded before any run). */
   checkouts: string[];
-  /** Top-most dirs `find` walks. */
+  gitDirs: Record<string, string>;
+  /** Top-most dirs `find` walks: also the only dirs (with the run's temp dir) a run may write. */
   scan: string[];
-  /** Nested checkouts `find` skips (the app touches none of them). */
+  /** Nested checkouts `find` skips and the run may not write (the app touches none of them). */
   prune: string[];
 }
 
@@ -205,14 +247,16 @@ export interface WriteScope {
  * The checkouts an app touches: those holding its repo, its root and each command's cwd (plus the
  * design-system checkout when a command names {ds}), every checkout nested in those, and every checkout
  * around them below --root (a bun workspace root whose node_modules the app shares). Sibling checkouts
- * nested in an enclosing one are pruned from the scan.
+ * nested in an enclosing one are pruned. Throws when a touched dir is in no checkout inside --root: the
+ * write check needs one.
  */
 export function writeScope(root: string, dirs: string[]): WriteScope {
   const realRoot = existsSync(root) ? realpathSync(root) : resolve(root);
   const touched = new Set<string>();
   for (const dir of dirs) {
     const top = toplevel(dir);
-    if (top) touched.add(top);
+    if (!top || !inside(top, realRoot) || top === realRoot) throw new Error(`${dir} is in no git checkout inside ${realRoot}; the write check needs one`);
+    touched.add(top);
   }
   const enclosing = new Set<string>();
   for (const top of touched) {
@@ -230,12 +274,36 @@ export function writeScope(root: string, dirs: string[]): WriteScope {
   for (const outer of enclosing) for (const dir of nestedCheckouts(outer)) if (!own.has(dir) && !enclosing.has(dir) && ![...own].some((o) => inside(o, dir))) prune.add(dir);
   const all = [...new Set([...touched, ...enclosing])].sort();
   const scan = all.filter((dir) => !all.some((other) => other !== dir && inside(dir, other)));
-  return { checkouts: [...new Set([...all, ...nested])].sort(), scan, prune: [...prune].sort() };
+  const checkouts = [...new Set([...all, ...nested])].sort();
+  const gitDirs: Record<string, string> = {};
+  for (const dir of checkouts) {
+    const out = git(dir, ["rev-parse", "--absolute-git-dir"]);
+    if (out.status !== 0 || !out.stdout.trim()) throw new Error(`${dir}: git cannot read its git dir`);
+    gitDirs[dir] = out.stdout.trim();
+  }
+  return { checkouts, gitDirs, scan, prune: [...prune].sort() };
 }
 
-/** `git status --ignored --porcelain` lines of each checkout. */
-export function statusSnapshot(checkouts: string[]): Map<string, string[]> {
-  return new Map(checkouts.map((dir) => [dir, git(dir, ["status", "--ignored", "--porcelain"]).stdout.split("\n").filter(Boolean)]));
+/** What a run must not change in a checkout's git setup: each `.git` entry's content (a gitdir file) or kind. */
+export function gitEntries(scope: WriteScope): Map<string, string> {
+  const entries = new Map<string, string>();
+  for (const dir of scope.checkouts) {
+    const entry = join(dir, ".git");
+    let state = "missing";
+    try {
+      const stat = lstatSync(entry);
+      state = stat.isSymbolicLink() ? "symlink" : stat.isDirectory() ? "dir" : `file ${readFileSync(entry, "utf8")}`;
+    } catch {}
+    entries.set(entry, state);
+  }
+  return entries;
+}
+
+/** `git status --ignored --porcelain` lines of each checkout, git pinned to its recorded git dir. */
+export function statusSnapshot(scope: WriteScope, skip: ReadonlySet<string> = new Set()): Map<string, string[]> {
+  return new Map(
+    scope.checkouts.filter((dir) => !skip.has(dir)).map((dir) => [dir, git(dir, ["status", "--ignored", "--porcelain"], { gitDir: scope.gitDirs[dir]! }).stdout.split("\n").filter(Boolean)]),
+  );
 }
 
 export interface WriteReport {
@@ -245,35 +313,55 @@ export interface WriteReport {
   caches: string[];
 }
 
-/** Files (and symlinks) under the scope modified or changed after `marker`, root-relative. */
-function newerFiles(scope: WriteScope, marker: string, skip: string[]): string[] {
-  const prunes: string[] = ["-name", ".git"];
-  for (const dir of [...scope.prune, ...skip]) prunes.push("-o", "-path", dir);
+/**
+ * Files and symlinks under the scope modified or changed after `marker`, plus folders whose entries
+ * changed with no new file in them (a deletion or rename), root-relative, folders with a trailing slash.
+ * Git dirs inside the scope are walked too (a run must not touch them).
+ */
+function newerEntries(scope: WriteScope, marker: string, skip: string[]): { files: string[]; dirs: string[] } {
+  const skipped: string[] = [];
+  for (const dir of [...scope.prune, ...skip]) skipped.push("-o", "-path", dir);
   const files: string[] = [];
+  const dirs: string[] = [];
+  const newer = ["(", "-newer", marker, "-o", "-cnewer", marker, ")"];
   for (const dir of scope.scan) {
-    const out = spawnSync("find", [dir, "(", ...prunes, ")", "-prune", "-o", "(", "-type", "f", "-o", "-type", "l", ")", "(", "-newer", marker, "-o", "-cnewer", marker, ")", "-print"], {
-      encoding: "utf8",
-      maxBuffer: 256 << 20,
-    }).stdout ?? "";
-    files.push(...out.split("\n").filter(Boolean));
+    files.push(...find([dir, "(", "-path", "/dev/null", ...skipped, ")", "-prune", "-o", "(", "-type", "f", "-o", "-type", "l", ")", ...newer, "-print"]));
+    dirs.push(...find([dir, "(", "-path", "/dev/null", ...skipped, ")", "-prune", "-o", "-type", "d", "-mindepth", "1", ...newer, "-print"]));
   }
-  return files;
+  return { files, dirs };
 }
 
-/** What changed between two status snapshots and the files newer than the marker, split into caches and the rest. */
-export function writeReport(root: string, scope: WriteScope, before: Map<string, string[]>, after: Map<string, string[]>, marker: string, skip: string[] = []): WriteReport {
+/**
+ * What changed: status lines that appeared or went, files newer than the marker, folders whose entries
+ * changed without a new file (deletions), and `.git` entries a run rewrote. Split into build caches and the rest.
+ */
+export function writeReport(
+  root: string,
+  scope: WriteScope,
+  before: { status: Map<string, string[]>; git: Map<string, string> },
+  marker: string,
+  skip: string[] = [],
+): WriteReport {
   const rel = (path: string) => relative(root, path) || ".";
-  const files = newerFiles(scope, marker, skip).map(rel);
-  // A git status line for a folder (an untracked or ignored folder listed as one entry) is a build cache
-  // when every new file find saw under it is one; an empty new folder counts as a write.
-  const isCache = (path: string) => {
-    if (!path.endsWith("/")) return isBuildCache(path);
-    const under = files.filter((file) => file.startsWith(path));
-    return under.length > 0 && under.every(isBuildCache);
-  };
   const changes = new Map<string, string>();
+  // The git setup first: a checkout whose .git entry changed gets no status (git would follow it).
+  const changedGit = new Set<string>();
+  for (const [entry, state] of gitEntries(scope)) {
+    if (before.git.get(entry) === state) continue;
+    changedGit.add(dirname(entry));
+    changes.set(`${rel(entry)} (the checkout's .git entry changed)`, `${rel(entry)}`);
+  }
+  const { files: newFiles, dirs: newDirs } = newerEntries(scope, marker, skip);
+  const files = newFiles.map(rel);
+  for (const file of files) changes.set(file, file);
+  for (const dir of newDirs.map(rel)) {
+    // A folder changes when an entry is added, removed or renamed; a new file or folder in it explains an addition.
+    const explained = [...files, ...newDirs.map(rel)].some((path) => path !== dir && dirname(path) === dir);
+    if (!explained) changes.set(`${dir}/ (an entry was removed or renamed)`, `${dir}/`);
+  }
+  const after = statusSnapshot(scope, changedGit);
   for (const [dir, lines] of after) {
-    const old = new Set(before.get(dir) ?? []);
+    const old = new Set(before.status.get(dir) ?? []);
     const now = new Set(lines);
     const record = (line: string, what: string) => {
       const path = rel(join(dir, line.slice(3))) + (line.endsWith("/") ? "/" : "");
@@ -282,10 +370,16 @@ export function writeReport(root: string, scope: WriteScope, before: Map<string,
     for (const line of lines) if (!old.has(line)) record(line, "new");
     for (const line of old) if (!now.has(line)) record(line, "gone");
   }
-  for (const file of files) changes.set(file, file);
+  // A folder entry (from git status or a deletion) is a build cache when it is one or every new file under it is.
+  const isCache = (path: string) => {
+    if (!path.endsWith("/")) return isBuildCache(path);
+    if (isBuildCache(path)) return true;
+    const under = files.filter((file) => file.startsWith(path));
+    return under.length > 0 && under.every(isBuildCache);
+  };
   const unexpected: string[] = [];
   const caches: string[] = [];
-  for (const [change, path] of [...changes].sort(([a], [b]) => a.localeCompare(b))) (isCache(path) ? caches : unexpected).push(change);
+  for (const [change, path] of [...changes].sort(([a], [b]) => a.localeCompare(b))) (isCache(path) && !change.includes(".git entry") ? caches : unexpected).push(change);
   return { unexpected, caches };
 }
 
@@ -299,7 +393,7 @@ export function writeReport(root: string, scope: WriteScope, before: Map<string,
  * test command could reach a service the run did not start.
  */
 export function listeningPorts(): number[] {
-  const out = spawnSync("netstat", ["-an", "-p", "tcp"], { encoding: "utf8", timeout: 15_000, maxBuffer: 64 << 20 });
+  const out = spawnSync(TOOLS.netstat, ["-an", "-p", "tcp"], { encoding: "utf8", timeout: 15_000, maxBuffer: 64 << 20 });
   if (out.status !== 0 || out.error) throw new Error(`netstat failed (${out.error?.message ?? `exit ${out.status}`}); without a listener snapshot nothing runs`);
   const ports = new Set<number>();
   for (const line of (out.stdout ?? "").split("\n")) {
@@ -350,9 +444,32 @@ function withWatchdog(cmd: string): string {
 
 const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
 
+/**
+ * SIGKILLs every process whose environment carries `DS_TEST_APPS_RUN=<tag>`: a descendant that left the
+ * command's process group (setsid, a detached child) still carries the run's environment. macOS hides the
+ * environment of platform binaries (/bin/sleep and the like) from ps, so only the runtimes' strays (bun, node,
+ * python) are found this way.
+ */
+function killTagged(tag: string): number[] {
+  const out = spawnSync("/bin/ps", ["-A", "-E", "-ww", "-o", "pid=,command="], { encoding: "utf8", maxBuffer: 64 << 20, timeout: 30_000 }).stdout ?? "";
+  const pids = out
+    .split("\n")
+    .filter((line) => line.includes(`DS_TEST_APPS_RUN=${tag}`))
+    .map((line) => Number(line.trim().split(/\s+/)[0]))
+    .filter((pid) => Number.isInteger(pid) && pid > 1 && pid !== process.pid);
+  for (const pid of pids) {
+    try {
+      process.kill(pid, "SIGKILL");
+    } catch {}
+  }
+  return pids;
+}
+
 export interface CommandResult extends PlannedCommand {
   /** The command after placeholder substitution. */
   expanded: string;
+  /** Processes outside the command's group that still carried the run's tag after it ended (killed). */
+  strays: number[];
   exit: number;
   timedOut: boolean;
   seconds: number;
@@ -395,25 +512,31 @@ function stamp(): string {
 async function runOne(app: AppEntry, planned: PlannedCommand, opts: TestAppOptions & { dir: string; scope: WriteScope }): Promise<CommandResult> {
   const root = opts.root;
   const tmp = mkdtempSync(join(safeTempBase(), `ds-test-${app.id}-`));
-  const log = join(opts.dir, `${planned.label.replace(/[^A-Za-z0-9_.-]+/g, "_")}.log`);
+  const name = planned.label.replace(/[^A-Za-z0-9_.-]+/g, "_");
+  const log = join(opts.dir, `${name}.log`);
   try {
     copyFixtures(app, tmp);
-    const env = profileEnv(app, { root, tmp });
+    const tag = randomUUID();
+    const env = { ...profileEnv(app, { root, tmp }), DS_TEST_APPS_RUN: tag };
     const expanded = expandPlaceholders(planned.cmd, { root, tmp, ports: app.runProfile?.ports ?? {} });
     const cwd = resolvePath(root, planned.cwd);
     // Test suites start their own servers on ephemeral ports: any loopback port but the owner's and every port
     // already listened on (decision 22). Named commands (typecheck, build) need no port.
     const listening = planned.label.startsWith("tests.") ? listeningPorts() : undefined;
-    const policy = listening ? runPolicy({ root, tmp, outDir: opts.outDir, anyLoopback: true, extraDeniedPorts: listening }) : runPolicy({ root, tmp, outDir: opts.outDir });
+    const base = listening ? runPolicy({ root, tmp, outDir: opts.outDir, anyLoopback: true, extraDeniedPorts: listening }) : runPolicy({ root, tmp, outDir: opts.outDir });
+    // Writes only where the write check looks (the scope's checkouts) and the run's temp dir; never a sibling
+    // checkout, a .git entry or a git dir inside --root.
+    const gitGuard = opts.scope.checkouts.flatMap((dir) => [join(dir, ".git"), ...(inside(opts.scope.gitDirs[dir]!, root) ? [opts.scope.gitDirs[dir]!] : [])]);
+    const policy = { ...base, writable: [...opts.scope.scan, tmp], readOnly: [...(base.readOnly ?? []), ...opts.scope.prune, ...new Set(gitGuard)] };
     const deniedPorts = listening ? [...new Set([...OWNER_PORTS, ...listening])].sort((a, b) => a - b) : undefined;
     const argv = sandboxCommand(policy, ["/bin/sh", "-c", withWatchdog(expanded)]);
     writeFileSync(
       log,
-      `$ ${expanded}\n  (cwd ${cwd}, sandboxed, HOME ${tmp}, ${deniedPorts ? `loopback except ${deniedPorts.length} owner or listening ports: ${deniedPorts.join(",")}` : "no network port"})\n`,
+      `$ ${expanded}\n  (cwd ${cwd}, sandboxed, HOME ${tmp}, writes only in ${opts.scope.scan.join(", ")} and HOME; ${deniedPorts ? `loopback except ${deniedPorts.length} owner or listening ports: ${deniedPorts.join(",")}` : "no network port"})\n`,
     );
 
-    const marker = join(opts.dir, `.marker-${planned.label.replace(/[^A-Za-z0-9_.-]+/g, "_")}`);
-    const before = statusSnapshot(opts.scope.checkouts);
+    const marker = join(opts.dir, `.marker-${name}`);
+    const before = { status: statusSnapshot(opts.scope), git: gitEntries(opts.scope) };
     writeFileSync(marker, "");
     await sleep(20); // the marker's mtime strictly precedes every write the command makes
 
@@ -428,6 +551,7 @@ async function runOne(app: AppEntry, planned: PlannedCommand, opts: TestAppOptio
     };
     child.stdout!.on("data", onData);
     child.stderr!.on("data", onData);
+    const closed = new Promise<void>((done) => child.on("close", () => done()));
     const exited = new Promise<number>((done) => {
       child.on("exit", (code, signal) => done(code ?? (signal ? 128 : 1)));
       child.on("error", () => done(127));
@@ -438,27 +562,32 @@ async function runOne(app: AppEntry, planned: PlannedCommand, opts: TestAppOptio
     const exit = await Promise.race([exited, new Promise<number>((done) => (timer = setTimeout(() => ((timedOut = true), done(-1)), timeout)))]);
     clearTimeout(timer);
     if (root$) await killRun([root$], 2_000);
+    const strays = killTagged(tag);
+    // Every byte the command wrote, before reading the result (a stray holding the pipe is dead by now).
+    await Promise.race([closed, sleep(5_000)]);
     const code = timedOut ? 124 : exit;
     const seconds = (Date.now() - started) / 1000;
-    appendFileSync(log, `\n[exit ${code}${timedOut ? `, timed out after ${timeout / 1000} s` : ""}] ${seconds.toFixed(1)} s\n`);
+    appendFileSync(log, `\n[exit ${code}${timedOut ? `, timed out after ${timeout / 1000} s` : ""}] ${seconds.toFixed(1)} s${strays.length ? `; killed ${strays.length} stray process(es) outside its group: ${strays.join(", ")}` : ""}\n`);
 
-    const after = statusSnapshot(opts.scope.checkouts);
-    const writes = writeReport(root, opts.scope, before, after, marker, [opts.outDir, tmp]);
+    const writes = writeReport(root, opts.scope, before, marker, [opts.outDir, tmp, opts.dir]);
     rmSync(marker, { force: true });
-    const parsed = parseOutput(output, root);
+    const parsed = parseOutput(output, { root, tmp });
     const baseline = app.tests?.baselines?.[planned.label];
-    const verdict = timedOut ? { ok: false, reasons: [`timed out after ${timeout / 1000} s`], newFailures: [], fixed: [] } : compareWithBaseline(code, parsed, baseline);
+    const verdict = timedOut ? { ok: false, reasons: [`timed out after ${timeout / 1000} s`], newFailures: [], fixed: [] } : compareWithBaseline(code, parsed, baseline, planned.cmd);
     if (writes.unexpected.length) verdict.reasons.push(`${writes.unexpected.length} unexpected write(s): ${writes.unexpected.slice(0, 5).join(", ")}${writes.unexpected.length > 5 ? ", ..." : ""}`);
+    if (strays.length) verdict.reasons.push(`${strays.length} process(es) left the command's group and outlived it (killed)`);
     const proposedBaseline: TestBaseline = {
+      cmd: planned.cmd,
       exit: code,
       ...(parsed.pass !== undefined ? { pass: parsed.pass } : {}),
       ...(parsed.fail !== undefined ? { fail: parsed.fail } : {}),
       ...(parsed.errors !== undefined ? { errors: parsed.errors } : {}),
       ...(parsed.failing.length ? { failing: parsed.failing } : {}),
       date: new Date().toISOString().slice(0, 10),
-      method: `bun run test:apps --root ${root} (sandbox-exec runPolicy, profile env, write check), 1 run`,
+      method: `bun run test:apps --root ${root} (sandbox-exec, profile env, write check), 1 run`,
     };
-    return { ...planned, expanded, exit: code, timedOut, seconds, parsed, baseline, verdict, writes, ok: verdict.ok && writes.unexpected.length === 0 && !timedOut, log, proposedBaseline };
+    const ok = verdict.ok && writes.unexpected.length === 0 && !timedOut && strays.length === 0;
+    return { ...planned, expanded, strays, exit: code, timedOut, seconds, parsed, baseline, verdict, writes, ok, log, proposedBaseline };
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
@@ -471,7 +600,7 @@ export async function testApp(app: AppEntry, opts: TestAppOptions): Promise<AppR
   // Canonical, as git and find print paths: the write check compares them with it.
   const root = realpathSync(resolve(opts.root));
   const outDir = safeOutputPath(opts.outDir, { root, label: "--out-dir" });
-  const report: AppReport = { app: app.id, root, date: new Date().toISOString(), sandbox: SANDBOX_EXEC, scope: { checkouts: [], scan: [], prune: [] }, commands: [], ok: false };
+  const report: AppReport = { app: app.id, root, date: new Date().toISOString(), sandbox: SANDBOX_EXEC, scope: { checkouts: [], gitDirs: {}, scan: [], prune: [] }, commands: [], ok: false };
   const planned = plannedCommands(app, { tests: opts.tests, commands: opts.commands });
   const noSandbox = sandboxUnavailable();
   if (noSandbox) {
@@ -482,10 +611,11 @@ export async function testApp(app: AppEntry, opts: TestAppOptions): Promise<AppR
     report.refused = `${app.id} has no tests.safe command${opts.commands?.length ? "" : " (name commands with --commands typecheck,build)"}`;
     return report;
   }
-  const dir = join(outDir, app.id, "test-apps", stamp());
-  mkdirSync(dir, { recursive: true });
   const usesDs = planned.some((p) => p.cmd.includes("{ds}"));
   report.scope = writeScope(root, [app.repo, app.root, ...planned.map((p) => p.cwd)].map((p) => resolvePath(root, p)).concat(usesDs ? [DESIGN_SYSTEM_ROOT] : []));
+  // Through safeChildPath: no symlink on the way can send the report into the owner's tree.
+  const dir = safeChildPath({ base: outDir, root, label: "--out-dir" }, app.id, "test-apps", stamp());
+  mkdirSync(dir, { recursive: true });
   for (const p of planned) report.commands.push(await runOne(app, p, { ...opts, root, outDir, dir, scope: report.scope }));
   report.ok = report.commands.every((c) => c.ok);
   report.reportPath = join(dir, "report.json");
@@ -576,7 +706,7 @@ export async function cli(argv: string[] = process.argv.slice(2)): Promise<numbe
     try {
       report = await testApp(getApp(registry, id), { root: opts.root, outDir: opts.outDir, registry, tests: opts.tests, commands: opts.commands, timeoutMs: opts.timeoutMs });
     } catch (error) {
-      report = { app: id, root: opts.root, date: new Date().toISOString(), sandbox: SANDBOX_EXEC, scope: { checkouts: [], scan: [], prune: [] }, commands: [], refused: (error as Error).message, ok: false };
+      report = { app: id, root: opts.root, date: new Date().toISOString(), sandbox: SANDBOX_EXEC, scope: { checkouts: [], gitDirs: {}, scan: [], prune: [] }, commands: [], refused: (error as Error).message, ok: false };
     }
     reports.push(report);
     if (opts.json) continue;

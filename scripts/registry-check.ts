@@ -29,8 +29,9 @@
  *     `bun build` anywhere; `bun run <script>`, `bun x <pkg>` / `bunx <pkg>` (with or without --bun) and
  *     `bun <file>` before the script, package or file (after it, bun hands the flag to the program).
  *     Only install, i, add, remove, pm, link, unlink, create, init, upgrade, outdated, --version and
- *     --help are exempt. Commands split at &&, ||, ;, |, &, ( and ); bun and bunx are found by name
- *     or path, after any VAR=value, exec, env, time or nice;
+ *     --help are exempt; `--env-file` is always a problem. Commands split at &&, ||, ;, |, &, ( and ); bun
+ *     and bunx are found by name or path, after any VAR=value, exec, env (-i, -u NAME), time, nice, nohup,
+ *     command or timeout N (a bun inside a quoted `sh -c '...'` is not seen; BUN_OPTIONS covers it);
  *   - `stack.utilityClasses` is a boolean and only set where `stack.tailwind` is "none", and comes with
  *     `stack.hostTailwind` (v3, v4 or uno: the host Tailwind that compiles its classes);
  *   - every `tests.baselines` key names one of the entry's commands, with an integer exit, a date and a method;
@@ -199,9 +200,19 @@ export function bunEnvFileProblems(app: AppEntry): string[] {
     for (const segment of text.split(/&&|\|\||[;|&()\n]/)) {
       const words = segment.trim().split(/\s+/);
       let i = 0;
-      while (i < words.length && (/^[A-Za-z_][A-Za-z0-9_]*=/.test(words[i]!) || ["exec", "env", "time", "nice"].includes(words[i]!))) i++;
+      // Wrappers before the command: VAR=value, exec, env (and its -i/-u NAME), time, nice, nohup, command, timeout N.
+      for (;;) {
+        const word = words[i];
+        if (word === undefined) break;
+        if (/^[A-Za-z_][A-Za-z0-9_]*=/.test(word) || ["exec", "env", "time", "nice", "nohup", "command", "-i", "-"].includes(word)) i++;
+        else if (word === "-u" || word === "timeout" || word === "-n") i += 2;
+        else break;
+      }
       const command = words[i]?.split("/").pop();
       if (command !== "bun" && command !== "bunx") continue;
+      // An explicit env file loads whatever it names, whatever --no-env-file says about the default .env.
+      if (words.slice(i + 1).some((word) => word === "--env-file" || word.startsWith("--env-file=")))
+        problems.push(`${app.id}: ${label} passes --env-file, which loads an env file into the run: ${segment.trim()}`);
       const gap = bunEnvFileGap(command, words.slice(i + 1));
       if (gap?.after) problems.push(`${app.id}: ${label} puts --no-env-file after ${gap.after}, so bun hands it to ${gap.after} and still auto-loads .env (move it before ${gap.after}): ${segment.trim()}`);
       else if (gap) problems.push(`${app.id}: ${label} runs bun without --no-env-file (bun auto-loads .env from its cwd): ${segment.trim()}`);
@@ -233,8 +244,9 @@ export function stackProblems(app: AppEntry): string[] {
 
 /**
  * `tests.baselines` (what test:apps compares a run with): every key names a command the entry has
- * ("tests.safe[<i>]", "commands.typecheck", "commands.build"), and every baseline has an integer exit, a
- * YYYY-MM-DD date, a method, non-negative integer counts and a string list of failing names.
+ * ("tests.safe[<i>]", "commands.typecheck", "commands.build"), a baseline's `cmd` is that command's text
+ * (else it is stale), and every baseline has an integer exit, a YYYY-MM-DD date, a method, non-negative
+ * integer counts and a string list of failing names.
  */
 export function baselineProblems(app: AppEntry): string[] {
   const problems: string[] = [];
@@ -242,9 +254,12 @@ export function baselineProblems(app: AppEntry): string[] {
     const where = `${app.id}: tests.baselines["${key}"]`;
     const safe = /^tests\.safe\[(\d+)\]$/.exec(key);
     const named = /^commands\.(typecheck|build)$/.exec(key);
-    if (safe ? Number(safe[1]) >= (app.tests?.safe?.length ?? 0) : named ? !app.commands?.[named[1] as "typecheck" | "build"] : true)
-      problems.push(`${where} names no command of the entry (keys: tests.safe[<i>], commands.typecheck, commands.build)`);
+    const command = safe ? app.tests?.safe?.[Number(safe[1])]?.cmd : named ? app.commands?.[named[1] as "typecheck" | "build"] : undefined;
+    if (!command) problems.push(`${where} names no command of the entry (keys: tests.safe[<i>], commands.typecheck, commands.build)`);
     const b = baseline as unknown as Record<string, unknown>;
+    if (b?.cmd !== undefined && typeof b.cmd !== "string") problems.push(`${where}.cmd must be the command text`);
+    else if (command && typeof b?.cmd === "string" && b.cmd !== command)
+      problems.push(`${where} was recorded for another command (${b.cmd}); re-record it with test:apps (the managing agent)`);
     if (!Number.isInteger(b?.exit)) problems.push(`${where} needs an integer exit`);
     if (typeof b?.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(b.date)) problems.push(`${where} needs a YYYY-MM-DD date`);
     if (typeof b?.method !== "string" || !b.method.trim()) problems.push(`${where} needs a method`);
