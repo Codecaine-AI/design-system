@@ -177,8 +177,8 @@ export type Network = ReturnType<typeof trackNetwork>;
  *
  * When the main frame commits a new document, the old document's requests are cancelled, and Playwright
  * reports neither requestfinished nor requestfailed for a routed one (every request is routed: the request
- * guard). So a commit that follows a main-frame navigation request drops every other request in flight; a
- * same-document (hash) navigation has no navigation request and drops nothing.
+ * guard). So the commit of a main-frame document request (the frame now shows its URL) drops every other
+ * request in flight; a same-document (hash) navigation drops nothing, even while a document request is pending.
  */
 export function trackNetwork(page: any) {
   const inflight = new Set<any>();
@@ -203,8 +203,11 @@ export function trackNetwork(page: any) {
     if (request === documentRequest) documentRequest = null; // no commit follows
     done(request);
   });
+  const withoutHash = (url: string) => url.replace(/#.*$/, "");
   page.on("framenavigated", (frame: any) => {
-    if (frame !== page.mainFrame() || !documentRequest) return;
+    // Only the document request's own commit replaces the document: a hash navigation while a document
+    // request is pending (it may never answer) commits the old document's URL, so nothing is dropped.
+    if (frame !== page.mainFrame() || !documentRequest || withoutHash(frame.url()) !== withoutHash(documentRequest.url())) return;
     const committed = documentRequest;
     documentRequest = null;
     for (const request of inflight) if (request !== committed) inflight.delete(request);

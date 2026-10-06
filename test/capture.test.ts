@@ -84,7 +84,7 @@ test.skipIf(Boolean(noPlaywright))(
 );
 
 test.skipIf(Boolean(noPlaywright))(
-  "network quiet: a new document drops the old one's routed requests; a hash navigation keeps them",
+  "network quiet: a new document drops the old one's routed requests; a hash navigation keeps them, even during a pending document navigation",
   async () => {
     // /a starts a fetch that never answers. Every request is routed, as under the request guard.
     let hangs = 0;
@@ -93,7 +93,7 @@ test.skipIf(Boolean(noPlaywright))(
       port: 0,
       fetch: (request) => {
         const path = new URL(request.url).pathname;
-        if (path === "/hang") return (hangs++, new Promise<Response>(() => {}));
+        if (path === "/hang" || path === "/hangdoc") return (path === "/hang" && hangs++, new Promise<Response>(() => {}));
         const script = path === "/a" ? "<script>fetch('/hang')</script>" : "";
         return new Response(`<!doctype html><title>${path}</title>${script}`, { headers: { "content-type": "text/html" } });
       },
@@ -114,6 +114,20 @@ test.skipIf(Boolean(noPlaywright))(
       const hash = await openA();
       await hash.page.goto(`${base}/a#elsewhere`);
       await expect(hash.network.quiet(200, 1_500)).rejects.toThrow(/pending: .*\/hang/);
+
+      // A document navigation that never answers, then a hash navigation: still the same document, so
+      // its pending request still counts (Opus review T3, Codex P2).
+      const pendingDocument = await openA();
+      const committed: string[] = [];
+      pendingDocument.page.on("framenavigated", (frame: any) => committed.push(frame.url()));
+      // The page itself changes its hash while the document request is pending (Playwright's own evaluate
+      // would see a destroyed context then).
+      await pendingDocument.page.evaluate(() => {
+        location.href = "/hangdoc";
+        setTimeout(() => (location.hash = "#elsewhere"), 300);
+      });
+      while (!committed.some((url) => url.endsWith("#elsewhere"))) await Bun.sleep(20);
+      await expect(pendingDocument.network.quiet(200, 1_500)).rejects.toThrow(/pending: .*\/hang\b/);
 
       const newDocument = await openA();
       await newDocument.page.goto(`${base}/b`);
