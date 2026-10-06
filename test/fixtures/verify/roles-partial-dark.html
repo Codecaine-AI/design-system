@@ -1,0 +1,18 @@
+<!doctype html>
+<!-- verify:apps fixture: the dark switch reaches the page and its text, but the panel sits in a region pinned to light, so its background and border never switch. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>roles-partial-dark</title>
+    <link rel="stylesheet" href="/tokens.css" />
+    <style>
+      body { margin: 0; background: var(--ds-color-surface-page); color: var(--ds-color-text-body); }
+      .panel { background: var(--ds-color-surface-panel); border: 1px solid var(--ds-color-border-default); }
+    </style>
+  </head>
+  <body>
+    <div data-theme="light">
+      <div class="panel">Panel</div>
+    </div>
+  </body>
+</html>
