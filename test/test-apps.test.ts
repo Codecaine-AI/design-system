@@ -105,6 +105,23 @@ switch (mode) {
     process.exit(bound ? 1 : 0);
   }
   case "hang": write(arg, String(process.pid)); await new Promise((r) => setTimeout(r, 120_000)); break;
+  // A test server on every interface (0.0.0.0): other hosts could reach it. Writes its pid, then serves 20 s.
+  case "listen-wide": {
+    const server = Bun.serve({ hostname: "0.0.0.0", port: 0, fetch: () => new Response("lan") });
+    write(arg, String(process.pid) + " " + server.port);
+    await new Promise((r) => setTimeout(r, 20_000));
+    server.stop(true);
+    console.log(bunSummary(1, 0));
+    break;
+  }
+  // The same on loopback only, long enough to be looked at: fine.
+  case "listen-loopback": {
+    const server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: () => new Response("own") });
+    await new Promise((r) => setTimeout(r, 1500));
+    server.stop(true);
+    console.log(bunSummary(1, 0));
+    break;
+  }
 }
 `;
 
@@ -179,6 +196,8 @@ const APPS: AppEntry[] = [
   app("connect-late", `${run("connect-late")} ${LATE_PORT}`),
   app("slow-pass", run("slow-pass")),
   app("hang", `${run("hang")} node_modules/.cache/hang.pid`),
+  app("listen-wide", `${run("listen-wide")} node_modules/.cache/listen-wide.pid`),
+  app("listen-loopback", run("listen-loopback")),
   { ...app("not-a-checkout", run("pass")), repo: "plain", root: "plain/app", commands: { cwd: "plain/app" }, tests: { safe: [{ cmd: run("pass"), cwd: "plain/app" }] } },
 ];
 
@@ -259,7 +278,7 @@ afterAll(async () => {
 describe.skipIf(!!noSandbox)("bun run test:apps", () => {
   let main: ReturnType<typeof testApps>;
   let typecheck: ReturnType<typeof testApps>;
-  const ids = APPS.map((a) => a.id).filter((id) => !["hang", "tsc", "not-a-checkout", "typecheck-only", "connect-late", "slow-pass"].includes(id));
+  const ids = APPS.map((a) => a.id).filter((id) => !["hang", "tsc", "not-a-checkout", "typecheck-only", "connect-late", "slow-pass", "listen-wide", "listen-loopback"].includes(id));
   beforeAll(() => {
     main = testApps(["--json", ...ids]);
     typecheck = testApps(["--json", "--no-tests", "--commands", "typecheck,build", "tsc"]);
@@ -399,6 +418,20 @@ describe.skipIf(!!noSandbox)("bun run test:apps", () => {
       rmSync(join(root, "core/concurrent.txt"), { force: true });
     }
   }, 60_000);
+
+  test("a suite that listens beyond loopback (0.0.0.0) is killed at once and fails; one on 127.0.0.1 passes", () => {
+    const run = testApps(["--json", "listen-wide", "listen-loopback"]);
+    expect(run.status).toBe(1);
+    const wide = run.reports["listen-wide"].commands[0];
+    const [pid, port] = readFileSync(join(root, "core/member/app/node_modules/.cache/listen-wide.pid"), "utf8").split(" ").map(Number);
+    expect(wide.ok).toBe(false);
+    expect(wide.exposed).toEqual([expect.stringMatching(new RegExp(`^egress: bun\\(${pid}\\) TCP \\*:${port} \\(LISTEN\\)$`))]);
+    expect(wide.verdict.reasons).toContain(`listened beyond loopback, reachable from other hosts (killed): ${wide.exposed[0]}`);
+    expect(wide.seconds).toBeLessThan(15); // killed, not left to serve its 20 s
+    expect(() => process.kill(pid!, 0)).toThrow();
+    const loopback = run.reports["listen-loopback"].commands[0];
+    expect({ ok: loopback.ok, exposed: loopback.exposed }).toEqual({ ok: true, exposed: [] });
+  }, 90_000);
 
   test("a named command (build, typecheck) gets no network port at all", () => {
     const build = typecheck.reports["tsc"].commands[1];
