@@ -3922,8 +3922,7 @@
       "root": "apps/skitzo/apps/frontend",
       "scan": {
         "paths": [
-          "apps/skitzo/apps/frontend/src/app",
-          "apps/skitzo/apps/frontend/src/components"
+          "apps/skitzo/apps/frontend/src/app"
         ],
         "exclude": []
       },
