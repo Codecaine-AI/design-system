@@ -1604,7 +1604,7 @@
         ],
         "darkSwitch": {
           "kind": "storage",
-          "key": "canvasAgentViewerStyle.v1",
+          "key": "canvasAgentViewerStyle.v2",
           "value": "{\"theme\":\"dark\"}"
         },
         "sidebar": {
@@ -1628,6 +1628,10 @@
         {
           "what": "test:apps re-run under the round-3 sandbox (R3-C, 2026-10-05)",
           "reason": "bun run test:apps --root /Users/Ford/workspace-ds --commands typecheck,build twice, under the round-3 sandbox (rollout-r3-a d24a159: writes only in the app's own checkouts, checkouts.ts appScope, and the run tmp; a suite connects only to its block and 49152-65535 on loopback, minus the listeners at start and the owner's ports; a named command gets no port; no .env reads) with the write check over the app's own checkouts (git status pinned to their git dirs, find -newer/-cnewer, .git entries): tests.safe[0]: run 1 exit 0, 4 pass, 0 fail in 5.1 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0, 4 pass, 0 fail in 5.1 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.typecheck: run 1 exit 0 in 6.8 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0 in 6.7 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.build: not set in apps.json (skipped). Every result matches tests.baselines (tests.safe[0], commands.typecheck: recorded by R2-C, cmd added in R3-C from the commands those runs executed, which equal the current ones). Reports in rollout/tooling/r3-c-runs/final-1 and final-2"
+        },
+        {
+          "what": "darkSwitch writes the canvasAgentViewerStyle.v2 storage key",
+          "reason": "viewer-shell pass 1 (decision 51) raises the host style key version; the host saves its settings on mount, so a theme written to the old key after the first load is never carried over. Switched on 2026-10-06 at the viewer-shell worker request, before its after captures"
         }
       ]
     },
@@ -2539,7 +2543,7 @@
         ],
         "darkSwitch": {
           "kind": "storage",
-          "key": "simpleResearchStyleSettings.v1",
+          "key": "simpleResearchStyleSettings.v2",
           "value": "{\"theme\":\"dark\"}"
         }
       },
@@ -2563,6 +2567,10 @@
         {
           "what": "test:apps re-run under the round-3 sandbox (R3-C, 2026-10-05)",
           "reason": "bun run test:apps --root /Users/Ford/workspace-ds --commands typecheck,build twice, under the round-3 sandbox (rollout-r3-a d24a159: writes only in the app's own checkouts, checkouts.ts appScope, and the run tmp; a suite connects only to its block and 49152-65535 on loopback, minus the listeners at start and the owner's ports; a named command gets no port; no .env reads) with the write check over the app's own checkouts (git status pinned to their git dirs, find -newer/-cnewer, .git entries): tests.safe[0]: run 1 exit 0, 35 pass, 0 fail in 5.1 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0, 35 pass, 0 fail in 5.1 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.typecheck: run 1 exit 0 in 3.1 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0 in 2.8 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.build: not set in apps.json (skipped). Every result matches tests.baselines (tests.safe[0], commands.typecheck: recorded by R2-C, cmd added in R3-C from the commands those runs executed, which equal the current ones). Reports in rollout/tooling/r3-c-runs/final-1 and final-2"
+        },
+        {
+          "what": "darkSwitch writes the simpleResearchStyleSettings.v2 storage key",
+          "reason": "viewer-shell pass 1 (decision 51) raises the host style key version; the host saves its settings on mount, so a theme written to the old key after the first load is never carried over. Switched on 2026-10-06 at the viewer-shell worker request, before its after captures"
         }
       ]
     },
@@ -2954,7 +2962,7 @@
         ],
         "darkSwitch": {
           "kind": "storage",
-          "key": "simpleResearchStyleSettings.v1",
+          "key": "simpleResearchStyleSettings.v2",
           "value": "{\"theme\":\"dark\"}"
         },
         "sidebar": {
@@ -2974,6 +2982,10 @@
         {
           "what": "test:apps re-run under the round-3 sandbox (R3-C, 2026-10-05)",
           "reason": "bun run test:apps --root /Users/Ford/workspace-ds --commands typecheck,build twice, under the round-3 sandbox (rollout-r3-a d24a159: writes only in the app's own checkouts, checkouts.ts appScope, and the run tmp; a suite connects only to its block and 49152-65535 on loopback, minus the listeners at start and the owner's ports; a named command gets no port; no .env reads) with the write check over the app's own checkouts (git status pinned to their git dirs, find -newer/-cnewer, .git entries): tests.safe[0]: run 1 exit 0, 7 pass, 0 fail in 5.1 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0, 7 pass, 0 fail in 5.0 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.typecheck: run 1 exit 0 in 6.0 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0 in 5.6 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.build: not set in apps.json (skipped). Every result matches tests.baselines (tests.safe[0], commands.typecheck: recorded by R2-C, cmd added in R3-C from the commands those runs executed, which equal the current ones). Reports in rollout/tooling/r3-c-runs/final-1 and final-2"
+        },
+        {
+          "what": "darkSwitch writes the simpleResearchStyleSettings.v2 storage key",
+          "reason": "viewer-shell pass 1 (decision 51) raises the host style key version; the host saves its settings on mount, so a theme written to the old key after the first load is never carried over. Switched on 2026-10-06 at the viewer-shell worker request, before its after captures"
         }
       ]
     },
