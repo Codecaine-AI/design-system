@@ -208,3 +208,27 @@ describe("fontSourceJudge with the runner's served-path mapping (decision 30)", 
     }
   });
 });
+
+test("fontSourceJudge sees the file the app serves itself at a prefix path: different bytes fail, a byte copy passes under the copy rule", () => {
+  const root = join(scratch, "shadow-root");
+  const pkg = join(root, "app/node_modules/@codecaine-ai/design-system");
+  const site = join(root, "tmp/site");
+  const shadow = join(site, "@codecaine-ai/design-system");
+  for (const dir of [join(pkg, "fonts"), join(pkg, "css"), join(shadow, "fonts"), join(shadow, "css")]) mkdirSync(dir, { recursive: true });
+  writeFileSync(join(pkg, "package.json"), '{"name":"@codecaine-ai/design-system"}');
+  for (const name of ["Inter-Regular.woff2", "Inter-Bold.woff2"]) copyFileSync(join(FONTS, name), join(pkg, "fonts", name));
+  copyFileSync(FONTS_CSS, join(pkg, "css/fonts.css"));
+  // The site's own files at the prefix: another font under the package font's name, a byte copy, another fonts.css.
+  writeFileSync(join(shadow, "fonts/Inter-Regular.woff2"), "the app's own font");
+  copyFileSync(join(FONTS, "Inter-Bold.woff2"), join(shadow, "fonts/Inter-Bold.woff2"));
+  writeFileSync(join(shadow, "css/fonts.css"), "@font-face{font-family:Inter}");
+  const running = { app: { id: "shadow-app", root: "app", run: { mode: "static" } }, root, tmp: join(root, "tmp"), serveRoot: site, baseUrl: "http://127.0.0.1:47000" } as unknown as RunningApp;
+  const judge = fontSourceJudge({ packageDirs: [realpathSync(pkg)], buildFontsDir: FONTS, buildFontsCss: FONTS_CSS, copyDirs: [running.tmp], diskPath: (url) => fontDiskPath(running, url) });
+  const PREFIX = "http://127.0.0.1:47000/@codecaine-ai/design-system";
+
+  expect(judge(`${PREFIX}/fonts/Inter-Regular.woff2`, null)).toMatchObject({ ok: false, how: expect.stringContaining("not from the design-system package's fonts/"), path: join(shadow, "fonts/Inter-Regular.woff2") });
+  // A byte copy counts only from the package's fonts.css, and the site's own css/fonts.css is not that.
+  expect(judge(`${PREFIX}/fonts/Inter-Bold.woff2`, `${PREFIX}/css/fonts.css`)).toMatchObject({ ok: false, how: expect.stringContaining(`it is in ${join(shadow, "css/fonts.css")}`) });
+  copyFileSync(FONTS_CSS, join(shadow, "css/fonts.css"));
+  expect(judge(`${PREFIX}/fonts/Inter-Bold.woff2`, `${PREFIX}/css/fonts.css`)).toMatchObject({ ok: true, how: expect.stringMatching(/^a copy of the package's fonts\/Inter-Bold\.woff2, declared in the package's fonts\.css/) });
+});

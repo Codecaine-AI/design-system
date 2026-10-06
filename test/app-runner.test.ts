@@ -602,6 +602,28 @@ describe("servedFromRoot", () => {
     const font = "http://127.0.0.1:46911/@codecaine-ai/design-system/fonts/Inter-Regular.woff2";
     expect(servedFromRoot(running, [font])).toEqual({ ok: false, outside: [`${font} -> ${join(outsidePkg, "fonts/Inter-Regular.woff2")}`], unresolved: [] });
   });
+
+  test("a file the app's server has at the prefix path is the one mapped, not the package's", () => {
+    const root = makeRoot();
+    const pkg = join(root, "app/node_modules/@codecaine-ai/design-system");
+    mkdirSync(join(pkg, "fonts"), { recursive: true });
+    writeFileSync(join(pkg, "package.json"), '{"name":"@codecaine-ai/design-system"}');
+    for (const name of ["Inter-Regular.woff2", "Inter-Bold.woff2", "Inter-Medium.woff2"]) writeFileSync(join(pkg, "fonts", name), "the package's font");
+    const site = join(root, "app/site");
+    mkdirSync(join(site, "@codecaine-ai/design-system/fonts"), { recursive: true });
+    writeFileSync(join(site, "@codecaine-ai/design-system/fonts/Inter-Regular.woff2"), "the app's own font");
+    const elsewhere = mkdtempSync(join(scratch, "elsewhere-"));
+    writeFileSync(join(elsewhere, "Inter-Bold.woff2"), "a font outside the root");
+    symlinkSync(join(elsewhere, "Inter-Bold.woff2"), join(site, "@codecaine-ai/design-system/fonts/Inter-Bold.woff2"));
+    // Under a base path, like every other served URL.
+    const running = { app: fixtureApp({ ui: 46911 }), root, serveRoot: site, baseUrl: "http://127.0.0.1:46911/studio" } as RunningApp;
+    const P = "http://127.0.0.1:46911/studio/@codecaine-ai/design-system/fonts";
+
+    expect(servedDiskPath(running, `${P}/Inter-Regular.woff2`)).toBe(join(site, "@codecaine-ai/design-system/fonts/Inter-Regular.woff2"));
+    expect(servedFromRoot(running, [`${P}/Inter-Bold.woff2`])).toEqual({ ok: false, outside: [`${P}/Inter-Bold.woff2 -> ${join(elsewhere, "Inter-Bold.woff2")}`], unresolved: [] });
+    // Nothing served at that path: the package's file, as before.
+    expect(servedDiskPath(running, `${P}/Inter-Medium.woff2`)).toBe(join(pkg, "fonts/Inter-Medium.woff2"));
+  });
 });
 
 const noPlaywright = playwrightUnavailable(process.env.DS_MIRROR ?? "/Users/Ford/workspace-ds");

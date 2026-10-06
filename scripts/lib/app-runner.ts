@@ -1436,7 +1436,8 @@ function designSystemFile(path: string, packageDir: () => string | null): string
 /**
  * Maps a served URL or path to a disk path, or null for a virtual module (/@vite/client, /@id/...).
  * A URL under the run's base path (baseUrl /app) maps relative to it. `/@codecaine-ai/design-system/...`
- * maps into `packageDir()`, the real path of the design-system package the app resolves (decision 30).
+ * maps to the file at that path under the serve root when there is one (the file the server sends), else
+ * into `packageDir()`, the real path of the design-system package the app resolves (decision 30).
  */
 function toDiskPath(entry: string, serveRoot: string, basePath: string, packageDir: () => string | null): string | null {
   let path = entry;
@@ -1449,7 +1450,11 @@ function toDiskPath(entry: string, serveRoot: string, basePath: string, packageD
     path = entry.split(/[?#]/)[0]!;
   }
   if (path.startsWith("/@fs/")) return path.slice("/@fs".length);
-  if (path.startsWith(DS_URL_PREFIX)) return designSystemFile(path, packageDir);
+  if (path.startsWith(DS_URL_PREFIX)) {
+    // A file the app's server has at that path (a static site's copy) is what it sends; only without one, the package.
+    const served = join(serveRoot, path);
+    return isInside(served, serveRoot) && existsSync(served) && statSync(served).isFile() ? served : designSystemFile(path, packageDir);
+  }
   if (path.startsWith("/@") || path.startsWith("/__")) return null;
   if (!fromUrl && isAbsolute(path)) {
     // An absolute disk path, unless it reads as a URL path under the serve root (/src/main.tsx).
