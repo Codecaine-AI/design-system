@@ -4,24 +4,34 @@
  * Shared by snapshot (screenshots), verify:apps (runtime check) and registry-prove. Every run:
  *   - gets a fresh temp dir that is HOME and the XDG dirs, with the profile's fixtures copied in;
  *   - runs with a sanitized environment built from an allowlist, never from the full process.env;
- *   - runs every process it starts inside the OS sandbox (sandbox.ts): outbound network only to
- *     loopback and never an owner port, no writes under the real home outside --root, the out dir and
- *     its temp dir, no `.env` reads. Without a working sandbox-exec startApp throws, unless the caller
- *     passes allowUnsandboxed (proof/debug only; running.unsandboxed is then set);
+ *   - runs every process it starts inside the OS sandbox, a profile generated per run (sandbox.ts):
+ *     network only to its own port block and allowedLocalPorts on loopback (listening only on the
+ *     block), no Unix socket but DNS/syslog and its temp dir, no reads under the real home but --root and
+ *     the runtimes, writes only in --root (never the design-system checkout or the out dir) and its temp
+ *     dir, no `.env*` reads, signals only to its own processes; TMPDIR is its temp dir. Without a working
+ *     sandbox-exec startApp throws, unless the caller passes allowUnsandboxed (proof/debug only;
+ *     running.unsandboxed is then set);
  *   - samples its processes' TCP connections with lsof from before the first spawn until stop(); every
  *     connection that leaves the run, and every failed sample, goes into running.violations;
  *   - binds only its profile's ports (46900-47999, never an owner port) and refuses a busy port;
- *   - starts every process in its own process group and records each process's identity (pid, group,
- *     start time) in <outDir>/runs/<id>.json, so `bun scripts/lib/app-runner.ts --cleanup` can stop
- *     exactly those after a crash; stop() kills only this run's processes, revalidating each one's start
- *     time before every signal, then confirms every port the run bound is free.
+ *   - starts every process in its own process group and records the roots' and every process's identity
+ *     (pid, group, start time) in <outDir>/runs/<id>.json, where no run process can write, so
+ *     `bun scripts/lib/app-runner.ts --cleanup` can stop what a crashed tool left: only processes under an
+ *     identity-checked runner root; stop() kills only this run's processes, revalidating each one's start
+ *     time before every signal, then confirms they are gone and every port the run bound is free (a stop it
+ *     cannot confirm rejects, and the run stays for the exit hook);
+ *   - installs SIGINT/SIGTERM/SIGHUP handlers (graceful stop, then exit 130/143/129; a second signal
+ *     SIGKILLs every live run at once), and an exit hook that SIGKILLs what is still live; a watchdog in
+ *     every run's process group kills it when the tool dies by SIGKILL.
  *
  * Run modes (registry `run.mode`):
  *   browser   spawn `run.start`, read the bound URL from its output with `run.readyPattern`; served
  *             URL paths map under `run.serveRoot` (the Vite/web root), default `run.cwd`
  *   static    `run.start` set: same as browser (a fixture server that builds into {tmp});
  *             otherwise run `commands.build`, then serve `run.staticDir` on the app's port
- *   electron  run `run.electron.build`, then Playwright `_electron.launch` against `run.electron.main`
+ *   electron  refused unless the tool runs with DS_ALLOW_ELECTRON=1 (cfprefsd writes the owner's
+ *             ~/Library/Preferences/com.github.Electron.plist, which no sandbox stops). Then: run
+ *             `run.electron.build`, then Playwright `_electron.launch` against `run.electron.main`
  *             through a launcher that starts Electron inside the sandbox (with `--no-sandbox`: Chromium
  *             cannot nest its own sandbox in ours). The app's `ready` event waits until the request
  *             guard is on electronApp.context(). The guard covers renderer traffic; main-process Node
@@ -170,13 +180,15 @@ export function expandPlaceholders(text: string, ctx: PlaceholderContext): strin
     .replaceAll("{ds}", DESIGN_SYSTEM_ROOT);
 }
 
-/** The allowlisted inherited variables, with HOME and the XDG dirs inside `tmp`. Browsers get exactly this. */
+/** The allowlisted inherited variables, with HOME, TMPDIR and the XDG dirs inside `tmp`. Browsers get exactly this. */
 export function sanitizedEnv(tmp: string): Record<string, string> {
   const env: Record<string, string> = {};
   for (const [key, value] of Object.entries(process.env)) {
     if (value !== undefined && (ENV_ALLOWLIST.has(key) || key.startsWith("BUN_INSTALL"))) env[key] = value;
   }
   env.HOME = tmp;
+  // Temp files go to the run's own dir: the sandbox denies writes to the shared system temp dirs.
+  env.TMPDIR = tmp;
   env.XDG_CONFIG_HOME = join(tmp, ".config");
   env.XDG_DATA_HOME = join(tmp, ".local", "share");
   env.XDG_STATE_HOME = join(tmp, ".local", "state");
@@ -321,21 +333,29 @@ export interface RootProc {
 
 const normalizeStart = (text: string) => text.trim().split(/\s+/).join(" ");
 
-/** Every process with its identity. `ps` can fail under load (fork limits); an empty table is retried. */
-function processTable(): ProcInfo[] {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const out = spawnSync("ps", ["-A", "-o", "pid=,ppid=,pgid=,lstart="], { encoding: "utf8" }).stdout ?? "";
+/** `ps` and `lsof` never hang a stop: each call is killed after this long and counts as failed. */
+const PS_TIMEOUT_MS = 10_000;
+const LSOF_TIMEOUT_MS = 10_000;
+
+/**
+ * Every process with its identity, or null when `ps` fails (error, timeout, non-zero exit or an empty
+ * table, which happens under fork pressure) `attempts` times. Null is "unknown", never "nothing running".
+ */
+function readProcessTable(attempts = 3, timeout = PS_TIMEOUT_MS): ProcInfo[] | null {
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    const result = spawnSync("ps", ["-A", "-o", "pid=,ppid=,pgid=,lstart="], { encoding: "utf8", timeout });
+    if (result.error || result.status !== 0) continue;
     const procs: ProcInfo[] = [];
-    for (const line of out.split("\n")) {
+    for (const line of (result.stdout ?? "").split("\n")) {
       const cols = line.trim().split(/\s+/);
       if (cols.length < 4) continue;
       const [pid, ppid, pgid] = cols.slice(0, 3).map(Number) as [number, number, number];
       if (![pid, ppid, pgid].every(Number.isInteger)) continue;
       procs.push({ pid, ppid, pgid, started: cols.slice(3).join(" ") });
     }
-    if (procs.length) return procs;
+    if (procs.some((proc) => proc.pid === process.pid)) return procs;
   }
-  return [];
+  return null;
 }
 
 function exists(pid: number): boolean {
@@ -347,11 +367,12 @@ function exists(pid: number): boolean {
   }
 }
 
-/** `ps -o lstart=` of a pid (whitespace normalized), or "" when it is gone. Retried while the pid exists. */
+/** `ps -o lstart=` of a pid (whitespace normalized), or "" when it is gone or `ps` keeps failing. */
 function startTime(pid: number): string {
   for (let attempt = 0; attempt < 3; attempt++) {
-    const started = normalizeStart(spawnSync("ps", ["-o", "lstart=", "-p", String(pid)], { encoding: "utf8" }).stdout ?? "");
-    if (started || !exists(pid)) return started;
+    const result = spawnSync("ps", ["-o", "lstart=", "-p", String(pid)], { encoding: "utf8", timeout: PS_TIMEOUT_MS });
+    const started = normalizeStart(result.stdout ?? "");
+    if (started || (!result.error && !exists(pid))) return started;
   }
   return "";
 }
@@ -367,13 +388,13 @@ function unreaped(root: RootProc): boolean {
 }
 
 let ownPgid: number | undefined;
-/** This process's group (read once, lazily: importing the runner runs no `ps`). Never signalled. */
+/** This process's group (read once while `ps` works; importing the runner runs no `ps`). Never signalled. */
 function OWN_PGID(): number {
-  return (ownPgid ??= processTable().find((p) => p.pid === process.pid)?.pgid ?? process.pid);
+  return (ownPgid ??= readProcessTable()?.find((p) => p.pid === process.pid)?.pgid ?? process.pid);
 }
 
 /** The processes of `procs` that still exist with the same start time, with their current pgid. */
-function stillRunning(procs: readonly ProcInfo[], table: ProcInfo[] = processTable()): ProcInfo[] {
+function stillRunning(procs: readonly ProcInfo[], table: readonly ProcInfo[]): ProcInfo[] {
   const byPid = new Map(table.map((proc) => [proc.pid, proc]));
   const out: ProcInfo[] = [];
   for (const proc of procs) {
@@ -387,7 +408,7 @@ function stillRunning(procs: readonly ProcInfo[], table: ProcInfo[] = processTab
  * The run's processes: descendants of its roots, plus every member of their process groups. A root whose
  * pid now belongs to a different process (start time changed) is dropped with its group: the pid was reused.
  */
-function runProcesses(roots: RootProc[], table: ProcInfo[] = processTable()): ProcInfo[] {
+function runProcesses(roots: RootProc[], table: readonly ProcInfo[]): ProcInfo[] {
   const byPid = new Map(table.map((proc) => [proc.pid, proc]));
   const rootPids = roots
     .filter((root) => {
@@ -413,10 +434,18 @@ function runProcesses(roots: RootProc[], table: ProcInfo[] = processTable()): Pr
   return [...found.values()];
 }
 
-/** TCP ports in LISTEN state held by these pids. */
+/** Runs lsof with a timeout; null when it fails (exit 1 with no message is "nothing matched", not a failure). */
+function lsofSync(args: string[]): string | null {
+  const result = spawnSync("lsof", args, { encoding: "utf8", timeout: LSOF_TIMEOUT_MS });
+  if (result.error) return null;
+  if (result.status === 0 || (result.status === 1 && !(result.stderr ?? "").trim())) return result.stdout ?? "";
+  return null;
+}
+
+/** TCP ports in LISTEN state held by these pids; [] when lsof fails (the guard then allows nothing new). */
 function listeningPorts(pids: number[]): number[] {
   if (pids.length === 0) return [];
-  const out = spawnSync("lsof", ["-nP", "-w", "-a", "-iTCP", "-sTCP:LISTEN", "-p", pids.join(","), "-Fn"], { encoding: "utf8" }).stdout ?? "";
+  const out = lsofSync(["-nP", "-w", "-a", "-iTCP", "-sTCP:LISTEN", "-p", pids.join(","), "-Fn"]) ?? "";
   const ports = new Set<number>();
   for (const line of out.split("\n")) {
     if (!line.startsWith("n")) continue;
@@ -426,9 +455,10 @@ function listeningPorts(pids: number[]): number[] {
   return [...ports].sort((a, b) => a - b);
 }
 
-/** Pids listening on a TCP port (any process). */
-function portListeners(port: number): number[] {
-  const out = spawnSync("lsof", ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN", "-t"], { encoding: "utf8" }).stdout ?? "";
+/** Pids listening on a TCP port (any process), or null when lsof fails. */
+function portListeners(port: number): number[] | null {
+  const out = lsofSync(["-nP", "-w", `-iTCP:${port}`, "-sTCP:LISTEN", "-t"]);
+  if (out === null) return null;
   return out
     .split("\n")
     .map((line) => Number(line.trim()))
@@ -446,12 +476,13 @@ function signal(target: number, sig: NodeJS.Signals) {
 const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
 
 /**
- * Signals the processes of `procs` that are still the same processes (pid and start time checked just
- * before), and their current process groups: a group is signalled only while one of its members is a
- * revalidated run process, so its id cannot have been reused. Never this process or its own group.
+ * Signals the processes of `procs` that are still the same processes (pid and start time checked against
+ * `table`, read just before), and their current process groups: a group is signalled only while one of
+ * its members is a revalidated run process, so its id cannot have been reused. Never this process or its
+ * own group.
  */
-function signalRun(procs: readonly ProcInfo[], sig: NodeJS.Signals): number {
-  const live = stillRunning(procs).filter((proc) => proc.pid !== process.pid);
+function signalRun(procs: readonly ProcInfo[], sig: NodeJS.Signals, table: readonly ProcInfo[]): number {
+  const live = stillRunning(procs, table).filter((proc) => proc.pid !== process.pid);
   const groups = new Set(live.map((proc) => proc.pgid).filter((pgid) => pgid > 1 && pgid !== OWN_PGID()));
   for (const pgid of groups) signal(-pgid, sig);
   for (const proc of live) signal(proc.pid, sig);
@@ -459,14 +490,35 @@ function signalRun(procs: readonly ProcInfo[], sig: NodeJS.Signals): number {
 }
 
 /**
+ * The fallback when `ps` fails: the process groups the run's roots lead (every root is spawned detached,
+ * so its pid is its group id). An unreaped root's group is certainly ours; an exited root's group id
+ * cannot be reused while any member of the group is alive.
+ */
+function signalRootGroups(roots: readonly RootProc[], sig: NodeJS.Signals) {
+  for (const root of roots) {
+    if (root.pid <= 1 || root.pid === process.pid || root.pid === OWN_PGID()) continue;
+    signal(-root.pid, sig);
+    if (unreaped(root)) signal(root.pid, sig);
+  }
+}
+
+export interface KillResult {
+  /** Every run process is gone, read from a working process table. False when `ps` failed or some survived. */
+  confirmed: boolean;
+  /** Run processes still alive at the end (empty when unknown). */
+  left: ProcInfo[];
+}
+
+/**
  * Stops a run's processes: SIGTERM, wait, SIGKILL, to the roots' descendants and process groups, plus
  * `known` processes seen earlier (a descendant that left its group). Every process is revalidated by
- * start time before each signal.
+ * start time before each signal. When `ps` fails, the roots' process groups are signalled instead (the
+ * recorded group ids), and the result is unconfirmed.
  */
-export async function killRun(roots: RootProc[], graceMs = 8_000, known: readonly ProcInfo[] = []) {
-  const table = processTable();
+export async function killRun(roots: RootProc[], graceMs = 8_000, known: readonly ProcInfo[] = []): Promise<KillResult> {
+  const first = readProcessTable();
   const captured = new Map<number, ProcInfo>();
-  for (const proc of [...stillRunning(known, table), ...runProcesses(roots, table)]) if (proc.pid !== process.pid) captured.set(proc.pid, proc);
+  if (first) for (const proc of [...stillRunning(known, first), ...runProcesses(roots, first)]) if (proc.pid !== process.pid) captured.set(proc.pid, proc);
   const procs = [...captured.values()];
   // Roots this process spawned (detached, so each leads its own group) are signalled from their child
   // handle too: that needs no `ps`, so a failing process table can never leave a root running.
@@ -476,15 +528,34 @@ export async function killRun(roots: RootProc[], graceMs = 8_000, known: readonl
       signal(-root.pid, sig);
       signal(root.pid, sig);
     }
-    return signalRun(procs, sig) + own.length;
+    const table = readProcessTable(1);
+    if (!table) {
+      signalRootGroups(roots, sig);
+      return own.length + 1; // unknown: assume something is left
+    }
+    return signalRun([...procs, ...runProcesses(roots, table)], sig, table) + own.length;
   };
-  const anyLeft = () => roots.some(unreaped) || stillRunning(procs).length > 0;
-  if (signalAll("SIGTERM") === 0) return;
+  const left = (): ProcInfo[] | null => {
+    const table = readProcessTable(1);
+    if (!table) return null;
+    const alive = new Map<number, ProcInfo>();
+    for (const proc of [...stillRunning(procs, table), ...runProcesses(roots, table)]) if (proc.pid !== process.pid) alive.set(proc.pid, proc);
+    return [...alive.values()];
+  };
+  const anyLeft = () => {
+    if (roots.some(unreaped)) return true;
+    const now = left();
+    return now === null || now.length > 0;
+  };
+  if (first && procs.length === 0 && !roots.some(unreaped)) return { confirmed: true, left: [] };
+  signalAll("SIGTERM");
   const deadline = Date.now() + graceMs;
   while (Date.now() < deadline && anyLeft()) await sleep(100);
-  signalAll("SIGKILL");
+  if (anyLeft()) signalAll("SIGKILL");
   const hard = Date.now() + 3_000;
   while (Date.now() < hard && anyLeft()) await sleep(50);
+  const final = left();
+  return { confirmed: final !== null && final.length === 0 && !roots.some(unreaped), left: final ?? [] };
 }
 
 const ANSI = /\u001b\[[0-9;?]*[ -\/]*[@-~]|\u001b\][^\u0007]*\u0007/g;
@@ -594,9 +665,14 @@ interface Internal {
   portCache?: { at: number; ports: Set<number> };
   /** Every socket egress sampling saw ("pid local->remote"). */
   sockets: Set<string>;
+  /** Electron only, while its launch is in flight or after a stop() that raced it: kill it synchronously. */
+  lateKill?: () => void;
 }
 const internals = new WeakMap<RunningApp, Internal>();
-/** Runs this process started and has not finished stopping (a run leaves only when its stop() is done). */
+/**
+ * Runs this process started and has not confirmed stopped: a run leaves only when its stop() saw every
+ * one of its processes gone (from a working `ps`). The exit hook and a second signal SIGKILL what is here.
+ */
 const live = new Set<RunningApp>();
 /** Set by the signal and crash handlers and at exit: no new run may start. */
 let shuttingDown = false;
@@ -609,48 +685,83 @@ export async function stopAllApps(): Promise<void> {
   await Promise.allSettled([...live].map((running) => running.stop()));
 }
 
+/**
+ * SIGKILL every live run's processes now, synchronously (the exit hook, a second signal): revalidated run
+ * processes and their groups from one `ps` read, and the roots' own groups when `ps` fails.
+ */
+function killAllNow() {
+  shuttingDown = true;
+  const runs = [...live].map((running) => internals.get(running)).filter((internal): internal is Internal => Boolean(internal));
+  if (runs.length === 0) return;
+  const table = readProcessTable(1, 5_000);
+  for (const internal of runs) {
+    for (const root of internal.roots.filter(unreaped)) {
+      signal(-root.pid, "SIGKILL");
+      signal(root.pid, "SIGKILL");
+    }
+    if (table) signalRun([...stillRunning([...internal.known.values()], table), ...runProcesses(internal.roots, table)], "SIGKILL", table);
+    else signalRootGroups(internal.roots, "SIGKILL");
+    internal.lateKill?.();
+  }
+}
+
 let exitHookInstalled = false;
 
 /** At process exit (normal, process.exit, crash): SIGKILL every live run's processes, synchronously. */
 function installExitHook() {
   if (exitHookInstalled) return;
   exitHookInstalled = true;
-  process.on("exit", () => {
-    shuttingDown = true;
-    for (const running of live) {
-      const internal = internals.get(running);
-      if (!internal) continue;
-      const table = processTable();
-      signalRun([...stillRunning([...internal.known.values()], table), ...runProcesses(internal.roots, table)], "SIGKILL");
-    }
-  });
+  process.on("exit", killAllNow);
 }
 
 const signalCleanups = new Set<() => unknown>();
 let signalHandlersInstalled = false;
+let crashHandlersInstalled = false;
+let exiting = false;
+const SIGNAL_EXIT: Record<"SIGINT" | "SIGTERM" | "SIGHUP", number> = { SIGINT: 130, SIGTERM: 143, SIGHUP: 129 };
 
 /**
- * Opt-in for CLIs and library users: on SIGINT, SIGTERM or SIGHUP (exit 130), or an uncaught exception
- * or unhandled rejection (exit 1), refuse new runs, run `cleanup` (close the browser), stop every app this
- * process started, then exit. Launch browsers with LAUNCH_OPTIONS (handleSIG* false) so Playwright does
- * not exit first. Returns a function that removes `cleanup`.
+ * First signal or crash: refuse new runs, run the cleanups (close the browser), stop every app this
+ * process started, then exit with `code`. A second signal while that runs SIGKILLs every live run at once
+ * and exits.
+ */
+function shutdown(reason: string, code: number) {
+  shuttingDown = true;
+  if (exiting) {
+    console.error(`\n${reason} again: killing the apps this process started now`);
+    killAllNow();
+    process.exit(code);
+  }
+  exiting = true;
+  console.error(`\n${reason}: stopping the apps this process started...`);
+  const bounded = (fn: () => unknown) => Promise.race([Promise.resolve().then(fn), sleep(10_000)]);
+  void Promise.allSettled([...signalCleanups].map(bounded))
+    .then(() => stopAllApps())
+    .finally(() => process.exit(code));
+}
+
+/**
+ * SIGINT, SIGTERM and SIGHUP handlers (exit 130, 143, 129). startApp installs them for every process
+ * that starts an app: Bun runs exit hooks on SIGINT but not on SIGTERM or SIGHUP, so without them those
+ * signals would leave the run to the watchdog. Launch browsers with LAUNCH_OPTIONS (handleSIG* false) so
+ * Playwright does not exit first.
+ */
+function installRunSignalHandlers() {
+  if (signalHandlersInstalled) return;
+  signalHandlersInstalled = true;
+  for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"] as const) process.on(sig, () => shutdown(sig, SIGNAL_EXIT[sig]));
+}
+
+/**
+ * For CLIs: the signal handlers startApp installs anyway, plus an uncaught exception or unhandled
+ * rejection (exit 1) handled the same way, and `cleanup` (close the browser) run before the apps are
+ * stopped. Returns a function that removes `cleanup`.
  */
 export function installSignalHandlers(cleanup?: () => unknown): () => void {
   if (cleanup) signalCleanups.add(cleanup);
-  if (!signalHandlersInstalled) {
-    signalHandlersInstalled = true;
-    let exiting = false;
-    const shutdown = (reason: string, code: number) => {
-      shuttingDown = true;
-      if (exiting) return;
-      exiting = true;
-      console.error(`\n${reason}: stopping the apps this process started...`);
-      const bounded = (fn: () => unknown) => Promise.race([Promise.resolve().then(fn), sleep(10_000)]);
-      void Promise.allSettled([...signalCleanups].map(bounded))
-        .then(() => stopAllApps())
-        .finally(() => process.exit(code));
-    };
-    for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"] as const) process.on(sig, () => shutdown(sig, 130));
+  installRunSignalHandlers();
+  if (!crashHandlersInstalled) {
+    crashHandlersInstalled = true;
     process.on("uncaughtException", (error) => {
       console.error(error);
       shutdown("uncaught exception", 1);
@@ -702,16 +813,21 @@ function ownPorts(running: RunningApp, maxAgeMs = PORT_CACHE_MS): Set<number> {
   const internal = internals.get(running);
   if (!internal) return new Set(running.startedPorts.filter((port) => !OWNER_PORTS.includes(port)));
   if (internal.portCache && Date.now() - internal.portCache.at <= maxAgeMs) return internal.portCache.ports;
-  const listening = listeningPorts(runProcesses(internal.roots).map((proc) => proc.pid));
+  const table = readProcessTable(1);
+  const listening = table ? listeningPorts(runProcesses(internal.roots, table).map((proc) => proc.pid)) : [];
   recordListeners(running, listening);
   const ports = new Set([...listening, ...(internal.staticPort ? [internal.staticPort] : [])].filter((port) => !OWNER_PORTS.includes(port)));
   internal.portCache = { at: Date.now(), ports };
   return ports;
 }
 
-/** The run's processes now (descendants, groups, and earlier-seen ones still alive); new ones are recorded. */
-function captureProcesses(internal: Internal, persist: () => void): ProcInfo[] {
-  const table = processTable();
+/**
+ * The run's processes now (descendants, groups, and earlier-seen ones still alive); new ones are recorded.
+ * Null when `ps` fails: the run's processes are then unknown.
+ */
+function captureProcesses(internal: Internal, persist: () => void): ProcInfo[] | null {
+  const table = readProcessTable();
+  if (!table) return null;
   const before = internal.known.size;
   const procs = [...runProcesses(internal.roots, table), ...stillRunning([...internal.known.values()], table)];
   for (const proc of procs) if (!internal.known.has(proc.pid)) internal.known.set(proc.pid, proc);
@@ -722,6 +838,11 @@ function captureProcesses(internal: Internal, persist: () => void): ProcInfo[] {
 /** One egress sample: the run's processes, their identities, their TCP sockets; violations recorded. */
 async function sampleEgress(running: RunningApp, internal: Internal, egress: EgressStats, persist: () => void) {
   const procs = captureProcesses(internal, persist);
+  if (!procs) {
+    egress.failures.push("ps failed: the run's processes are unknown");
+    addViolation(running, "egress sampling failed, isolation unproven: ps failed, the run's processes are unknown");
+    return;
+  }
   const pids = [...new Set(procs.map((proc) => proc.pid))].filter((pid) => pid !== process.pid);
   if (pids.length === 0) return;
   const result = await lsofConnections(pids);
@@ -778,10 +899,10 @@ function playwrightElectronLoader(root: string): string {
 /**
  * The executable Playwright launches for Electron: a script that writes its pid (Electron's, after exec)
  * to `pidFile`, so egress sampling covers Electron from its first instruction, then execs Electron inside
- * the sandbox with `--no-sandbox` (Chromium cannot install its own Seatbelt sandbox inside ours).
+ * the sandbox with `--no-sandbox` (Chromium cannot install its own Seatbelt sandbox inside ours). `dir` is
+ * the tool's own dir, never one the run can write: this script runs outside the sandbox.
  */
 function electronLauncher(dir: string, executablePath: string, policy: SandboxPolicy | null): { path: string; pidFile: string } {
-  mkdirSync(dir, { recursive: true });
   const pidFile = join(dir, "electron.pid");
   const argv = policy ? sandboxCommand(policy, [executablePath, "--no-sandbox"]) : [executablePath];
   const path = join(dir, "electron");
@@ -791,11 +912,19 @@ function electronLauncher(dir: string, executablePath: string, policy: SandboxPo
 
 const SIGNALS = ["SIGINT", "SIGTERM", "SIGHUP"] as const;
 
+/** Set to "1" in the tool's environment to run an Electron app at all (decision 23). */
+export const ELECTRON_OPT_IN = "DS_ALLOW_ELECTRON";
+
 function writeJsonAtomic(path: string, data: unknown) {
   mkdirSync(dirname(path), { recursive: true });
   const partial = `${path}.${process.pid}.partial`;
   writeFileSync(partial, `${JSON.stringify(data, null, 2)}\n`);
   renameSync(partial, path);
+}
+
+/** The ten ports of a block, or none. */
+function blockPorts(block: PortBlock | null): number[] {
+  return block ? Array.from({ length: block.size }, (_, i) => block.start + i) : [];
 }
 
 export async function startApp(app: AppEntry, opts: StartOptions): Promise<RunningApp> {
@@ -805,6 +934,10 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
     throw new Error(`${app.id}: run mode none (${app.run?.reason ?? "no reason given"}): no screenshots and no runtime checks`);
   if (!app.runProfile) throw new Error(`${app.id}: no run profile`);
   safeAppId(app.id);
+  if (mode === "electron" && process.env[ELECTRON_OPT_IN] !== "1")
+    throw new Error(
+      `${app.id}: Electron runs are refused (decision 23): cfprefsd writes the owner's ~/Library/Preferences/com.github.Electron.plist, which the sandbox cannot stop; set ${ELECTRON_OPT_IN}=1 only where that is acceptable`,
+    );
   const unproven = app.runProfile.proof?.status !== "proven";
   if (unproven && !opts.allowUnproven)
     throw new Error(`${app.id}: run profile is ${app.runProfile.proof?.status ?? "missing"}; only a proven profile runs`);
@@ -818,20 +951,34 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
   if (noSandbox && !opts.allowUnsandboxed) throw new Error(`${app.id}: refusing to start without the OS sandbox: ${noSandbox}`);
   for (const [name, port] of Object.entries(app.runProfile.ports ?? {})) {
     const holders = portListeners(port);
+    if (holders === null) throw new Error(`${app.id}: cannot check whether port ${name}=${port} is free (lsof failed)`);
     if (holders.length) throw new Error(`${app.id}: port ${name}=${port} is in use (pid ${holders.join(", ")}); a previous run may still be up`);
   }
+  installRunSignalHandlers();
+  installExitHook();
 
   const logDir = join(outDir, app.id, "logs");
   mkdirSync(logDir, { recursive: true });
   const logPath = join(logDir, `${stamp()}-${mode}.log`);
   const tmp = mkdtempSync(join(realTmpRoot(), `ds-run-${app.id}-`));
+  // The tool's own scratch (the Electron launcher): in the shared temp dir, which the run cannot write.
+  const toolDir = mkdtempSync(join(realTmpRoot(), `ds-tool-${app.id}-`));
   appendFileSync(logPath, `# ${app.id} run mode ${mode}, root ${root}, tmp ${tmp}\n`);
   if (unproven) {
     const warning = `!!! ${app.id}: RUNNING AN UNPROVEN PROFILE (allowUnproven). Use only to prove the profile; never for gates.`;
     console.error(warning);
     appendFileSync(logPath, `${warning}\n`);
   }
-  const policy = noSandbox ? null : runPolicy({ root, tmp, outDir });
+  const policy = noSandbox
+    ? null
+    : runPolicy({
+        root,
+        tmp,
+        outDir,
+        blockPorts: blockPorts(block),
+        allowedLocalPorts: app.runProfile.allowedLocalPorts ?? [],
+        bindAnyPort: mode === "electron",
+      });
   if (noSandbox) {
     const warning = `!!! ${app.id}: RUNNING WITHOUT THE OS SANDBOX (allowUnsandboxed): ${noSandbox}. Proof/debug only; never for gates.`;
     console.error(warning);
@@ -852,15 +999,18 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
   let stopping: Promise<void> | undefined;
 
   const egress: EgressStats = { samples: 0, failures: [], connections: 0 };
+  // In the out dir, which the sandbox keeps read-only for the run: no run process can forge or edit it.
   const recordPath = join(outDir, "runs", `${app.id}.json`);
   const tool = { pid: process.pid, started: startTime(process.pid) };
   const persist = () =>
     writeJsonAtomic(recordPath, {
-      version: 1,
+      version: 2,
       app: app.id,
       tool,
       tmp,
+      toolDir,
       logPath,
+      roots: roots.map(({ pid, started }) => ({ pid, started })),
       processes: [...internal.known.values()].map(({ pid, pgid, started }) => ({ pid, pgid, started })),
     });
   /** A new root: recorded at once, so a crash right after the spawn still leaves its identity on disk. */
@@ -871,19 +1021,30 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
       return;
     }
     roots.push(rootProc(pid, child));
+    persist();
     captureProcesses(internal, persist);
+  };
+  /** Electron's pid from its launcher's pid file, only while it is still this process's child (else null). */
+  const electronChild = (): number | null => {
+    if (!electronPidFile || !existsSync(electronPidFile)) return null;
+    const pid = Number(readFileSync(electronPidFile, "utf8").trim());
+    if (!Number.isInteger(pid) || pid <= 1) return null;
+    return readProcessTable(1)?.find((proc) => proc.pid === pid)?.ppid === process.pid ? pid : null;
   };
   let sampling = true;
   let wake: (() => void) | undefined;
   const sampleOnce = async () => {
-    if (electronPidFile && existsSync(electronPidFile)) {
+    try {
       // Adopt Electron from its launcher's pid file only while it is still our child: a pid read after
       // Electron exited could already belong to another process.
-      const pid = Number(readFileSync(electronPidFile, "utf8").trim());
-      if (processTable().find((proc) => proc.pid === pid)?.ppid === process.pid) {
+      const pid = electronChild();
+      if (pid !== null) {
         adopt(pid);
         electronPidFile = undefined;
       }
+    } catch (error) {
+      egress.failures.push(`adopting Electron failed: ${String(error).split("\n")[0]}`);
+      addViolation(running, `isolation unproven: adopting Electron failed: ${String(error).split("\n")[0]}`);
     }
     await sampleEgress(running, internal, egress, persist).catch((error) => {
       egress.failures.push(String(error));
@@ -891,34 +1052,42 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
     });
   };
 
+  const removeScratch = () => {
+    rmSync(tmp, { recursive: true, force: true });
+    rmSync(toolDir, { recursive: true, force: true });
+  };
   const doStop = async () => {
     sampling = false;
     wake?.();
     await sampler;
-    await sampleOnce(); // the last look before anything is killed
+    await sampleOnce(); // the last look before anything is killed (adopts a launching Electron too)
     if (electronApp) await Promise.race([electronApp.close().catch(() => undefined), sleep(10_000)]);
     server?.stop(true);
     internal.staticPort = undefined;
-    await killRun(roots, 8_000, [...internal.known.values()]);
+    const kill = await killRun(roots, 8_000, [...internal.known.values()]);
     const check = [...new Set([...running.startedPorts, ...Object.values(ports)])];
     let busy: string[] = [];
     for (let i = 0; i < 20; i++) {
       busy = check.flatMap((port) => {
         const holders = portListeners(port);
+        if (holders === null) return [`:${port} (unknown: lsof failed)`];
         return holders.length ? [`:${port} (pid ${holders.join(", ")})`] : [];
       });
       if (busy.length === 0) break;
       await sleep(100);
     }
-    const leftover = stillRunning([...internal.known.values()]);
-    rmSync(tmp, { recursive: true, force: true });
-    appendFileSync(logPath, `\n# stopped${busy.length ? `; still bound: ${busy.join(", ")}` : "; ports free"}; ${egress.samples} egress samples\n`);
-    if (leftover.length === 0) rmSync(recordPath, { force: true });
+    removeScratch();
+    const unconfirmed = kill.confirmed ? "" : kill.left.length ? `pids ${kill.left.map((proc) => proc.pid).join(", ")} still running` : "ps failed";
+    appendFileSync(
+      logPath,
+      `\n# stopped${unconfirmed ? ` (NOT CONFIRMED: ${unconfirmed})` : ""}${busy.length ? `; still bound: ${busy.join(", ")}` : "; ports free"}; ${egress.samples} egress samples\n`,
+    );
+    if (unconfirmed) throw new Error(`${app.id}: could not confirm the run stopped (${unconfirmed}); its record ${recordPath} stays for --cleanup`);
+    // Confirmed: the run leaves `live` (the exit hook has nothing more to kill) and its record goes.
+    live.delete(running);
+    rmSync(recordPath, { force: true });
     if (busy.length) throw new Error(`${app.id}: ports still bound after stop, not by this run's processes: ${busy.join(", ")}`);
   };
-  // The run stays in `live` until its stop is done: stopAllApps then waits for it, and the exit hook
-  // still kills its processes if the process exits mid-stop.
-  const stopOnce = () => doStop().finally(() => live.delete(running));
 
   const running: RunningApp = {
     app,
@@ -929,14 +1098,14 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
     env: {},
     logPath,
     egress,
-    // Memoized: a second caller (a signal handler during a failed start) waits for the same stop.
-    stop: () => (stopping ??= stopOnce()),
+    // Memoized: a second caller (a signal handler during a failed start) waits for the same stop. A run
+    // whose kill is not confirmed stays in `live`, so the exit hook and a second signal still SIGKILL it.
+    stop: () => (stopping ??= doStop()),
   };
   if (unproven) running.unproven = true;
   if (noSandbox) running.unsandboxed = true;
   internals.set(running, internal);
   live.add(running);
-  installExitHook();
   // Sampling starts before the first spawn, so nothing a run process does at startup goes unobserved.
   const sampler = (async () => {
     while (sampling) {
@@ -1028,34 +1197,57 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
       } catch (error) {
         throw new Error(`${app.id}: the electron package does not resolve from ${app.root}: ${String(error).split("\n")[0]}`);
       }
-      const launcher = electronLauncher(join(tmp, ".ds-launcher"), executablePath, policy);
+      const launcher = electronLauncher(toolDir, executablePath, policy);
       electronPidFile = launcher.pidFile;
+      // A stop() or exit while the launch is in flight kills Electron from its pid file (it is our child).
+      internal.lateKill = () => {
+        const pid = electronChild();
+        if (pid !== null) signal(pid, "SIGKILL");
+      };
       const { _electron } = loadPlaywright(root);
       const listenersBefore = new Map(SIGNALS.map((sig) => [sig, new Set(process.listeners(sig))]));
-      electronApp = await _electron.launch({
-        executablePath: launcher.path,
-        // Playwright adds its loader only without executablePath; ours loads it and holds `ready` (below).
-        // Electron ignores $HOME on macOS: the loader moves userData & co. under {tmp}/electron-user-data,
-        // and --user-data-dir covers Chromium's own early use of the profile dir.
-        args: ["-r", ELECTRON_LOADER, `--user-data-dir=${join(tmp, "electron-user-data")}`, main, ...flags],
-        cwd,
-        env: { ...env, DS_PW_ELECTRON_LOADER: playwrightElectronLoader(root) },
-        timeout: timeoutMs,
-        handleSIGINT: false,
-        handleSIGTERM: false,
-        handleSIGHUP: false,
-      });
-      // Playwright's Electron launcher installs its own signal handlers regardless of the options above;
-      // they exit before stopAllApps runs. Remove exactly the ones the launch added.
-      for (const sig of SIGNALS) for (const fn of process.listeners(sig)) if (!listenersBefore.get(sig)!.has(fn)) process.off(sig, fn as any);
-      const pid = electronApp.process()?.pid;
-      if (pid) adopt(pid, electronApp.process());
-      stillStarting();
-      electronApp.process()?.stdout?.on("data", (chunk: Buffer) => appendFileSync(logPath, chunk));
-      electronApp.process()?.stderr?.on("data", (chunk: Buffer) => appendFileSync(logPath, chunk));
+      try {
+        electronApp = await _electron.launch({
+          executablePath: launcher.path,
+          // Playwright adds its loader only without executablePath; ours loads it and holds `ready` (below).
+          // Electron ignores $HOME on macOS: the loader moves userData & co. under {tmp}/electron-user-data,
+          // and --user-data-dir covers Chromium's own early use of the profile dir.
+          args: ["-r", ELECTRON_LOADER, `--user-data-dir=${join(tmp, "electron-user-data")}`, main, ...flags],
+          cwd,
+          // No CFFIXED_USER_HOME: cfprefsd ignores it (`CFFIXED_USER_HOME=<dir> defaults read <domain>` does not
+          // read <dir>/Library/Preferences on macOS 26), so it cannot keep the owner's plist safe; hence the opt-in.
+          env: { ...env, DS_PW_ELECTRON_LOADER: playwrightElectronLoader(root) },
+          timeout: timeoutMs,
+          handleSIGINT: false,
+          handleSIGTERM: false,
+          handleSIGHUP: false,
+        });
+      } finally {
+        // Playwright's Electron launcher installs its own signal handlers regardless of the options above;
+        // they exit before stopAllApps runs. Remove exactly the ones the launch added.
+        for (const sig of SIGNALS) for (const fn of process.listeners(sig)) if (!listenersBefore.get(sig)!.has(fn)) process.off(sig, fn as any);
+      }
+      const child = electronApp.process();
+      if (stopping) {
+        // stop() ran while Electron launched and has already finished: nothing tracks this process. End it
+        // here, then let the stop's leftovers (the temp dirs Electron may have recreated) go too.
+        await Promise.race([electronApp.close().catch(() => undefined), sleep(5_000)]);
+        if (child?.pid) await killRun([rootProc(child.pid, child)], 2_000);
+        removeScratch();
+        throw new Error(`${app.id}: stopped while starting (Electron was launching; it is stopped)`);
+      }
+      try {
+        if (child?.pid) adopt(child.pid, child);
+      } catch (error) {
+        throw new Error(`${app.id}: could not adopt Electron (pid ${child?.pid}): ${String(error).split("\n")[0]}`);
+      }
+      internal.lateKill = undefined;
+      child?.stdout?.on("data", (chunk: Buffer) => appendFileSync(logPath, chunk));
+      child?.stderr?.on("data", (chunk: Buffer) => appendFileSync(logPath, chunk));
       running.serveRoot = app.run.serveRoot ? resolvePath(root, expand(app.run.serveRoot)) : cwd;
       running.electron = { app: electronApp, window: () => electronApp.firstWindow({ timeout: timeoutMs }) };
       running.blocked = await installGuard(electronApp.context(), running);
+      stillStarting();
       // Only now may the app emit `ready` and open windows: their first loads go through the guard.
       await electronApp.evaluate(() => (globalThis as any).__ds_release());
     } else {
@@ -1236,20 +1428,24 @@ export async function installGuard(context: any, running: RunningApp): Promise<(
     blocked.push(`${request.method()} ${request.url()}`);
     return route.abort("blockedbyclient");
   });
-  if (typeof context.routeWebSocket === "function") {
-    await context.routeWebSocket(needsCheck, (ws: any) => {
-      if (decide(ws.url())) {
-        ws.connectToServer();
-        return;
-      }
-      blocked.push(`WS ${ws.url()}`);
-      ws.close({ code: 1008, reason: "blocked by the rollout request guard" });
-    });
-  }
+  // WebSockets bypass context.route: without routeWebSocket a page could reach any local port. Fail closed.
+  if (typeof context.routeWebSocket !== "function") throw new Error("the request guard needs Playwright's context.routeWebSocket (Playwright 1.48+) to block WebSockets");
+  await context.routeWebSocket(needsCheck, (ws: any) => {
+    if (decide(ws.url())) {
+      ws.connectToServer();
+      return;
+    }
+    blocked.push(`WS ${ws.url()}`);
+    ws.close({ code: 1008, reason: "blocked by the rollout request guard" });
+  });
   return () => [...blocked];
 }
 
-/** A browser context with the request guard: aborts and records every request to a local port the run does not hold (and not in allowedLocalPorts), and every non-loopback request. */
+/**
+ * A browser context with the request guard: aborts and records every request and WebSocket to a local
+ * port the run does not hold (and not in allowedLocalPorts), to an owner port, and to any non-loopback
+ * host. WebSockets are recorded as "WS <url>".
+ */
 export async function guardedContext(
   browser: any,
   running: RunningApp,
@@ -1303,11 +1499,30 @@ export async function launchBrowser(root: string, overrides: Record<string, unkn
 
 // -- cleanup after a crash ----------------------------------------------------------
 
+/** The command line of a pid (`ps -o command=`), or "" when it is gone or ps fails. */
+function commandOf(pid: number): string {
+  const result = spawnSync("ps", ["-o", "command=", "-p", String(pid)], { encoding: "utf8", timeout: PS_TIMEOUT_MS });
+  return result.status === 0 ? (result.stdout ?? "").trim() : "";
+}
+
+/**
+ * Whether a live process is a root this runner starts: the sandboxed shell that carries the watchdog
+ * (spawnLogged), or an Electron started with app-runner's loader. A record naming any other process as a
+ * root is not trusted, whatever its start time says.
+ */
+function looksLikeRunRoot(pid: number): boolean {
+  const command = commandOf(pid);
+  return command.startsWith("/bin/sh -c { cat >/dev/null; kill -KILL 0; }") || command.includes(ELECTRON_LOADER);
+}
+
 /**
  * Stops what crashed runs left behind: for every <outDir>/runs/<id>.json whose tool process is gone,
- * signals the recorded processes that still exist with the same start time (and their groups), then
- * removes the record and the run's temp dir. Records of a live tool are left alone. Returns one line per
- * record.
+ * signals the processes that are provably the run's: a recorded root that still exists with the same
+ * start time and the runner's own command line, its descendants and its process group. A recorded
+ * process that is not one of those (it left the run's tree, or the record names something else) is never
+ * signalled; it is reported and the record stays. Records live in the out dir, which the sandbox keeps
+ * read-only for run processes. Records of a live tool are left alone; nothing is touched when `ps` fails.
+ * Returns one line per record.
  */
 export async function cleanupRuns(outDir: string): Promise<string[]> {
   const dir = join(safeOutputPath(outDir, { label: "--out-dir" }), "runs");
@@ -1322,24 +1537,46 @@ export async function cleanupRuns(outDir: string): Promise<string[]> {
       report.push(`${name}: unreadable; left in place`);
       continue;
     }
-    const tool = record?.tool;
-    if (tool && Number.isInteger(tool.pid) && startTime(tool.pid) === normalizeStart(String(tool.started ?? ""))) {
-      report.push(`${record.app}: its tool (pid ${tool.pid}) is still running; left alone`);
+    const label = typeof record?.app === "string" ? record.app : name;
+    const table = readProcessTable();
+    if (!table) {
+      report.push(`${label}: cannot read the process table (ps failed); left alone`);
       continue;
     }
-    const procs: ProcInfo[] = (Array.isArray(record?.processes) ? record.processes : [])
-      .filter((p: any) => Number.isInteger(p?.pid) && Number.isInteger(p?.pgid) && typeof p?.started === "string")
+    const tool = record?.tool;
+    if (tool && Number.isInteger(tool.pid) && stillRunning([{ pid: tool.pid, ppid: 0, pgid: 0, started: String(tool.started ?? "") }], table).length) {
+      report.push(`${label}: its tool (pid ${tool.pid}) is still running; left alone`);
+      continue;
+    }
+    const identity = (p: any) => Number.isInteger(p?.pid) && p.pid > 1 && typeof p?.started === "string" && p.started.trim() !== "";
+    const recordedRoots: RootProc[] = (Array.isArray(record?.roots) ? record.roots : []).filter(identity).map((p: any) => ({ pid: p.pid, started: p.started }));
+    const recorded: ProcInfo[] = (Array.isArray(record?.processes) ? record.processes : [])
+      .filter((p: any) => identity(p) && Number.isInteger(p?.pgid))
       .map((p: any) => ({ pid: p.pid, ppid: 0, pgid: p.pgid, started: p.started }));
-    const left = stillRunning(procs);
-    if (left.length) await killRun([], 3_000, procs);
-    const after = stillRunning(procs);
-    report.push(
-      `${record?.app ?? name}: ${left.length ? `stopped ${left.length - after.length} of ${left.length} leftover process(es) (pids ${left.map((p) => p.pid).join(", ")})` : "nothing left running"}`,
-    );
-    if (after.length === 0) {
+    // Roots that are provably still the run's: same pid, same start time, the runner's command line.
+    const roots = recordedRoots.filter((root) => stillRunning([{ ...root, ppid: 0, pgid: 0 }], table).length && looksLikeRunRoot(root.pid));
+    const ours = runProcesses(roots, table).filter((proc) => roots.length > 0 && proc.pid !== process.pid);
+    const oursPids = new Set(ours.map((proc) => proc.pid));
+    const strays = stillRunning(recorded, table).filter((proc) => !oursPids.has(proc.pid));
+    let line: string;
+    let confirmed = true;
+    if (ours.length) {
+      const kill = await killRun(roots, 3_000);
+      confirmed = kill.confirmed;
+      line = `stopped ${ours.length - kill.left.length} of ${ours.length} leftover process(es) (pids ${ours.map((p) => p.pid).join(", ")})${kill.confirmed ? "" : `; NOT CONFIRMED (${kill.left.length ? `pids ${kill.left.map((p) => p.pid).join(", ")} left` : "ps failed"})`}`;
+    } else line = "nothing left running";
+    if (strays.length)
+      line += `; left alone ${strays.length} recorded process(es) that are not a recorded root's descendants (pids ${strays.map((p) => p.pid).join(", ")}): check them by hand`;
+    report.push(`${label}: ${line}`);
+    if (confirmed && strays.length === 0) {
       rmSync(path, { force: true });
-      const tmp = typeof record?.tmp === "string" ? record.tmp : "";
-      if (tmp && dirname(tmp) === realTmpRoot() && basename(tmp).startsWith("ds-run-")) rmSync(tmp, { recursive: true, force: true });
+      for (const [key, prefix] of [
+        ["tmp", "ds-run-"],
+        ["toolDir", "ds-tool-"],
+      ] as const) {
+        const scratch = typeof record?.[key] === "string" ? record[key] : "";
+        if (scratch && dirname(scratch) === realTmpRoot() && basename(scratch).startsWith(prefix)) rmSync(scratch, { recursive: true, force: true });
+      }
     }
   }
   return report;

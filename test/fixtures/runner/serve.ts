@@ -6,6 +6,8 @@
  * records which requests succeeded. GET /themed is a
  * page that turns dark through data-theme, localStorage, ?theme=dark, a #dark button, or (with
  * ?follow=system) prefers-color-scheme. GET /csp is a page under `style-src 'self'` with a 2 s transition.
+ * GET /ws-probe opens WebSockets to this server's /ws (which greets) and to the stray port, and records
+ * which ones opened and greeted.
  */
 const port = Number(process.env.FIXTURE_PORT);
 const helperPort = Number(process.env.FIXTURE_HELPER_PORT);
@@ -49,11 +51,26 @@ const themed = `<!doctype html><html><head><style>
   document.getElementById("dark").onclick = () => root.setAttribute("data-theme", "dark");
 </script></body></html>`;
 
+const wsProbe = `<!doctype html><html><body><script>
+  const open = (url) => new Promise((done) => {
+    const socket = new WebSocket(url);
+    socket.onmessage = (event) => (socket.close(), done(event.data === "hello" ? "ok" : "unexpected"));
+    socket.onerror = () => done("failed");
+    socket.onclose = () => done("failed");
+    setTimeout(() => done("timeout"), 3000);
+  });
+  window.wsResults = Promise.all([open("ws://127.0.0.1:${port}/ws"), open("ws://127.0.0.1:${strayPort}/")])
+    .then(([own, stray]) => ({ own, stray }));
+</script></body></html>`;
+
 Bun.serve({
   hostname: "127.0.0.1",
   port,
-  fetch: (request) => {
+  websocket: { open: (socket) => socket.send("hello"), message: () => {} },
+  fetch: (request, server) => {
     const { pathname } = new URL(request.url);
+    if (pathname === "/ws" && server.upgrade(request)) return undefined;
+    if (pathname === "/ws-probe") return new Response(wsProbe, { headers: { "content-type": "text/html" } });
     if (pathname === "/ping") return new Response("pong");
     // A page under a strict CSP (like a server that sends `style-src 'self'`) with a slow transition.
     if (pathname === "/csp")

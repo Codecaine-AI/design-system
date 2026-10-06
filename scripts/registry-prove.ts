@@ -20,13 +20,17 @@
  * leaves the proof inconclusive, never proven), and the run stopped clean. Blocked requests are listed
  * per origin. Writes <out-dir>/tooling/registry/proofs/<app>.json and .log.
  * The result is evidence for the registry worker; apps.json records it in runProfile.proof.
+ *
+ * The registry is validated on load (validateLoadedRegistry). SIGINT/SIGTERM/SIGHUP close the browser,
+ * stop the app and exit 130/143/129; on start, run records a crashed earlier proof left in
+ * <out-dir>/tooling/registry/runs/runs/ are cleaned up (cleanupRuns).
  */
 import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { guardedContext, launchBrowser, startApp, type RunningApp } from "./lib/app-runner";
-import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, type AppEntry, type RouteSpec } from "./lib/registry";
+import { cleanupRuns, guardedContext, installSignalHandlers, launchBrowser, startApp, validateLoadedRegistry, type RunningApp } from "./lib/app-runner";
+import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, type AppEntry, type Registry, type RouteSpec } from "./lib/registry";
 import { safeOutputPath } from "./lib/safe-paths";
 
 /** The connection classifier lives in scripts/lib/egress.ts (the runner samples with it). */
@@ -85,7 +89,15 @@ export interface ProofResult {
   proven: boolean;
 }
 
-async function prove(app: AppEntry, opts: { root: string; outDir: string }): Promise<ProofResult> {
+/** Where the proof's runs keep their logs and run records. */
+export function proofRunsDir(outDir: string): string {
+  return join(outDir, "tooling", "registry", "runs");
+}
+
+/** The open browser, so the signal handlers can close it. */
+let openBrowser: any;
+
+async function prove(app: AppEntry, opts: { root: string; outDir: string; registry: Registry }): Promise<ProofResult> {
   const proofDir = join(opts.outDir, "tooling", "registry", "proofs");
   mkdirSync(proofDir, { recursive: true });
   const result: ProofResult = {
@@ -104,16 +116,17 @@ async function prove(app: AppEntry, opts: { root: string; outDir: string }): Pro
   };
   let running: RunningApp | undefined;
   try {
-    running = await startApp(app, { root: opts.root, outDir: join(opts.outDir, "tooling", "registry", "runs"), allowUnproven: true });
+    running = await startApp(app, { root: opts.root, outDir: proofRunsDir(opts.outDir), allowUnproven: true, registry: opts.registry });
     result.baseUrl = running.baseUrl;
     result.env = Object.keys(running.env).sort();
-    const browser = await launchBrowser(opts.root);
+    const browser = (openBrowser = await launchBrowser(opts.root));
     try {
       for (const route of app.routes) {
         const themes = route.themes ?? (app.theme.rule === "dark-first" ? ["dark"] : ["light", "dark"]);
         for (const theme of themes) result.routes.push(await loadRoute(browser, running, route, theme as "light" | "dark", result));
       }
     } finally {
+      openBrowser = undefined;
       await browser.close();
     }
     await sleep(1000);
@@ -251,10 +264,12 @@ if (import.meta.main) {
   };
   const root = resolve(flag("--root") ?? resolve(DESIGN_SYSTEM_ROOT, ".."));
   const outDir = safeOutputPath(flag("--out-dir") ?? process.env.DS_RUN ?? join(tmpdir(), "ds-rollout"), { root, label: "--out-dir" });
-  const registry = loadRegistry();
+  const registry = validateLoadedRegistry(loadRegistry());
+  installSignalHandlers(() => openBrowser?.close());
+  for (const line of await cleanupRuns(proofRunsDir(outDir))) console.error(`registry-prove: cleanup: ${line}`);
   let failed = false;
   for (const id of argv) {
-    const r = await prove(getApp(registry, id), { root, outDir });
+    const r = await prove(getApp(registry, id), { root, outDir, registry });
     failed ||= !r.proven;
     console.log(
       `${id}: ${r.proven ? "PROVEN" : r.inconclusive ? "INCONCLUSIVE" : "NOT PROVEN"} url=${r.baseUrl ?? "-"} ports=${r.startedPorts.join(",")} connections=${r.connectionsSeen} samples=${r.egress?.samples ?? 0}`,
