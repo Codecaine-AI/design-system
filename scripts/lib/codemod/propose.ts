@@ -11,7 +11,7 @@ import { pickColor } from "./color-role.ts";
 import { readContext, type Context } from "./context.ts";
 import { locate, type Span } from "./locate.ts";
 import { pickClass, pickFamily, pickFontSize, pickRadius, pickSpacing, type Pick, type TailwindTarget } from "./size-role.ts";
-import { jsSlot, markupSlot, typePosition, type Slot } from "./slot.ts";
+import { cssPropertyName, jsClassSlot, jsSlot, markupSlot, typePosition, type Slot } from "./slot.ts";
 import { cssRegionAt, kindOf, lineRange, prepareSource, type SourceFile } from "./source.ts";
 import { fileSha, lineSha, type Row } from "./table.ts";
 import { cssVarRef, type Theme, type TokenData } from "./tokens.ts";
@@ -182,10 +182,10 @@ function contextAnchor(f: SourceFile, line: number): Span {
   return { start: at, end: at, slot: "text" };
 }
 
-/** Whether a JS or markup literal reaches CSS; null for stylesheets, and for JS classes and canvas (decided elsewhere). */
+/** Whether a JS or markup literal reaches CSS (or a class list); null for stylesheets and canvas (decided elsewhere). */
 function slotOf(f: SourceFile, span: Span | null, ctx: Context): Slot | null {
   if (!span) return null;
-  if (f.kind === "js") return span.slot === "class" || span.slot === "canvas" ? null : jsSlot(f, span, ctx.property);
+  if (f.kind === "js") return span.slot === "canvas" ? null : span.slot === "class" ? jsClassSlot(f, span) : jsSlot(f, span, ctx.property);
   if (f.kind === "html") return markupSlot(f, span, ctx.property);
   return null;
 }
@@ -215,8 +215,11 @@ export function proposeFile(data: TokenData, f: SourceFile, hits: Hit[], opts: P
     const [ls, le] = lineRange(f, hit.line);
     const ctx = readContext(f, span ?? contextAnchor(f, hit.line), { defaultTheme: opts.defaultTheme });
     const slot = slotOf(f, span, ctx);
-    // The slot's CSS property (`background` for `background: on ? "#fff" : x` on its own line) when the line alone did not say.
-    if (slot?.ok && slot.property && !ctx.property && f.kind === "js") {
+    // The slot's CSS property (`background` for `background: on ? "#fff" : x` on its own line) when
+    // the line alone did not name one.
+    if (slot?.ok && slot.property && f.kind === "js" && !cssPropertyName(ctx.property)) {
+      // A JS name the line gave (`$on` in `({ $on }) => …`) is not a definition once the slot names the property.
+      if (ctx.definition && !ctx.definition.startsWith("--")) ctx.definition = null;
       ctx.property = slot.property;
       ctx.hints += ` ${slot.property}`;
     }

@@ -64,18 +64,32 @@ export function cssPropertyName(key: string | null | undefined): string | null {
 
 /** SVG presentation attributes that take a color, a font size or a family: CSS values, so var() resolves. */
 const PRESENTATION = /^(?:fill|stroke|color|stop-color|flood-color|lighting-color|font-size|font-family)$/;
-/** HTML's legacy color attributes (`<td bgcolor>`, `<font color>`): HTML parses them, so var() does not resolve. */
-const LEGACY_COLOR = /^(?:font|basefont|body|table|tr|td|th|hr|marquee)$/i;
+/** SVG elements: only on these is `fill="…"` a presentation attribute (not a component prop, a three.js material, a custom element). */
+const SVG_TAG = /^(?:svg|g|path|rect|circle|ellipse|line|polyline|polygon|text|tspan|textPath|use|symbol|defs|marker|pattern|mask|clipPath|linearGradient|radialGradient|stop|filter|fe[A-Z][A-Za-z]*|foreignObject|image|switch|view)$/;
 
+/** The slot an attribute gives on a tag: a presentation attribute of an SVG element, HTML's own color (no), or null (another attribute). */
 function presentation(name: string, tag: string): Slot | null {
   const k = kebab(name);
-  if (k === "bgcolor" || (k === "color" && LEGACY_COLOR.test(tag))) return no(`the ${name} attribute of <${tag}> is HTML's own color, where var() does not resolve`);
-  return PRESENTATION.test(k) ? { ok: true, property: k, how: `the ${k} attribute` } : null;
+  if (k === "bgcolor") return no(`the bgcolor attribute of <${tag}> is HTML's own color, where var() does not resolve`);
+  if (!PRESENTATION.test(k)) return null;
+  if (!SVG_TAG.test(tag)) return no(`the ${name} attribute of <${tag}> is not an SVG presentation attribute (a component prop, HTML's own color, or another renderer's)`);
+  return { ok: true, property: k, how: `the ${k} attribute` };
 }
 /** JSX attributes that take a style object. */
 const STYLE_ATTR = /^(?:style|sx|css|[\w$]*Style)$/;
 /** ECharts option keys named like styles (`itemStyle: { color }`): not CSS, unless the file uses recharts, whose props they are. */
 const CHART_STYLE_KEY = /^(?:textStyle|itemStyle|lineStyle|areaStyle|crossStyle|handleStyle|moveHandleStyle|nodeStyle|edgeStyle|backgroundStyle|shadowStyle|dataBackground)$/;
+/** Keys of chart and map configurations (ECharts, Chart.js, Mapbox, Google Maps): an object under one is not CSS, whatever it is named. */
+const CONFIG_KEY = /^(?:series|graphic|xAxis|yAxis|grid|tooltip|legend|dataZoom|visualMap|polar|radar|geo|toolbox|stylers|featureType|elementType|paint|layout|layers|sources|datasets|scales|plugins|encode)$/;
+/**
+ * Files whose style-named objects may feed something other than CSS: canvas 2D or WebGL code, and
+ * chart, map, graph and scene libraries. There a style-named holder is not trusted (a JSX style
+ * attribute and a CSSProperties type still are).
+ */
+const NON_CSS_CONSUMER_CODE = /\bCanvasRenderingContext2D\b|\.getContext\(\s*["'`](?:2d|webgl2?|bitmaprenderer)/;
+const NON_CSS_CONSUMER_LIB = /^(?:d3(?:-[\w-]+)?|cytoscape|vis-network|leaflet|react-leaflet|konva|react-konva|pixi\.js|@pixi\/[\w-]+|three|chart\.js|react-chartjs-2|echarts|echarts-for-react|plotly\.js(?:-[\w-]+)?|react-plotly\.js|highcharts|highcharts-react-official|apexcharts|react-apexcharts|mapbox-gl|maplibre-gl|react-map-gl|@react-google-maps\/api|google-map-react|vega|vega-lite|react-vega|@nivo\/[\w-]+|@antv\/[\w-]+|fabric|paper)$/;
+/** Imports of renderers whose style objects are not DOM CSS (var() does not resolve there). */
+const NON_DOM = /^(?:react-native(?:-[\w-]+)?|@react-pdf\/renderer|next\/og|@vercel\/og|satori|react-three-fiber|@react-three\/fiber|ink)$/;
 const CSS_TYPE = /\bCSSProperties\b|\bCSS\.Properties\b/;
 
 const nameWords = (s: string) => s.replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
@@ -172,6 +186,18 @@ function enclosingOpen(f: SourceFile, from: number): number {
   return -1;
 }
 
+/** The index of the bracket opening the one closing at `close`, or -1. */
+function matchingOpenBefore(f: SourceFile, close: number): number {
+  let depth = 0;
+  for (let k = close; k >= 0; k--) {
+    if (f.inStr![k] === 1) continue;
+    const ch = f.text[k];
+    if (ch === ")" || ch === "]" || ch === "}") depth++;
+    else if ((ch === "(" || ch === "[" || ch === "{") && --depth === 0) return k;
+  }
+  return -1;
+}
+
 /** The index of the bracket closing the one at `open`, or -1. */
 function matchingClose(f: SourceFile, open: number): number {
   let depth = 0;
@@ -204,6 +230,11 @@ const NOT_CALLEE = /^(?:return|typeof|await|void|delete|yield|in|of|case|else|do
 /** The callee before a call's `(` (`a.b.c`, `useMemo`) and where it starts; name "" for a plain group. */
 function calleeBefore(f: SourceFile, open: number): { name: string; start: number } {
   let k = prevSig(f, open);
+  // `darken(0.2)("#fff")`, `pick[on]("#fff")`: a call of what a call or an index returned.
+  if (f.text[k] === ")" || f.text[k] === "]") {
+    const o = matchingOpenBefore(f, k);
+    return { name: `${f.text.slice(Math.max(0, o - 40), o).match(/[\w$.]*$/)?.[0] ?? ""}(…)`, start: o < 0 ? open : o };
+  }
   // Type arguments: `useMemo<CSSProperties>(…)`.
   if (f.text[k] === ">" && f.text[k - 1] !== "=") {
     let depth = 0;
@@ -510,15 +541,23 @@ function importsFrom(f: SourceFile, pkg: RegExp): boolean {
   return false;
 }
 
-/** The name and type a declaration or assignment's left side gives (`const chipStyle: CSSProperties`, `this.style.color`). */
+/** The name and type a declaration or assignment's left side gives (`const chipStyle: CSSProperties`, `private boxStyle: CSSProperties`, `this.style.color`). */
 function leftName(lhs: string): { name: string | null; type: string } {
-  // The left side can run back over earlier statements without semicolons: the last declaration
-  // is ours only when nothing but its type follows its name.
+  // The left side can run back over earlier statements without semicolons: a declaration is ours
+  // only when nothing but its type follows its name, and a type does not end in a new statement.
+  const typeOnly = (rest: string) => {
+    if (!/^(?::[\s\S]*)?$/.test(rest.trim())) return false;
+    const lines = rest.trimEnd().split("\n");
+    return lines.length < 2 || !/^\s*[A-Za-z_$][\w$.]*\s*$/.test(lines[lines.length - 1]) || /[|&<,:(=]\s*$/.test(lines[lines.length - 2]);
+  };
   const decl = [...lhs.matchAll(/\b(?:const|let|var)\s+([\w$]+)\s*/g)].pop();
   if (decl) {
     const rest = lhs.slice(decl.index! + decl[0].length);
-    if (/^(?::[\s\S]*)?$/.test(rest.trim())) return { name: decl[1], type: rest.replace(/^\s*:/, "") };
+    if (typeOnly(rest)) return { name: decl[1], type: rest.replace(/^\s*:/, "") };
   }
+  // A typed class field or member: `private boxStyle: CSSProperties`, `styles!: Record<…>`.
+  const field = lhs.match(/(?:^|[\s;{}])(?:(?:public|private|protected|readonly|static|declare|override|accessor)\s+)*(#?[\w$]+)\s*[?!]?\s*:([^=;]*)$/);
+  if (field && typeOnly(`:${field[2]}`)) return { name: field[1], type: field[2] };
   return { name: lhs.match(/([\w$]+)\s*$/)?.[1] ?? null, type: "" };
 }
 
@@ -580,44 +619,56 @@ function returningFunction(f: SourceFile, at: number): { prelude: string; arrow:
 
 const WRAPPERS = /^(?:(?:React\.)?useMemo|Object\.freeze|freeze|structuredClone)$/;
 
-/** Whether the object literal opening at `open` is a CSS object, and how. */
+/**
+ * Whether the object literal opening at `open` is a CSS object, and how. The walk goes out through
+ * keys, arrays, spreads and wrappers to the holder: a JSX style attribute, a style-named or
+ * CSSProperties holder makes it CSS, unless a chart or map option key holds it further out
+ * (`graphic: [{ style: {…} }]`, `stylers: [{ color }]`, `paint: {…}`).
+ */
 function cssObject(f: SourceFile, open: number): Slot {
   let vs = open;
   let ve = matchingClose(f, open) + 1;
-  for (let hop = 0; hop < 10; hop++) {
-    if (ve > 0 && /^\s*(?:as|satisfies)\s+(?:React\.)?CSS(?:Properties|\.Properties)\b/.test(f.text.slice(ve, ve + 60))) return { ok: true, property: null, how: "a CSSProperties object" };
+  /** The first style holder found; an outer holder that says nothing does not undo it. */
+  let found: string | null = null;
+  const ok = (how: string): Slot => ({ ok: true, property: null, how: found ?? how });
+  const done = (why: string): Slot => (found ? ok(found) : no(why));
+  const recharts = importsFrom(f, /^recharts$/) && !importsFrom(f, /echarts/);
+  const distrust = nonCssConsumer(f);
+  for (let hop = 0; hop < 12; hop++) {
+    if (!found && ve > 0 && /^\s*(?:as|satisfies)\s+(?:React\.)?CSS(?:Properties|\.Properties)\b/.test(f.text.slice(ve, ve + 60))) found = "a CSSProperties object";
     const h = holderOf(f, vs, ve);
     switch (h.kind) {
       case "attr":
         // style={{…}} on an element, or a component's style prop (recharts' contentStyle, a Box's style).
-        return STYLE_ATTR.test(h.name) ? { ok: true, property: null, how: `a JSX ${h.name} object` } : no(`the ${h.name} prop of <${h.tag}> is not a style`);
+        return STYLE_ATTR.test(h.name) ? ok(`a JSX ${h.name} object`) : no(`the ${h.name} prop of <${h.tag}> is not a style`);
       case "key": {
         const key = h.key ?? "";
-        if (CHART_STYLE_KEY.test(key) && !(importsFrom(f, /^recharts$/) && !importsFrom(f, /echarts/))) return no(`${key} is a chart option, not CSS`);
-        if (styleNamed(key)) return { ok: true, property: null, how: `the ${key} object` };
-        if (h.open < 0) return no(`an object under ${key}`);
-        // A nested selector (`"&:hover": {…}`) or a plain group key: the parent object decides.
+        if (CONFIG_KEY.test(key)) return no(`an object under ${key}, a chart or map option`);
+        if (CHART_STYLE_KEY.test(key) && !recharts) return no(`${key} is a chart option, not CSS`);
+        if (!found && !distrust && styleNamed(key)) found = `the ${key} object`;
+        // A nested selector (`"&:hover": {…}`) or a group key (`panel: {…}`): the parent object decides.
         vs = h.open;
         ve = matchingClose(f, h.open) + 1;
         continue;
       }
       case "assign": {
         const { name, type } = leftName(h.lhs);
-        if (CSS_TYPE.test(type)) return { ok: true, property: null, how: "a CSSProperties object" };
-        if (styleNamed(name)) return { ok: true, property: null, how: `the ${name} object` };
-        return no(`an object held by ${name ?? "a variable"}`);
+        if (CSS_TYPE.test(type)) return ok("a CSSProperties object");
+        if (styleNamed(name) && !distrust) return ok(`the ${name} object`);
+        return done(distrust && styleNamed(name) ? `${name} in a file that ${distrust}` : `an object held by ${name ?? "a variable"}`);
       }
       case "arg": {
-        if (/^Object\.assign$/.test(h.callee) && h.index > 0 && /\.style\s*$/.test(f.text.slice(h.open + 1, f.text.indexOf(",", h.open)))) return { ok: true, property: null, how: "Object.assign onto a style" };
-        if (/^(?:css|sx|style)$/.test(h.callee)) return { ok: true, property: null, how: `an argument to ${h.callee}()` };
+        if (/^Object\.assign$/.test(h.callee) && h.index > 0 && /\.style\s*$/.test(f.text.slice(h.open + 1, f.text.indexOf(",", h.open)))) return ok("Object.assign onto a style");
+        if (/^(?:css|sx|style)$/.test(h.callee)) return ok(`an argument to ${h.callee}()`);
         // `useMemo<CSSProperties>(() => ({…}))`.
-        if (CSS_TYPE.test(f.text.slice(h.calleeStart, h.open))) return { ok: true, property: null, how: "a CSSProperties object" };
+        if (CSS_TYPE.test(f.text.slice(h.calleeStart, h.open))) return ok("a CSSProperties object");
         if (WRAPPERS.test(h.callee)) {
           // useMemo(() => ({…}), deps), Object.freeze({…}): the call's holder decides.
           vs = h.calleeStart;
           ve = matchingClose(f, h.open) + 1;
           continue;
         }
+        // Any other function decides what the object becomes (`L.geoJSON(d, { style: {…} })`): a style-named key inside is not enough.
         return no(`an argument to ${h.callee}()`);
       }
       case "array":
@@ -627,34 +678,32 @@ function cssObject(f: SourceFile, open: number): Slot {
         continue;
       case "arrow": {
         const fn = arrowStart(f, h.at);
-        if (CSS_TYPE.test(fn.returnType)) return { ok: true, property: null, how: "returned as CSSProperties" };
+        if (CSS_TYPE.test(fn.returnType)) return ok("returned as CSSProperties");
         vs = fn.start;
         ve = nextFunctionEnd(f, h.at, ve);
         continue;
       }
       case "return": {
         const fn = returningFunction(f, h.at);
-        if (!fn) return no("a function's return value");
-        if (CSS_TYPE.test(fn.prelude)) return { ok: true, property: null, how: "returned as CSSProperties" };
+        if (!fn) return done("a function's return value");
+        if (CSS_TYPE.test(fn.prelude)) return ok("returned as CSSProperties");
         const name = fn.prelude.match(/function\s*\*?\s*([\w$]+)/)?.[1] ?? fn.prelude.match(/([\w$]+)\s*(?::[^=]*)?=\s*(?:async\s*)?(?:function\b|\(|[\w$]+\s*=>)/)?.[1] ?? fn.prelude.match(/([\w$]+)\s*\([^)]*\)\s*(?::[^{]*)?$/)?.[1];
-        if (styleNamed(name)) return { ok: true, property: null, how: `returned by ${name}()` };
+        if (styleNamed(name) && !distrust) return ok(`returned by ${name}()`);
         if (fn.arrow !== null) {
           const a = arrowStart(f, fn.arrow);
           vs = a.start;
           ve = nextFunctionEnd(f, fn.arrow, ve);
           continue;
         }
-        return no(`returned by ${name ?? "a function"}()`);
+        return done(`returned by ${name ?? "a function"}()`);
       }
       case "template":
-        return no("an object inside a template");
-      case "type":
-        return no(h.why);
+        return done("an object inside a template");
       default:
-        return no(h.why);
+        return done(h.why);
     }
   }
-  return no("held too far out to read");
+  return done("held too far out to read");
 }
 
 /** Where an arrow function's body ends (for the neighbour check of its holder): past the value end we already know. */
@@ -682,15 +731,14 @@ function attrSlot(name: string, tag: string, property: string | null): Slot {
  * names (null when the slot does not say, as in a CSS template the caller reads itself).
  */
 export function jsSlot(f: SourceFile, span: Span, ctxProperty: string | null): Slot {
-  if (cssRegionAt(f, span.start)) return { ok: true, property: ctxProperty, how: "a CSS template" };
+  const renderer = nonDomRenderer(f);
+  if (renderer) return no(`this file renders with ${renderer}, whose styles are not DOM CSS`);
+  const region = cssRegionAt(f, span.start);
+  if (region) return { ok: true, property: cssPropertyName(ctxProperty) ?? templateProperty(f, region[0], span.start) ?? ctxProperty, how: "a CSS template" };
   if (!f.inStr) return no("not JS");
   let [vs, ve] = valueRange(f, span);
-  for (let hop = 0; hop < 4; hop++) {
-    const t = f.text;
-    // A tagged CSS template: css`…`, styled.div`…`, keyframes`…`, createGlobalStyle`…`.
-    if (t[vs] === "`" && /(?:\bcss|\bstyled(?:\.[\w$]+|\([^)]*\))(?:\.attrs\([^)]*\))?|\bkeyframes|\bcreateGlobalStyle|\binjectGlobal)$/.test(t.slice(Math.max(0, vs - 60), vs))) {
-      return { ok: true, property: ctxProperty, how: "a CSS template" };
-    }
+  for (let hop = 0; hop < 6; hop++) {
+    if (taggedCss(f, vs)) return { ok: true, property: ctxProperty, how: "a CSS template" };
     const h = holderOf(f, vs, ve);
     switch (h.kind) {
       case "attr":
@@ -717,7 +765,9 @@ export function jsSlot(f: SourceFile, span: Span, ctxProperty: string | null): S
       case "arg": {
         if (/(?:^|\.)setProperty$/.test(h.callee) && h.index === 1) {
           const first = f.src.slice(h.open + 1, f.text.indexOf(",", h.open)).trim().match(/^["'`](--[\w-]+|[a-z-]+)["'`]$/)?.[1] ?? null;
-          return { ok: true, property: first ?? ctxProperty, how: "style.setProperty" };
+          // A style declaration's setProperty: on `.style`, or naming a custom property (`feature.setProperty("color", …)` is a map feature's).
+          if (/(?:^|\.)style\.setProperty$/.test(h.callee) || first?.startsWith("--")) return { ok: true, property: first ?? ctxProperty, how: "style.setProperty" };
+          return no(`an argument to ${h.callee}()`);
         }
         if (/(?:^|\.)setAttribute$/.test(h.callee) && h.index === 1) {
           const first = f.src.slice(h.open + 1, f.text.indexOf(",", h.open)).trim().match(/^["'`]([\w:-]+)["'`]$/)?.[1] ?? "";
@@ -735,7 +785,15 @@ export function jsSlot(f: SourceFile, span: Span, ctxProperty: string | null): S
         return no("an array element");
       case "spread":
         return no("a spread value");
-      case "arrow":
+      case "arrow": {
+        // `${({ on }) => (on ? "#fff" : "#000")}` inside a CSS template: the template takes what it returns.
+        const fn = arrowStart(f, h.at);
+        const outer = holderOf(f, fn.start, nextFunctionEnd(f, h.at, ve));
+        if (outer.kind === "template" && (cssRegionAt(f, outer.start + 1) || taggedCss(f, outer.start))) {
+          return { ok: true, property: templateProperty(f, outer.start, fn.start) ?? cssPropertyName(ctxProperty), how: "a CSS template's interpolation" };
+        }
+        return no("a function's return value");
+      }
       case "return":
         return no("a function's return value");
       default:
@@ -743,6 +801,81 @@ export function jsSlot(f: SourceFile, span: Span, ctxProperty: string | null): S
     }
   }
   return no("nested too deep to read");
+}
+
+/**
+ * The CSS property a template interpolation at `at` fills (`background: ${…}`): the last
+ * declaration name in the template's own text before it, or null.
+ */
+function templateProperty(f: SourceFile, start: number, at: number): string | null {
+  let text = "";
+  for (let k = start; k < at; k++) text += !f.inStr || f.inStr[k] === 1 ? f.src[k] : "x";
+  return cssPropertyName(text.match(/(--[\w-]+|-?[a-z][a-z-]*)\s*:\s*[^;{}:]*$/)?.[1]);
+}
+
+/** A tagged CSS template opening at `vs`: css`…`, styled.div`…`, styled.div<Props>`…`, styled(X).attrs(…)`…`, keyframes`…`. */
+function taggedCss(f: SourceFile, vs: number): boolean {
+  if (f.text[vs] !== "`") return false;
+  return /(?:\bcss|\bstyled(?:\.[\w$]+|\([^)]*\))(?:\.attrs\([^)]*\))?(?:<[^`]*>)?|\bkeyframes|\bcreateGlobalStyle|\binjectGlobal)\s*$/.test(f.text.slice(Math.max(0, vs - 120), vs));
+}
+
+const consumerCache = new WeakMap<SourceFile, string | null>();
+
+/** Why this file's style-named objects may feed something other than CSS (canvas code, a chart or map library), or null. */
+function nonCssConsumer(f: SourceFile): string | null {
+  if (!consumerCache.has(f)) {
+    let why: string | null = NON_CSS_CONSUMER_CODE.test(f.text) ? "draws on a canvas" : null;
+    if (!why) for (const m of f.text.matchAll(/\bfrom\s*(["'])([^"'\n]+)\1/g)) if (NON_CSS_CONSUMER_LIB.test(m[2])) why = `imports ${m[2]}`;
+    consumerCache.set(f, why);
+  }
+  return consumerCache.get(f)!;
+}
+
+const domCache = new WeakMap<SourceFile, string | null>();
+
+/** The non-DOM renderer this file imports (React Native, react-pdf, Satori), whose style objects var() cannot reach, or null. */
+function nonDomRenderer(f: SourceFile): string | null {
+  if (!domCache.has(f)) {
+    let found: string | null = null;
+    for (const m of f.text.matchAll(/\bfrom\s*(["'])([^"'\n]+)\1/g)) if (NON_DOM.test(m[2])) found = m[2];
+    domCache.set(f, found);
+  }
+  return domCache.get(f)!;
+}
+
+const CLASS_ATTR = /^(?:class|className|classes|tw)$|Class(?:Name|es)?$/;
+
+/**
+ * Whether a Tailwind class in a JS string sits in a class list: not a compared value
+ * (`variant === "bg-blue-500"`), not a non-class attribute (aria-label, title), not a type, and
+ * not prose (`"Avoid text-[#fff] here."`: words with capitals or end punctuation outside brackets).
+ */
+export function jsClassSlot(f: SourceFile, span: Span): Slot {
+  if (cssRegionAt(f, span.start) || !f.inStr) return { ok: true, property: null, how: "a class" };
+  const range = stringAt(f, span.start);
+  if (!range) return { ok: true, property: null, how: "a class" };
+  const [vs, ve] = range;
+  // The string's own text: a template's ${…} interpolations (with their own strings) read as a space.
+  let body = "";
+  for (let k = vs + 1; k < ve - 1; k++) {
+    if (f.src[k] === "$" && f.src[k + 1] === "{" && f.inStr[k] === 0) {
+      const close = matchingClose(f, k + 1);
+      body += " ";
+      if (close < 0) break;
+      k = close;
+    } else body += f.src[k];
+  }
+  const prose = body.trim().split(/\s+/).some((word) => {
+    const bare = word.replace(/\[[^\]]*\]/g, "[]").replace(/\([^)]*\)/g, "()");
+    return /[A-Z]/.test(bare) || /[.,;?]$/.test(bare) || /["'`]/.test(bare);
+  });
+  const notClass = (why: string): Slot => ({ ok: false, why: `${why}, not a class list: edit by hand` });
+  if (prose) return notClass("text");
+  const h = holderOf(f, vs, ve);
+  if (h.kind === "type") return notClass("a type");
+  if (h.kind === "other" && /compared|condition|method call|switch case/.test(h.why)) return notClass(h.why.replace(/, not a CSS value$/, ""));
+  if (h.kind === "attr" && !CLASS_ATTR.test(h.name)) return notClass(`the ${h.name} attribute`);
+  return { ok: true, property: null, how: "a class" };
 }
 
 /** Why a JS literal sits in a type rather than a value (`type Tone = "#fff"`, `x: "#fff"`, `useState<"#fff">`), or null. */
@@ -761,36 +894,6 @@ export function typePosition(f: SourceFile, span: Span): string | null {
 
 // ---------------------------------------------------------------------------
 // Markup
-
-/** [start, end) of each fenced code block (``` or ~~~) in a Markdown file. */
-const fences = new WeakMap<SourceFile, Array<[number, number]>>();
-
-function markdownCode(f: SourceFile): Array<[number, number]> {
-  let r = fences.get(f);
-  if (r) return r;
-  r = [];
-  if (/\.mdx?$/i.test(f.rel)) {
-    let open: { at: number; mark: string } | null = null;
-    let at = 0;
-    for (const line of f.src.split("\n")) {
-      const m = line.match(/^ {0,3}(`{3,}|~{3,})/);
-      if (m) {
-        if (!open) open = { at, mark: m[1] };
-        else if (m[1][0] === open.mark[0] && m[1].length >= open.mark.length && /^ {0,3}[`~]+\s*$/.test(line)) {
-          r.push([open.at, at + line.length]);
-          open = null;
-        }
-      } else if (!open) {
-        // Inline code spans on a prose line.
-        for (const c of line.matchAll(/(`+)(?!`)[\s\S]*?(?<!`)\1(?!`)/g)) r.push([at + c.index!, at + c.index! + c[0].length]);
-      }
-      at += line.length + 1;
-    }
-    if (open) r.push([open.at, f.src.length]);
-  }
-  fences.set(f, r);
-  return r;
-}
 
 /** The attribute of an HTML/Vue/Svelte tag whose value holds `i`, and the tag, or null when `i` is not in a tag. */
 function markupAttribute(f: SourceFile, i: number): { name: string | null; tag: string } | null {
@@ -815,7 +918,9 @@ function markupAttribute(f: SourceFile, i: number): { name: string | null; tag: 
 
 /** Whether a literal in an HTML, Vue, Svelte, Astro or Markdown file sits in a style. Class spans need a class attribute. */
 export function markupSlot(f: SourceFile, span: Span, ctxProperty: string | null): Slot {
-  if (markdownCode(f).some(([a, b]) => span.start >= a && span.start < b)) return { ok: false, why: "Markdown code, not a style: never changed" };
+  const inside = (ranges: Array<[number, number]>) => ranges.some(([a, b]) => span.start >= a && span.start < b);
+  if (inside(f.code)) return { ok: false, why: "Markdown code, not a style: never changed" };
+  if (inside(f.scripts)) return { ok: false, why: "a <script> block, not a style: edit by hand" };
   if (cssRegionAt(f, span.start)) return { ok: true, property: ctxProperty, how: "a <style> block" };
   const attr = markupAttribute(f, span.start);
   if (!attr || !attr.name) return { ok: false, why: `${/\.mdx?$/i.test(f.rel) ? "Markdown prose" : "element text or a script block"}, not a style: edit by hand` };

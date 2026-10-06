@@ -196,7 +196,7 @@ function candidates(f: SourceFile, hit: Hit, lineHits: readonly Hit[]): Span[] {
         if (f.inStr && !f.inStr[i + 1]) continue;
         if (masked(masks, i, j)) continue;
         // The places scan-literals skips: an ID selector in CSS, a link target or url() elsewhere.
-        if (cssFile && isSelector(f.text, j)) continue;
+        if ((cssFile || isCssAt(f, i)) && isSelector(f.text, j)) continue;
         if (!cssFile && (/(?:href|to|id|for|xlink:href)\s*=\s*\{?\s*["'`]$/.test(f.text.slice(Math.max(0, i - 24), i)) || /url\(\s*['"]?$/.test(f.text.slice(Math.max(0, i - 24), i)))) continue;
         if (normalizeHex(m[0]) === hit.value) add(i, j);
       }

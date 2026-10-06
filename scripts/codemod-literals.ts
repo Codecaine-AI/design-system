@@ -15,23 +15,31 @@
  * Known limits (round 2; each either leaves a row without a replacement or needs the reviewer):
  * - JS: a value gets a replacement only where the code at the literal shows it reaches CSS: a JSX
  *   style object (style, sx, css, *Style props), an object a style-named holder or a CSSProperties
- *   type holds, `el.style.x =`, `style.setProperty`, `setAttribute("style" | SVG color)`, a CSS
- *   template, an SVG presentation attribute of a DOM element. A value bound through a variable
- *   (`const c = "#fff"; <div style={{ color: c }}>`), returned by a helper (`treeVars({…})`), or
- *   kept in a settings, theme or palette object is "not known to reach CSS": no replacement, even
- *   where it does reach CSS. A nearest-color pick in JS needs a CSS property in its slot.
- * - A style-named object (`chartStyles`, `buttonStyle`) is trusted: if a canvas or a chart library
- *   reads it, its rows still get var(). Only ECharts' textStyle/itemStyle/lineStyle/areaStyle-style
- *   keys are refused by name (allowed when the file imports recharts and not echarts).
- * - The JS reading is lexical. Brackets inside a regex literal between a literal and its holder, or
- *   statements run together without semicolons, can misread the holder; check rows next to them.
- * - SVG presentation attributes (fill, stroke, stop-color, color, font-size, font-family) take var()
- *   in browsers but not in a rasterizer such as resvg; markup inside JS strings (data-URL cursors,
- *   canvas-renderer's static SVG) is never changed, JSX attributes are.
- * - Markup: Vue, Svelte and Astro <script> blocks, element text, other attributes (title, alt,
- *   aria-*, content, value), HTML's own bgcolor and <font color>, and Markdown prose, inline code and
- *   fenced code are never changed. Only <style> bodies, style attributes, class attributes and SVG
- *   presentation attributes are.
+ *   type holds, `el.style.x =`, `el.style.setProperty`, `setAttribute("style" | an SVG color)`, a
+ *   CSS template (also styled/css tagged templates and their interpolated functions), an SVG
+ *   presentation attribute of an SVG element. A value bound through a variable
+ *   (`const c = "#fff"; <div style={{ color: c }}>`), passed to or returned by another function
+ *   (`treeVars({…})`, `L.geoJSON(d, { style: {…} })`), or kept in a settings, theme or palette
+ *   object is "not known to reach CSS": no replacement, even where it does reach CSS. A nearest-color
+ *   pick in JS needs a CSS property in its slot.
+ * - A style-named holder (`buttonStyle`, `styles`) is trusted unless the file draws on a canvas or
+ *   imports a chart, map, graph or scene library; there only JSX style attributes and CSSProperties
+ *   types count. Chart and map option keys (series, graphic, stylers, paint, ECharts' itemStyle…)
+ *   veto any style name inside them. A file importing React Native, react-pdf or Satori gets no JS
+ *   replacements. Other non-CSS consumers of a style-named object are not detected.
+ * - The JS reading is lexical. Brackets inside a regex literal between a literal and its holder can
+ *   misread the holder; check rows next to regex literals.
+ * - Tailwind classes in JS are rewritten in class lists only: not in compared strings, non-class
+ *   attributes or prose. Prose is a word with a capital letter or end punctuation outside brackets,
+ *   so a class list holding a capitalised custom class (`ProseMirror`) is left alone too.
+ * - SVG presentation attributes take var() in browsers but not in a rasterizer such as resvg; SVG
+ *   documents and HTML held in JS strings are never changed except their <style> bodies and style=""
+ *   values (a page template), and not at all when the string is an SVG image.
+ * - Markup: <script> blocks, element text, other attributes (title, alt, aria-*, content, value),
+ *   component props, HTML's own bgcolor and <font color>, and Markdown prose, inline, fenced and
+ *   indented code are never changed. Only <style> bodies, style attributes, class attributes and
+ *   presentation attributes of SVG elements are. An indented paragraph after a blank line in
+ *   Markdown reads as code.
  * - Roles from names: the last role word decides, so a name whose role comes first (`bg-input`,
  *   `text-highlight`) reads by its last word. A fallback's own variable (`var(--docs-page, #fdfdfd)`)
  *   is not read as a hint. Mask colors and SVG filter flood/lighting colors get no token.
@@ -58,6 +66,7 @@ import { loadTokens, type Theme } from "./lib/codemod/tokens.ts";
 import type { TailwindTarget } from "./lib/codemod/size-role.ts";
 import { DESIGN_SYSTEM_ROOT, loadRegistry, type AppEntry } from "./lib/registry.ts";
 import { safeAppId } from "./lib/safe-paths.ts";
+import { SYSTEM_BIN, SYSTEM_PATH } from "./lib/system-bin.ts";
 
 const USAGE = `Usage:
   bun run codemod:literals --app <id> [--root <dir>] [--out-dir <dir>] propose [options]
@@ -149,8 +158,9 @@ export function parseArgs(argv: string[]): Args {
   return a;
 }
 
-function designSystemCommit(): string | null {
-  const r = spawnSync("git", ["rev-parse", "HEAD"], { cwd: DESIGN_SYSTEM_ROOT, encoding: "utf8" });
+export function designSystemCommit(): string | null {
+  // git by absolute path, never through PATH (scripts/lib/system-bin.ts).
+  const r = spawnSync(SYSTEM_BIN.git, ["rev-parse", "HEAD"], { cwd: DESIGN_SYSTEM_ROOT, encoding: "utf8", env: { ...process.env, PATH: SYSTEM_PATH } });
   return r.status === 0 ? r.stdout.trim() : null;
 }
 

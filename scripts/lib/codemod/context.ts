@@ -234,10 +234,37 @@ export function enclosingTag(f: SourceFile, index: number): { name: string; text
     if (ch === ">" && t[k - 1] !== "=") return null;
     if (ch === "<") {
       const m = t.slice(k + 1, k + 64).match(/^([A-Za-z][\w.:-]*)/);
-      return m ? { name: m[1], text: t.slice(k, index) } : null;
+      if (!m) return null;
+      // In JS, `a<b; c = "#fff"` and `if (n<min) c = "#fff"` are comparisons, not tags.
+      if (f.kind === "js" && !jsxTagText(f, k, index, m[1].length)) return null;
+      return { name: m[1], text: t.slice(k, index) };
     }
   }
   return null;
+}
+
+/**
+ * Whether [lt, index) reads as the start of a JSX opening tag: the name ends at a space, `/` or
+ * `>`, and outside strings and `{…}` there is no `;`, `,` or unmatched `)`/`]` (which a comparison
+ * followed by more code has).
+ */
+function jsxTagText(f: SourceFile, lt: number, index: number, nameLength: number): boolean {
+  const t = f.text;
+  if (!/[\s/>]/.test(t[lt + 1 + nameLength] ?? "")) return false;
+  let braces = 0;
+  let parens = 0;
+  for (let k = lt + 1 + nameLength; k < index; k++) {
+    if (f.inStr && f.inStr[k] === 1) continue;
+    const ch = t[k];
+    if (ch === "{") braces++;
+    else if (ch === "}") braces--;
+    if (braces > 0) continue;
+    if (ch === "(" || ch === "[") parens++;
+    else if (ch === ")" || ch === "]") {
+      if (--parens < 0) return false;
+    } else if (ch === ";" || ch === ",") return false;
+  }
+  return true;
 }
 
 /**

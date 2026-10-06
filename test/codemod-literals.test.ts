@@ -8,10 +8,10 @@
  */
 import { beforeAll, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, symlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
-import { classTarget } from "../scripts/codemod-literals.ts";
+import { classTarget, designSystemCommit } from "../scripts/codemod-literals.ts";
 import { applyTable } from "../scripts/lib/codemod/apply.ts";
 import { tokenAllowed } from "../scripts/lib/codemod/color-role.ts";
 import { applyRoot, tableDir } from "../scripts/lib/codemod/paths.ts";
@@ -19,6 +19,7 @@ import { DEFAULT_CATEGORIES, propose } from "../scripts/lib/codemod/propose.ts";
 import { fileSha, lineSha, summarize, type Row, type Table } from "../scripts/lib/codemod/table.ts";
 import { loadTokens } from "../scripts/lib/codemod/tokens.ts";
 import { loadRegistry } from "../scripts/lib/registry.ts";
+import { SYSTEM_BIN } from "../scripts/lib/system-bin.ts";
 import { PKG } from "./support.ts";
 
 const FIXTURES = join(PKG, "test/fixtures/codemod");
@@ -424,8 +425,8 @@ describe("propose: a JS value gets a replacement only where it reaches CSS", () 
       [3, "15", "an object held by BASE_SETTINGS"], // prompt-kit BASE_SETTINGS.fontSize
       [3, '"#ffffff"', "foregroundColor is not a CSS property"],
       [4, '"#1a1a1a"', "an array element"], // pen-plotter PALETTE
-      [5, '"#666562"', "an object held by option"], // an ECharts series label
-      [5, "11", "an object held by option"],
+      [5, '"#666562"', "an object under series, a chart or map option"], // an ECharts series label
+      [5, "11", "an object under series, a chart or map option"],
       [5, '"#e6e5e3"', "itemStyle is a chart option"],
       [6, '"#808080"', "the value attribute is not a style"], // a color input's value
       [7, '"#ffffff"', "compared"], // === "#ffffff"
@@ -554,6 +555,84 @@ describe("propose: radius, names and types", () => {
 
   test("a commented-out import and import text in a string bind no cssVar", () => {
     expect(r2(r2Rows("commented-import.tsx"), 4, '"#ebebe9"').replacement).toBe('"var(--ds-color-fill-chip)"');
+  });
+});
+
+describe("propose: second-pass review of the slot reading", () => {
+  const none = (rows: Row[], line: number, literal: string, why: string, nth = 0) => {
+    const r = r2(rows, line, literal, nth);
+    expect({ line, literal, replacement: r.replacement, why: r.why.includes(why) }).toEqual({ line, literal, replacement: null, why: true });
+  };
+
+  test("a comparison with `<` followed by an assignment is not a JSX attribute", () => {
+    const rows = r2Rows("lt.ts");
+    none(rows, 5, '"#ffffff"', "assigned to color"); // after `innerWidth<breakpoint;`
+    none(rows, 7, '"#ffffff"', "assigned to color"); // `if (n<min) color = …`
+  });
+
+  test("a Tailwind class in a compared string, prose or a non-class attribute is not rewritten", () => {
+    const rows = r2Rows("classes.tsx");
+    none(rows, 2, "bg-blue-500", "compared");
+    none(rows, 3, "text-[#ffffff]", "text, not a class list");
+    none(rows, 4, "text-[#ffffff]", "the aria-label attribute");
+    expect(r2(rows, 4, "text-[#ffffff]", 1).replacement).toBe("text-on-solid"); // its className
+    // A class template whose ${…} holds quoted classes over several lines is still a class list.
+    expect(r2(rows, 5, "rounded-[2px]").replacement).toBe("rounded");
+    expect(r2(rows, 6, "bg-[#ffffff]").replacement).toBe("bg-page");
+  });
+
+  test("color and fill are presentation attributes only on SVG elements", () => {
+    const rows = r2Rows("props.tsx");
+    none(rows, 3, '"#ffffff"', "the color prop of <MyIcon>");
+    none(rows, 4, '"#ffffff"', "<meshStandardMaterial> is not an SVG presentation attribute");
+    none(rows, 5, '"#ffffff"', "<link> is not an SVG presentation attribute");
+    expect(r2(rows, 6, '"#ffffff"').replacement).toBe('"var(--ds-color-text-on-solid)"');
+    const vue = r2Rows("guards.vue");
+    none(vue, 2, "#ffffff", "<MyIcon> is not an SVG presentation attribute");
+    expect(r2(vue, 3, "#e6e5e3").replacement).toBe("var(--ds-color-border-default)");
+    none(vue, 6, "#ffffff", "a <script> block"); // markup in a script string
+  });
+
+  test("markup: <style> inside comments or backticks opens nothing; script blocks, indented and list-indented code never change", () => {
+    const md = r2Rows("guards.md", { ext: "+md" });
+    none(md, 3, "#ffffff", "Markdown prose");
+    none(md, 8, "#ffffff", "Markdown code"); // a fence indented inside a list item
+    none(md, 13, "#ffffff", "Markdown code"); // an indented code block
+    expect(r2(md, 15, "#666562").replacement).toBe("var(--ds-color-text-muted)");
+    const html = r2Rows("guards.html");
+    none(html, 2, "#ffffff", "element text"); // after a comment naming <style>
+    expect(r2(html, 4, "#666562").replacement).toBe("var(--ds-color-text-muted)");
+    expect(html.filter((r) => r.line === 4 && r.replacement !== null).map((r) => r.literal)).toEqual(["#666562"]); // #bad, #face are selectors
+    none(html, 7, "#ffffff", "a <script> block");
+  });
+
+  test("templates holding code or an SVG image are not CSS; a page template is CSS only in its <style>; a curried call is a call", () => {
+    const rows = r2Rows("templates.ts");
+    none(rows, 2, "#ffffff", "assigned to snippet");
+    none(rows, 3, "#ffffff", "assigned to cursor");
+    none(rows, 4, "#ffffff", "assigned to page");
+    expect(r2(rows, 4, "#666562").replacement).toBe("var(--ds-color-text-muted)");
+    none(rows, 6, '"#ffffff"', "an argument to darken(…)()");
+    expect(r2(rows, 6, '"#ebebe9"').replacement).toBe('"var(--ds-color-fill-chip)"');
+  });
+
+  test("chart and map options, other functions' arguments, a map feature's setProperty and a type leaking past a line without a semicolon: none", () => {
+    const rows = r2Rows("configs.tsx");
+    none(rows, 4, '"#ffffff"', "an object under graphic"); // ECharts graphic style
+    none(rows, 5, '"#ffffff"', "an object under stylers"); // Google Maps styles
+    none(rows, 6, '"#ffffff"', "an object under paint"); // a Mapbox layer
+    none(rows, 7, '"#ffffff"', "an argument to L.geoJSON()");
+    none(rows, 8, '"#ffffff"', "an argument to feature.setProperty()");
+    none(rows, 10, '"#ffffff"', "an object under legend");
+  });
+
+  test("styled templates with type arguments and interpolated functions are CSS; a typed class field is; a style-named object in canvas code is not", () => {
+    const rows = r2Rows("styled.tsx");
+    expect(r2(rows, 5, "#ffffff").replacement).toBe("var(--ds-color-text-on-solid)");
+    expect(r2(rows, 6, '"#ffffff"')).toMatchObject({ context: { property: "background" }, replacement: '"var(--ds-color-surface-page)"' });
+    expect(r2(rows, 9, '"#ffffff"').replacement).toBe('"var(--ds-color-text-on-solid)"'); // private boxStyle: CSSProperties
+    none(rows, 10, '"#ffffff"', "an object held by settings");
+    none(r2Rows("canvas-file.ts"), 3, '"#ffffff"', "textStyle in a file that draws on a canvas");
   });
 });
 
@@ -804,6 +883,20 @@ describe("CLI", () => {
     const uno = cli("--app", "fixture", "--root", FIXTURES, "--out-dir", out, "propose", "--paths", "review/r2/v3-host.tsx", "--tailwind", "uno");
     expect(uno.status).toBe(0);
     expect(uno.stdout).toContain("classes target UnoCSS (no class rewrites) (--tailwind)");
+  });
+
+  test("the design-system commit is read with git by its absolute path, never through PATH", () => {
+    const stand = join(mkdtempSync(join(tmpdir(), "codemod-git-")), "git");
+    writeFileSync(stand, "#!/bin/sh\necho stand-in\n");
+    chmodSync(stand, 0o755);
+    const saved = SYSTEM_BIN.git;
+    SYSTEM_BIN.git = stand;
+    try {
+      expect(designSystemCommit()).toBe("stand-in");
+    } finally {
+      SYSTEM_BIN.git = saved;
+    }
+    expect(designSystemCommit()).toMatch(/^[0-9a-f]{40}$/);
   });
 
   test("an app missing from the registry needs --paths", () => {
