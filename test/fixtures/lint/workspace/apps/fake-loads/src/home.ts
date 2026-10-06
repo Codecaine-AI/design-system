@@ -2,7 +2,7 @@
 export function renderHome(): string {
   return `<!doctype html>
 <html><head>
-<link rel="stylesheet" href="@codecaine-ai/design-system/fonts.css">
+<style>@import url("@codecaine-ai/design-system/fonts.css")</style>
 <link rel="stylesheet" href="@codecaine-ai/design-system/tokens.css">
 </head><body>home</body></html>`;
 }

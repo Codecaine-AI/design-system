@@ -4,13 +4,15 @@
  * dead constant listing ds-* names).
  *
  * - JS/TS: the string characters of
- *   - `className=` / `class=` attribute values: a string, or every string in the `{…}` expression;
+ *   - `className=` / `class=` attribute values, and props that pass a class on
+ *     (`sidebarClassName=`): a string, or every string in the `{…}` expression;
  *   - `className:` / `class:` property values (`createElement("div", { className: … })`);
  *   - the arguments of clsx, cn, classNames, cx, twMerge, twJoin, cva and tv calls;
  *   - `classList.add/toggle/replace(…)`, `setAttribute("class", …)` and `.className = …`;
  *   - `class="…"` / `className="…"` written inside a string or template literal (markup built as text).
  * - HTML, Vue, Svelte, Astro, Markdown: class attribute values (`class`, `className`,
- *   `:class`, `v-bind:class`, `class:list`), plus the JS rules inside `<script>` blocks.
+ *   `:class`, `v-bind:class`, `class:list`; a quoted value or a `{…}` expression), plus
+ *   the JS rules inside `<script>` blocks.
  * - CSS/SCSS: the arguments of `@apply`.
  */
 
@@ -68,16 +70,35 @@ function closeOf(text: string, inStr: Uint8Array, open: number): number {
   return -1;
 }
 
-/** End of an assigned expression: `;` or a line break at bracket depth 0, or an unmatched closing bracket. */
+/** Characters that leave an expression open across a line break, before or after it. */
+const CONTINUES = /[?:+\-*/%&|^!~<>=.,(\[{]/;
+
+/**
+ * End of an assigned expression: `;` or `,` at bracket depth 0, an unmatched closing bracket,
+ * or a line break at depth 0 that the expression does not continue across (an operator ends
+ * the line before it, or starts the line after it: `sel\n  ? "a"\n  : "b"`).
+ */
 function expressionEnd(text: string, inStr: Uint8Array, from: number): number {
   let depth = 0;
+  let last = ""; // previous significant code character
   for (let i = from; i < text.length && i < from + MAX_SPAN; i++) {
-    if (inStr[i]) continue;
+    if (inStr[i]) {
+      last = "s";
+      continue;
+    }
     const ch = text[i];
     if (ch === "(" || ch === "{" || ch === "[") depth++;
     else if (ch === ")" || ch === "}" || ch === "]") {
       if (--depth < 0) return i;
-    } else if (depth === 0 && (ch === ";" || ch === "\n" || ch === ",")) return i;
+    } else if (depth === 0 && (ch === ";" || ch === ",")) return i;
+    else if (depth === 0 && ch === "\n") {
+      if (last === "" || CONTINUES.test(last)) continue;
+      let j = i + 1;
+      while (j < text.length && /\s/.test(text[j])) j++;
+      if (j < text.length && !inStr[j] && CONTINUES.test(text[j]) && text[j] !== "," && text[j] !== "(" && text[j] !== "[" && text[j] !== "{") continue;
+      return i;
+    }
+    if (!/\s/.test(ch)) last = ch;
   }
   return Math.min(text.length, from + MAX_SPAN);
 }
@@ -97,12 +118,14 @@ function stringRuns(inStr: Uint8Array, start: number, end: number, out: Span[]):
   }
 }
 
-const JSX_CLASS_ATTR = /(?<![\w$.:-])(?:className|class)\s*=\s*/g;
+/** `className`, `class`, and component props that pass one on (`sidebarClassName`, `overlayClassName`). */
+const CLASS_PROP = String.raw`(?:[A-Za-z]\w*ClassName|className|class)`;
+const JSX_CLASS_ATTR = new RegExp(String.raw`(?<![\w$.:-])${CLASS_PROP}\s*=\s*`, "g");
 const CLASS_CALL = /(?<![\w$.])(?:clsx|cn|classNames|classnames|cx|twMerge|twJoin|cva|tv)\s*\(/g;
 const CLASS_LIST_CALL = /\.\s*classList\s*\.\s*(?:add|toggle|replace)\s*\(/g;
 const SET_CLASS_ATTR = /\.\s*setAttribute\s*\(\s*(["'])class\1\s*,/g;
 const CLASS_NAME_ASSIGN = /\.\s*className\s*(?:\+=|=(?!=))/g;
-const CLASS_KEY = /(?<![\w$.:-])(?:className|class|(["'])class(?:Name)?\1)\s*:(?!:)\s*/g;
+const CLASS_KEY = new RegExp(String.raw`(?<![\w$.:-])(?:${CLASS_PROP}|(["'])class(?:Name)?\1)\s*:(?!:)\s*`, "g");
 const MARKUP_CLASS_ATTR = /(?<![\w$.:-])(?:className|class)\s*=\s*(\\?["'])/g;
 
 /** Class-context spans of a JS/TS source. */
@@ -153,8 +176,39 @@ export function jsClassSpans(src: string, lexed: { text: string; inStr: Uint8Arr
   return offset ? spans.map(([a, b]) => [a + offset, b + offset]) : spans;
 }
 
-/** Class attributes of HTML-like markup (values in double or single quotes, or a `{"…"}` expression). */
-export const HTML_CLASS_ATTR = /(?<![\w-])(?::class|v-bind:class|class:list|className|class)\s*=\s*(?:"([^"]*)"|'([^']*)'|\{\s*(["'`])([^"'`]*)\3\s*\})/g;
+const HTML_CLASS_ATTR = /(?<![\w-])(?::class|v-bind:class|class:list|className|class)\s*=\s*(?=["'{])/g;
+
+/**
+ * Value spans of the class attributes in HTML-like markup (comments blanked): a quoted value,
+ * or a `{…}` expression (Svelte, Astro, JSX-style) up to its matching brace.
+ */
+export function htmlClassAttrSpans(text: string): Span[] {
+  const spans: Span[] = [];
+  for (const m of text.matchAll(HTML_CLASS_ATTR)) {
+    const v = m.index! + m[0].length;
+    const q = text[v];
+    if (q === '"' || q === "'") {
+      const end = text.indexOf(q, v + 1);
+      if (end !== -1) spans.push([v + 1, end]);
+      continue;
+    }
+    let depth = 0;
+    let quote = "";
+    for (let i = v; i < text.length && i < v + MAX_SPAN; i++) {
+      const ch = text[i];
+      if (quote) {
+        if (ch === "\\") i++;
+        else if (ch === quote) quote = "";
+      } else if (ch === '"' || ch === "'" || ch === "`") quote = ch;
+      else if (ch === "{") depth++;
+      else if (ch === "}" && --depth === 0) {
+        spans.push([v + 1, i]);
+        break;
+      }
+    }
+  }
+  return spans;
+}
 
 /** Class contexts of one file. */
 export function classContexts(src: string, kind: FileKind): ClassContexts {
@@ -168,11 +222,7 @@ export function classContexts(src: string, kind: FileKind): ClassContexts {
     }
   } else if (kind === "html") {
     const text = stripHtml(src);
-    for (const m of text.matchAll(HTML_CLASS_ATTR)) {
-      const value = m[1] ?? m[2] ?? m[4] ?? "";
-      const start = m.index! + m[0].indexOf(value, m[0].indexOf("="));
-      spans.push([start, start + value.length]);
-    }
+    spans.push(...htmlClassAttrSpans(text));
     for (const m of text.matchAll(/(<script\b[^>]*>)([\s\S]*?)<\/script>/gi)) {
       spans.push(...jsClassSpans(m[2], lexJs(m[2]), m.index! + m[1].length));
     }

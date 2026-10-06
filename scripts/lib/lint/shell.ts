@@ -12,15 +12,16 @@
  *   by bytes; apps may add files), still renders every ds-* class the template
  *   renders, and the entry reaches its index;
  * - `.ds-shell` markup: a reachable file renders ds-shell, and that file together with
- *   the modules it imports (its component subtree) renders ds-sidebar,
- *   ds-sidebar-toggle, ds-workspace, ds-topbar and ds-main.
+ *   the modules it imports (its component subtree; for a script an HTML page loads,
+ *   the page and all its scripts) renders ds-sidebar, ds-sidebar-toggle, ds-workspace,
+ *   ds-topbar and ds-main.
  * An app with `shell: false` has no shell to check (n/a).
  */
 
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { TEMPLATE_APPSHELL, dsClassesIn } from "./design-system";
-import { reachableFrom } from "./modules";
+import { subtreeOf } from "./modules";
 import type { AppContext, CheckOutput, Finding } from "./types";
 import { lineFinder, realpathOrNull, type SourceFile } from "./workspace";
 
@@ -93,7 +94,7 @@ export function checkShell(ctx: AppContext): CheckOutput {
   let best: { root: Rendered; missing: string[] } | null = null;
   for (const [real, r] of rendered) {
     if (!r.classes.has("ds-shell")) continue;
-    const subtree = reachableFrom(graph, real);
+    const subtree = subtreeOf(graph, real);
     const have = new Set<string>();
     for (const f of subtree) for (const c of rendered.get(f)?.classes.keys() ?? []) have.add(c);
     const missing = SHELL_CLASSES.slice(1).filter((c) => !have.has(c));

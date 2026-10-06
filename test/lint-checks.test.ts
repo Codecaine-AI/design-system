@@ -169,6 +169,7 @@ describe("wiring", () => {
     const presetFindings = (app: string) => check(app, "wiring").violations.filter((v) => v.message.includes("preset"));
     expect(presetFindings("tw3")).toEqual([]);
     expect(presetFindings("tw3-bound")).toEqual([]);
+    expect(presetFindings("tw3-shorthand")).toEqual([]);
     expect(presetFindings("tw3-commented")).toEqual([at("apps/tw3-commented/tailwind.config.js", 2, "does not use the preset")]);
     expect(presetFindings("tw3-unused")).toEqual([at("apps/tw3-unused/tailwind.config.js", 3, "does not use the preset")]);
   });
@@ -197,6 +198,16 @@ describe("wiring", () => {
 
   test("a server-rendered entry module loads the stylesheets its returned page links", () => {
     expect(check("ssr-home", "wiring")).toMatchObject({ status: "pass", violations: [] });
+  });
+
+  test("a static import on its own line after a statement without a semicolon still loads", () => {
+    expect(check("asi-import", "wiring")).toMatchObject({ status: "pass", violations: [] });
+  });
+
+  test("Tailwind v4 import options (source(none), layer(…)) are not conditions: the order checks still see the import", () => {
+    expectExactly(check("tw-options", "wiring").violations, [
+      at("apps/wiring/tw-options.css", 4, 'tailwind-strict.css loads before "tailwindcss" (apps/wiring/tw-options.css:5)'),
+    ]);
   });
 
   test("host-contract.css sits between the tokens and layout.css, in the tokens' variant", () => {
@@ -251,6 +262,7 @@ describe("literals", () => {
       .violations.filter((v) => v.message.startsWith("Tailwind default-scale class "))
       .map((v) => `${v.file.replace("apps/scale-classes/src/", "")}:${v.line} ${v.message.split(" ")[3]}`);
     // Not flagged: rounded, the MODE constant, title="shadow", the WORDS array, el.title and the title property.
+    // Flagged in class contexts: a className assignment across lines, an overlayClassName prop, a Svelte class={…}.
     expect(tw.sort()).toEqual([
       "_components/Panel/index.tsx:10 blur",
       "_components/Panel/index.tsx:10 inset-shadow",
@@ -266,7 +278,12 @@ describe("literals", () => {
       "dom.ts:6 blur",
       "dom.ts:6 leading-3",
       "dom.ts:9 drop-shadow",
-    ]);
+      "dom.ts:13 shadow",
+      "dom.ts:14 blur",
+      "_components/Dialog/index.tsx:4 backdrop-blur",
+      "Badge.svelte:5 blur",
+      "Badge.svelte:5 shadow",
+    ].sort());
   });
 
   test("a library without Tailwind gets the class check only when its host compiles its class strings", () => {
@@ -347,6 +364,10 @@ describe("shell", () => {
     expect(check("shell-split", "shell")).toMatchObject({ status: "pass", violations: [] });
   });
 
+  test("scripts an HTML page loads render into one DOM: markup split across them passes", () => {
+    expect(check("shell-page", "shell")).toMatchObject({ status: "pass", violations: [] });
+  });
+
   test("a Next.js app router page counts as rendered: the router reaches it without an import", () => {
     expect(check("shell-next", "shell")).toMatchObject({ status: "pass", violations: [] });
   });
@@ -367,12 +388,15 @@ describe("structure", () => {
   });
 
   test("every .tsx file outside _components/<Name>/index.tsx is a component in the wrong place; entry and hook files are not", () => {
-    // Not flagged: main.tsx, App.tsx, src/index.tsx, pages/home/page.tsx, app/layout.tsx, app/not-found.tsx,
+    // Not flagged: main.tsx, App.tsx, mdx-components.tsx, src/index.tsx, pages/home/page.tsx, app/layout.tsx, app/not-found.tsx,
     // _components/Shelf/index.tsx, pages/home/_components/Card/index.tsx and its useCard.tsx hook.
     expectExactly(check("wrong-folders", "structure").violations, [
       at("apps/wrong-folders/src/components/Panel/index.tsx", 0, "component file outside _components/<Name>/index.tsx; move it to _components/Panel/index.tsx"),
       at("apps/wrong-folders/src/components/ui/app-sidebar.tsx", 0, "move it to _components/AppSidebar/index.tsx"),
       at("apps/wrong-folders/src/_components/Shelf/ShelfItem.tsx", 0, "component file ShelfItem.tsx in Shelf/; a component folder renders one component"),
+      // Next.js file names are entries only inside an app/ or pages/ router folder.
+      at("apps/wrong-folders/src/components/icon.tsx", 0, "move it to _components/Icon/index.tsx"),
+      at("apps/wrong-folders/src/components/loading.tsx", 0, "move it to _components/Loading/index.tsx"),
     ]);
   });
 

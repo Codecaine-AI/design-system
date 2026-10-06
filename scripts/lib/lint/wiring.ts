@@ -126,15 +126,20 @@ export function exportsPreset(raw: string): boolean {
     if (open === -1) continue;
     const close = closeOf(text, inStr, open);
     if (close === -1) continue;
+    const arrayHasPreset = (arrOpen: number) => {
+      const arrClose = closeOf(text, inStr, arrOpen);
+      return arrClose !== -1 && topLevelParts(text, inStr, arrOpen, arrClose).some(isPreset);
+    };
     for (const part of topLevelParts(text, inStr, open, close)) {
-      const kv = /^(["']?)presets\1\s*:\s*\[/.exec(part);
-      if (!kv) continue;
-      const arrOpen = part.indexOf("[", kv[0].length - 1);
-      const arrClose = part.lastIndexOf("]");
-      const inner = part.slice(arrOpen + 1, arrClose === -1 ? part.length : arrClose);
-      // Re-lex the array body: it holds the only strings that matter here.
-      const lexed = lexJs(`[${inner}]`);
-      if (topLevelParts(lexed.text, lexed.inStr, 0, inner.length + 1).some(isPreset)) return true;
+      const at = text.indexOf(part, open);
+      const kv = /^(["']?)presets\1\s*:\s*/.exec(part);
+      if (kv && text[at + kv[0].length] === "[" && arrayHasPreset(at + kv[0].length)) return true;
+      // `{ presets }` or `presets: list`: a binding to an array.
+      const ref = part === "presets" ? "presets" : kv ? /^[\w$]+$/.exec(part.slice(kv[0].length).trim())?.[0] : undefined;
+      if (ref) {
+        const decl = new RegExp(`(?<![\\w$.])(?:const|let|var)\\s+${esc(ref)}\\s*(?::[^=]+)?=\\s*\\[`, "g").exec(text);
+        if (decl && code(decl.index) && arrayHasPreset(decl.index + decl[0].length - 1)) return true;
+      }
     }
   }
   return false;

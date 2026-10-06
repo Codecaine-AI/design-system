@@ -7,3 +7,9 @@ export function mount(el: HTMLElement) {
   el.title = "blur";
 }
 export const buttonProps = { className: "drop-shadow", title: "blur" };
+
+export function paint(card: HTMLElement, selected: boolean) {
+  card.className = selected
+    ? "shadow"
+    : "blur";
+}

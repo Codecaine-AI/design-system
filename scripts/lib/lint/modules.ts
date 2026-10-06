@@ -9,9 +9,10 @@
  *   that `app/` folder: the router renders them without an import.
  * Edges: static `import`/`export … from` (not `import type`), dynamic `import("…")`,
  * `require("…")`, and an HTML page's `<script src>` and inline module scripts.
- * Specifiers: relative, root-absolute (against the app's web root) and tsconfig `paths`
- * aliases (`@/…`, through `extends` and `references`). Bare package specifiers are not
- * followed: a package is not the app's own source.
+ * Specifiers: relative (a page's `src="app.js"` too), root-absolute (against the app's
+ * web root) and tsconfig `paths` aliases (`@/…`, through `extends` and `references`).
+ * Bare package specifiers are not followed: a package is not the app's own source.
+ * Not followed: template-literal `import(`…${x}`)` and `import.meta.glob` patterns.
  */
 
 import { readdirSync } from "node:fs";
@@ -198,6 +199,11 @@ function resolveModule(spec: string, fromFile: string, serveRoot: string, stop: 
   const clean = spec.replace(/[?#].*$/, "");
   if (!clean || /^(?:[a-z]+:|\/\/)/i.test(clean)) return null;
   if (clean.startsWith(".")) return moduleFile(resolve(dirname(fromFile), clean));
+  // A page's <script src="app.js"> is a URL relative to the page.
+  if (PAGE_FILE.test(fromFile) && !clean.startsWith("/")) {
+    const local = moduleFile(resolve(dirname(fromFile), clean));
+    if (local) return local;
+  }
   if (clean.startsWith("/")) return moduleFile(join(serveRoot, clean)) ?? moduleFile(clean);
   for (const { base, paths } of aliasesFor(fromFile, stop)) {
     for (const [pattern, targets] of Object.entries(paths)) {
@@ -293,6 +299,18 @@ export function buildModuleGraph(opts: ModuleGraphOptions): ModuleGraph {
     graph.edges.set(file, targets);
   }
   return graph;
+}
+
+/**
+ * What `file` renders into: the modules reachable from it. A script a page loads with
+ * `<script src>` shares that page's DOM with the page's other scripts, so its subtree is
+ * the page's (the page, every script it loads and their imports).
+ */
+export function subtreeOf(graph: ModuleGraph, file: string): Set<string> {
+  for (const [from, targets] of graph.edges) {
+    if (PAGE_FILE.test(from) && (from === file || targets.includes(file))) return reachableFrom(graph, from);
+  }
+  return reachableFrom(graph, file);
 }
 
 /** Modules reachable from `start` through the graph's edges, `start` included. */

@@ -22,7 +22,7 @@
  */
 
 import { lexJs, stripCss, stripHtml, type FileKind } from "../../scan-literals";
-import { classContexts, HTML_CLASS_ATTR, type ClassContexts } from "./class-context";
+import { classContexts, htmlClassAttrSpans, type ClassContexts } from "./class-context";
 
 const PRE = String.raw`(?<![\w\-/\[.$#@])!?`;
 const POST = String.raw`(?![\w-])`;
@@ -119,11 +119,7 @@ export function findDefaultScaleClasses(src: string, kind: FileKind): TwHit[] {
   else if (kind === "html") {
     const ctx = classContexts(src, kind);
     const text = stripHtml(src);
-    for (const m of text.matchAll(HTML_CLASS_ATTR)) {
-      const value = m[1] ?? m[2] ?? m[4] ?? "";
-      const start = m.index! + m[0].indexOf(value, m[0].indexOf("="));
-      hits.push(...matchAll(value, () => true, start));
-    }
+    for (const [start, end] of htmlClassAttrSpans(text)) hits.push(...matchAll(text.slice(start, end), () => true, start));
     for (const m of text.matchAll(/(<script\b[^>]*>)([\s\S]*?)<\/script>/gi)) hits.push(...inJsStrings(m[2], ctx, m.index! + m[1].length));
     for (const m of text.matchAll(/(<style\b[^>]*>)([\s\S]*?)<\/style>/gi)) hits.push(...inApply(m[2], m.index! + m[1].length));
   }

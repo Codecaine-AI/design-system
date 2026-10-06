@@ -164,17 +164,19 @@ const VALUE_QUERY = /[?&](?:url|raw|inline)(?:[&=#]|$)/;
  */
 export function conditionOf(tail: string): string | undefined {
   let t = tail.trim().replace(/;$/, "").trim();
-  t = t.replace(/^layer(?:\([^)]*\))?/i, "").trim();
+  // Cascade layers and Tailwind v4's import options are not conditions.
+  for (let prev = ""; prev !== t; ) {
+    prev = t;
+    t = t.replace(/^(?:(?:layer|source|prefix|theme)(?:\([^)]*\))?|important)(?![\w-])/i, "").trim();
+  }
   if (!t || /^(?:all|screen)$/i.test(t)) return undefined;
   return t;
 }
 
 function cssRefs(text: string, offset = 0): Ref[] {
   const refs: Ref[] = [];
-  const tail = (end: number) => {
-    const semi = text.indexOf(";", end);
-    return conditionOf(text.slice(end, semi === -1 ? Math.min(text.length, end + 300) : Math.min(semi, end + 300)));
-  };
+  // The tail ends at `;`; in markup held in a string (no `;` before </style>), at a tag, a line break or the string's end.
+  const tail = (end: number) => conditionOf(text.slice(end, end + 300).split(/[;<\n`"']/)[0]);
   for (const m of text.matchAll(CSS_IMPORT)) refs.push({ spec: m[2], index: offset + m.index!, as: "css", url: true, condition: tail(m.index! + m[0].length) });
   for (const m of text.matchAll(CSS_IMPORT_BARE_URL)) refs.push({ spec: m[1], index: offset + m.index!, as: "css", url: true, condition: tail(m.index! + m[0].length) });
   return refs;
@@ -198,28 +200,45 @@ function linkRefs(text: string, offset = 0): Ref[] {
 const JS_IMPORT =
   /(?<![\w$.])(?:import\s+(?!type\b)(?:[\w$*{}\s,]+?\s+from\s+)?|export\s+(?!type\b)[\w$*{}\s,]+?\s+from\s+)(["'])([^"'\n]+)\1|(?<![\w$.])require\(\s*(["'])([^"'\n]+)\3\s*\)/g;
 
-/** Characters a statement can follow: none (start of file), `;`, a closing bracket, the end of a string, a word. */
+/** Characters a statement can follow on the same line: none (start of file), `;`, a closing bracket, the end of a string, a word. */
 const ENDS_STATEMENT = /[;})\]"'`\w$]/;
 
 /**
- * Bracket depth before each offset of a lexed JS source, counting code characters only, and the
- * offset of the previous significant code character. A static import is a statement only at depth 0.
+ * Where a static import can be a statement: at bracket depth 0 (counting code characters
+ * only), after a character that ends a statement, or first on its line (ASI) unless a `.`
+ * before it makes it a property. An `import` line in JSX text sits inside the component's
+ * brackets. Brackets inside regex literals are counted too (lexJs does not mark them).
  */
 function statementStarts(text: string, inStr: Uint8Array): (index: number) => boolean {
   const depth = new Int32Array(text.length + 1);
   const prev = new Int32Array(text.length + 1);
+  const lineStart = new Uint8Array(text.length + 1);
   let d = 0;
   let last = -1;
+  let fresh = 1;
   for (let i = 0; i < text.length; i++) {
     depth[i] = d;
     prev[i] = last;
-    if (inStr[i]) continue;
+    lineStart[i] = fresh;
     const ch = text[i];
+    if (ch === "\n") fresh = 1;
+    if (inStr[i]) {
+      fresh = 0;
+      continue;
+    }
     if (ch === "(" || ch === "{" || ch === "[") d++;
     else if (ch === ")" || ch === "}" || ch === "]") d = Math.max(0, d - 1);
-    if (!/\s/.test(ch)) last = i;
+    if (!/\s/.test(ch)) {
+      last = i;
+      fresh = 0;
+    }
   }
-  return (index) => depth[index] === 0 && (prev[index] === -1 || ENDS_STATEMENT.test(text[prev[index]]));
+  return (index) => {
+    if (depth[index] !== 0) return false;
+    const p = prev[index];
+    if (p === -1 || ENDS_STATEMENT.test(text[p])) return true;
+    return lineStart[index] === 1 && text[p] !== ".";
+  };
 }
 
 /** An HTML document in a JS module's strings: the module renders a page on the server. */

@@ -172,9 +172,19 @@ export const APPS: AppEntry[] = [
   }),
   appEntry({ id: "tw3-unused", root: "apps/tw3-unused", stack: { summary: "Tailwind v3 (fixture)", tailwind: "v3", packageManager: "bun" } }),
   appEntry({ id: "tw3-bound", root: "apps/tw3-bound", stack: { summary: "Tailwind v3 (fixture)", tailwind: "v3", packageManager: "bun" } }),
+  appEntry({ id: "tw3-shorthand", root: "apps/tw3-shorthand", stack: { summary: "Tailwind v3 (fixture)", tailwind: "v3", packageManager: "bun" } }),
+  appEntry({ id: "asi-import", root: FAKE_LOADS, entryStylesheet: `${FAKE_LOADS}/src/asi-entry.tsx` }),
+  appEntry({ id: "tw-options", root: WIRING, scan: { paths: [WIRING], exclude: [] }, entryStylesheet: `${WIRING}/tw-options.css` }),
   // Shell: markup that is never rendered, split across a component subtree, or reached only by the Next.js router.
   appEntry({ id: "shell-dead", root: "apps/shell-dead" }),
   appEntry({ id: "shell-split", root: "apps/shell-split" }),
+  appEntry({
+    id: "shell-page",
+    root: "apps/shell-page",
+    stack: { summary: "static page with classic scripts (fixture)", tailwind: "none", packageManager: "none" },
+    scan: { paths: ["apps/shell-page/web"], exclude: [] },
+    entryStylesheet: "apps/shell-page/web/index.html",
+  }),
   appEntry({ id: "shell-next", root: "apps/shell-next", scan: { paths: ["apps/shell-next/app"], exclude: [] }, entryStylesheet: "apps/shell-next/app/layout.tsx" }),
   // Resolution: libraries with their own copy of the package.
   appEntry({ id: "with-libs", root: "apps/with-libs" }),

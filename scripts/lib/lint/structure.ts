@@ -8,10 +8,11 @@
  * - every .tsx/.jsx file outside `_components/<Name>/index.tsx` is a component in the
  *   wrong place, whatever its name or folder (`components/Panel/index.tsx`,
  *   `shell/style-rail-nav.tsx`), except:
- *   - entry files: `main`, `App`, route entries (`page`) and the Next.js special files
- *     (`layout`, `template`, `loading`, `error`, `not-found`, `global-error`, `default`,
- *     `forbidden`, `unauthorized`, the metadata images, `_app`, `_document`), the
- *     registry's entry file, and an `index.tsx` at the root of the app's sources;
+ *   - entry files: `main`, `App`, `mdx-components`, the registry's entry file, an
+ *     `index.tsx` in the app root, its `src/` or the entry's folder, and, inside an
+ *     `app/` or `pages/` router folder, route entries (`page`) and the Next.js special
+ *     files (`layout`, `template`, `loading`, `error`, `not-found`, `global-error`,
+ *     `default`, `forbidden`, `unauthorized`, the metadata images, `_app`, `_document`);
  *   - hook files (`use<Name>.tsx`), which hold no component.
  *   A plain-DOM slice's entry is `index.ts`, never .tsx, so the rule does not reach it.
  * Every app: no source file (.ts .tsx .js .jsx .css in the scan dirs; tests,
@@ -30,10 +31,10 @@ const LINE_EXTS = new Set(["ts", "tsx", "js", "jsx", "css"]);
 const PASCAL = /^[A-Z][A-Za-z0-9]*$/;
 const INDEX_FILES = ["index.tsx", "index.ts", "index.jsx", "index.js"];
 /** Entry files by basename (guide/code-structure.md, "Components"): they wire the app, its routes or a region. */
-const ENTRY_FILES = new Set([
-  "main", "App", "page",
-  // Next.js special files.
-  "layout", "template", "loading", "error", "not-found", "global-error", "default", "forbidden", "unauthorized",
+const APP_ENTRY_FILES = new Set(["main", "App", "mdx-components"]);
+/** Route entries: `page` and the Next.js special files, entries only inside an `app/` or `pages/` router folder. */
+const ROUTE_FILES = new Set([
+  "page", "layout", "template", "loading", "error", "not-found", "global-error", "default", "forbidden", "unauthorized",
   "opengraph-image", "twitter-image", "icon", "apple-icon", "_app", "_document", "_error",
 ]);
 const HOOK_FILE = /^use[A-Z][A-Za-z0-9]*$/;
@@ -61,13 +62,18 @@ export function checkStructure(ctx: AppContext): CheckOutput {
   }
 
   if (app.folderStandard) {
-    // Source roots: an index.tsx directly in one of them is the app's entry (src/index.tsx).
-    const roots = new Set<string>();
-    for (const p of [...(app.scan?.paths ?? []).map((x) => resolvePath(ctx.root, x)), ctx.appRoot, join(ctx.appRoot, "src")]) {
-      const real = realpathOrNull(p);
-      if (real) roots.add(isDir(real) ? real : dirname(real));
-    }
+    // Source roots: an index.tsx directly in one of them is the app's entry (src/index.tsx beside main.tsx).
     const entry = app.entryStylesheet ? realpathOrNull(resolvePath(ctx.root, app.entryStylesheet)) : null;
+    const roots = new Set<string>();
+    for (const p of [ctx.appRoot, join(ctx.appRoot, "src"), ...(entry ? [dirname(entry)] : [])]) {
+      const real = realpathOrNull(p);
+      if (real && isDir(real)) roots.add(real);
+    }
+    const appRoot = realpathOrNull(ctx.appRoot) ?? ctx.appRoot;
+    const inRouter = (file: string) => {
+      const rel = file.startsWith(appRoot + "/") ? file.slice(appRoot.length + 1) : file;
+      return rel.split("/").slice(0, -1).some((d) => d === "app" || d === "pages");
+    };
 
     const componentDirs = new Set<string>();
     for (const s of sources) {
@@ -81,7 +87,9 @@ export function checkStructure(ctx: AppContext): CheckOutput {
       const grand = dirname(parent);
       // In its place, or reported by the folder pass below (loose files, non-Pascal folders).
       if (basename(parent) === "_components" || (name === "index" && basename(grand) === "_components")) continue;
-      if (ENTRY_FILES.has(name) || HOOK_FILE.test(name) || s.abs === entry || (name === "index" && roots.has(parent))) continue;
+      const real = realpathOrNull(s.abs) ?? s.abs;
+      if (APP_ENTRY_FILES.has(name) || HOOK_FILE.test(name) || real === entry || (name === "index" && roots.has(realpathOrNull(parent) ?? parent))) continue;
+      if (ROUTE_FILES.has(name) && inRouter(real)) continue;
       const inFolder = basename(grand) === "_components" && PASCAL.test(basename(parent));
       const target = name === "index" ? basename(parent) : name;
       violations.push({
