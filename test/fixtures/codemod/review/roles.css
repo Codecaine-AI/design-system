@@ -84,3 +84,6 @@ html:not([data-theme="dark"]) .note {
 .error-box {
   background: #9f1d1d;
 }
+.field {
+  background: var(--input-bg);
+}

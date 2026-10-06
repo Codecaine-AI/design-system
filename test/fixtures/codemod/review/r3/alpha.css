@@ -1,0 +1,8 @@
+/* Codemod review fixture, round 3 (P1-5): a nearest pick keeps a translucent literal's alpha or gets none; the backdrop needs a scrim hint. */
+:root[data-theme="dark"] {
+  --editor-landmark: rgb(255 255 255 / 0.028);
+}
+.results { scrollbar-color: rgba(255, 255, 255, 0.25) transparent; }
+.trace { scrollbar-color: rgb(168 168 168 / 0.4) transparent; }
+.list { scrollbar-color: rgba(0, 0, 0, 0.4) transparent; }
+.modal { scrollbar-color: rgba(0, 0, 0, 0.4) transparent; }

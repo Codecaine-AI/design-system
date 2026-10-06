@@ -277,8 +277,10 @@ function pickClassBody(data: TokenData, cls: string, ctx: Context, opts: ClassOp
   if (SPACING_ROOTS.test(root)) {
     const px = toPx(value);
     if (px === null || px % 1 !== 0 || px % 2 !== 0) return { ...none(`${root} ${value}: not on the 4px spacing scale (layout value; keep it with an allowlist entry or pick a scale step)`), root };
-    const step = px / 4;
-    return { path: "space.1", method: "role", deltaE: null, why: `${px}px on the spacing scale (${step} × space.1)`, utility: `${neg ? "-" : ""}${root}-${step}`, root };
+    const step = Math.abs(px) / 4;
+    // A negative value is a leading `-` on the utility (`top-[-4px]` is `-top-1`; `top--1` generates nothing); `-top-[-4px]` is positive.
+    const negative = neg !== px < 0;
+    return { path: "space.1", method: "role", deltaE: null, why: `${px}px on the spacing scale (${step} × space.1)`, utility: `${negative && step !== 0 ? "-" : ""}${root}-${step}`, root };
   }
   if (root === "aspect" && /^\d+\s*\/\s*\d+$/.test(value)) {
     const [w, h] = value.split("/").map((x) => Number(x.trim()));

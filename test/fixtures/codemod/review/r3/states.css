@@ -1,0 +1,12 @@
+/* Codemod review fixture, round 3 (P1-7): a state or role word holds only when every branch of the selector list has it (annotations useTargeting). */
+[data-annotation-ring],
+[data-annotation-ring-selected],
+[data-annotation-chip],
+[data-annotation-composer] {
+  --_annotation-surface: var(--annotation-surface, #ffffff);
+  --_annotation-border: var(--annotation-border, rgba(0, 0, 0, 0.15));
+}
+[data-annotation-composer] { background: var(--_annotation-surface); border: 1px solid var(--_annotation-border); }
+.tab.active, .tab[aria-selected="true"] { background: #ebebe9; }
+.tab:not(.active) { background: #ebebe9; }
+.tab[aria-selected="false"] { background: #ebebe9; }

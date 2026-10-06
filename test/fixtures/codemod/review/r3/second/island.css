@@ -1,0 +1,5 @@
+/* Codemod review fixture, round 3 second pass (P1-1): color-scheme off the root switches the browser's colors, not the tokens. */
+.code-block { color-scheme: dark; background: #0d1117; color: #d1d9e0; border: 1px solid #3d444d; }
+.y { color-scheme: dark !important; color: #d1d9e0; }
+@media (prefers-color-scheme: dark) { .x { color-scheme: light; color: #2a2a2a; } }
+[data-theme="dark"] .card { color-scheme: dark; color: #d1d9e0; }

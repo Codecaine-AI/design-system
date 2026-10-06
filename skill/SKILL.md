@@ -33,7 +33,7 @@ metadata:
 - **Inside Codecaine Core:** add `"@codecaine-ai/design-system": "workspace:*"` to the package, then run `bun install` at the Core root. Core's `workspaces` already lists `../../design-system`, so the link is live.
 - **Another local bun app:** add the relative path to the root `workspaces` and depend on `workspace:*`, or use `bun link`. That gives a live link. Avoid a bun `file:` dependency: bun links it file by file at install time, so files added later (new outputs) are missing until someone reruns `bun install`.
 - **npm apps:** use a `file:` dependency, which npm links live, or `@import` the CSS by relative path.
-- **Apps built on Vercel, Railway or Docker:** vendor a packed copy. Run `bun run pack --out <app>/vendor` in design-system and depend on `file:vendor/<tgz name>`. Repack after a token change.
+- **Apps built on Vercel, Railway or Docker:** vendor a packed copy. Run `bun run pack --out ../<app>/vendor` in design-system (`--out` is relative to the design-system folder) and depend on `file:vendor/<tgz name>`. Repack after a token change.
 - **Load order:** `@codecaine-ai/design-system/fonts.css`, then `tokens.css` (`tokens-dark-first.css` on a dark-first surface), then `layout.css`. Agent-viewer hosts add `host-contract.css` after the tokens. For Tailwind v4, `tailwind-strict.css` comes before `tailwind.css`; Tailwind v3 apps use the `tailwind-v3-preset` export as a preset.
 - `guide/consume.md` has the full recipe, including the Vite settings.
 
@@ -44,7 +44,7 @@ Run these in `/Users/Ford/workspace/design-system`. `--root` defaults to the wor
 1. Find the app's entry in `apps.json`: repo, wiring, entry stylesheet, scan paths, literal floor, run profile and routes. After you change an entry, run `bun run registry:check`.
 2. Run `bun run lint:apps <app>` (add `--pass <n>` to check one migration pass). It prints one line per violation and exits 0 when the app is wired and conformant.
 3. Run `bun run verify:apps <app>`. It starts the app under its run profile and proves in a browser that it renders from the tokens in light and dark.
-4. Run `bun run test:apps <app>` for the app's tests (add `--commands typecheck,build` for those). It runs them under the run profile and the sandbox, fails on a write into the app's checkouts, and compares the results with the baselines in `apps.json`. Never run an app's tests or commands directly.
+4. Run `bun run test:apps <app>` for the app's tests (add `--commands typecheck,build` for those; a command the entry does not set is skipped). It runs them under the run profile and the sandbox, fails on a write into the app's own checkout, and compares the results with the baselines in `apps.json`. Never run an app's tests or commands directly.
 5. Never start the app outside its run profile. `verify:apps`, `snapshot` and `test:apps` start and stop it for you.
 6. The app passes when every gate its `apps.json` entry marks required passes: lint, verify, tests, snapshot and pixel diff.
 7. `bun run progress` writes one page with every app's status and literal count.

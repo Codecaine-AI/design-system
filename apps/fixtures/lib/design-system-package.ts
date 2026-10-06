@@ -6,8 +6,8 @@
  * the package's fonts.css). Nothing from text-measure: decision 20, fonts come from the design-system
  * package only.
  */
-import { copyFileSync, cpSync, existsSync, realpathSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { copyFileSync, cpSync, existsSync, lstatSync, realpathSync } from "node:fs";
+import { basename, dirname, join } from "node:path";
 
 import { ensureTmpDir } from "./fixture-server";
 
@@ -40,4 +40,23 @@ export function copyPackageFiles(pkg: string, site: string, prefix: string, tmp:
   if (!existsSync(join(pkg, "fonts"))) throw new Error(`the design-system package at ${pkg} has no fonts/`);
   cpSync(join(pkg, "fonts"), ensureTmpDir(tmp, join(base, "fonts")), { recursive: true });
   return files.map((rel) => `${prefix}/${rel}`);
+}
+
+/** What a host serves under its package prefix: package.json and the folders the package's exports reach. */
+export const PACKAGE_SERVED = ["package.json", "css", "fonts", "dist"] as const;
+
+/**
+ * Copies the package's served files (PACKAGE_SERVED) into `<site>/<prefix>/` under `tmp`, in the package
+ * layout, so `/<prefix>/<package path>` answers with the package's own bytes. Dotfiles and symlinks are
+ * skipped (no `.env`, nothing from outside the package). Returns the copy's root.
+ */
+export function copyPackageTree(pkg: string, site: string, prefix: string, tmp: string): string {
+  const base = ensureTmpDir(tmp, join(site, prefix));
+  for (const rel of PACKAGE_SERVED) {
+    const from = join(pkg, rel);
+    if (!existsSync(from)) throw new Error(`the design-system package at ${pkg} has no ${rel}`);
+    if (lstatSync(from).isSymbolicLink()) throw new Error(`the design-system package at ${pkg}: ${rel} is a symlink`);
+    cpSync(from, join(base, rel), { recursive: true, filter: (path) => path === from || (!basename(path).startsWith(".") && !lstatSync(path).isSymbolicLink()) });
+  }
+  return base;
 }

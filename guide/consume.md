@@ -44,16 +44,20 @@ These builds cannot see a folder outside the repo. The app commits a packed copy
 
 ### First wiring
 
-1. In design-system, run `bun run pack --out <app>/vendor`. It refuses a stale build, packs, checks the tgz and prints two lines:
+1. In design-system, run `bun run pack --out ../<app>/vendor`. `--out` is relative to the design-system folder, so `../<app>` is the app's folder in the workspace, for example `--out ../lascari-ai/personal-site/vendor`. It refuses a stale build, packs, checks the tgz and prints two lines (the path is absolute):
 
    ```text
-   tgz: <app>/vendor/codecaine-ai-design-system-0.2.0.tgz
+   tgz: /Users/Ford/workspace/<app>/vendor/codecaine-ai-design-system-0.2.0.tgz
    tokens.css sha256: <hex>
    ```
 
    It never overwrites a tgz of the same name. If `vendor/` already holds the same content (the same files with the same bytes once extracted; another npm or zlib version may compress them differently), it leaves the file and prints a third line, `unchanged: a tgz with the same files and bytes was already at this path`. If it holds different content, it exits 1 and writes nothing: bump the version first (below).
 
-   Run it from the design-system checkout in the same workspace as the app. A checkout outside `/Users/Ford/workspace` (the rollout mirror) refuses every destination inside it. Its scratch folders go to the system temp folder, never to the owner's workspace or `~/Library`, whatever `TMPDIR` says.
+   Run it from the design-system checkout in the same workspace as the app. A checkout outside `/Users/Ford/workspace` (the rollout mirror) refuses every destination inside it.
+
+   Its scratch folders (npm's staging folder and its temp `HOME`) go under `TMPDIR`. `bun run pack` exits 1 and creates nothing when `TMPDIR` is inside `/Users/Ford/workspace`, is your home folder itself, or is inside `~/Library` or a credential folder (`~/.ssh` and the like). Unset `TMPDIR`, or point it at a system temp folder.
+
+   It runs npm inside the macOS sandbox: npm writes only its staging folder and temp `HOME`, and has no network. It takes `npm` and `node` from the nvm folder (`~/.nvm`) or from a folder you cannot write. If the first `npm` or `node` on `PATH` is in a folder you can write, before the nvm folder (for example `~/.local/bin` or `/usr/local/bin`), it exits 1 and runs nothing: something could have put that file there. Remove that file, or put the nvm `bin` folder first on `PATH`.
 
 2. In the app's `package.json`, under `dependencies`: `"@codecaine-ai/design-system": "file:vendor/codecaine-ai-design-system-0.2.0.tgz"`. A Dockerfile that runs `npm ci --omit=dev` skips `devDependencies`.
 3. Run `npm install` (or `bun install`) in the app. The lockfile records the tgz path and its `integrity` hash.
@@ -80,8 +84,8 @@ Never repack under the same file name: `bun run pack` refuses to overwrite a sam
 So a same-name repack looks fine locally and breaks the deployed build. These steps work for both package managers:
 
 1. In design-system, bump the patch version in `package.json`. Every repack that changes the tgz bumps it: `0.2.0` to `0.2.1` on the next repack, then `0.2.2`. That is any change to a shipped file (`dist/`, `css/`, `fonts/`, `tokens/`, `templates/`, `guide/*.md`, `AGENTS.md`, `README.md`), not only a token change. The tgz name follows the version. During the rollout, do not bump it yourself. Ask the managing agent.
-2. Run `bun run build`, then `bun run pack --out <app>/vendor`.
-3. Delete the old tgz from `<app>/vendor`, and change the dependency line to the new file name.
+2. Run `bun run build`, then `bun run pack --out ../<app>/vendor`.
+3. Delete the old tgz from the app's `vendor/`, and change the dependency line to the new file name.
 4. Run `npm install` (or `bun install`) in the app. The lockfile gets the new path and `integrity`.
 5. Commit the new tgz, the deleted old one, `package.json` and the lockfile together.
 

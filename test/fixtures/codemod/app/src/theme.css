@@ -57,3 +57,16 @@ pre code {
 .tile {
   background: #151b23;
 }
+
+/* Readers of the :root definitions above: a custom property takes its readers' role. */
+body {
+  background: var(--background);
+  color: var(--muted-foreground);
+  border-color: var(--border);
+}
+.danger-badge {
+  background: var(--destructive);
+}
+.field:focus {
+  outline: 2px solid var(--ring);
+}
