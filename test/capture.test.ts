@@ -10,7 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { startApp, type RunningApp } from "../scripts/lib/app-runner.ts";
-import { captureRoute, LAUNCH_OPTIONS } from "../scripts/lib/capture.ts";
+import { captureRoute, LAUNCH_OPTIONS, trackNetwork } from "../scripts/lib/capture.ts";
 import { loadPlaywright, playwrightUnavailable } from "../scripts/lib/playwright.ts";
 import { decodePng } from "../scripts/lib/png.ts";
 import type { AppEntry, RouteSpec, ThemeSwitch, VerifySpec } from "../scripts/lib/registry.ts";
@@ -123,4 +123,47 @@ test.skipIf(Boolean(noPlaywright))(
     }
   },
   60_000,
+);
+
+test.skipIf(Boolean(noPlaywright))(
+  "network quiet: a new document drops the old one's routed requests; a hash navigation keeps them",
+  async () => {
+    // /a starts a fetch that never answers. Every request is routed, as under the request guard.
+    let hangs = 0;
+    const server = Bun.serve({
+      hostname: "127.0.0.1",
+      port: 0,
+      fetch: (request) => {
+        const path = new URL(request.url).pathname;
+        if (path === "/hang") return (hangs++, new Promise<Response>(() => {}));
+        const script = path === "/a" ? "<script>fetch('/hang')</script>" : "";
+        return new Response(`<!doctype html><title>${path}</title>${script}`, { headers: { "content-type": "text/html" } });
+      },
+    });
+    const browser = await loadPlaywright(mirror).chromium.launch(LAUNCH_OPTIONS);
+    const base = `http://127.0.0.1:${server.port}`;
+    const openA = async () => {
+      const context = await browser.newContext();
+      await context.route(() => true, (route: any) => route.fallback());
+      const page = await context.newPage();
+      const network = trackNetwork(page);
+      const before = hangs;
+      await page.goto(`${base}/a`);
+      while (hangs === before) await Bun.sleep(20);
+      return { page, network };
+    };
+    try {
+      const hash = await openA();
+      await hash.page.goto(`${base}/a#elsewhere`);
+      await expect(hash.network.quiet(200, 1_500)).rejects.toThrow(/pending: .*\/hang/);
+
+      const newDocument = await openA();
+      await newDocument.page.goto(`${base}/b`);
+      await newDocument.network.quiet(200, 5_000);
+    } finally {
+      await browser.close();
+      server.stop(true);
+    }
+  },
+  30_000,
 );

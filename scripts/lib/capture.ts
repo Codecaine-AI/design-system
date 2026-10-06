@@ -174,15 +174,25 @@ function defaultTheme(app: AppEntry): Theme {
 
 export type Network = ReturnType<typeof trackNetwork>;
 
-/** Tracks in-flight requests so "network quiet" ignores long-lived streams (SSE, websockets). */
-function trackNetwork(page: any) {
+/**
+ * Tracks in-flight requests so "network quiet" ignores long-lived streams (SSE, websockets).
+ *
+ * When the main frame commits a new document, the old document's requests are cancelled, and Playwright
+ * reports neither requestfinished nor requestfailed for a routed one (every request is routed: the request
+ * guard). So a commit that follows a main-frame navigation request drops every other request in flight; a
+ * same-document (hash) navigation has no navigation request and drops nothing.
+ */
+export function trackNetwork(page: any) {
   const inflight = new Set<any>();
   let lastChange = Date.now();
+  /** The main frame's document request in flight: the next main-frame commit is a new document. */
+  let documentRequest: any = null;
   const ignore = (request: any) => {
     const type = request.resourceType();
     return type === "websocket" || type === "eventsource" || /\/(events|sse|stream)(\?|$)/.test(request.url());
   };
   page.on("request", (request: any) => {
+    if (request.isNavigationRequest() && request.frame() === page.mainFrame()) documentRequest = request;
     if (ignore(request)) return;
     inflight.add(request);
     lastChange = Date.now();
@@ -191,7 +201,17 @@ function trackNetwork(page: any) {
     if (inflight.delete(request)) lastChange = Date.now();
   };
   page.on("requestfinished", done);
-  page.on("requestfailed", done);
+  page.on("requestfailed", (request: any) => {
+    if (request === documentRequest) documentRequest = null; // no commit follows
+    done(request);
+  });
+  page.on("framenavigated", (frame: any) => {
+    if (frame !== page.mainFrame() || !documentRequest) return;
+    const committed = documentRequest;
+    documentRequest = null;
+    for (const request of inflight) if (request !== committed) inflight.delete(request);
+    lastChange = Date.now();
+  });
   return {
     async quiet(quietMs = 500, timeoutMs = 30_000) {
       const deadline = Date.now() + timeoutMs;
