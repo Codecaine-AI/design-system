@@ -123,7 +123,7 @@ Use `cssVar()` in inline styles. A raw value from `tokens` does not switch with 
 
 ### Install
 
-[guide/consume.md](guide/consume.md) is the full recipe, including the vendored tgz for apps that build in Docker, Vercel or Railway (`bun run pack --out <app>/vendor`) and the Vite settings.
+[guide/consume.md](guide/consume.md) is the full recipe, including the vendored tgz for apps that build in Docker, Vercel or Railway (`bun run pack --out ../<app>/vendor`, relative to this folder) and the Vite settings.
 
 | Where | How |
 | --- | --- |

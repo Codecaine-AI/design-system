@@ -5,7 +5,8 @@
  *   bun run test:apps [--root <dir>] [--registry <apps.json>] [--out-dir <dir>] [--commands typecheck,build]
  *                     [--no-tests] [--timeout <seconds>] [--json] <app>...
  *
- * Every `tests.safe` command (and with --commands, each named `commands.<name>`; never `install`) runs:
+ * Every `tests.safe` command (and with --commands, each named `commands.<name>` the entry sets; one it does not
+ * set is skipped with "commands.<name>: not set in apps.json (skipped)"; `install` and unknown names refuse) runs:
  *   - with the app's profile environment (profileEnv: allowlisted variables only, HOME and the XDG dirs in a
  *     fresh temp dir with the profile's fixtures, BUN_OPTIONS=--no-env-file, runProfile.env, unsetEnv removed),
  *     placeholders ({root}, {tmp}, {ds}, {port:<name>}) substituted;
@@ -35,10 +36,12 @@
  *
  * Results: the output is read for a test summary (bun test, vitest, Python unittest) and failing names, or for
  * tsc errors. Each command is compared with its recorded baseline (registry `tests.baselines[<label>]`):
+ *   baseline without cmd         fail (a stale baseline could not be told apart; registry:check requires cmd)
+ *   baseline for another cmd     fail (stale: the entry's command changed since it was recorded)
+ *   fewer tests than baseline    fail, whatever the exit (pass + fail below the baseline's: a lost test file)
  *   exit 0                       pass (baseline failures that now pass are listed as fixed)
  *   exit != 0, no baseline       fail
  *   baseline exit 0              fail (a new failure)
- *   baseline for another cmd     fail (stale: the entry's command changed since it was recorded)
  *   otherwise                    fail when a failing test or tsc error is not in the baseline, when more
  *                                tests fail, more errors happen or more failures go unnamed than recorded,
  *                                or when the output names no failures to compare
