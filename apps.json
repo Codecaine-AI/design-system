@@ -152,7 +152,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. All 3 routes rendered light and dark; 0 blocked requests; 18 connections seen, all inbound to :47000; no foreign connection.",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. All 3 routes rendered light and dark; 0 blocked requests; 18 connections seen, all inbound to :47000; no foreign connection. Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 6 route loads ok, 0 blocked requests, 20 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
           "date": "2026-10-05"
         }
       },
@@ -175,6 +175,12 @@
             "token": "color.text.body"
           }
         ],
+        "waivedRoles": [
+          {
+            "role": "border",
+            "reason": "the diagram has no neutral chrome border: every SVG stroke is a content color, the accent (participant boxes, lifelines, messages, notes: packages/sequence/src/theme.ts:98 participantStroke → --seq-accent #C77D2E, render/svg.ts:155) or the fragment accent #5B7FBD; these stay product colors"
+          }
+        ],
         "darkSwitch": {
           "kind": "query",
           "param": "theme",
@@ -183,12 +189,12 @@
       },
       "exceptions": [
         {
-          "what": "verify has no border probe",
-          "reason": "the diagram's strokes (lifelines, participant borders, fragment frames) are the accent and fragment-accent hues, which stay product colors; the neutral roles are page, panel and text"
-        },
-        {
           "what": "the run is a fixture page, not the library itself",
           "reason": "a library has no UI: apps/fixtures/sequence-renderer/serve.ts renders the engine's own example programs inline in a host page that loads tokens.css, so before/after sheets exist for the pilot"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 1 s (79 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -619,7 +625,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. State isolation recipe of verification/docs-system/README.md with a corpus copied from the repo's docs/ into {tmp}; serve runs --standalone --dev, never the central service. All 7 routes rendered (12 captures); the only blocked requests were 36 to the dead kernel port :47022 (own block, never bound; rendering did not need them); 120 connections seen, all inbound to :47021 or vite->api on :47020; no connection to :4820, :4840 or any other port; verify probes matched the light and dark token values.",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. State isolation recipe of verification/docs-system/README.md with a corpus copied from the repo's docs/ into {tmp}; serve runs --standalone --dev, never the central service. All 7 routes rendered (12 captures); the only blocked requests were 36 to the dead kernel port :47022 (own block, never bound; rendering did not need them); 120 connections seen, all inbound to :47021 or vite->api on :47020; no connection to :4820, :4840 or any other port; verify probes matched the light and dark token values. Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 13 route loads ok, blocked 36x http://127.0.0.1:47022, 120 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
           "date": "2026-10-05"
         }
       },
@@ -688,11 +694,15 @@
         },
         {
           "what": "baseline test failures",
-          "reason": "at the mirror's owner HEAD the safe suite has 54 failing tests of 425 (workbench shell, useDocLabSession and others time out at about 1000 ms), and the same tests fail under the normal environment; the tests gate compares against this baseline"
+          "reason": "at the mirror owner HEAD the safe suite (30 files, serve-routes and live-smoke excluded) has 54 failing tests of 396 (workbench shell, useDocLabSession, style rail export/import, static public-site shell and others time out at about 1000 ms); the same 54 failed before serve-routes left the set (54 of 425) and fail under the normal environment, so the sandbox denies nothing they need; the tests gate compares against this baseline"
         },
         {
           "what": "literal floor 14",
           "reason": "allowlisted: the PDF export stylesheet and page-number color (export output), the hidden color-control code in style-rail-panes.tsx, the grain mask gradient, and the legacy stock-metrics constant"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 1 in 63 s (342 pass, 54 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -875,7 +885,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. All 6 routes rendered light and dark (12 captures); the guard blocked 4 requests to localhost:4803 (the owner's docs-system dev API, asked for linked boards by the boards route only; rendering did not need them, and the verify route gallery makes none); 86 connections seen, all inbound to :47030; no connection to :4820 or any other port; the canvas repo stayed clean (CANVAS_DIR copy in {tmp}).",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. All 6 routes rendered light and dark (12 captures); the guard blocked 4 requests to localhost:4803 (the owner's docs-system dev API, asked for linked boards by the boards route only; rendering did not need them, and the verify route gallery makes none); 86 connections seen, all inbound to :47030; no connection to :4820 or any other port; the canvas repo stayed clean (CANVAS_DIR copy in {tmp}). Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 12 route loads ok, blocked 4x http://localhost:4803, 86 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
           "date": "2026-10-05"
         }
       },
@@ -888,14 +898,24 @@
             "token": "color.surface.page"
           },
           {
-            "selector": "header.border-b",
-            "property": "border-bottom-color",
-            "token": "color.border.default"
+            "selector": "article.bg-card:first-of-type",
+            "property": "background-color",
+            "token": "color.surface.panel"
+          },
+          {
+            "selector": "body",
+            "property": "color",
+            "token": "color.text.body"
           },
           {
             "selector": "header.border-b h1",
             "property": "color",
-            "token": "color.text.body"
+            "token": "color.text.ink"
+          },
+          {
+            "selector": "header.border-b",
+            "property": "border-bottom-color",
+            "token": "color.border.default"
           }
         ],
         "darkSwitch": {
@@ -927,6 +947,10 @@
         {
           "what": "allowlist",
           "reason": "the swatch checkerboard in src/index.css:300-305 (transparency art behind color swatches, 5 hits) and the color-input fallback #000000 in src/style/StyleRail.tsx:514 (color-control code kept per owner decision; <input type=color> needs a hex value)"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 1 in 1 s (77 pass, 2 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -1107,7 +1131,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. All 4 routes rendered light and dark through the studio host (8 captures); 0 blocked requests; 58 connections seen, all inbound to :47040; no foreign connection; the canvas repo stayed clean.",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. All 4 routes rendered light and dark through the studio host (8 captures); 0 blocked requests; 58 connections seen, all inbound to :47040; no foreign connection; the canvas repo stayed clean. Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 8 route loads ok, 0 blocked requests, 58 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
           "date": "2026-10-05"
         }
       },
@@ -1117,12 +1141,31 @@
           {
             "selector": "[data-canvas-stage=\"true\"]",
             "property": "background-color",
-            "token": "color.surface.page"
+            "token": "color.surface.page",
+            "themes": [
+              "light"
+            ]
           },
           {
             "selector": "[aria-label=\"Zoom controls\"]",
             "property": "background-color",
             "token": "color.surface.panel"
+          },
+          {
+            "selector": "[aria-label=\"Zoom controls\"] [data-zoom-percent]",
+            "property": "color",
+            "token": "color.text.body"
+          },
+          {
+            "selector": "button[title=\"Toggle style settings\"]",
+            "property": "border-top-color",
+            "token": "color.border.default"
+          }
+        ],
+        "waivedRoles": [
+          {
+            "role": "page",
+            "reason": "decision 10: the board stage is board data, not app chrome; the schematic-light preset keeps its light stage when the app is dark, so the stage probe runs in light only and no canvas-owned element paints the page in dark"
           }
         ],
         "darkSwitch": {
@@ -1140,8 +1183,8 @@
           "reason": "a library: its gallery, editor and viewer render in the studio host, with boards from a temp copy of canvases/"
         },
         {
-          "what": "verify probes: the schematic-light board and the floating chrome only",
-          "reason": "board colors are canvas theme data (figjam, schematic-light, schematic-dark); the audit migrates the schematic neutrals and the chrome, and the FigJam preset and its 10 inks stay canvas-owned. The chrome's text and borders come from the host's shadcn utilities with alpha (bg-background/95, border/70), so canvas-studio's probes cover them"
+          "what": "verify probes: the stage in light, the editor chrome in both themes (decision 10)",
+          "reason": "board colors are canvas theme data (figjam, schematic-light, schematic-dark); the schematic presets are bridged to design-system values (light preset → light tokens) and do not follow the app theme, so [data-canvas-stage] is probed in light only. The chrome probes run in light and dark: the zoom pill (stage/editor/components/ZoomControls.tsx:97,106) and its percent label (:119,127), and the outline Button from canvas/src/ui/button.tsx:21-22 (instance: the style toggle, studio/src/App.tsx:1133 via TopBar.tsx:96). No canvas chrome on the editor route has another solid border: the dock and zoom pill use shadows, the TopBar pills border-border/70 (alpha)"
         },
         {
           "what": "allowlist",
@@ -1158,6 +1201,10 @@
         {
           "what": "the dev server proxies /api/agent/* and /api/canvases/:id/agent/* to the owner's :4820",
           "reason": "packages/studio/vite.config.ts:59 mounts createAgentProxyHandler({}) with no target; server/agent-proxy.ts:21 (AGENT_PATH_PATTERN: /api/agent, /api/agent/*, /api/agent?..., /api/canvases/<id>/agent[/...]) pipes method, headers and body to DEFAULT_TARGET http://127.0.0.1:4820 (agent-proxy.ts:23); no env var, flag or config overrides the target. These are the only proxied prefixes in the dev server. No registry route, step or verify probe requests them (checked from the per-route request log); the AI panel that calls them is never opened. The run sandbox (decision 12) denies the connection to :4820 as the hard boundary"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 1 in 6 s (1186 pass, 13 fail, 9 errors); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -1366,6 +1413,10 @@
         {
           "what": "typecheck may fail in the mirror",
           "reason": "tsconfig pins React types to ./node_modules/@types/react, which the mirror's canvas-agent/node_modules does not hold"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 0 s (4 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -1522,7 +1573,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. The fixture server rendered the real directoryHtml; the home route rendered in dark (the only theme of a dark-first surface); 0 blocked requests (the page's /api polls hit the fixture); 5 connections seen, all inbound to :47060; no foreign connection.",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. The fixture server rendered the real directoryHtml; the home route rendered in dark (the only theme of a dark-first surface); 0 blocked requests (the page's /api polls hit the fixture); 5 connections seen, all inbound to :47060; no foreign connection. Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 1 route loads ok, 0 blocked requests, 5 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
           "date": "2026-10-05"
         }
       },
@@ -1564,6 +1615,10 @@
         {
           "what": "the run is a fixture server, not the docs service",
           "reason": "apps/fixtures/docs-mcp-home/serve.ts renders the real directoryHtml with 4 synthetic projects and answers the page's /api/projects, /api/discovery and /api/status polls in memory; the supervisor (which reads ~/.local/state and binds :4820) is never imported"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 0 s (4 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -1708,6 +1763,11 @@
           "id": "stack",
           "path": "/playground.html?doc=10-system-design/40-block-vocabulary/50-flow-and-diagrams/30-stack&type=stack&theme=light",
           "waitFor": "[data-doc-root]"
+        },
+        {
+          "id": "rich-text",
+          "path": "/playground.html?doc=10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text&type=structured-table&all=1&theme=light",
+          "waitFor": "[data-docs-block-type=\"structured-table\"]"
         }
       ],
       "runProfile": {
@@ -1756,22 +1816,39 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. Same isolation recipe as docs-workbench (fixture launcher, corpus copied into {tmp}, --standalone --dev, dead kernel port). All 6 playground routes rendered with ?theme=light and ?theme=dark (12 captures); 0 blocked requests; 91 connections seen, all inbound to :47071 or vite->api on :47070; no foreign connection; verify probes matched the light and dark token values.",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. Same isolation recipe as docs-workbench (fixture launcher, corpus copied into {tmp}, --standalone --dev, dead kernel port). All 6 playground routes rendered with ?theme=light and ?theme=dark (12 captures); 0 blocked requests; 91 connections seen, all inbound to :47071 or vite->api on :47070; no foreign connection; verify probes matched the light and dark token values. Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 14 route loads ok, 0 blocked requests, 105 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
           "date": "2026-10-05"
         }
       },
       "verify": {
-        "route": "callout",
+        "route": "rich-text",
         "probes": [
           {
-            "selector": "body",
+            "selector": "[data-docs-block-type=\"structured-table\"] > div",
             "property": "background-color",
-            "token": "color.surface.page"
+            "token": "color.surface.panel"
           },
           {
-            "selector": "[data-doc-root]",
+            "selector": "[data-block-id=\"b-rich-text-overview-intro-2\"] p",
             "property": "color",
             "token": "color.text.body"
+          },
+          {
+            "selector": "a[href=\"https://example.com\"]",
+            "property": "color",
+            "token": "color.link",
+            "role": "text"
+          },
+          {
+            "selector": "[data-docs-block-type=\"structured-table\"] > div",
+            "property": "border-top-color",
+            "token": "color.border.default"
+          }
+        ],
+        "waivedRoles": [
+          {
+            "role": "page",
+            "reason": "host-owned: the docs-workbench playground paints the page (docs-workbench/web/src/playground/main.tsx:82, body background var(--docs-page)); the viewer root [data-doc-root] (docs-viewer/src/render/DocBlockRenderer.tsx:254) has no background"
           }
         ],
         "darkSwitch": {
@@ -1782,8 +1859,8 @@
       },
       "exceptions": [
         {
-          "what": "verify probes: page and text only",
-          "reason": "the viewer's panels are the dark code-surface island (color.code.*, dark in both themes) and its callout rails are hue colors; snapshot sheets cover them"
+          "what": "verify probes: viewer-owned elements on the rich-text route",
+          "reason": "the structured-table frame (components/structured-table/table-classes.ts:37-38: --docs-panel background, --docs-rule border) is the panel and border, a paragraph (render/block-classes.ts:61) the body text, a link (block-classes.ts:176, --docs-link) the link color; the page belongs to the host playground (waived). The callout has no panel background at stock (CalloutDocsBlock.tsx:136,167: transparent tint and a tone rail), so it is not the panel probe; snapshot sheets cover the callouts and the code-surface island"
         },
         {
           "what": "rendered through docs-workbench's playground",
@@ -1796,6 +1873,10 @@
         {
           "what": "CANVAS_STUDIO_URL and SEQUENCE_STUDIO_URL point at dead ports in the app's block",
           "reason": "web/vite.config.ts:45-50 bakes them into the open-in-studio links (defaults are the owner's :3999 and :3998); the profile points them at 47073 and 47074, named ports nothing binds, so a click reaches nobody and the guard counts it as expected-blocked"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 3 s (352 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -1932,6 +2013,10 @@
         {
           "what": "commands.build writes the package's own dist/",
           "reason": "the publish build output (gitignored); every token change needs a rebuild, npm pack and a version bump in personal-site"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 1 s (11 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -2048,6 +2133,11 @@
           "id": "traces",
           "path": "/traces",
           "waitFor": "main.research-style-shell"
+        },
+        {
+          "id": "traces-rail",
+          "path": "/traces?style=open",
+          "waitFor": "aside.style-settings-rail"
         }
       ],
       "runProfile": {
@@ -2087,12 +2177,12 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. Through simple-research-kernel's Vite 5 frontend with API_TARGET at the dead port :47091 (own block, never bound). Both routes rendered light and dark (4 captures; the console errors are the failed API calls); 0 blocked browser requests; 30 connections seen, all inbound to :47090; no connection outside the run's own ports; the agent-kernel repo stayed clean.",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. Through simple-research-kernel's Vite 5 frontend with API_TARGET at the dead port :47091 (own block, never bound). Both routes rendered light and dark (4 captures; the console errors are the failed API calls); 0 blocked browser requests; 30 connections seen, all inbound to :47090; no connection outside the run's own ports; the agent-kernel repo stayed clean. Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 6 route loads ok, 0 blocked requests, 47 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
           "date": "2026-10-05"
         }
       },
       "verify": {
-        "route": "research-rail",
+        "route": "traces-rail",
         "probes": [
           {
             "selector": "main.research-style-shell",
@@ -2100,9 +2190,19 @@
             "token": "color.surface.page"
           },
           {
-            "selector": "aside.style-settings-rail h2",
+            "selector": "section[data-trace-workspace=\"list\"]",
+            "property": "background-color",
+            "token": "color.surface.panel"
+          },
+          {
+            "selector": "main.research-style-shell",
             "property": "color",
             "token": "color.text.body"
+          },
+          {
+            "selector": "aside.style-settings-rail h2",
+            "property": "color",
+            "token": "color.text.ink"
           },
           {
             "selector": "aside.style-settings-rail",
@@ -2124,6 +2224,14 @@
         {
           "what": "allowlist",
           "reason": "the grain overlay's SVG filter constants (#ffffff/#808080 in StyleOverlay.tsx) are filter math, not colors"
+        },
+        {
+          "what": "verify route traces-rail",
+          "reason": "the research-rail route has no solid viewer-shell panel (the rail is bg-card/85, its sections bg-background/30, and alpha never equals a token); the trace workspace list (workspace/KernelTraceWorkspace.tsx:255-256, bg-card) is one. Body text is the shell's own color (main.research-style-shell, colored by viewer-shell's style vars, style/style-settings.ts:324; host element examples/simple-research-kernel/src/_layouts/ResearchKernelLayout.tsx:72); the rail's hex inputs are color controls the owner decision hides, so they are not probed"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 0 s (35 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -2272,6 +2380,10 @@
         {
           "what": "safe tests: explicit files",
           "reason": "tests.safe lists the 34 test files that open no trace data; the 4 files that read canvas/.agent-kernel/trace.db are in tests.unsafe, so a new test file is not run until it is checked and listed"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 1 s (318 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -2484,6 +2596,10 @@
         {
           "what": "the API is not started",
           "reason": "API_TARGET points the Vite proxy at a dead port in this app's block; pages render their layout, sidebar and rail with the API error state"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 0 s (7 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -2624,6 +2740,10 @@
         {
           "what": "needs a light editor palette designed first",
           "reason": "audit: migrate last; the editor is effectively dark-only today"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 4 s (749 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -2914,15 +3034,20 @@
       "run": {
         "mode": "browser",
         "cwd": "lascari-ai/personal-site",
-        "start": "./node_modules/.bin/vite {flags}",
+        "start": "exec bun --no-env-file {ds}/apps/fixtures/personal-site/serve.ts --root {root} --tmp {tmp} --port {port:ui}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
       },
       "commands": {
         "cwd": "lascari-ai/personal-site",
-        "typecheck": "./node_modules/.bin/tsc -b"
+        "typecheck": "./node_modules/.bin/tsc -p tsconfig.json --noEmit"
       },
       "tests": {
-        "safe": [],
+        "safe": [
+          {
+            "cmd": "./node_modules/.bin/vitest run --root . --config {ds}/apps/fixtures/personal-site/vitest.config.mjs --configLoader runner --no-cache",
+            "cwd": "lascari-ai/personal-site"
+          }
+        ],
         "unsafe": [
           {
             "cmd": "npm test (vitest run)",
@@ -2967,11 +3092,6 @@
           "id": "resume",
           "path": "/resume/",
           "waitFor": ".site-header"
-        },
-        {
-          "id": "blog",
-          "path": "/blog/",
-          "waitFor": ".site-header"
         }
       ],
       "runProfile": {
@@ -2997,19 +3117,13 @@
         ],
         "tempHome": true,
         "fixtures": [],
-        "flags": [
-          "--host",
-          "127.0.0.1",
-          "--port",
-          "{port:ui}",
-          "--strictPort"
-        ],
+        "flags": [],
         "ports": {
           "ui": 47140
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. All 6 routes rendered light and dark (12 captures); 0 blocked requests; 81 connections seen, all inbound to :47140; no foreign connection (no route touches /blog/drafts, the only :4820 proxy); git status of the repo was clean after the run, so the tracked resume markdown regenerated byte-identical; verify probes matched the light and dark token values.",
+          "method": "apps/fixtures/personal-site/serve.ts: Vite 7.3.3 JS API with configFile false; plugins sitePages, inlineLandingLoader, externalLinks, @tailwindcss/vite and resume-pages.mjs's resumeContent transform; no devContentEditor, resumePages, watchBlog/generateBlog, writingDraftPreview or feedback handlers; cacheDir in {tmp}, watcher and dep discovery off, GET/HEAD only (POST /__dev-content-edit, /api/logo-feedback, /api/landing-feedback answer 405; /blog/, /sitemap.xml, /robots.txt, /blog/drafts/ answer 404). First proof by the fixture's author: 10 loads, 16 distinct URLs all on 127.0.0.1:47140, 0 console errors, 61 sockets (1 listener, 60 inbound), 0 foreign; git status and find -newer (node_modules/.vite and .vite-temp included) unchanged. Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 10 route loads ok, 0 blocked requests, 60 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
           "date": "2026-10-05"
         }
       },
@@ -3027,9 +3141,14 @@
             "token": "color.surface.sidebar"
           },
           {
-            "selector": "h1",
+            "selector": ".home-introduction p:first-of-type",
             "property": "color",
             "token": "color.text.body"
+          },
+          {
+            "selector": ".home-introduction h1",
+            "property": "color",
+            "token": "color.text.ink"
           },
           {
             "selector": ".site-header",
@@ -3045,12 +3164,12 @@
       },
       "exceptions": [
         {
-          "what": "vite.config.ts writes generated files into the repo at load",
-          "reason": "generateBlog() and resumePages() regenerate blog/, public/blog/, public/sitemap.xml, robots.txt, legacy-redirects.json (gitignored) and the tracked public/resume/ford-lascari-resume.md from repo sources; the proof checks the tracked file is unchanged afterwards"
+          "what": "runs and tests do not load vite.config.ts",
+          "reason": "at load it regenerates blog/, public/blog/, sitemap.xml, robots.txt and legacy-redirects.json (scripts/blog-pages.mjs:86-99,104,155-159) and the tracked public/resume/ford-lascari-resume.md (scripts/resume-pages.mjs:26-35); its dev server writes page HTML (scripts/dev-content-editor.mjs:99), proxies /blog/drafts/__docs/api to the owner's :4820 (scripts/writing-draft-preview.mjs:8,42-46) and writes design-reviews/ JSON (scripts/logo-feedback.mjs:45-46, landing-feedback.mjs:19). Runs use apps/fixtures/personal-site/serve.ts (Vite JS API, configFile false, only sitePages, inlineLandingLoader, externalLinks, @tailwindcss/vite and the resume transform rebuilt from resume-pages.mjs's pure exports; cacheDir in {tmp}, watcher off, GET/HEAD only); tests use apps/fixtures/personal-site/vitest.config.mjs (no plugins, cache under the temp HOME)"
         },
         {
-          "what": "routes skip the landing (/), /logo-lab and /blog/drafts/",
-          "reason": "the landing and logo lab are CircleSnakes product art (audit Skip); /blog/drafts/__docs/api proxies to the owner's docs service on :4820"
+          "what": "routes skip the landing (/), /logo-lab and all of /blog/",
+          "reason": "the landing and logo lab are CircleSnakes product art (audit Skip). Blog pages exist only as generateBlog() output, which takes no output dir (scripts/blog-pages.mjs:7 fixes root from import.meta.url), so the fixture does not generate them and answers 404 for /blog/, /sitemap.xml, /robots.txt and /legacy-redirects.json; /blog/drafts/ (the :4820 proxy) is not mounted"
         },
         {
           "what": "entryStylesheet is about/index.html",
@@ -3059,6 +3178,22 @@
         {
           "what": "pass 3 on vanilla partials",
           "reason": "the ledger plans slices (1h) for its _components partials; the linter's 400-line rule applies, the index.tsx rule does not fit vanilla HTML partials"
+        },
+        {
+          "what": "blog article pages load docs-publish's docs.css before styles.css (known gap)",
+          "reason": "scripts/blog-pages.mjs:103 links ${runtime}/docs.css (runtime path :94, copied from @codecaine-ai/docs-publish dist/styles at :96-97) and an inline docsThemeHead <style> (:76-78) before /src/site/styles.css and blog.css on article pages (:141). docs.css (vendor tgz 0.1.0-proof.20) declares, unlayered at :root, 80 of the same --palette-*/--color-* names as src/site/palette.css and styles.css plus 962 --docs-* properties, a second tokens copy. The linter's single entry (about/index.html → styles.css → palette.css, layout.css) never sees docs.css, the inline theme style, blog.css → blog-style.css (also imported by services.css:5), resume.css or services.css; with /blog/ dropped no capture covers article pages. Pass 1 must check the blog graph by hand until the registry takes several entries"
+        },
+        {
+          "what": "captures show production markup, not the owner's dev view",
+          "reason": "the fixture leaves out devContentEditor, so pages carry no [data-dev-edit] marks and no 'Edit mode (dev)' badge (injected at dev-content-editor.mjs:79; badge in src/site/dev-content-editor.ts:15). Baselines captured under the old `vite` profile must be retaken"
+        },
+        {
+          "what": "typecheck uses tsc -p --noEmit",
+          "reason": "tsc -b (the app's build step) can write tsconfig.tsbuildinfo into the checkout; the project is a single non-composite tsconfig with noEmit (tsconfig.json:16), so `tsc -p tsconfig.json --noEmit` checks the same files and writes nothing"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 2 s (Tests  92 passed (92)); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -3245,7 +3380,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. python3 manager/server.py --root {tmp}/skills (synthetic catalog copied from apps/fixtures; HOME and the agent links inside {tmp}). All 5 routes rendered light and dark (10 captures, no console errors once the runner applied its determinism CSS under the CSP); 0 blocked requests; no foreign connection; the agent-skills repo stayed clean.",
+          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. python3 manager/server.py --root {tmp}/skills (synthetic catalog copied from apps/fixtures; HOME and the agent links inside {tmp}). All 5 routes rendered light and dark (10 captures, no console errors once the runner applied its determinism CSS under the CSP); 0 blocked requests; no foreign connection; the agent-skills repo stayed clean. Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 10 route loads ok, 0 blocked requests, 1 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
           "date": "2026-10-05"
         }
       },
@@ -3261,6 +3396,11 @@
             "selector": ".sidebar",
             "property": "background-color",
             "token": "color.surface.sidebar"
+          },
+          {
+            "selector": "body",
+            "property": "color",
+            "token": "color.text.body"
           },
           {
             "selector": ".topbar",
@@ -3282,6 +3422,10 @@
         {
           "what": "synthetic skills catalog",
           "reason": "apps/fixtures/agent-skills-manager/skills (3 invented skills, agents under the temp HOME) replaces the repo's real catalog and the owner's ~/.claude, ~/.codex skill links; writes happen only on POST /api/apply, which no route triggers"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 1 s (Ran 10 tests in 0.195s, OK); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -3631,6 +3775,10 @@
         {
           "what": "run mode none when unblocked too",
           "reason": "no standalone page: it renders inside docs-viewer and prompt-kit hosts; a host-based route (docs-workbench lab-annotate) can prove it later"
+        },
+        {
+          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
+          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 1 s (68 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
         }
       ]
     },
@@ -4054,6 +4202,10 @@
         {
           "what": "theme rule light-dark",
           "reason": "pinned light today; not on the owner's dark-first list, so it gains a dark theme with the tokens"
+        },
+        {
+          "what": "safe tests not re-run: blocked",
+          "reason": "the app is blocked and its dependencies are not installed in the mirror; run tests.safe in the run sandbox with write detection when it unblocks, before the tests gate counts it"
         }
       ]
     },
@@ -4235,7 +4387,7 @@
           },
           {
             "role": "border",
-            "reason": "the template layout (styles/layout.css) styles no bordered chrome (blockquote is border-none, layout.css:78; no tables); slide 2's card borders (slides/01-column-cards/index.md:11) are per-slide utilities outside the scan paths; FileExplorer and Terminal are VS Code and terminal replicas (product art)"
+            "reason": "the template layout (styles/layout.css) styles no bordered chrome (blockquote is border-none, layout.css:78; no tables); slide 2's card borders (slides/01-column-cards/index.md:11) are per-slide utilities outside the scan paths; the FileExplorer and Terminal components draw their own frames but are not on slide 1 (they migrate with the rest, audit: all 203 template literals)"
           }
         ],
         "darkSwitch": {
@@ -4495,6 +4647,10 @@
         {
           "what": "bun --no-env-file on every bun command",
           "reason": "the owner's life/budget/.env holds MERCURY_* and SIMPLEFIN_* credentials and bun auto-loads .env from its cwd; every bun command here passes --no-env-file, and the run sandbox denies .env reads"
+        },
+        {
+          "what": "safe tests not re-run: blocked",
+          "reason": "the app is blocked and its dependencies are not installed in the mirror; run tests.safe in the run sandbox with write detection when it unblocks, before the tests gate counts it"
         }
       ]
     },
@@ -4701,6 +4857,10 @@
         {
           "what": "theme rule light-dark",
           "reason": "light only today; not on the owner's dark-first list"
+        },
+        {
+          "what": "safe tests not re-run: blocked",
+          "reason": "the app is blocked and its dependencies are not installed in the mirror; run tests.safe in the run sandbox with write detection when it unblocks, before the tests gate counts it"
         }
       ]
     },
@@ -5136,6 +5296,10 @@
         {
           "what": "style engine",
           "reason": "owner decision: keep its effect knobs, hide color controls, bump styleSettings.v1"
+        },
+        {
+          "what": "safe tests not re-run: blocked",
+          "reason": "the app is blocked and its dependencies are not installed in the mirror; run tests.safe in the run sandbox with write detection when it unblocks, before the tests gate counts it"
         }
       ]
     },
@@ -5345,6 +5509,10 @@
         {
           "what": "planned profile",
           "reason": "vite dev on its own port with a WebGL scene; mask the canvas in diffs (the scene animates); needs npm install"
+        },
+        {
+          "what": "safe tests not re-run: blocked",
+          "reason": "the app is blocked and its dependencies are not installed in the mirror; run tests.safe in the run sandbox with write detection when it unblocks, before the tests gate counts it"
         }
       ]
     }
