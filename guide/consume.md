@@ -77,7 +77,7 @@ Never repack under the same file name: `bun run pack` refuses to overwrite a sam
 
 So a same-name repack looks fine locally and breaks the deployed build. These steps work for both package managers:
 
-1. In design-system, bump the patch version in `package.json`. Every repack of a changed build bumps it: `0.2.0` to `0.2.1` on the next repack, then `0.2.2`. The tgz name follows the version. During the rollout, do not bump it yourself. Ask the managing agent.
+1. In design-system, bump the patch version in `package.json`. Every repack that changes the tgz bumps it: `0.2.0` to `0.2.1` on the next repack, then `0.2.2`. That is any change to a shipped file (`dist/`, `css/`, `fonts/`, `tokens/`, `templates/`, `guide/*.md`, `AGENTS.md`, `README.md`), not only a token change. The tgz name follows the version. During the rollout, do not bump it yourself. Ask the managing agent.
 2. Run `bun run build`, then `bun run pack --out <app>/vendor`.
 3. Delete the old tgz from `<app>/vendor`, and change the dependency line to the new file name.
 4. Run `npm install` (or `bun install`) in the app. The lockfile gets the new path and `integrity`.
