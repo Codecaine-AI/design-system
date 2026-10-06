@@ -221,8 +221,8 @@
           "reason": "every fixture route renders activation bars, so the old border waiver was false. Disputed role (Codex P1: color.text.faint is a guide role; Opus: no hex mid-gray border token) ruled by Codex xhigh: fill color.gray.solid (same hex as before the ruling), stroke color.border.default, both #rrggbb in both themes for img/PDF exports; the border probe checks the stroke"
         },
         {
-          "what": "SEQUENCE_TYPOGRAPHY title size 16",
-          "reason": "no font.size token equals 16 and the owner keeps size and density (owner decisions); the 12 and 11 sizes and the weights come from font.size.ui-xs, font.size.ui-2xs and font.weight.*. The scanner does not see TS sizes; review checks them"
+          "what": "SEQUENCE_TYPOGRAPHY title size 16, line heights 15 and 20, participant radius 4, stroke widths",
+          "reason": "kept diagram geometry: no font.size token equals 16, no line-height ratio gives 15 or 20, radius.base is 2px, and stroke widths are 1 and 1.5 × scale; the owner keeps size and density (owner decisions). The 12 and 11 sizes, the weights and the family come from font.size.ui-xs, font.size.ui-2xs, font.weight.* and font.family.sans. Their TS types widened from literals to number (pass-1 review round 2, ruled P2 by Codex xhigh: private package, no consumer relies on the literal types). The scanner does not see TS values; review checks them"
         }
       ]
     },

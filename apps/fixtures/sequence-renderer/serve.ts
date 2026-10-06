@@ -69,7 +69,8 @@ async function main() {
 
   // The host's stylesheets in the contract's order: the package's fonts.css, then tokens.css.
   const stylesheets: string[] = copyPackageFiles(resolvedPackage(pkgDir), site, "design-system", args.tmp);
-  // Any stylesheet the sequence package exports (a --seq-* alias or dark set, once it ships one).
+  // Any stylesheet the sequence package exports. The renderer's var(--seq-*, var(--ds-*, hex)) chain
+  // needs none; a package sheet that set --seq-* on the <svg> would override the host's aliases.
   const pkg = JSON.parse(readFileSync(join(pkgDir, "package.json"), "utf8")) as { exports?: Record<string, unknown> };
   for (const target of Object.values(pkg.exports ?? {})) {
     if (typeof target !== "string" || !target.endsWith(".css")) continue;
