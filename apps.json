@@ -2554,11 +2554,11 @@
         },
         {
           "what": "allowlist",
-          "reason": "the grain overlay's SVG filter constants (#ffffff/#808080 in StyleOverlay.tsx) are filter math, not colors"
+          "reason": "the grain overlay's SVG filter constants (#ffffff/#808080 in StyleOverlay.tsx) are filter math, not colors; the CSS bevel light and shade constants (rgb(255 255 255 / …) and rgb(0 0 0 / …) in style/style-system.css) are alpha-scaled by the engine (bevel off by default). 6 hits, floor 6"
         },
         {
           "what": "verify route traces-rail",
-          "reason": "the research-rail route has no solid viewer-shell panel (the rail is bg-card/85, its sections bg-background/30, and alpha never equals a token); the trace workspace list (workspace/KernelTraceWorkspace.tsx:255-256, bg-card) is one. Body text is the shell's own color (main.research-style-shell, colored by viewer-shell's style vars, style/style-settings.ts:324; host element examples/simple-research-kernel/src/_layouts/ResearchKernelLayout.tsx:72); the rail's hex inputs are color controls the owner decision hides, so they are not probed"
+          "reason": "the research-rail route has no solid viewer-shell panel (the rail is bg-card/85, its sections bg-background/30, and alpha never equals a token); the trace workspace list (workspace/KernelTraceWorkspace.tsx:255-256, bg-card) is one. Body text is the shell's own color (main.research-style-shell, colored by the host's own contract variables (pass 1 removed the engine's inline colors, a6820c2); host element examples/simple-research-kernel/src/_layouts/ResearchKernelLayout.tsx:72); the rail's hex inputs are color controls the owner decision hides, so they are not probed"
         },
         {
           "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
