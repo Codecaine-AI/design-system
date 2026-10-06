@@ -588,6 +588,9 @@ async function runOne(app: AppEntry, planned: PlannedCommand, opts: TestAppOptio
     clearTimeout(timer);
     running = false;
     await watch;
+    // Once more right after the exit, for a command that ended before the first look: milliseconds after the
+    // root was reaped, its pid (allocated in sequence) cannot lead another process's group yet.
+    if (child.pid && !timedOut) for (const proc of groupMembers(child.pid)) if (!known.has(proc.pid)) known.set(proc.pid, proc);
     if (root$) await killRun([root$], 2_000, [...known.values()]);
     const strays = killTagged(tag);
     // Every byte the command wrote, before reading the result (a stray holding the pipe is dead by now).
