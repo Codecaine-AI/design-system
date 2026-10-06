@@ -21,8 +21,10 @@
  * - wiring: unused HTML strings in a server-rendered entry still count as its page (decision 21c).
  *   An inlined stylesheet counts only when the entry module itself reads the file (readFileSync,
  *   Bun.file(…).text(), a `?raw` import) into a module-level binding or right inside the <style>
- *   block; text returned by a function, held in an object or read in another module is not
- *   followed, nor is a path built from run-time values (process.cwd(), environment variables).
+ *   block, and writes it whole there (`${tokens}`, or an operand of a `+` chain; an async read
+ *   awaited where it is read); text returned by a function, held in an object, transformed
+ *   (`tokens.slice(…)`, a ternary) or read in another module is not followed, nor is a path built
+ *   from run-time values (process.cwd(), environment variables), nor `${await p}` on a promise.
  * - Tailwind v3 config: writes are read in source order, not run order; `let` reassignments,
  *   getters and `Object.assign({}, a, b)` as the export are not followed; `exports.presets =`
  *   after `module.exports =` counts although Node drops it; a spread inside `theme` that is not

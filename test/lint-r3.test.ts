@@ -171,6 +171,27 @@ describe("decision 30: design-system files by /@codecaine-ai/design-system/ URL,
     ]);
   });
 
+  test("round-3 close (R3-B3): only a whole binding or read, interpolated or concatenated, loads; awaited where the read is async", () => {
+    const graph = buildLoadGraph(join(ws.root, "apps/r3w-ssr/src/home-whole.ts"));
+    expect(graph.loads.map((l) => [l.kind, l.line])).toEqual([
+      ["fonts", 15],
+      ["tokens-dark-first", 16],
+      ["fonts", 17],
+      ["tokens-dark-first", 17],
+      ["fonts", 18],
+      ["tokens-dark-first", 19],
+    ]);
+    expect(page("home-whole.ts", "wiring")).toMatchObject({ status: "pass", violations: [] });
+  });
+
+  test("round-3 close (R3-B3): member access, calls, ternaries, unary plus and un-awaited reads inside <style> load nothing", () => {
+    expect(buildLoadGraph(join(ws.root, "apps/r3w-ssr/src/home-transformed.ts")).loads).toEqual([]);
+    expectExactly(page("home-transformed.ts", "wiring").violations, [
+      at("apps/r3w-ssr/src/home-transformed.ts", 1, "does not load fonts.css"),
+      at("apps/r3w-ssr/src/home-transformed.ts", 1, "does not load @codecaine-ai/design-system/tokens.css or tokens-dark-first.css"),
+    ]);
+  });
+
   test("text read but not put in a <style>, and a ?url import in one, load nothing", () => {
     expectExactly(page("home-unused.ts", "wiring").violations, [
       at("apps/r3w-ssr/src/home-unused.ts", 1, "does not load fonts.css"),
