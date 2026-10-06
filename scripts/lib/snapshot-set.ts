@@ -196,7 +196,7 @@ function sortedJson(value: unknown): string {
 /**
  * sha256 of the part of an app's registry entry that decides what a capture looks like: where the app
  * comes from (id, repo, root), how it runs (run, commands.cwd and .build, the run profile's env,
- * unsetEnv, fixtures, flags, ports and allowedLocalPorts), its theme rule and dark switch, and its routes
+ * unsetEnv, fixtures, flags, ports and allowedLocalPorts), its theme rule, dark switch and light switch (when set), and its routes
  * (path, themes, viewport, waitFor, steps). Two sets compare only when it matches.
  *
  * It leaves out what snapshot:diff reads from the current apps.json anyway (each route's masks, gating,
@@ -212,7 +212,8 @@ export function captureSha256(app: AppEntry): string {
     repo: app.repo,
     root: app.root,
     theme: { rule: app.theme?.rule ?? null },
-    verify: { darkSwitch: app.verify?.darkSwitch ?? null },
+    // lightSwitch only when set, so the sha of every entry without one is unchanged.
+    verify: { darkSwitch: app.verify?.darkSwitch ?? null, ...(app.verify?.lightSwitch ? { lightSwitch: app.verify.lightSwitch } : {}) },
     run: app.run ?? null,
     commands: { cwd: app.commands?.cwd ?? null, build: app.commands?.build ?? null },
     runProfile: {

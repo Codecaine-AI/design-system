@@ -170,6 +170,48 @@ export interface Exception {
 export type ProbeRole = "page" | "panel" | "text" | "border";
 export const PROBE_ROLES: readonly ProbeRole[] = ["page", "panel", "text", "border"];
 
+/** How the tools put an app in one theme (verify.darkSwitch, verify.lightSwitch). */
+export type ThemeSwitch =
+  /** Sets data-theme to the theme on `target` (default html). */
+  | { kind: "attribute"; target?: string }
+  | { kind: "storage"; key: string; value: string }
+  | { kind: "click"; selector: string }
+  | { kind: "query"; param: string; value: string }
+  /** Navigation/view-only steps (for example open the style rail, click its dark-mode toggle). Writes may land only in the run's temp state. */
+  | { kind: "steps"; steps: NonNullable<RouteSpec["steps"]> };
+
+/** verify.lightSwitch: a stored value only (see VerifySpec.lightSwitch for why). */
+export type LightSwitch = { kind: "storage"; key: string; value: string };
+
+/**
+ * verify.lightSwitch's problems, one message each. Only `storage` is accepted: it is written before the
+ * page loads (capture, use:app) or before a reload (verify, registry:prove) and stays in localStorage
+ * across every later navigation. An `attribute` switch is lost when a navigation-only route step loads a
+ * new document; `query` is dropped by such a navigation and never reaches an Electron window; `click`
+ * and `steps` can navigate without the route being prepared again. No entry needs those for light.
+ * A dark-first entry may not set one: verify never reads light there, so nothing would check it.
+ */
+export function lightSwitchProblems(sw: unknown, rule: ThemeRule | undefined): string[] {
+  const where = "verify.lightSwitch";
+  if (sw === null || typeof sw !== "object" || Array.isArray(sw)) return [`${where} must be an object { kind: "storage", key, value }`];
+  const s = sw as Record<string, unknown>;
+  const problems: string[] = [];
+  if (s.kind !== "storage")
+    problems.push(
+      `${where}.kind ${JSON.stringify(s.kind)} is not allowed: lightSwitch accepts only "storage" (a stored value survives the navigation a route step can make; attribute, query, click and steps switches can be lost or skip the route's preparation)`,
+    );
+  else for (const key of ["key", "value"]) if (typeof s[key] !== "string" || (s[key] as string).length === 0) problems.push(`${where}.${key} must be a non-empty string`);
+  if (rule === "dark-first") problems.push(`${where} is set on a dark-first entry: verify never reads light there, so nothing would check it (drop it, or make the rule light-dark)`);
+  return problems;
+}
+
+/** The light switch the tools apply: the entry's storage lightSwitch, or undefined (none, another kind, or a dark-first entry). */
+export function lightSeed(app: { theme?: { rule?: ThemeRule }; verify?: { lightSwitch?: unknown } }): LightSwitch | undefined {
+  const sw = app.verify?.lightSwitch as Partial<LightSwitch> | undefined;
+  if (app.theme?.rule === "dark-first" || sw?.kind !== "storage" || typeof sw.key !== "string" || typeof sw.value !== "string") return undefined;
+  return { kind: "storage", key: sw.key, value: sw.value };
+}
+
 /** How verify:apps proves the app is connected (runtime check). */
 export interface VerifySpec {
   /** Route id to verify on; default the first route. */
@@ -190,13 +232,19 @@ export interface VerifySpec {
    */
   waivedRoles?: Array<{ role: ProbeRole; reason: string; themes?: Array<"light" | "dark"> }>;
   /** How to switch to dark. On dark-first surfaces dark is the default; the check confirms it instead. */
-  darkSwitch:
-    | { kind: "attribute"; target?: string }
-    | { kind: "storage"; key: string; value: string }
-    | { kind: "click"; selector: string }
-    | { kind: "query"; param: string; value: string }
-    /** Navigation/view-only steps (for example open the style rail, click its dark-mode toggle). Writes may land only in the run's temp state. */
-    | { kind: "steps"; steps: NonNullable<RouteSpec["steps"]> };
+  darkSwitch: ThemeSwitch;
+  /**
+   * How to reach light, for a light-dark app that boots dark with empty storage (the product default is
+   * dark). Only `storage` (lightSwitchProblems says why); not on dark-first entries. When present:
+   * - snapshot capture and use:app write it into localStorage before the page loads, in every light shot;
+   * - verify writes it and reloads (re-running the route's waitFor and steps) before the light reads,
+   *   after the route was prepared, then reads light, then applies darkSwitch for the dark reads;
+   * - registry:prove writes it and reloads before the route's steps in every light load.
+   * The stored value stays across navigation-only route steps. Capture and use:app also emulate
+   * prefers-color-scheme: light; verify keeps light emulated for both themes, as it always has.
+   * Omit it when the app boots light: then light is the app as it boots, as before.
+   */
+  lightSwitch?: LightSwitch;
   /** Shell apps: the sidebar toggle (default ".ds-sidebar-toggle") and the storage key (default "<app>.sidebar"). */
   sidebar?: { toggle?: string; storageKey?: string };
 }
@@ -432,6 +480,7 @@ export function validateRegistry(registry: Registry): string[] {
     if (runnable && !app.routes?.length) problems.push(`${app.id}: run mode ${app.run.mode} needs at least one route`);
     if (runnable && app.gates?.verify?.required && !app.verify) problems.push(`${app.id}: gates.verify is required but verify is missing`);
     if (app.verify) for (const problem of verifySpecProblems(app.verify, app.theme?.rule)) problems.push(`${app.id}: ${problem}`);
+    if (app.verify?.lightSwitch !== undefined) for (const problem of lightSwitchProblems(app.verify.lightSwitch, app.theme?.rule)) problems.push(`${app.id}: ${problem}`);
     if (!runnable) {
       for (const g of ["verify", "snapshot"] as const)
         if (app.gates?.[g]?.required) problems.push(`${app.id}: gates.${g} is required but run mode is none`);
