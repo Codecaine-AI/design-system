@@ -1,0 +1,3 @@
+/* verify:apps fixture (c7): a host sheet that imports the package fonts.css for screen. */
+@import url("/ds/css/fonts.css") screen;
+body { color: black; }

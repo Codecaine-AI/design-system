@@ -37,6 +37,8 @@ export interface FaceStatus {
   style: string;
   /** FontFace.status: "unloaded", "loading", "loaded" or "error". */
   status: string;
+  /** FontFace.unicodeRange; absent reads as the whole range (U+0-10FFFF). */
+  unicodeRange?: string;
 }
 
 /** An @font-face rule: its descriptors, src, the resolved url()s, whether a local() source is listed, and its stylesheet. */
@@ -48,6 +50,14 @@ export interface FontRule {
   local: boolean;
   /** href of the stylesheet that holds the rule, after following @import; null for an inline <style> or a constructed sheet. */
   sheet: string | null;
+  /**
+   * Whether the rule applies to the page: its sheet is enabled and its media list matches, every
+   * @import on the way matches its media, every enclosing @media matches and every enclosing @supports
+   * holds. An inactive rule (in `@media print`, say) puts no face in document.fonts.
+   */
+  active: boolean;
+  /** The unicode-range descriptor; absent or empty reads as the whole range. */
+  unicodeRange?: string;
 }
 
 export interface FontReading {
@@ -131,12 +141,12 @@ export async function readFonts(page: any, opts: ReadFontsOptions = {}): Promise
       await Promise.race([document.fonts.ready, new Promise((resolve) => setTimeout(resolve, 10_000))]);
       const firstFamilies = selectors.map((selector) => {
         const element = document.querySelector(selector);
-        return { selector, family: element ? clean(getComputedStyle(element).fontFamily.split(",")[0] ?? "").toLowerCase() : null };
+        return { selector, family: element ? clean(getComputedStyle(element).fontFamily.split(",")[0] ?? "") : null };
       });
       return names.map((name) => ({
         before: Array.from(document.fonts)
           .filter((face) => clean(face.family) === name.toLowerCase())
-          .map((face) => ({ weight: face.weight, style: face.style, status: face.status })),
+          .map((face) => ({ weight: face.weight, style: face.style, status: face.status, unicodeRange: face.unicodeRange })),
         probedBy: firstFamilies.filter((probe) => probe.family === name.toLowerCase()).map((probe) => probe.selector),
       }));
     },
@@ -150,9 +160,11 @@ export async function readFonts(page: any, opts: ReadFontsOptions = {}): Promise
         const loading = Promise.all(loads.map((font) => document.fonts.load(font).catch(() => undefined)));
         await Promise.race([loading, new Promise((resolve) => setTimeout(resolve, 10_000))]);
       }
-      const rules: Array<{ family: string; weight: string; style: string; src: string; base: string; sheet: string | null }> = [];
+      const rules: Array<{ family: string; weight: string; style: string; src: string; unicodeRange: string; base: string; sheet: string | null; active: boolean }> = [];
       let unreadableSheets = 0;
-      const walk = (list: CSSRuleList, base: string, sheet: string | null) => {
+      // A media list matches when it is empty or matchMedia says so (screen, not print, for the check's page).
+      const mediaMatches = (media: MediaList | null | undefined) => !media || !media.mediaText.trim() || window.matchMedia(media.mediaText).matches;
+      const walk = (list: CSSRuleList, base: string, sheet: string | null, active: boolean) => {
         for (const rule of Array.from(list)) {
           if (rule instanceof CSSFontFaceRule) {
             const style = rule.style;
@@ -161,25 +173,31 @@ export async function readFonts(page: any, opts: ReadFontsOptions = {}): Promise
               weight: style.getPropertyValue("font-weight").trim(),
               style: style.getPropertyValue("font-style").trim(),
               src: style.getPropertyValue("src"),
+              unicodeRange: style.getPropertyValue("unicode-range").trim(),
               base,
               sheet,
+              active,
             });
           } else if (rule instanceof CSSImportRule) {
             try {
               const imported = rule.styleSheet;
-              if (imported) walk(imported.cssRules, imported.href ?? base, imported.href ?? sheet);
+              if (imported) walk(imported.cssRules, imported.href ?? base, imported.href ?? sheet, active && mediaMatches(rule.media) && !imported.disabled && mediaMatches(imported.media));
             } catch {
               unreadableSheets += 1;
             }
+          } else if (rule instanceof CSSMediaRule) {
+            walk(rule.cssRules, base, sheet, active && mediaMatches(rule.media));
+          } else if (rule instanceof CSSSupportsRule) {
+            walk(rule.cssRules, base, sheet, active && CSS.supports(rule.conditionText));
           } else if ("cssRules" in rule) {
-            walk((rule as CSSGroupingRule).cssRules, base, sheet);
+            walk((rule as CSSGroupingRule).cssRules, base, sheet, active);
           }
         }
       };
       const sheets = [...Array.from(document.styleSheets), ...Array.from(document.adoptedStyleSheets ?? [])];
       for (const sheet of sheets) {
         try {
-          walk(sheet.cssRules, sheet.href ?? document.baseURI, sheet.href ?? null);
+          walk(sheet.cssRules, sheet.href ?? document.baseURI, sheet.href ?? null, !sheet.disabled && mediaMatches(sheet.media));
         } catch {
           unreadableSheets += 1;
         }
@@ -187,7 +205,7 @@ export async function readFonts(page: any, opts: ReadFontsOptions = {}): Promise
       return names.map((family) => ({
         after: Array.from(document.fonts)
           .filter((face) => clean(face.family) === family.toLowerCase())
-          .map((face) => ({ weight: face.weight, style: face.style, status: face.status })),
+          .map((face) => ({ weight: face.weight, style: face.style, status: face.status, unicodeRange: face.unicodeRange })),
         rules: rules
           .filter((rule) => rule.family === family.toLowerCase())
           .map((rule) => ({
@@ -203,6 +221,8 @@ export async function readFonts(page: any, opts: ReadFontsOptions = {}): Promise
             }),
             local: /local\(/.test(rule.src),
             sheet: rule.sheet,
+            active: rule.active,
+            unicodeRange: rule.unicodeRange,
           })),
         unreadableSheets,
       }));
@@ -241,16 +261,56 @@ export function styleIsNormal(descriptor: string): boolean {
   return value === "" || value === "normal";
 }
 
-/** Whether two weight and style descriptors name the same face: the same weight range and the same style (unset reads as normal). */
-export function sameFace(a: { weight: string; style: string }, b: { weight: string; style: string }): boolean {
+const WHOLE_RANGE = "0-10ffff";
+
+/**
+ * A unicode-range descriptor in one canonical form: its ranges as lowercase hex `lo-hi`, sorted and
+ * merged ("U+0-10FFFF" for absent or empty, wildcards such as U+4?? expanded). null when it does not parse.
+ */
+export function canonicalRange(descriptor: string | undefined): string | null {
+  const text = (descriptor ?? "").replace(/\s+/g, "");
+  if (!text) return WHOLE_RANGE;
+  const ranges: Array<[number, number]> = [];
+  for (const part of text.split(",")) {
+    const m = /^u\+([0-9a-f?]{1,6})(?:-([0-9a-f]{1,6}))?$/i.exec(part);
+    if (!m) return null;
+    const lo = parseInt(m[1]!.replace(/\?/g, "0"), 16);
+    const hi = m[2] ? parseInt(m[2], 16) : parseInt(m[1]!.replace(/\?/g, "f"), 16);
+    ranges.push([lo, hi]);
+  }
+  ranges.sort((a, b) => a[0] - b[0]);
+  const merged: Array<[number, number]> = [];
+  for (const [lo, hi] of ranges) {
+    const last = merged[merged.length - 1];
+    if (last && lo <= last[1] + 1) last[1] = Math.max(last[1], hi);
+    else merged.push([lo, hi]);
+  }
+  return merged.map(([lo, hi]) => `${lo.toString(16)}-${hi.toString(16)}`).join(",");
+}
+
+type Descriptors = { weight: string; style: string; unicodeRange?: string };
+
+/**
+ * Whether two sets of descriptors name the same face: the same weight range, the same style (unset reads
+ * as normal) and the same unicode-range (unset reads as the whole range).
+ */
+export function sameFace(a: Descriptors, b: Descriptors): boolean {
   const style = (descriptor: string) => descriptor.trim().toLowerCase() || "normal";
   const [wa, wb] = [weightRange(a.weight), weightRange(b.weight)];
-  return wa !== null && wb !== null && wa[0] === wb[0] && wa[1] === wb[1] && style(a.style) === style(b.style);
+  const [ra, rb] = [canonicalRange(a.unicodeRange), canonicalRange(b.unicodeRange)];
+  return wa !== null && wb !== null && wa[0] === wb[0] && wa[1] === wb[1] && style(a.style) === style(b.style) && ra !== null && ra === rb;
 }
+
+/** Whether a rule puts a face in document.fonts: it applies to the page (active) and lists a src. */
+const applies = (rule: FontRule) => rule.active !== false && rule.src.trim() !== "";
+const live = (face: FaceStatus) => face.status === "loaded" || face.status === "loading";
 
 const regularOf = <T extends { weight: string; style: string }>(items: T[]) => items.filter((item) => weightCovers(item.weight) && styleIsNormal(item.style));
 const statuses = (faces: FaceStatus[]) => faces.map((face) => `${face.weight} ${face.style} ${face.status}`).join(", ");
-const faceName = (face: { weight: string; style: string }) => `${face.weight} ${face.style}`;
+const faceName = (face: Descriptors) => {
+  const range = canonicalRange(face.unicodeRange);
+  return `${face.weight} ${face.style}${range === WHOLE_RANGE ? "" : ` (unicode-range ${face.unicodeRange})`}`;
+};
 
 /** One face's source verdict: the fetched url() the judge accepted, or why the face fails. Either way, what was read. */
 type SourceCheck = ({ ok: true; url: string; how: string } | { ok: false; message: string }) & { detail: Record<string, unknown> };
@@ -258,6 +318,7 @@ type SourceCheck = ({ ok: true; url: string; how: string } | { ok: false; messag
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 /** Each face once, by its weight and style descriptors as the page reports them. */
 const distinctFaces = (faces: FaceStatus[]) => faces.filter((face, i) => faces.findIndex((other) => faceName(other) === faceName(face)) === i);
+const countSame = (faces: FaceStatus[], face: FaceStatus, keep: (f: FaceStatus) => boolean = () => true) => faces.filter((other) => keep(other) && sameFace(other, face)).length;
 
 /**
  * Why a judged face cannot be attributed to a readable @font-face rule, or null. document.fonts holds one
@@ -269,11 +330,16 @@ const distinctFaces = (faces: FaceStatus[]) => faces.filter((face, i) => faces.f
  */
 function unattributed(r: FontReading, faces: FaceStatus[]): string | null {
   for (const face of distinctFaces(faces)) {
-    const inSet = Math.max(r.before.filter((other) => sameFace(other, face)).length, r.after.filter((other) => sameFace(other, face)).length);
+    // A face loaded before the check that is gone after it was removed by the page: what rendered can no longer be attributed.
+    const [loadedBefore, loadedAfter] = [countSame(r.before, face, (f) => f.status === "loaded"), countSame(r.after, face, (f) => f.status === "loaded")];
+    if (loadedAfter < loadedBefore) {
+      return `the ${faceName(face)} face of ${r.family}: a judged face left document.fonts during the check (${loadedBefore} loaded before, ${loadedAfter} after), so its source cannot be attributed to the package`;
+    }
+    const inSet = Math.max(countSame(r.before, face), countSame(r.after, face));
     const declaring = r.rules.filter((rule) => sameFace(rule, face)).length;
     if (inSet > declaring || (declaring === 0 && r.unreadableSheets > 0)) {
       const unreadable = r.unreadableSheets ? ` (${plural(r.unreadableSheets, "stylesheet")} unreadable)` : "";
-      return `the ${faceName(face)} face of ${r.family} has ${plural(inSet, "FontFace object")} in document.fonts but ${plural(declaring, "readable @font-face rule")}${unreadable}: one is a face added from script or an unreadable stylesheet, so its source cannot be attributed to the package`;
+      return `the ${faceName(face)} face of ${r.family} has ${plural(inSet, "FontFace object")} in document.fonts but ${plural(declaring, "active readable @font-face rule")}${unreadable}: one is a face added from script or an unreadable stylesheet, so its source cannot be attributed to the package`;
     }
   }
   return null;
@@ -286,10 +352,11 @@ function unattributed(r: FontReading, faces: FaceStatus[]): string | null {
  * before it, one of its url()s was fetched, and `judge` accepts a fetched one. `noun` names the face in
  * messages ("the regular face", "the 500 normal face"); `declared` names it when no rule declares it.
  */
-function checkSource(r: FontReading, faces: FaceStatus[], rules: FontRule[], noun: string, declared: string, responses: ResponseLog, judge: FontSourceJudge): SourceCheck {
+function checkSource(r: FontReading & { inactiveRules?: number }, faces: FaceStatus[], rules: FontRule[], noun: string, declared: string, responses: ResponseLog, judge: FontSourceJudge): SourceCheck {
   const detail: Record<string, unknown> = {};
   if (r.rules.length === 0) {
-    return { ok: false, message: `faces are loaded but no readable @font-face declares ${r.family}${r.unreadableSheets ? ` (${r.unreadableSheets} stylesheet(s) unreadable)` : ""}`, detail };
+    const inactive = r.inactiveRules ? ` (${plural(r.inactiveRules, "rule")} inactive here: a non-matching @media, @supports or media list, or a disabled sheet)` : "";
+    return { ok: false, message: `faces are loaded but no readable @font-face declares ${r.family}${r.unreadableSheets ? ` (${r.unreadableSheets} stylesheet(s) unreadable)` : ""}${inactive}`, detail };
   }
   const ambiguous = unattributed(r, faces);
   if (ambiguous) return { ok: false, message: ambiguous, detail };
@@ -322,12 +389,16 @@ function checkSource(r: FontReading, faces: FaceStatus[], rules: FontRule[], nou
  * by the check's forced load), its winning @font-face rule's url() fetched, and the fetched file judged
  * by `judge` to come from the package. IBM Plex Mono rendered only in other faces: every face the page
  * loaded passes the same rules first, on the rule that declares that face. In every branch, a judged face
- * with more FontFace objects than readable rules for its weight and style fails (unattributed).
+ * with more FontFace objects than active readable rules for its descriptors, or one that left
+ * document.fonts between the readings, fails (unattributed).
  */
 export function fontAssertions(readings: FontReading[], responses: ResponseLog, judge: FontSourceJudge): Assertion[] {
-  return readings.map((r) => {
-    const id = `font: ${r.family}`;
-    const detail: Record<string, unknown> = { ...r };
+  return readings.map((reading) => {
+    const id = `font: ${reading.family}`;
+    const detail: Record<string, unknown> = { ...reading };
+    // Only rules that put a face in document.fonts count, for attribution and for the winner: an inactive
+    // rule (in @media print, say) declares nothing on this page.
+    const r = { ...reading, rules: reading.rules.filter(applies), inactiveRules: reading.rules.filter((rule) => !applies(rule)).length };
     if (r.before.length === 0) return fail(id, `no @font-face for ${r.family}: text renders in a local or fallback font`, detail);
     const regularBefore = regularOf(r.before);
     if (regularBefore.length === 0) return fail(id, `no regular face (400, normal) of ${r.family} is declared (${r.before.map((f) => `${f.weight} ${f.style}`).join(", ")})`, detail);
@@ -371,8 +442,9 @@ export function fontAssertions(readings: FontReading[], responses: ResponseLog, 
         return fail(id, `${r.family} is not rendered on this route, and its regular face did not load when the check forced ${r.forced ?? "it"} (${statuses(regularAfter)})`, detail);
       loadedBy = "available, not rendered on this route: regular face loaded";
     }
-    const loadedRegular = regularOf(r.after).filter((face) => face.status === "loaded");
-    const check = checkSource(r, loadedRegular, regularOf(r.rules), "the regular face", "the regular face (400, normal)", responses, judge);
+    // Every live regular face, before the forced load or after it: a face that left between the readings is judged too.
+    const liveRegular = regularOf([...r.before, ...r.after]).filter(live);
+    const check = checkSource(r, liveRegular, regularOf(r.rules), "the regular face", "the regular face (400, normal)", responses, judge);
     Object.assign(detail, check.detail);
     return check.ok ? pass(id, `${loadedBy} from ${check.url} (${check.how})`, detail) : fail(id, check.message, detail);
   });

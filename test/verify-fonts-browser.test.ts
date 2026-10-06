@@ -38,12 +38,10 @@ describe.skipIf(Boolean(browserSkip))("font checks in Chromium", () => {
     mkdirSync(join(copies, "design-system/css"), { recursive: true });
     copyFileSync(join(DESIGN_SYSTEM_ROOT, "css/fonts.css"), join(copies, "design-system/css/fonts.css"));
     cpSync(join(DESIGN_SYSTEM_ROOT, "fonts"), join(copies, "design-system/fonts"), { recursive: true });
-    if (existsSync(TEXT_MEASURE_CSS)) {
-      mkdirSync(join(copies, "text-measure"));
-      copyFileSync(TEXT_MEASURE_CSS, join(copies, "text-measure/fonts.css"));
-      // text-measure's woff2 files are byte-identical to the package's (decision 20): only the stylesheet differs.
-      cpSync(join(DESIGN_SYSTEM_ROOT, "fonts"), join(copies, "text-measure/fonts"), { recursive: true });
-    }
+    // text-measure's woff2 files are byte-identical to the package's (decision 20): only the stylesheet differs.
+    // The fonts are always copied, so the pages that use another package's files run without the mirror.
+    cpSync(join(DESIGN_SYSTEM_ROOT, "fonts"), join(copies, "text-measure/fonts"), { recursive: true });
+    if (existsSync(TEXT_MEASURE_CSS)) copyFileSync(TEXT_MEASURE_CSS, join(copies, "text-measure/fonts.css"));
     server = Bun.serve({
       hostname: "127.0.0.1",
       port: PORT,
@@ -61,9 +59,11 @@ describe.skipIf(Boolean(browserSkip))("font checks in Chromium", () => {
     if (scratch) rmSync(scratch, { recursive: true, force: true });
   });
 
-  /** /fonts/<file> is the package's fonts/ (FONT_DIR), /copy/<path> the copies, /<page>.html a fixture page. */
+  /** /fonts/<file> is the package's fonts/ (FONT_DIR), /ds/<path> the package itself, /copy/<path> the copies, /fonts-*.html or .css a fixture. */
   function diskPath(pathname: string): string | null {
     if (pathname.startsWith("/fonts/")) return join(FONT_DIR!, pathname.slice("/fonts/".length));
+    if (pathname.startsWith("/ds/")) return join(dirname(FONT_DIR!), pathname.slice("/ds/".length));
+    if (/^\/fonts-[a-z-]+\.css$/.test(pathname)) return join(FIXTURES, pathname.slice(1));
     if (pathname.startsWith("/copy/")) return join(copies, pathname.slice("/copy/".length));
     if (/^\/fonts-[a-z-]+\.html$/.test(pathname)) return join(FIXTURES, pathname.slice(1));
     return null;
@@ -120,12 +120,12 @@ describe.skipIf(Boolean(browserSkip))("font checks in Chromium", () => {
     expect((await fonts("fonts-mono-script-face"))["font: IBM Plex Mono"]).toEqual({
       status: "fail",
       message: expect.stringMatching(
-        /^the 600 normal face of IBM Plex Mono has 2 FontFace objects in document\.fonts but 1 readable @font-face rule: one is a face added from script or an unreadable stylesheet, so its source cannot be attributed to the package; IBM Plex Mono renders on this route only in faces other than the regular one \(faces 600 normal loaded(, 600 normal loaded)?\)$/,
+        /^the 600 normal face of IBM Plex Mono has 2 FontFace objects in document\.fonts but 1 active readable @font-face rule: one is a face added from script or an unreadable stylesheet, so its source cannot be attributed to the package; IBM Plex Mono renders on this route only in faces other than the regular one \(faces 600 normal loaded(, 600 normal loaded)?\)$/,
       ),
     });
   }, 30_000);
 
-  test.skipIf(!existsSync(TEXT_MEASURE_CSS))("another package's face declared as \"ibm plex mono\" fails at 600 and at 400: family names match case-insensitively", async () => {
+  test("another package's face declared as \"ibm plex mono\" fails at 600 and at 400: family names match case-insensitively", async () => {
     const semibold = join(copies, "text-measure/fonts/IBMPlexMono-SemiBold.woff2");
     expect((await fonts("fonts-mono-lowercase-semibold"))["font: IBM Plex Mono"]).toEqual({
       status: "fail",
@@ -136,6 +136,35 @@ describe.skipIf(Boolean(browserSkip))("font checks in Chromium", () => {
       message: `the regular face loads from ${join(copies, "text-measure/fonts/IBMPlexMono-Regular.woff2")}: ${DECISION_20}: it is in an inline <style> or a constructed stylesheet`,
     });
   }, 30_000);
+
+  describe("fix round 2: inactive rules, a face leaving during the check, unicode-range", () => {
+    const mono = async (page: string) => (await fonts(page))["font: IBM Plex Mono"];
+    const UNATTRIBUTED = "one is a face added from script or an unreadable stylesheet, so its source cannot be attributed to the package";
+
+    test("a print-only package rule does not mask a script face from another package: 600 (a1), 400 (a2), a <link media=print> sheet (a3)", async () => {
+      expect(await mono("fonts-mask-print-semibold")).toEqual({ status: "fail", message: expect.stringMatching(/^the 600 normal face of IBM Plex Mono has 2 FontFace objects in document\.fonts but 1 active readable @font-face rule: /) });
+      expect(await mono("fonts-mask-print-regular")).toEqual({ status: "fail", message: `the 400 normal face of IBM Plex Mono has 2 FontFace objects in document.fonts but 1 active readable @font-face rule: ${UNATTRIBUTED}` });
+      expect(await mono("fonts-mask-print-link")).toEqual({ status: "fail", message: expect.stringMatching(/^the 600 normal face of IBM Plex Mono has 2 FontFace objects in document\.fonts but 1 active readable @font-face rule: /) });
+    }, 60_000);
+
+    test("conformant pages pass: a print-only rule with another URL (c9), @import of fonts.css (c6), @import … screen (c7), fonts.css linked twice (c4)", async () => {
+      for (const page of ["fonts-print-other-url", "fonts-host-import", "fonts-host-import-screen", "fonts-sheet-twice"]) {
+        expect({ page, ...(await mono(page)) }).toEqual({ page, status: "pass", message: expect.stringContaining("/ds/fonts/") });
+      }
+    }, 60_000);
+
+    test("a loaded script face deleted between the two readings fails (a11)", async () => {
+      expect(await mono("fonts-face-removed")).toEqual({
+        status: "fail",
+        message: "the 400 normal face of IBM Plex Mono: a judged face left document.fonts during the check (1 loaded before, 0 after), so its source cannot be attributed to the package",
+      });
+    }, 30_000);
+
+    test("an unloaded CJK-range script face does not fail a conformant page (c2); a script face with the package's URL and descriptors does (c3)", async () => {
+      expect(await mono("fonts-script-cjk-range")).toEqual({ status: "pass", message: expect.stringContaining("/ds/fonts/IBMPlexMono-Regular.woff2") });
+      expect(await mono("fonts-script-package-url")).toEqual({ status: "fail", message: `the 400 normal face of IBM Plex Mono has 2 FontFace objects in document.fonts but 1 active readable @font-face rule: ${UNATTRIBUTED}` });
+    }, 60_000);
+  });
 
   test("byte copies declared in a copy of the package's fonts.css pass, its rules read through @import", async () => {
     const found = await fonts("fonts-copied-sheet");

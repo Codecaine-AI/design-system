@@ -1,0 +1,2 @@
+/* verify:apps fixture (a3): a package 600 rule, linked with media="print". */
+@font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 600; src: url("/ds/fonts/IBMPlexMono-SemiBold.woff2") format("woff2"); }

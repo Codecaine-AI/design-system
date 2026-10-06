@@ -1,0 +1,19 @@
+<!doctype html>
+<!-- verify:apps fixture (fix round 2, c2): a conformant page plus a script 400 face from another package limited to CJK (unicode-range U+3000-30FF), never loaded; text at 400. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>c2</title>
+    <link rel="stylesheet" href="/ds/css/fonts.css" />
+    <style>
+      body { margin: 0; font-family: Inter, sans-serif; font-weight: 400; }
+      code { font-family: "IBM Plex Mono", monospace; font-weight: 400; }
+    </style>
+    <script>
+      document.fonts.add(new FontFace("IBM Plex Mono", 'url("/copy/text-measure/fonts/IBMPlexMono-Regular.woff2") format("woff2")', { weight: "400", unicodeRange: "U+3000-30FF" }));
+    </script>
+  </head>
+  <body>
+    <p>Text in Inter, <code>a mono label</code>.</p>
+  </body>
+</html>
