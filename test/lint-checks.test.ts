@@ -184,6 +184,35 @@ describe("literals", () => {
       "apps/unconnected/src/Widget.tsx:6 text-sm",
     ]);
   });
+
+  test("bare shadow, blur and numeric leading count only in class contexts; container sizes and animations always; bare rounded never", () => {
+    const tw = check("scale-classes", "literals")
+      .violations.filter((v) => v.message.startsWith("Tailwind default-scale class "))
+      .map((v) => `${v.file.replace("apps/scale-classes/src/", "")}:${v.line} ${v.message.split(" ")[3]}`);
+    // Not flagged: rounded, the MODE constant, title="shadow", the WORDS array and el.title.
+    expect(tw.sort()).toEqual([
+      "_components/Panel/index.tsx:10 blur",
+      "_components/Panel/index.tsx:10 inset-shadow",
+      "_components/Panel/index.tsx:7 animate-spin",
+      "_components/Panel/index.tsx:7 max-w-2xl",
+      "_components/Panel/index.tsx:7 shadow",
+      "_components/Panel/index.tsx:8 leading-6",
+      "_components/Panel/index.tsx:8 text-gray-500",
+      "_components/Panel/index.tsx:9 backdrop-blur",
+      "_components/Panel/index.tsx:9 drop-shadow",
+      "dom.ts:4 shadow",
+      "dom.ts:5 backdrop-blur",
+      "dom.ts:6 blur",
+      "dom.ts:6 leading-3",
+    ]);
+  });
+
+  test("a library without Tailwind gets the class check only when its host compiles its class strings", () => {
+    const twOf = (app: string) => messages(check(app, "literals").violations).filter((m) => m.startsWith("Tailwind default-scale class "));
+    expect(twOf("widgets")).toEqual([]);
+    expect(twOf("widgets-utility-classes")).toEqual([expect.stringContaining("class shadow-md (shadow)")]);
+    expect(messages(check("widgets-utility-classes", "wiring").violations)).toEqual([]);
+  });
 });
 
 describe("names", () => {

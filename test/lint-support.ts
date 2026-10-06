@@ -127,6 +127,23 @@ export const APPS: AppEntry[] = [
     shell: false,
     folderStandard: false,
   }),
+  // The widgets sources, with a host that compiles their class strings.
+  appEntry({
+    id: "widgets-utility-classes",
+    root: "libs/widgets",
+    kind: "library",
+    stack: { summary: "React components (fixture)", tailwind: "none", packageManager: "bun", utilityClasses: true } as AppEntry["stack"],
+    consume: { via: "host-css", detail: "names --ds-* variables; the host loads tokens.css" },
+    entryStylesheet: null,
+    shell: false,
+    folderStandard: false,
+    checks: {
+      resolution: { required: false, reason: NA_REASONS.libraryResolution },
+      wiring: { required: false, reason: NA_REASONS.libraryWiring },
+    },
+  }),
+  // Literals: Tailwind default-scale classes in and out of class contexts.
+  appEntry({ id: "scale-classes", root: "apps/scale-classes" }),
   appEntry({ id: "templated-unused", root: "apps/templated-unused" }),
   // Resolution: where each design-system file comes from.
   appEntry({ id: "stale-copy", root: "apps/stale-copy", entryStylesheet: "apps/stale-copy/src/index.css" }),
