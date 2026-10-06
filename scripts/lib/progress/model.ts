@@ -4,27 +4,22 @@
  * - the registry (apps.json): which passes and checks apply, wave, repo, literal floor
  * - the ledger (STATE.md app_ledger): each pass's status, literal baseline, rounds, blocked reason
  * - the lint report (lint:apps --json): each check's status and the measured literal count
+ * - optionally a lint baseline (a lint:apps --json report from before the apps moved)
  *
  * The registry is authoritative for what applies; the ledger is authoritative for where the run is.
  * Disagreements become notes on the row instead of being resolved silently.
+ *
+ * "Literals removed" subtracts counts of one linter only: the lint baseline minus lint:apps now. The
+ * ledger's baseline is the audit's count (another scanner, other rules), so without a lint baseline
+ * the page shows both numbers and claims no removal.
  */
 
-import type { CheckId, PassId, Registry, Requirement } from "../registry.ts";
-import { PASS_STATUSES, type Ledger, type LedgerRow } from "./ledger.ts";
+import type { CheckId, PassId, Registry } from "../registry.ts";
+import { type AppState, appState, type Ledger, type LedgerRow, PASS_IDS, type PassCell, passCells } from "./ledger.ts";
 import type { LintCheck, LintSource } from "./lint.ts";
 
-export const PASS_IDS: PassId[] = ["1", "2", "3"];
+export { type AppState, appState, PASS_IDS, type PassCell };
 export const CHECK_IDS: CheckId[] = ["resolution", "wiring", "literals", "names", "shell", "structure"];
-
-export type AppState = "done" | "in flight" | "blocked" | "todo";
-
-export interface PassCell {
-  /** Status text as the ledger has it ("n/a" when the registry marks the pass n/a); null when unrecorded. */
-  status: string | null;
-  applicable: boolean;
-  /** The registry's reason when the pass is n/a. */
-  reason?: string;
-}
 
 export type RowLint =
   | { kind: "unavailable" }
@@ -40,7 +35,17 @@ export interface ProgressRow {
   dependsOn: string;
   passes: Record<PassId, PassCell>;
   state: AppState;
-  literals: { baseline: number | null; now: number | null; nowFrom: "lint" | "ledger" | null; floor: number | null };
+  literals: {
+    /** The ledger's baseline: the audit's count. */
+    baseline: number | null;
+    /** lint:apps' count before the app moved (--baseline-lint), or null. */
+    lintBaseline: number | null;
+    now: number | null;
+    nowFrom: "lint" | "ledger" | null;
+    floor: number | null;
+    /** lintBaseline - now when both are lint:apps counts; null otherwise (never audit minus lint). */
+    removed: number | null;
+  };
   rounds: number | null;
   lint: RowLint;
   blocked: { reason: string; ownerAction: string } | null;
@@ -54,12 +59,14 @@ export interface ProgressTotals {
   blocked: number;
   todo: number;
   literals: {
-    /** Sum of every known baseline. */
+    /** Sum of every known audit baseline (the ledger's). */
     baseline: number;
-    /** Apps with both a baseline and a current count. */
+    /** Sum of every known current count. */
+    now: number;
+    /** Apps whose removal is measured: a lint baseline and a lint count now. */
     measured: number;
-    /** Sum of (baseline - now) over the measured apps. */
-    removed: number;
+    /** Sum of removed over the measured apps; null when no app is measured. */
+    removed: number | null;
   };
 }
 
@@ -70,6 +77,7 @@ export interface ProgressModel {
     registry: { path: string; apps: number };
     ledger: { path: string; rows: number };
     lint: LintSource;
+    lintBaseline: LintSource | null;
   };
   totals: ProgressTotals;
   rows: ProgressRow[];
@@ -83,32 +91,10 @@ export interface ProgressInput {
   ledger: Ledger;
   ledgerPath: string;
   lint: LintSource;
+  /** A lint:apps --json report from before the apps moved: the only baseline "removed" is measured against. */
+  lintBaseline?: LintSource | null;
   root: string;
   now?: Date;
-}
-
-const ACTIVE = new Set(["working", "review", "done"]);
-const KNOWN = new Set<string>(PASS_STATUSES);
-
-/** An app's place in the run, from its applicable passes: blocked wins, then all done, then any started. */
-export function appState(passes: PassCell[]): AppState {
-  const statuses = passes.filter((p) => p.applicable).map((p) => p.status ?? "todo");
-  if (statuses.includes("blocked")) return "blocked";
-  if (statuses.length > 0 && statuses.every((s) => s === "done")) return "done";
-  if (statuses.some((s) => ACTIVE.has(s) || !KNOWN.has(s))) return "in flight";
-  return "todo";
-}
-
-function passCell(ledgerStatus: string | null, requirement: Requirement | undefined, pass: PassId, notes: string[]): PassCell {
-  if (requirement && !requirement.required) {
-    if (ledgerStatus && ledgerStatus !== "n/a") notes.push(`p${pass}: ledger says ${ledgerStatus}, apps.json marks it n/a (${requirement.reason})`);
-    return { status: "n/a", applicable: false, reason: requirement.reason };
-  }
-  if (requirement?.required && ledgerStatus === "n/a") {
-    notes.push(`p${pass}: ledger says n/a, apps.json requires it`);
-    return { status: ledgerStatus, applicable: true };
-  }
-  return { status: ledgerStatus, applicable: requirement ? true : ledgerStatus !== "n/a" };
 }
 
 const EMPTY_LEDGER_ROW = (id: string): LedgerRow => ({
@@ -129,13 +115,17 @@ const EMPTY_LEDGER_ROW = (id: string): LedgerRow => ({
 
 export function buildProgress(input: ProgressInput): ProgressModel {
   const { registry, ledger, lint } = input;
+  const lintBaseline = input.lintBaseline ?? null;
   const notes = [...ledger.problems];
   const registryById = new Map(registry.apps.map((a) => [a.id, a]));
   const ledgerById = new Map(ledger.rows.map((r) => [r.id, r]));
   const lintById = new Map(lint.available ? lint.report.apps.map((a) => [a.id, a]) : []);
+  const baselineById = new Map(lintBaseline?.available ? lintBaseline.report.apps.map((a) => [a.id, a]) : []);
   const registryEmpty = registry.apps.length === 0;
   if (registryEmpty) notes.push("apps.json has no apps yet: wave and repo come from the ledger, floors and n/a reasons are unknown.");
   if (!lint.available) notes.push(`lint unavailable: ${lint.reason}`);
+  if (lintBaseline && !lintBaseline.available) notes.push(`lint baseline unavailable: ${lintBaseline.reason}`);
+  const partial = lint.available && lint.report.pass !== null ? lint.report.pass : null;
 
   // Ledger order first (it follows the waves and repo stacks), then apps only the registry or the linter knows.
   const ids = [...ledger.rows.map((r) => r.id)];
@@ -149,9 +139,7 @@ export function buildProgress(input: ProgressInput): ProgressModel {
     if (!ledgerById.has(id)) rowNotes.push(app ? "not in the STATE.md ledger" : "only in the lint output");
     if (!app && !registryEmpty && ledgerById.has(id)) rowNotes.push("not in apps.json");
 
-    const passes = Object.fromEntries(
-      PASS_IDS.map((p) => [p, passCell(row.passes[p], app?.passes?.[p], p, rowNotes)]),
-    ) as Record<PassId, PassCell>;
+    const passes = passCells(row, app, rowNotes);
 
     let rowLint: RowLint;
     if (!lint.available) rowLint = { kind: "unavailable" };
@@ -169,9 +157,20 @@ export function buildProgress(input: ProgressInput): ProgressModel {
           return reason && c.status === "n/a" ? { ...c, reason } : c;
         });
       rowLint = { kind: "result", ok: lintApp.ok, checks };
+      // A report of fewer checks than apps.json requires (--pass 1, say) cannot show the app is clean.
+      const missing = CHECK_IDS.filter((id) => app?.checks?.[id]?.required && !lintApp.checks.some((c) => c.id === id));
+      if (missing.length) rowNotes.push(`the lint report has no ${missing.join(", ")} result${partial ? ` (it ran --pass ${partial})` : ""}, which apps.json requires`);
+    }
+
+    const state = appState(PASS_IDS.map((p) => passes[p]));
+    if (state === "done" && rowLint.kind === "result" && !rowLint.ok) {
+      const failing = rowLint.checks.filter((c) => c.status === "fail").map((c) => c.id);
+      rowNotes.push(`done in the ledger, but lint:apps fails${failing.length ? `: ${failing.join(", ")}` : ""}`);
     }
 
     const now = lintApp?.literals ? lintApp.literals.hard : row.literals.now;
+    const nowFrom = lintApp?.literals ? "lint" : row.literals.now !== null ? "ledger" : null;
+    const lintBaselineCount = baselineById.get(id)?.literals?.hard ?? null;
     return {
       id,
       name: app?.name ?? null,
@@ -180,12 +179,14 @@ export function buildProgress(input: ProgressInput): ProgressModel {
       branch: row.branch || null,
       dependsOn: row.dependsOn,
       passes,
-      state: appState(PASS_IDS.map((p) => passes[p])),
+      state,
       literals: {
         baseline: row.literals.baseline,
+        lintBaseline: lintBaselineCount,
         now,
-        nowFrom: lintApp?.literals ? "lint" : row.literals.now !== null ? "ledger" : null,
+        nowFrom,
         floor: app?.literalFloor ?? lintApp?.literals?.floor ?? null,
+        removed: lintBaselineCount !== null && nowFrom === "lint" && now !== null ? lintBaselineCount - now : null,
       },
       rounds: row.rounds,
       lint: rowLint,
@@ -195,7 +196,7 @@ export function buildProgress(input: ProgressInput): ProgressModel {
   });
 
   const count = (state: AppState) => rows.filter((r) => r.state === state).length;
-  const measured = rows.filter((r) => r.literals.baseline !== null && r.literals.now !== null);
+  const measured = rows.filter((r) => r.literals.removed !== null);
   return {
     generatedAt: (input.now ?? new Date()).toISOString(),
     root: input.root,
@@ -203,6 +204,7 @@ export function buildProgress(input: ProgressInput): ProgressModel {
       registry: { path: input.registryPath, apps: registry.apps.length },
       ledger: { path: input.ledgerPath, rows: ledger.rows.length },
       lint,
+      lintBaseline,
     },
     totals: {
       apps: rows.length,
@@ -212,8 +214,9 @@ export function buildProgress(input: ProgressInput): ProgressModel {
       todo: count("todo"),
       literals: {
         baseline: rows.reduce((sum, r) => sum + (r.literals.baseline ?? 0), 0),
+        now: rows.reduce((sum, r) => sum + (r.literals.now ?? 0), 0),
         measured: measured.length,
-        removed: measured.reduce((sum, r) => sum + (r.literals.baseline! - r.literals.now!), 0),
+        removed: measured.length ? measured.reduce((sum, r) => sum + r.literals.removed!, 0) : null,
       },
     },
     rows,

@@ -6,8 +6,10 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { createHash } from "node:crypto";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import type { CheckId } from "../registry.ts";
 
 export type CheckStatus = "pass" | "fail" | "n/a" | "warn";
@@ -114,28 +116,68 @@ export function readLintFile(path: string): LintSource {
 }
 
 /**
- * Runs `bun run lint:apps --json --root <root>` in a design-system checkout. Exit 1 is the linter's
- * normal answer when a required check fails, so the report is read whatever the exit code.
+ * Runs `bun run lint:apps --json --root <root> --registry <apps.json> --out-dir <temp>` in a
+ * design-system checkout. The report the linter writes to its --out-dir is read first: it is whole
+ * whatever happens to a piped stdout (a linter that exits right after writing loses the pipe's tail).
+ * stdout is the fallback. Exit 1 is the linter's normal answer when a required check fails, so the
+ * report is read whatever the exit code.
  */
-export function runLinter(designSystemRoot: string, root: string, timeoutMs = 15 * 60_000): LintSource {
-  const origin = `bun run lint:apps --json --root ${root}`;
+export function runLinter(designSystemRoot: string, root: string, opts: { registry?: string; timeoutMs?: number } = {}): LintSource {
+  const args = ["run", "lint:apps", "--json", "--root", root, ...(opts.registry ? ["--registry", opts.registry] : [])];
+  const origin = `bun ${args.join(" ")}`;
   if (!existsSync(join(designSystemRoot, "scripts", "lint-apps.ts")))
     return { available: false, origin, reason: "scripts/lint-apps.ts is not in this design-system checkout yet" };
-  const result = spawnSync("bun", ["run", "lint:apps", "--json", "--root", root], {
-    cwd: designSystemRoot,
-    encoding: "utf8",
-    maxBuffer: 512 * 1024 * 1024,
-    timeout: timeoutMs,
-  });
-  if (result.error) return { available: false, origin, reason: `lint:apps did not run: ${result.error.message}` };
+  const outDir = mkdtempSync(join(tmpdir(), "ds-progress-lint-"));
   try {
-    return { available: true, origin, report: parseLintJson(result.stdout) };
-  } catch (error) {
-    const detail = (result.stderr || result.stdout).trim().split("\n").filter(Boolean).slice(-1)[0] ?? "";
-    return {
-      available: false,
-      origin,
-      reason: `lint:apps exited ${result.status ?? result.signal}: ${(error as Error).message}${detail ? ` (${detail.slice(0, 200)})` : ""}`,
-    };
+    const result = spawnSync("bun", [...args, "--out-dir", outDir], {
+      cwd: designSystemRoot,
+      encoding: "utf8",
+      maxBuffer: 512 * 1024 * 1024,
+      timeout: opts.timeoutMs ?? 15 * 60_000,
+    });
+    if (result.error) return { available: false, origin, reason: `lint:apps did not run: ${result.error.message}` };
+    const reportDir = join(outDir, "lint");
+    const files = existsSync(reportDir) ? readdirSync(reportDir).filter((name) => name.endsWith(".json")).sort() : [];
+    const file = files.length ? join(reportDir, files[files.length - 1]!) : null;
+    try {
+      return { available: true, origin: file ? `${origin} (its --out-dir report)` : origin, report: parseLintJson(file ? readFileSync(file, "utf8") : result.stdout) };
+    } catch (error) {
+      const detail = (result.stderr || result.stdout).trim().split("\n").filter(Boolean).slice(-1)[0] ?? "";
+      return {
+        available: false,
+        origin,
+        reason: `lint:apps exited ${result.status ?? result.signal}: ${(error as Error).message}${detail ? ` (${detail.slice(0, 200)})` : ""}`,
+      };
+    }
+  } finally {
+    rmSync(outDir, { recursive: true, force: true });
   }
+}
+
+const canonical = (path: string) => (existsSync(path) ? realpathSync(path) : resolve(path));
+
+/**
+ * Whether a lint report belongs to this page: a report of another root is not about these apps
+ * (unavailable); one made with another design-system commit or tokens.css is stale (a note).
+ */
+export function checkLintReport(source: LintSource, opts: { root: string; commit: string | null; tokensCssSha256: string | null; label?: string }): { source: LintSource; notes: string[] } {
+  if (!source.available) return { source, notes: [] };
+  const label = opts.label ?? "the lint report";
+  const { report } = source;
+  if (!report.root || canonical(report.root) !== canonical(opts.root)) {
+    return { source: { available: false, origin: source.origin, reason: `${label} is for root ${report.root || "(none)"}, not ${opts.root}` }, notes: [] };
+  }
+  const notes: string[] = [];
+  const ds = report.designSystem;
+  if (!ds) notes.push(`${label} does not say which design-system build it checked against`);
+  else {
+    if (opts.commit && ds.commit !== opts.commit) notes.push(`${label} was made at design-system ${ds.commit.slice(0, 12) || "(unknown)"}, this checkout is at ${opts.commit.slice(0, 12)}: its results may be stale`);
+    if (opts.tokensCssSha256 && ds.tokensCssSha256 !== opts.tokensCssSha256) notes.push(`${label} checked against another tokens.css (sha256 ${ds.tokensCssSha256.slice(0, 12) || "(unknown)"}, the build is ${opts.tokensCssSha256.slice(0, 12)})`);
+  }
+  return { source, notes };
+}
+
+/** sha256 of a file, or null when it is missing. */
+export function fileSha256(path: string): string | null {
+  return existsSync(path) ? createHash("sha256").update(readFileSync(path)).digest("hex") : null;
 }

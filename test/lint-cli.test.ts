@@ -3,7 +3,8 @@
  * line format and the --json report shape from rollout/TOOLING_CONTRACT.md.
  */
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { materialize, REAL_TOKENS_CSS, sha256, type Workspace } from "./lint-support";
 import { PKG } from "./support";
 
@@ -49,3 +50,20 @@ test("an app id the registry does not have exits 2", () => {
   expect(stderr).toContain("no-such-app");
   expect(stdout).toBe("");
 });
+
+test("--json through a pipe carries the whole report when it is over 2 MB, and still exits 1", () => {
+  // Its own workspace: 25,000 hard literals in one stylesheet make a ~4 MB report.
+  const big = materialize();
+  try {
+    writeFileSync(join(big.root, "apps/unconnected/src/many.css"), Array.from({ length: 25_000 }, (_, i) => `.c${i} { color: #123456; }`).join("\n"));
+    const r = Bun.spawnSync([process.execPath, "scripts/lint-apps.ts", "--root", big.root, "--registry", big.registryPath, "--json", "unconnected"], { cwd: PKG });
+    const stdout = r.stdout.toString();
+    expect(stdout.length).toBeGreaterThan(2 * 1024 * 1024);
+    const report = JSON.parse(stdout);
+    const literals = report.apps[0].checks.find((c: any) => c.id === "literals");
+    expect(literals.violations.filter((v: any) => v.file.endsWith("many.css")).length).toBe(25_000);
+    expect(r.exitCode).toBe(1);
+  } finally {
+    big.cleanup();
+  }
+}, 60_000);

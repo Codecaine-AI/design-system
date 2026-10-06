@@ -21,8 +21,10 @@ function pass(row: ProgressRow, p: PassId): string {
 }
 
 function literals(row: ProgressRow): string {
-  const { baseline, now, nowFrom, floor } = row.literals;
-  return `${formatCount(baseline)} / ${formatCount(now)}${nowFrom === "ledger" ? "*" : ""} / ${formatCount(floor)}`;
+  const { baseline, lintBaseline, now, nowFrom, floor, removed } = row.literals;
+  const lint = lintBaseline !== null ? ` (lint ${formatCount(lintBaseline)})` : "";
+  const gone = removed !== null ? `, ${formatCount(removed)} removed` : "";
+  return `${formatCount(baseline)}${lint} / ${formatCount(now)}${nowFrom === "ledger" ? "*" : ""} / ${formatCount(floor)}${gone}`;
 }
 
 export function renderMarkdown(model: ProgressModel): string {
@@ -40,7 +42,9 @@ export function renderMarkdown(model: ProgressModel): string {
           String(totals.inFlight),
           String(totals.blocked),
           String(totals.todo),
-          `${formatCount(totals.literals.removed)} (${totals.literals.measured} of ${totals.apps} apps measured, baseline ${formatCount(totals.literals.baseline)})`,
+          totals.literals.removed === null
+            ? `– (no lint baseline; audit ${formatCount(totals.literals.baseline)}, now ${formatCount(totals.literals.now)})`
+            : `${formatCount(totals.literals.removed)} (${totals.literals.measured} of ${totals.apps} apps measured against a lint baseline)`,
         ],
       ],
     ),
@@ -57,6 +61,8 @@ export function renderMarkdown(model: ProgressModel): string {
   } else {
     out.push(`- Lint: unavailable (${sources.lint.reason})`);
   }
+  const base = sources.lintBaseline;
+  out.push(`- Lint baseline: ${base ? (base.available ? `\`${base.origin}\`` : `unavailable (${base.reason})`) : "none (literals removed is not measured)"}`);
   out.push("");
 
   if (model.notes.length) out.push("## Notes", "", ...model.notes.map((n) => `- ${n}`), "");
@@ -64,7 +70,7 @@ export function renderMarkdown(model: ProgressModel): string {
   out.push("## Apps", "");
   out.push(
     table(
-      ["App", "State", "Wave", "Repo", "Branch", "P1", "P2", "P3", "Literals (baseline / now / floor)", "Rounds", "Lint"],
+      ["App", "State", "Wave", "Repo", "Branch", "P1", "P2", "P3", "Literals (audit baseline / now / floor)", "Rounds", "Lint"],
       model.rows.map((r) => [
         r.id,
         r.state,

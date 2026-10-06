@@ -1,12 +1,13 @@
 /**
- * The run's app ledger: the `## app_ledger` table in `$DS_RUN/STATE.md`.
+ * The run's app ledger: the `## app_ledger` table in `$DS_RUN/STATE.md`, and the one rule for when
+ * an app is done. Every tool that reads the ledger (progress, verify:apps --propagate) uses both.
  *
  * The managing agent edits that table by hand, so this parser finds every column by its header
  * text, never by position: reordering, adding or renaming a column to a recognizable header keeps
  * working. A cell that is empty, `-`, `–` or `—` means "no value".
  */
 
-import type { PassId } from "../registry.ts";
+import type { AppEntry, PassId, Requirement } from "../registry.ts";
 
 /** Pass statuses the ledger uses. Any other text is kept as written and shown as is. */
 export const PASS_STATUSES = ["todo", "working", "review", "done", "blocked", "n/a"] as const;
@@ -203,4 +204,57 @@ export function parseLedger(markdown: string): Ledger {
     });
   }
   return { rows, problems };
+}
+
+// -- the done rule ------------------------------------------------------------------
+
+export const PASS_IDS: PassId[] = ["1", "2", "3"];
+
+export type AppState = "done" | "in flight" | "blocked" | "todo";
+
+export interface PassCell {
+  /** Status text as the ledger has it ("n/a" when the registry marks the pass n/a); null when unrecorded. */
+  status: string | null;
+  applicable: boolean;
+  /** The registry's reason when the pass is n/a. */
+  reason?: string;
+}
+
+const ACTIVE = new Set(["working", "review", "done"]);
+const KNOWN = new Set<string>(PASS_STATUSES);
+
+/**
+ * One pass of one app: the registry decides whether it applies (a pass it marks n/a never counts,
+ * whatever the ledger says; one it requires always counts), the ledger says where it is. Without a
+ * registry entry, a ledger "n/a" is taken as written. Disagreements are pushed to `notes`.
+ */
+export function passCell(ledgerStatus: string | null, requirement: Requirement | undefined, pass: PassId, notes: string[] = []): PassCell {
+  if (requirement && !requirement.required) {
+    if (ledgerStatus && ledgerStatus !== "n/a") notes.push(`p${pass}: ledger says ${ledgerStatus}, apps.json marks it n/a (${requirement.reason})`);
+    return { status: "n/a", applicable: false, reason: requirement.reason };
+  }
+  if (requirement?.required && ledgerStatus === "n/a") {
+    notes.push(`p${pass}: ledger says n/a, apps.json requires it`);
+    return { status: ledgerStatus, applicable: true };
+  }
+  return { status: ledgerStatus, applicable: requirement ? true : ledgerStatus !== "n/a" };
+}
+
+/** Every pass of a ledger row, judged against the app's registry entry (when there is one). */
+export function passCells(row: Pick<LedgerRow, "passes">, app: Pick<AppEntry, "passes"> | undefined, notes: string[] = []): Record<PassId, PassCell> {
+  return Object.fromEntries(PASS_IDS.map((p) => [p, passCell(row.passes[p], app?.passes?.[p], p, notes)])) as Record<PassId, PassCell>;
+}
+
+/** An app's place in the run, from its applicable passes: blocked wins, then all done, then any started. */
+export function appState(passes: PassCell[]): AppState {
+  const statuses = passes.filter((p) => p.applicable).map((p) => p.status ?? "todo");
+  if (statuses.includes("blocked")) return "blocked";
+  if (statuses.length > 0 && statuses.every((s) => s === "done")) return "done";
+  if (statuses.some((s) => ACTIVE.has(s) || !KNOWN.has(s))) return "in flight";
+  return "todo";
+}
+
+/** The passes of a row as one line: "p1 done, p2 working, p3 n/a". */
+export function describePasses(cells: Record<PassId, PassCell>): string {
+  return PASS_IDS.map((p) => `p${p} ${cells[p].status ?? "–"}`).join(", ");
 }

@@ -56,16 +56,22 @@ function passCell(row: ProgressRow, p: PassId): string {
   return `<td>${chip(cell.status ?? "–", passTone(cell.status), cell.reason ? `n/a: ${cell.reason}` : undefined)}</td>`;
 }
 
+/**
+ * Baseline → now / floor. The meter and "% removed" appear only when both counts come from lint:apps
+ * (a lint baseline); an audit baseline and a lint count are different measures, shown side by side.
+ */
 function literalsCell(row: ProgressRow): string {
-  const { baseline, now, nowFrom, floor } = row.literals;
+  const { baseline, lintBaseline, now, nowFrom, floor, removed } = row.literals;
   const source = nowFrom === "ledger" ? " title=\"From the ledger: lint:apps has no result for this app\"" : "";
   const nowText = `<span${source}>${formatCount(now)}${nowFrom === "ledger" ? "*" : ""}</span>`;
-  let meter = "";
-  if (baseline !== null && now !== null && baseline > 0) {
-    const share = Math.max(0, Math.min(100, Math.round(((baseline - now) / baseline) * 100)));
-    meter = `<span class="p-meter" aria-hidden="true"><span style="width: ${share}%"></span></span><span class="p-sub">${share}% removed</span>`;
+  const floorText = `<span class="p-dim">/ ${formatCount(floor)}</span>`;
+  if (removed !== null && lintBaseline !== null) {
+    const share = lintBaseline > 0 ? Math.max(0, Math.min(100, Math.round((removed / lintBaseline) * 100))) : 0;
+    const meter = `<span class="p-meter" aria-hidden="true"><span style="width: ${share}%"></span></span><span class="p-sub">${share}% removed (lint baseline)</span>`;
+    const audit = baseline !== null ? `<span class="p-sub">audit ${formatCount(baseline)}</span>` : "";
+    return `<td class="p-num">${formatCount(lintBaseline)} → ${nowText} ${floorText}${meter}${audit}</td>`;
   }
-  return `<td class="p-num">${formatCount(baseline)} → ${nowText} <span class="p-dim">/ ${formatCount(floor)}</span>${meter}</td>`;
+  return `<td class="p-num"><span title="audit baseline">${formatCount(baseline)}</span> · ${nowText} ${floorText}<span class="p-sub">audit · now: different counts, no removal measured</span></td>`;
 }
 
 function checkTitle(c: LintCheck): string {
@@ -139,7 +145,7 @@ function lintDetails(model: ProgressModel): string {
 }
 
 function sources(model: ProgressModel): string {
-  const { registry, ledger, lint } = model.sources;
+  const { registry, ledger, lint, lintBaseline } = model.sources;
   const lintText = lint.available
     ? `<code>${escapeHtml(lint.origin)}</code> (pass ${escapeHtml(lint.report.pass ?? "all required")}${lint.report.designSystem ? `, design-system ${escapeHtml(lint.report.designSystem.commit.slice(0, 12))}` : ""})`
     : `unavailable: ${escapeHtml(lint.reason)}`;
@@ -148,6 +154,7 @@ function sources(model: ProgressModel): string {
     `<dt>Registry</dt><dd><code>${escapeHtml(registry.path)}</code> (${registry.apps} apps)</dd>`,
     `<dt>Ledger</dt><dd><code>${escapeHtml(ledger.path)}</code> (${ledger.rows} rows)</dd>`,
     `<dt>Lint</dt><dd>${lintText}</dd>`,
+    `<dt>Lint baseline</dt><dd>${lintBaseline ? (lintBaseline.available ? `<code>${escapeHtml(lintBaseline.origin)}</code>` : `unavailable: ${escapeHtml(lintBaseline.reason)}`) : "none: literals removed is not measured"}</dd>`,
     "</dl>",
   ].join("");
 }
@@ -234,20 +241,24 @@ const THEME_TOGGLE = `(function () {
 /** The page. `tokensCss` is the design system's dist/css/tokens.css, inlined as the first stylesheet. */
 export function renderHtml(model: ProgressModel, tokensCss: string): string {
   const { totals } = model;
-  const literalSub = `${totals.literals.measured} of ${totals.apps} apps measured · baseline ${formatCount(totals.literals.baseline)}`;
+  const { literals } = totals;
+  const literalSub =
+    literals.removed === null
+      ? `no lint baseline · audit ${formatCount(literals.baseline)} · now ${formatCount(literals.now)}`
+      : `${literals.measured} of ${totals.apps} apps measured against a lint baseline`;
   const tiles = [
     tile("Apps", String(totals.apps), "none"),
     tile("Done", String(totals.done), "success"),
     tile("In flight", String(totals.inFlight), "info"),
     tile("Blocked", String(totals.blocked), "danger"),
     tile("Todo", String(totals.todo), "neutral"),
-    tile("Literals removed", formatCount(totals.literals.removed), "success", literalSub),
+    tile("Literals removed", formatCount(literals.removed), literals.removed === null ? "none" : "success", literalSub),
   ].join("");
   const notes = model.notes.length ? `<ul class="p-notes">${model.notes.map((n) => `<li>${inline(n)}</li>`).join("")}</ul>` : "";
   const ledgerNow = model.rows.some((r) => r.literals.nowFrom === "ledger")
     ? '<p class="p-meta">* The current count comes from the ledger; lint:apps has no result for the app.</p>'
     : "";
-  const headers = ["App", "State", "Wave", "P1", "P2", "P3", "Literals (baseline → now / floor)", "Rounds", "Lint", "Blocked reason → owner action"];
+  const headers = ["App", "State", "Wave", "P1", "P2", "P3", "Literals (baseline, now / floor)", "Rounds", "Lint", "Blocked reason → owner action"];
   return `<!doctype html>
 <html lang="en" data-theme="light">
 <head>

@@ -120,7 +120,8 @@ function main() {
     if (!args.json) process.stderr.write(`lint:apps: wrote ${file}\n`);
   }
   process.stdout.write(args.json ? json : formatText(report) + "\n");
-  process.exit(exitCode(report));
+  // Not process.exit(): it drops whatever a pipe has not taken yet (a 1.8 MB report arrived cut at 1.5 MB).
+  process.exitCode = exitCode(report);
 }
 
 if (import.meta.main) main();
