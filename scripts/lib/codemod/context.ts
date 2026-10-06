@@ -139,20 +139,67 @@ const styleish = (s: string) => nameWords(s).some((w) => STYLE_WORDS.has(w));
 
 /** Tailwind layout and type utilities say nothing about a color's role; drop them from hints. */
 const UTILITY =
-  /^-?(?:bg|text|border|ring|inset|backdrop|shadow|rounded|[pm][xytrblse]?|w|h|min|max|flex|grid|gap|items|justify|z|top|left|right|bottom|start|end|font|leading|tracking|truncate|overflow|absolute|relative|fixed|sticky|block|inline|hidden|pointer|cursor|transition|duration|ease|opacity|translate|scale|rotate|outline|divide|space|self|place|order|col|row|aspect|object|whitespace|break|select|animate|sr|size|shrink|grow|basis|uppercase|lowercase|capitalize|underline|italic|antialiased|blur|fill|stroke|list|isolate|contents|table|align|content|decoration|caret|accent|appearance|resize|snap|touch|will|line|tabular|origin|visible|invisible|container|mx|my)(?:-|$)/;
+  /^-?(?:bg|text|border|ring|inset|backdrop|shadow|rounded|[pm][xytrblse]?|w|h|min|max|flex|grid|gap|items|justify|z|top|left|right|bottom|start|end|font|leading|tracking|truncate|overflow|absolute|relative|fixed|sticky|block|inline|hidden|pointer|cursor|transition|duration|ease|opacity|translate|scale|rotate|outline|divide|space|self|place|order|col|row|aspect|object|whitespace|break|select|animate|sr|size|shrink|grow|basis|uppercase|lowercase|capitalize|underline|italic|antialiased|blur|drop|fill|stroke|list|isolate|contents|table|align|content|decoration|caret|accent|appearance|resize|snap|touch|will|line|tabular|origin|visible|invisible|container|mx|my)(?:-|$)/;
 const COLOR_UTILITY = /^(?:bg|text|border|ring|fill|stroke|outline|divide|decoration)-(?!\[)([a-z][a-z-]*?)(?:-(?:50|[1-9]00|950))?(?:\/\S+)?$/;
+
+/** Color utility values that name no role: `text-current`, `border-inherit`, `bg-transparent`. */
+const NO_ROLE_COLOR = /^(?:current|inherit|transparent)$/;
+
+/**
+ * The static text of a class value written in a template literal (or a window of one): what lies
+ * outside its `${…}` interpolations (also a template language's `{…}`), each chunk on its own. An
+ * interpolation still open at the end drops the rest; text before an unmatched `}` was inside one.
+ * A condition is never a class.
+ */
+export function staticChunks(value: string): string[] {
+  const chunks: string[] = [];
+  let chunk = "";
+  for (let i = 0; i < value.length; i++) {
+    if (value[i] === "}") {
+      // The window opened inside an interpolation: all before this was its code.
+      chunks.length = 0;
+      chunk = "";
+      continue;
+    }
+    if (value[i] === "$" && value[i + 1] === "{") continue;
+    if (value[i] !== "{") {
+      chunk += value[i];
+      continue;
+    }
+    chunks.push(chunk);
+    chunk = "";
+    let depth = 0;
+    let quote = "";
+    let j = i;
+    for (; j < value.length; j++) {
+      const c = value[j];
+      if (quote) {
+        if (c === "\\") j++;
+        else if (c === quote) quote = "";
+      } else if (c === '"' || c === "'" || c === "`") quote = c;
+      else if (c === "{") depth++;
+      else if (c === "}" && --depth === 0) break;
+    }
+    if (j >= value.length) return chunks; // open to the end
+    i = j;
+  }
+  chunks.push(chunk);
+  return chunks;
+}
 
 /**
  * Role words from a class string: custom classes (`card-action`, `danger`) and the names in
- * semantic color utilities (`text-destructive` -> `destructive`). Variants and layout utilities go.
+ * semantic color utilities (`text-destructive` -> `destructive`). Variants and layout utilities go,
+ * and so does every `${…}` interpolation of a template-literal class value (staticChunks).
  */
 export function classHints(classes: string): string {
   const out: string[] = [];
-  for (const raw of classes.split(/\s+/)) {
+  for (const raw of staticChunks(classes).join(" ").split(/\s+/)) {
     const cls = raw.split(":").pop()!.replace(/^!/, "");
     const color = cls.match(COLOR_UTILITY);
-    if (color) out.push(color[1]);
-    else if (cls && !UTILITY.test(cls) && /^[a-z][\w-]*$/i.test(cls)) out.push(cls);
+    if (color) {
+      if (!NO_ROLE_COLOR.test(color[1])) out.push(color[1]);
+    } else if (cls && !UTILITY.test(cls) && /^[a-z][\w-]*$/i.test(cls)) out.push(cls);
   }
   return out.join(" ");
 }
@@ -279,6 +326,29 @@ function wordStates(parts: string[], variants: string[] = []): Set<string> {
   return out;
 }
 
+/** A template literal's text after its opening backtick, up to the closing one (or the end of `text`), interpolations kept. */
+function templateText(text: string): string {
+  let depth = 0;
+  let quote = "";
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (depth === 0) {
+      if (c === "\\") i++;
+      else if (c === "`") return text.slice(0, i);
+      else if (c === "$" && text[i + 1] === "{") {
+        depth = 1;
+        i++;
+      }
+    } else if (quote) {
+      if (c === "\\") i++;
+      else if (c === quote) quote = "";
+    } else if (c === '"' || c === "'" || c === "`") quote = c;
+    else if (c === "{") depth++;
+    else if (c === "}") depth--;
+  }
+  return text;
+}
+
 /**
  * Role words of a JSX/HTML tag: the tag name, the role words of its class string, and attribute
  * names. Attribute values (`title="Delete"`) and text are prose, not roles; only variant attributes
@@ -325,7 +395,10 @@ function tagHints(name: string, text: string): { hints: string; classes: string;
     } else if (value === undefined) value = m[0].includes("=") ? m[0].slice(m[0].indexOf("=") + 1).trim() : true;
     const state = attributeState(attr, value);
     if (/^(?:className|class)$/.test(attr)) {
-      const cls = typeof value === "string" ? value : (attrs.slice(i).match(/^[\w-]+\s*=\s*\{\s*(["'`])([^"'`]*)/)?.[2] ?? "");
+      // `className={`…`}`: the whole literal (classHints reads its static chunks); `{"…"}`: the string.
+      const open = attrs.slice(i).match(/^[\w-]+\s*=\s*\{\s*(["'`])/);
+      const literal = open ? attrs.slice(i + open[0].length) : "";
+      const cls = typeof value === "string" ? value : !open ? "" : open[1] === "`" ? templateText(literal) : literal.match(/^[^"'`]*/)![0];
       const words = classHints(cls);
       out.push(words);
       classes.push(words);

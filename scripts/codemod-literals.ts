@@ -67,6 +67,9 @@
  *   inside an SVG <mask> or <clipPath>, or in a pattern or gradient a mask references, gets no
  *   token. A generic background may still take fill.hover or fill.active without a hover or
  *   selected state, and a faint hued wash may take a gray fill (categorical badges lose their hue).
+ *   Class hints read a template-literal class value's static chunks only, never its `${…}`
+ *   condition, so a state held only in a condition (`${on ? "bg-[#…]" : …}`) is not seen;
+ *   `text-current`, `bg-transparent`, `border-inherit` and `drop-shadow-*` name no role or state.
  * - apply refuses every row of a file whose text changed since propose (whole-file hash): re-run
  *   propose after any edit, including an earlier apply of part of the same table.
  * - By design (decision 21a), `--root` naming the owner's tree itself is allowed for the owner's
