@@ -536,10 +536,10 @@ async function portsClosed(ports: number[], ms = 5_000): Promise<boolean> {
 
 describe("a tool that ends without stopping its apps", () => {
   test("process.exit: the exit hook kills the run's processes", async () => {
-    const { tool, tmp } = await lifecycle("exit", [46920, 46921]);
+    const { tool, tmp } = await lifecycle("exit", [46909, 46910]);
     expect(tmp).toBeDefined();
     expect(await tool.exited).toBe(3);
-    expect(await portsClosed([46920, 46921])).toBe(true);
+    expect(await portsClosed([46909, 46910])).toBe(true);
   }, 40_000);
 
   test("an uncaught exception: the handlers stop the apps, then exit 1", async () => {
@@ -555,6 +555,27 @@ describe("a tool that ends without stopping its apps", () => {
     expect(await read("REFUSED", 15_000)).toMatch(/REFUSED .*shutting down/);
     expect(await tool.exited).toBe(130);
     expect(await portsClosed([46927, 46928, 46932, 46933], 1_000)).toBe(true);
+  }, 40_000);
+
+  test("a signal while the tool's own stop() is in flight: the handler waits for it, nothing is left", async () => {
+    const { tool, tmp } = await lifecycle("stop-race", [46934, 46935]);
+    expect(tmp).toBeDefined();
+    expect(await tool.exited).toBe(130);
+    expect(await portsClosed([46934, 46935], 1_000)).toBe(true);
+    expect(existsSync(tmp!)).toBe(false);
+  }, 40_000);
+
+  test("a signal while startApp waits for the ready line: the spawned server is stopped", async () => {
+    const tool = Bun.spawn(["bun", join(import.meta.dir, "fixtures/runner/lifecycle.ts"), "before-ready", makeRoot(), outDir, "46936", "46929"], {
+      stdout: "ignore",
+      stderr: "ignore",
+    });
+    const deadline = Date.now() + 20_000;
+    while (!(await portOpen(46936)) && Date.now() < deadline) await Bun.sleep(50);
+    expect(await portOpen(46936)).toBe(true);
+    tool.kill("SIGINT");
+    expect(await tool.exited).toBe(130);
+    expect(await portsClosed([46936, 46929], 1_000)).toBe(true);
   }, 40_000);
 
   test("SIGKILL: the run record lets --cleanup stop exactly the orphans", async () => {
@@ -605,10 +626,15 @@ const electronDir = (() => {
     return null;
   }
 })();
-if (!electronDir) console.warn("skipping the electron test: electron does not resolve from the mirror's system-view");
+// Opt-in: any real Electron launch makes cfprefsd write the owner's shared ~/Library/Preferences/com.github.Electron.plist,
+// which the sandbox cannot stop (cfprefsd writes it, not the app). `bun run test` launches no Electron.
+const electronOptIn = process.env.DS_TEST_ELECTRON === "1";
+if (!electronOptIn)
+  console.warn("skipping the electron test: set DS_TEST_ELECTRON=1 to run it; any Electron launch writes ~/Library/Preferences/com.github.Electron.plist through cfprefsd");
+else if (!electronDir) console.warn("skipping the electron test: electron does not resolve from the mirror's system-view");
 
 describe("startApp electron", () => {
-  test.skipIf(Boolean(noPlaywright) || !electronDir)(
+  test.skipIf(!electronOptIn || Boolean(noPlaywright) || !electronDir)(
     "guards the first window's first load, and stop() ends the app and keeps Playwright's signal handlers out",
     async () => {
       const root = makeRoot();

@@ -78,6 +78,8 @@ export interface ProofResult {
   egress?: { samples: number; failures: string[] };
   /** Why the proof is inconclusive (egress unobserved), when it is. */
   inconclusive?: string;
+  /** What the probe check covers: each probe selector matches exactly one element; computed values are not compared (verify:apps does). */
+  probeCheck?: "selectors only";
   stoppedClean: boolean;
   stopError?: string;
   proven: boolean;
@@ -141,6 +143,7 @@ async function prove(app: AppEntry, opts: { root: string; outDir: string }): Pro
   result.proven =
     result.routes.length > 0 && result.routes.every((r) => r.ok) && result.foreign.length === 0 && result.stoppedClean && !result.inconclusive;
   result.blockedTargets = summarizeBlocked(result.blockedRequests);
+  if (result.routes.some((r) => r.probes?.length)) result.probeCheck = "selectors only";
   writeFileSync(join(proofDir, `${app.id}.json`), JSON.stringify(result, null, 2) + "\n");
   return result;
 }
@@ -259,6 +262,7 @@ if (import.meta.main) {
     if (r.inconclusive) console.log(`  inconclusive: ${r.inconclusive}`);
     for (const route of r.routes)
       console.log(`  ${route.ok ? "ok  " : "FAIL"} ${route.id}/${route.theme} ${route.error ?? ""}${route.consoleErrors.length ? ` (${route.consoleErrors.length} console errors)` : ""}`);
+    if (r.probeCheck) console.log(`  probes: ${r.probeCheck} (each selector matches one element; verify:apps compares the values)`);
     for (const [origin, n] of Object.entries(r.blockedTargets ?? {})) console.log(`  blocked ${n}x ${origin}`);
     for (const f of r.foreign) console.log(`  foreign ${f}`);
     if (!r.stoppedClean) console.log(`  NOT STOPPED CLEAN: ${r.stopError ?? ""}`);
