@@ -5,6 +5,8 @@
  */
 import { dlopen, FFIType, ptr, read } from "bun:ffi";
 
+import { coversLoopback, selfCheck, socketFds, TCP_LISTEN, tcpSocket } from "./libproc";
+
 declare const self: Worker;
 
 const AF_INET = 2;
@@ -31,8 +33,6 @@ const libc = dlopen("/usr/lib/libSystem.B.dylib", {
   ioctl: { args: [FFIType.i32, FFIType.u64], returns: FFIType.i32 },
   poll: { args: [FFIType.ptr, FFIType.u32, FFIType.i32], returns: FFIType.i32 },
   close: { args: [FFIType.i32], returns: FFIType.i32 },
-  proc_pidinfo: { args: [FFIType.i32, FFIType.i32, FFIType.u64, FFIType.ptr, FFIType.i32], returns: FFIType.i32 },
-  proc_pidfdinfo: { args: [FFIType.i32, FFIType.i32, FFIType.i32, FFIType.ptr, FFIType.i32], returns: FFIType.i32 },
   kqueue: { args: [], returns: FFIType.i32 },
   kevent: { args: [FFIType.i32, FFIType.ptr, FFIType.i32, FFIType.ptr, FFIType.i32, FFIType.ptr], returns: FFIType.i32 },
   __error: { args: [], returns: FFIType.ptr },
@@ -53,47 +53,16 @@ const NOTE_EXIT = 0x80000000;
 const ZERO = new BigInt64Array([0n, 0n]);
 const WAIT = new BigInt64Array([0n, BigInt(SWEEP_MS * 1_000_000)]);
 
-// libproc: struct socket_fdinfo (792 bytes) offsets on darwin arm64 (sys/proc_info.h); checked against the
-// worker's own first hold at start, so a layout change fails closed (the run refuses to start).
-const PROC_PIDLISTFDS = 1;
-const PROC_PIDFDSOCKETINFO = 3;
-const PROX_FDTYPE_SOCKET = 2;
-const SOCKET_FDINFO_SIZE = 792;
-const SOI_FAMILY = 184;
-const SOI_KIND = 256;
-const SOCKINFO_TCP = 2;
-const INSI_LPORT = 268;
-const INSI_LADDR = 312;
-const TCPSI_STATE = 344;
-const TSI_S_LISTEN = 1;
-const socketInfo = new DataView(new ArrayBuffer(SOCKET_FDINFO_SIZE));
-
-/** Whether fd `fd` of `pid` is a TCP socket listening on `port` at the loopback (or any) address of `family`. */
+/** Whether fd `fd` of `pid` is a TCP socket listening on `port` and taking loopback `family` (libproc.ts). */
 function listensOn(pid: number, fd: number, family: 4 | 6, port: number): boolean {
-  if (libc.symbols.proc_pidfdinfo(pid, fd, PROC_PIDFDSOCKETINFO, ptr(socketInfo), SOCKET_FDINFO_SIZE) < SOCKET_FDINFO_SIZE) return false;
-  if (socketInfo.getInt32(SOI_KIND, true) !== SOCKINFO_TCP || socketInfo.getInt32(TCPSI_STATE, true) !== TSI_S_LISTEN) return false;
-  const lport = socketInfo.getUint16(INSI_LPORT, false);
-  if (lport !== port) return false;
-  const af = socketInfo.getInt32(SOI_FAMILY, true);
-  const addr = new Uint8Array(socketInfo.buffer, INSI_LADDR, 16);
-  const any = addr.every((byte) => byte === 0);
-  if (af === AF_INET) return family === 4 && (any || (addr[12] === 127 && addr[13] === 0 && addr[14] === 0 && addr[15] === 1));
-  if (af === AF_INET6) return any || (family === 6 && addr.slice(0, 15).every((byte) => byte === 0) && addr[15] === 1);
-  return false;
+  const socket = tcpSocket(pid, fd);
+  return !!socket && socket.state === TCP_LISTEN && socket.localPort === port && coversLoopback(socket, family === 4 ? "127.0.0.1" : "::1");
 }
 
 /** The fd of `pid` listening as listensOn says, trying `hint` first; -1 when none. */
 function listeningFd(pid: number, hint: number, family: 4 | 6, port: number): number {
   if (hint >= 0 && listensOn(pid, hint, family, port)) return hint;
-  const size = libc.symbols.proc_pidinfo(pid, PROC_PIDLISTFDS, 0n, null, 0);
-  if (size <= 0) return -1;
-  const list = new DataView(new ArrayBuffer(size + 8 * 64));
-  const got = libc.symbols.proc_pidinfo(pid, PROC_PIDLISTFDS, 0n, ptr(list), list.byteLength);
-  for (let i = 0; i + 8 <= got; i += 8) {
-    const fd = list.getInt32(i, true);
-    if (list.getUint32(i + 4, true) === PROX_FDTYPE_SOCKET && listensOn(pid, fd, family, port)) return fd;
-  }
-  return -1;
+  return socketFds(pid).find((fd) => listensOn(pid, fd, family, port)) ?? -1;
 }
 
 /** sockaddr_in / sockaddr_in6 for the loopback address. */
@@ -195,8 +164,11 @@ self.onmessage = (event: MessageEvent) => {
   void run(event.data);
 };
 
-async function run(data: { ports: number[]; sab: SharedArrayBuffer }) {
+async function run(data: { ports: number[]; sab: SharedArrayBuffer; heartbeat: SharedArrayBuffer }) {
   const { ports, sab } = data;
+  const heartbeat = new BigInt64Array(data.heartbeat);
+  const beat = () => Atomics.store(heartbeat, 0, BigInt(Date.now()));
+  beat();
   kq = libc.symbols.kqueue();
   const view = new Int32Array(sab);
   const n = ports.length;
@@ -205,6 +177,8 @@ async function run(data: { ports: number[]; sab: SharedArrayBuffer }) {
   const fds: number[] = [];
   const problems: string[] = [];
   if (kq < 0) problems.push(`kqueue failed (errno ${errno()})`);
+  const layout = await selfCheck();
+  if (layout) problems.push(`libproc: ${layout}`);
   // The socket_fdinfo layout, checked on a listener of the worker's own on the block's first port, which
   // no run process holds yet (the hold starts before the first one does); released at once.
   if (ports.length) {
@@ -229,6 +203,7 @@ async function run(data: { ports: number[]; sab: SharedArrayBuffer }) {
     return true;
   };
   while (Atomics.load(view, control) === 0) {
+    beat();
     // The last run process holding an address exited: the address is the runner's now, or, when something
     // else already holds it, tainted (no run process holds it any more).
     const exited = new Set(exitedPids());
@@ -237,7 +212,10 @@ async function run(data: { ports: number[]; sab: SharedArrayBuffer }) {
         if (![...pids].some((pid) => exited.has(pid))) continue;
         for (const pid of exited) pids.delete(pid);
         if (pids.size || Atomics.load(view, slot) === 1) continue;
-        if (!take(slot)) Atomics.store(view, slot, 2);
+        if (!take(slot)) {
+          Atomics.store(view, slot, 2);
+          self.postMessage({ tainted: slot });
+        }
       }
       for (const pid of exited) watchedPids.delete(pid);
     }

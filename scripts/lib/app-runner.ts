@@ -79,6 +79,8 @@ import { appScope, changedCheckouts, checkoutStates } from "./checkouts";
 import { describeConnection, egressConnections, isExposedListener, lsofConnections } from "./egress";
 import { markAppsStarted, pinRepos } from "./git";
 import { OWNER_PORTS } from "./owner";
+import { processStart } from "./libproc";
+import { startPagePin, type PagePin } from "./page-pin";
 import { BlockHold, LOOPBACK_ADDRESSES, type HoldState, type LoopbackAddress } from "./port-hold";
 import { designSystemUrlPath, DS_URL_PREFIX, findPackageDir } from "./lint/workspace";
 import { headlessShellPath, loadPlaywright, noteAppStarted, pinElectron, pinPlaywright, playwrightAnchor, playwrightDirs } from "./playwright";
@@ -475,26 +477,34 @@ function lsofSync(args: string[]): string | null {
 }
 
 /** TCP ports in LISTEN state held by these pids; [] when lsof fails (the guard then allows nothing new). */
-/** A TCP listener of a run process: its pid, local address as lsof prints it ("127.0.0.1", "[::1]", "*") and port. */
+/** A TCP listener of a run process: its pid, local address as lsof prints it ("127.0.0.1", "[::1]", "*"), port and socket family. */
 interface Listener {
   pid: number;
   host: string;
   port: number;
+  family: 4 | 6;
+}
+
+/** A listener from an lsof connection line (its TYPE column says IPv4 or IPv6). */
+function listenerOf(conn: { pid: number; local: { host: string; port: number }; raw: string }): Listener {
+  return { pid: conn.pid, ...conn.local, family: /\sIPv6\s/.test(conn.raw) ? 6 : 4 };
 }
 
 /** The TCP sockets in LISTEN state these pids hold; null when lsof fails. */
 function listeningSockets(pids: number[]): Listener[] | null {
   if (pids.length === 0) return [];
-  const out = lsofSync(["-nP", "-w", "-a", "-iTCP", "-sTCP:LISTEN", "-p", pids.join(","), "-Fpn"]);
+  const out = lsofSync(["-nP", "-w", "-a", "-iTCP", "-sTCP:LISTEN", "-p", pids.join(","), "-Fptn"]);
   if (out === null) return null;
   const found: Listener[] = [];
   let pid = 0;
+  let family: 4 | 6 = 4;
   for (const line of out.split("\n")) {
     if (line.startsWith("p")) pid = Number(line.slice(1));
+    else if (line.startsWith("t")) family = line === "tIPv6" ? 6 : 4;
     else if (line.startsWith("n") && pid) {
       const i = line.lastIndexOf(":");
       const port = Number(line.slice(i + 1));
-      if (Number.isInteger(port) && port > 0) found.push({ pid, host: line.slice(1, i), port });
+      if (Number.isInteger(port) && port > 0) found.push({ pid, host: line.slice(1, i), port, family });
     }
   }
   return found;
@@ -724,6 +734,21 @@ export function readyUrl(output: string, pattern: string): { baseUrl: string; po
   return { baseUrl: `${url.origin}${url.pathname.replace(/\/+$/, "")}`, port };
 }
 
+/**
+ * A `localhost` base URL names two addresses, and the run may listen on one only: the base URL names the
+ * one the ready read shows (127.0.0.1 first), so every page URL goes to an address the run holds. Any other
+ * base URL is returned as it is.
+ */
+export function loopbackBaseUrl(baseUrl: string, port: number, read: Pick<ListenerRead, "listeners"> | undefined): string {
+  const url = new URL(baseUrl);
+  if (url.hostname !== "localhost" || !read) return baseUrl;
+  const has = (...keys: string[]) => keys.some((key) => (read.listeners.get(key) ?? []).length > 0);
+  if (has(`127.0.0.1:${port}`, `*4:${port}`)) url.hostname = "127.0.0.1";
+  else if (has(`::1:${port}`, `*6:${port}`)) url.hostname = "[::1]";
+  else return baseUrl;
+  return `${url.origin}${url.pathname.replace(/\/+$/, "")}`;
+}
+
 // -- run state, shutdown --------------------------------------------------------
 
 interface Internal {
@@ -740,6 +765,14 @@ interface Internal {
   hold?: BlockHold;
   /** Loopback addresses ("127.0.0.1:47021") a read showed a run process listening on, ever. */
   runHeld: Set<string>;
+  /** The run's processes as last captured, with their libproc start times (the page pin's identity check). */
+  starts: Map<number, string>;
+  /** The page pin (page-pin.ts), started on first use; every guarded page connects through it. */
+  pin?: Promise<PagePin>;
+  /** Requests and tunnels the page pin refused, in order. */
+  pinBlocked: string[];
+  /** Re-captures the run's processes (startApp sets it). */
+  refresh?: () => void;
   /** Every socket egress sampling saw ("pid local->remote"). */
   sockets: Set<string>;
   /** Electron only, while its launch is in flight or after a stop() that raced it: kill it synchronously. */
@@ -882,10 +915,15 @@ export function refreshStartedPorts(running: RunningApp): number[] {
   return running.startedPorts;
 }
 
-/** "127.0.0.1", "::1" or "*" (any address) for an lsof local address; null for any other address. */
-function listenerAddress(host: string): string | null {
+/**
+ * "127.0.0.1", "::1", "*4" (an IPv4 socket on any address) or "*6" (an IPv6 socket on any address, which
+ * takes IPv4 only when it is not IPv6-only: lsof cannot tell, the block hold's worker checks) for a
+ * listener; null for any other address.
+ */
+export function listenerAddress(host: string, family: 4 | 6): string | null {
   const bare = host.replace(/^\[|\]$/g, "");
-  return bare === "127.0.0.1" || bare === "::1" || bare === "*" ? bare : null;
+  if (bare === "*") return `*${family}`;
+  return bare === "127.0.0.1" || bare === "::1" ? bare : null;
 }
 
 /**
@@ -896,12 +934,12 @@ function listenerAddress(host: string): string | null {
  */
 function recordRead(running: RunningApp, internal: Internal, started: number, listening: readonly Listener[]): Set<number> {
   recordListeners(running, listening.map((listener) => listener.port));
-  const all = [...listening, ...(internal.staticPort ? [{ pid: process.pid, host: "127.0.0.1", port: internal.staticPort }] : [])].filter(
+  const all = [...listening, ...(internal.staticPort ? [{ pid: process.pid, host: "127.0.0.1", port: internal.staticPort, family: 4 as const }] : [])].filter(
     (listener) => !OWNER_PORTS.includes(listener.port),
   );
   const listeners = new Map<string, number[]>();
-  for (const { pid, host, port } of all) {
-    const address = listenerAddress(host);
+  for (const { pid, host, port, family } of all) {
+    const address = listenerAddress(host, family);
     if (address === null) continue;
     const key = `${address}:${port}`;
     listeners.set(key, [...new Set([...(listeners.get(key) ?? []), pid])]);
@@ -919,8 +957,9 @@ function recordRead(running: RunningApp, internal: Internal, started: number, li
       if (!hold.covers(port)) continue;
       // Only the families the run listens on: taking the other one would turn a run process's "connection
       // refused" there (Node tries ::1 first for `localhost`) into a reset, which apps do not retry.
+      // "*6" may take IPv4 too (dual stack): the worker verifies 127.0.0.1 only if the socket really does.
       for (const family of LOOPBACK_ADDRESSES) {
-        if (address !== family && address !== "*") continue;
+        if (address !== family && address !== (family === "127.0.0.1" ? "*4" : "*6") && address !== "*6") continue;
         hold.watch(family, port);
         hold.holders(family, port, pids);
         held.add(`${family}:${port}`);
@@ -965,7 +1004,7 @@ async function readOwnPorts(running: RunningApp, internal: Internal): Promise<vo
     const pids = runProcesses(internal.roots, table, [...internal.known.values()]).map((proc) => proc.pid);
     const result = await lsofConnections(pids);
     if (!result.ok) return internal.reads.fail(started);
-    recordRead(running, internal, started, result.conns.filter((conn) => !conn.remote && conn.state === "LISTEN").map((conn) => ({ pid: conn.pid, ...conn.local })));
+    recordRead(running, internal, started, result.conns.filter((conn) => !conn.remote && conn.state === "LISTEN").map(listenerOf));
   } catch {
     internal.reads.fail(started);
   }
@@ -981,6 +1020,14 @@ function captureProcesses(internal: Internal, persist: () => void): ProcInfo[] |
   const before = internal.known.size;
   const procs = [...runProcesses(internal.roots, table, [...internal.known.values()]), ...stillRunning([...internal.known.values()], table)];
   for (const proc of procs) if (!internal.known.has(proc.pid)) internal.known.set(proc.pid, proc);
+  // libproc start times, read right after ps proved each process is the run's: the pin's pid + start identity.
+  const starts = new Map<number, string>();
+  for (const proc of procs) {
+    if (proc.pid === process.pid) continue;
+    const started = processStart(proc.pid);
+    if (started) starts.set(proc.pid, started);
+  }
+  internal.starts = starts;
   if (internal.known.size !== before) persist();
   return procs;
 }
@@ -1030,7 +1077,7 @@ async function takeEgressSample(running: RunningApp, internal: Internal, egress:
   for (const conn of exposed) addViolation(running, `a run process listens beyond loopback, reachable from other hosts: ${describeConnection(conn)}`);
   if (exposed.length) void running.stop().catch(() => undefined);
   const current = [...listening, ...(internal.staticPort ? [internal.staticPort] : [])];
-  recordRead(running, internal, started, listeningConns.map((conn) => ({ pid: conn.pid, ...conn.local })));
+  recordRead(running, internal, started, listeningConns.map(listenerOf));
   // Outbound: the run's current listeners, its named profile ports (its own block; a dead kernel URL the
   // profile points at on purpose), the profile's allowedLocalPorts. Inbound: any port it listened on.
   const outbound = new Set([...current, ...Object.values(running.ports), ...(running.app.runProfile?.allowedLocalPorts ?? [])]);
@@ -1192,7 +1239,7 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
   const ctx: PlaceholderContext = { root, tmp, ports };
   const expand = (text: string) => expandPlaceholders(text, ctx);
   const roots: RootProc[] = [];
-  const internal: Internal = { roots, known: new Map(), sockets: new Set(), reads: new ListenerReads(), listenable: noSandbox ? null : new Set(blockPorts(block)), runHeld: new Set() };
+  const internal: Internal = { roots, known: new Map(), sockets: new Set(), reads: new ListenerReads(), listenable: noSandbox ? null : new Set(blockPorts(block)), runHeld: new Set(), starts: new Map(), pinBlocked: [] };
   const knownProcs = () => [...internal.known.values()];
   /** Settles when an Electron launch in flight has resolved or failed (undefined when none is). */
   let launchSettled: Promise<any> | undefined;
@@ -1297,6 +1344,7 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
     // The run's processes are gone (or unconfirmed, and the run record stays): the block goes back, so the
     // check below sees only listeners that are not the runner's own holds.
     await internal.hold?.stop();
+    if (internal.pin) await (await internal.pin.catch(() => null))?.stop();
     const check = [...new Set([...running.startedPorts, ...Object.values(ports)])];
     let busy: string[] = [];
     for (let i = 0; i < 20; i++) {
@@ -1344,6 +1392,7 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
   if (unproven) running.unproven = true;
   if (noSandbox) running.unsandboxed = true;
   internals.set(running, internal);
+  internal.refresh = () => void captureProcesses(internal, persist);
   live.add(running);
   // Sampling starts before the first spawn, so nothing a run process does at startup goes unobserved.
   const sampler = (async () => {
@@ -1365,7 +1414,11 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
     // Watching starts before the first run process: every block address a run process listens on is the
     // run's until it lets go, then the runner's (port-hold.ts).
     if (block) {
-      internal.hold = new BlockHold(blockPorts(block));
+      internal.hold = new BlockHold(
+        blockPorts(block),
+        (why) => addViolation(running, `isolation unproven: ${why}; every block address is refused from now on`),
+        (address, port) => addViolation(running, `a process the run did not start took ${address}:${port} after the run let go of it; it is refused from now on`),
+      );
       await internal.hold.start();
       stillStarting();
     }
@@ -1416,6 +1469,7 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
       }
       if (!ownPorts(running).has(ready.port))
         throw new Error(`${app.id}: ${ready.baseUrl} is not served by this run's processes (they listen on ${running.startedPorts.join(", ") || "nothing"})`);
+      running.baseUrl = loopbackBaseUrl(ready.baseUrl, ready.port, internal.reads.last);
     } else if (mode === "static") {
       if (!app.run.staticDir) throw new Error(`${app.id}: run mode static needs run.staticDir (or run.start)`);
       if (!app.commands?.build) throw new Error(`${app.id}: run mode static needs commands.build`);
@@ -1450,7 +1504,10 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
       } catch (error) {
         throw new Error(`${app.id}: the electron package does not resolve from ${app.root}, or changed: ${String(error).split("\n")[0]}`);
       }
-      const launcher = electronLauncher(toolDir, executablePath, policy);
+      // The renderer's loopback traffic goes through the page pin (Chromium switches; the sandbox lets Electron reach it).
+      const pin = await pagePin(running)!;
+      const electronPolicy = policy && policy.connectPorts ? { ...policy, connectPorts: [...policy.connectPorts, pin.port] } : policy;
+      const launcher = electronLauncher(toolDir, executablePath, electronPolicy);
       electronPidFile = launcher.pidFile;
       // A stop() or exit while the launch is in flight kills Electron from its pid file (it is our child).
       internal.lateKill = () => {
@@ -1466,7 +1523,15 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
           // Playwright adds its loader only without executablePath; ours loads it and holds `ready` (below).
           // Electron ignores $HOME on macOS: the loader moves userData & co. under {tmp}/electron-user-data,
           // and --user-data-dir covers Chromium's own early use of the profile dir.
-          args: ["-r", ELECTRON_LOADER, `--user-data-dir=${join(tmp, "electron-user-data")}`, main, ...flags],
+          args: [
+            "-r",
+            ELECTRON_LOADER,
+            `--user-data-dir=${join(tmp, "electron-user-data")}`,
+            `--proxy-server=http://127.0.0.1:${pin.port}`,
+            "--proxy-bypass-list=<-loopback>",
+            main,
+            ...flags,
+          ],
           cwd,
           // No CFFIXED_USER_HOME: cfprefsd ignores it (`CFFIXED_USER_HOME=<dir> defaults read <domain>` does not
           // read <dir>/Library/Preferences on macOS 26), so it cannot keep the owner's plist safe; hence the opt-in.
@@ -1705,7 +1770,8 @@ export function deadPorts(app: AppEntry): Set<number> {
 
 /**
  * One completed read of the run's listeners: when it started and finished (performance.now ms), the ports,
- * and the pids listening on each address ("127.0.0.1:47021", "::1:47021", "*:47021" for any address).
+ * and the pids listening on each address ("127.0.0.1:47021", "::1:47021"; "*4:47021" and "*6:47021" for
+ * an IPv4 and an IPv6 socket on any address).
  */
 export interface ListenerRead {
   started: number;
@@ -1714,11 +1780,6 @@ export interface ListenerRead {
   listeners: ReadonlyMap<string, readonly number[]>;
 }
 
-/**
- * The reads of a run's listeners and the guard's waits on them. Readers (egress sampling, ownPorts,
- * readOwnPorts) record each completed read and report each failed one; the guard waits on `next` for a
- * read without ever running lsof itself. Every waiter is a promise: nothing here blocks the event loop.
- */
 /**
  * A request function for ListenerReads that runs `read` (one at a time) and runs it again when requests
  * still wait once it ends: a request that arrived while a read was in flight, and that this read could not
@@ -1735,6 +1796,11 @@ export function singleFlight(reads: Pick<ListenerReads, "waiting">, read: () => 
   return request;
 }
 
+/**
+ * The reads of a run's listeners and the guard's waits on them. Readers (egress sampling, ownPorts,
+ * readOwnPorts) record each completed read and report each failed one; the guard waits on `next` for a
+ * read without ever running lsof itself. Every waiter is a promise: nothing here blocks the event loop.
+ */
 export class ListenerReads {
   /** The newest completed read. */
   last?: ListenerRead;
@@ -1796,6 +1862,15 @@ export interface GuardInputs {
   now?: () => number;
 }
 
+/**
+ * The pids a read shows listening on a loopback address: its own entry, the same family's wildcard, and
+ * for 127.0.0.1 an IPv6 wildcard only when a block hold verifies (owned) that the socket takes IPv4.
+ */
+function listenersFor(read: ListenerRead, address: LoopbackAddress, port: number, verifiedDualStack: boolean): readonly number[] {
+  const keys = [`${address}:${port}`, address === "127.0.0.1" ? `*4:${port}` : `*6:${port}`, ...(address === "127.0.0.1" && verifiedDualStack ? [`*6:${port}`] : [])];
+  return keys.flatMap((key) => read.listeners.get(key) ?? []);
+}
+
 /** The loopback addresses a URL's host stands for (`localhost` is both); null for any other spelling (0.0.0.0, 127.0.0.2). */
 function hostAddresses(host: string): LoopbackAddress[] | null {
   if (host === "localhost" || host.endsWith(".localhost")) return ["127.0.0.1", "::1"];
@@ -1847,7 +1922,7 @@ export function portGuard(inputs: GuardInputs): { quick(url: URL): boolean | und
     const runs = (address: LoopbackAddress) =>
       hold(address, port) === "free" &&
       (ignoreOwned || owned(address, port)) &&
-      (read.listeners.get(`${address}:${port}`) ?? read.listeners.get(`*:${port}`) ?? []).some(alive);
+      listenersFor(read, address, port, !!inputs.hold).some(alive);
     return addresses.some(runs) && addresses.every((address) => runs(address) || hold(address, port) === "runner");
   };
   const quick = (url: URL): boolean | undefined => {
@@ -1863,7 +1938,8 @@ export function portGuard(inputs: GuardInputs): { quick(url: URL): boolean | und
     // The read in flight (or the next one): a port it shows is allowed while it is fresh. The worker verifies
     // a newly reported listener within a sweep or two: give it that long.
     const settled = async (read: ListenerRead | null) => {
-      for (let i = 0; i < 20 && read && fresh(read) && !byRead(url, read) && byRead(url, read, true); i++) await new Promise((done) => setTimeout(done, 5));
+      // (Up to 1 s: also a block hold whose worker is briefly stalled under load, which verifies nothing meanwhile.)
+      for (let i = 0; i < 100 && read && fresh(read) && !byRead(url, read) && byRead(url, read, true); i++) await new Promise((done) => setTimeout(done, 10));
       return read;
     };
     const next = await settled(await inputs.reads.next());
@@ -1907,9 +1983,46 @@ function guardInputs(running: RunningApp): GuardInputs {
   }
   const fixed = (): ListenerRead => {
     const ports = running.startedPorts.filter((port) => !OWNER_PORTS.includes(port));
-    return { started: performance.now(), finished: performance.now(), ports: new Set(ports), listeners: new Map(ports.map((port) => [`*:${port}`, [process.pid]])) };
+    return { started: performance.now(), finished: performance.now(), ports: new Set(ports), listeners: new Map(ports.flatMap((port) => [[`*4:${port}`, [process.pid]], [`*6:${port}`, [process.pid]]] as Array<[string, number[]]>)) };
   };
   return { allowedLocalPorts, listenable: null, dead, reads: { get last() { return fixed(); }, next: async () => fixed() } };
+}
+
+/**
+ * The page pin of a run startApp started (page-pin.ts), started on first use; null for anything else (a
+ * stand-in RunningApp a test builds: no pin, its pages connect directly).
+ */
+function pagePin(running: RunningApp): Promise<PagePin> | null {
+  const internal = internals.get(running);
+  if (!internal) return null;
+  internal.pin ??= startPagePin({
+    processes: () => {
+      const processes = new Map(internal.starts);
+      // The built-in static server runs in this process: its port only (pin.selfPorts).
+      if (internal.staticPort) processes.set(process.pid, processStart(process.pid) ?? "");
+      return processes;
+    },
+    selfPorts: () => (internal.staticPort ? [internal.staticPort] : []),
+    refresh: () => internal.refresh?.(),
+    allowed: (port) =>
+      !OWNER_PORTS.includes(port) && (internal.listenable === null || internal.listenable.has(port) || (running.app.runProfile?.allowedLocalPorts ?? []).includes(port)),
+    refused: (entry, violation) => {
+      internal.pinBlocked.push(entry);
+      try {
+        appendFileSync(running.logPath, `# ${entry}\n`);
+      } catch {}
+      if (violation) addViolation(running, `page pin: ${violation}`);
+    },
+  });
+  return internal.pin;
+}
+
+/** The proxy option that sends a context's loopback traffic through the run's page pin. */
+async function pinProxy(running: RunningApp): Promise<{ server: string; bypass: string } | undefined> {
+  const pin = pagePin(running);
+  if (!pin) return undefined;
+  // "<-loopback>" removes Chromium's implicit bypass of localhost and 127.0.0.1: loopback goes through the pin too.
+  return { server: `http://127.0.0.1:${(await pin).port}`, bypass: "<-loopback>" };
 }
 
 /**
@@ -1969,6 +2082,8 @@ export async function installGuard(context: any, running: RunningApp): Promise<(
   // WebSockets bypass context.route: without routeWebSocket a page could reach any local port. Fail closed.
   if (typeof context.routeWebSocket !== "function") throw new Error("the request guard needs Playwright's context.routeWebSocket (Playwright 1.48+) to block WebSockets");
   const blocked: string[] = [];
+  const internal = internals.get(running);
+  const pinFrom = internal?.pinBlocked.length ?? 0;
   const guard = portGuard(guardInputs(running));
   // A port the app opened after it became ready (a lazily started API) counts once a run process holds it.
   // Every decision that needs a read waits on one asynchronously: other routed requests go on meanwhile.
@@ -2046,7 +2161,7 @@ export async function installGuard(context: any, running: RunningApp): Promise<(
     blocked.push(`WS ${ws.url()}`);
     ws.close({ code: 1008, reason: "blocked by the rollout request guard" });
   });
-  return () => [...blocked];
+  return () => [...blocked, ...(internal?.pinBlocked.slice(pinFrom) ?? [])];
 }
 
 /**
@@ -2065,8 +2180,11 @@ export async function guardedContext(
     determinism?: boolean;
   } = {},
 ): Promise<{ context: any; blocked: () => string[] }> {
+  const proxy = await pinProxy(running);
   const context = await browser.newContext({
     ...CONTEXT_OPTIONS,
+    // Every connection the page makes goes through the run's page pin (page-pin.ts).
+    ...(proxy ? { proxy } : {}),
     serviceWorkers: "block",
     // DETERMINISM_CSS is an inline <style>; a page CSP like `style-src 'self'` would block it and leave
     // animations running. Bypassing CSP changes no settled style of the app.
@@ -2154,7 +2272,10 @@ export async function launchBrowser(root: string, opts: BrowserOptions = {}): Pr
     } else {
       const shell = headlessShellPath(root);
       // The shell's own install dir is readable wherever PLAYWRIGHT_BROWSERS_PATH puts it.
-      const policy = browserPolicy({ browserHome: home, connectPorts: opts.running?.allowedPorts ?? [], readable: [...(opts.readable ?? []), shell.dir] });
+      // With a page pin, Chromium may connect to the pin only: a context without it reaches no port of the run.
+      const pin = opts.running ? pagePin(opts.running) : null;
+      const connectPorts = pin ? [(await pin).port] : (opts.running?.allowedPorts ?? []);
+      const policy = browserPolicy({ browserHome: home, connectPorts, readable: [...(opts.readable ?? []), shell.dir] });
       executablePath = browserLauncher(toolDir, shell.path, policy);
     }
     const browser = await playwright.chromium.launch({ ...LAUNCH_OPTIONS, ...opts.launch, env: sanitizedEnv(home), ...(executablePath ? { executablePath } : {}) });

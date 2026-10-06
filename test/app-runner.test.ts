@@ -22,6 +22,8 @@ import {
   validateLoadedRegistry,
   guardVerdict,
   deadPorts,
+  listenerAddress,
+  loopbackBaseUrl,
   killRun,
   ListenerReads,
   LISTENER_MAX_AGE_MS,
@@ -342,12 +344,39 @@ describe("portGuard", () => {
     expect(late.calls).toHaveLength(2);
   });
 
+  test("an IPv6 wildcard listener covers ::1, and 127.0.0.1 only when the block hold verifies it takes IPv4 (Codex r2 P1-3)", async () => {
+    const v6 = (started: number): ListenerRead => ({ started, finished: started + 100, ports: new Set([47021]), listeners: new Map([["*6:47021", [101]]]) });
+    // No block hold: lsof's "*" says nothing about IPv6-only, so IPv4 is not inferred.
+    const noHold = fixture(v6(9_000), [v6(10_000)], { hold: undefined });
+    expect(await noHold.guard.decide(url(47021, "[::1]"))).toBe(true);
+    expect(await noHold.guard.decide(url(47021))).toBe(false);
+    // With a hold, 127.0.0.1 is allowed only while the worker verifies the socket takes IPv4 (dual stack).
+    const dual = fixture(v6(9_000), [], { owned: () => true });
+    expect(await dual.guard.decide(url(47021))).toBe(true);
+    const v6only = fixture(v6(9_000), [v6(10_000)], { owned: (address) => address === "::1" });
+    expect(await v6only.guard.decide(url(47021))).toBe(false);
+  });
+
   test("allowedLocalPorts are allowed without a read; an unsandboxed run reads for ports outside the block", async () => {
     const allowed = fixture(undefined, [], { allowedLocalPorts: [47999] });
     expect(await allowed.guard.decide(url(47999))).toBe(true);
     const unsandboxed = fixture(undefined, [read(10_000, 10_100, 47999)], { listenable: null });
     expect(await unsandboxed.guard.decide(url(47999))).toBe(true);
     expect(unsandboxed.calls).toHaveLength(1);
+  });
+});
+
+describe("listenerAddress and loopbackBaseUrl", () => {
+  test("a wildcard keeps its socket family; other addresses are not loopback listeners", () => {
+    expect([listenerAddress("*", 4), listenerAddress("*", 6), listenerAddress("[::1]", 6), listenerAddress("127.0.0.1", 4), listenerAddress("192.168.1.2", 4)]).toEqual(["*4", "*6", "::1", "127.0.0.1", null]);
+  });
+
+  test("a localhost ready URL names the family the run listens on (Opus r2 P2-2); others stay as they are", () => {
+    const read = (key: string) => ({ listeners: new Map([[key, [101]]]) });
+    expect(loopbackBaseUrl("http://localhost:47021/app", 47021, read("127.0.0.1:47021"))).toBe("http://127.0.0.1:47021/app");
+    expect(loopbackBaseUrl("http://localhost:47021", 47021, read("::1:47021"))).toBe("http://[::1]:47021");
+    expect(loopbackBaseUrl("http://localhost:47021", 47021, read("*6:47021"))).toBe("http://[::1]:47021");
+    expect(loopbackBaseUrl("http://127.0.0.1:47021", 47021, read("::1:47021"))).toBe("http://127.0.0.1:47021");
   });
 });
 
@@ -489,6 +518,39 @@ describe("BlockHold", () => {
       while (hold.state("127.0.0.1", 46950) !== "runner" && performance.now() < takenBy) await Bun.sleep(5);
       expect([hold.state("127.0.0.1", 46950), hold.verified("127.0.0.1", 46950)]).toEqual(["runner", false]);
       expect(await listen("127.0.0.1", 46950)).toBe("EADDRINUSE");
+    } finally {
+      child.kill(9);
+      await hold.stop();
+    }
+  });
+
+  test("fails closed when its worker dies: every address tainted, nothing verified, the runner told (Opus/Codex r2 P1-2)", async () => {
+    const deaths: string[] = [];
+    const hold = new BlockHold(ports, (why) => deaths.push(why));
+    await hold.start();
+    const child = Bun.spawn(["bun", "-e", `Bun.serve({ hostname: "127.0.0.1", port: 46950, fetch: () => new Response("app") }); console.log("UP"); setInterval(() => {}, 1e6);`], { stdout: "pipe" });
+    try {
+      await child.stdout.getReader().read();
+      hold.watch("127.0.0.1", 46950);
+      hold.holders("127.0.0.1", 46950, [child.pid]);
+      const by = performance.now() + 2_000;
+      while (!hold.verified("127.0.0.1", 46950) && performance.now() < by) await Bun.sleep(5);
+      expect([hold.healthy(), hold.verified("127.0.0.1", 46950)]).toEqual([true, true]);
+      (hold as any).worker.terminate(); // the worker dies (an uncaught throw or a crash looks the same)
+      const dead = performance.now() + 2_000;
+      while (!deaths.length && performance.now() < dead) await Bun.sleep(5);
+      expect(deaths).toEqual(["the port-hold worker exited"]);
+      expect([hold.healthy(), hold.verified("127.0.0.1", 46950), hold.state("127.0.0.1", 46950), hold.state("::1", 46951)]).toEqual([false, false, "tainted", "tainted"]);
+      // And the guard, given this hold, refuses the address however fresh the read.
+      const guard = portGuard({
+        allowedLocalPorts: [],
+        listenable: new Set(ports),
+        dead: new Set(),
+        reads: { last: { started: performance.now(), finished: performance.now(), ports: new Set([46950]), listeners: new Map([["127.0.0.1:46950", [child.pid]]]) }, next: async () => null },
+        hold: (address, port) => hold.state(address, port),
+        owned: (address, port) => hold.verified(address, port),
+      });
+      expect(await guard.decide(new URL("http://127.0.0.1:46950/"))).toBe(false);
     } finally {
       child.kill(9);
       await hold.stop();
@@ -976,7 +1038,7 @@ describe("guardedContext WebSockets", () => {
 
 describe("guardedContext redirects (hop by hop) and the browser sandbox", () => {
   test.skipIf(Boolean(noPlaywright))(
-    "a 302/307 from the run's own port to a foreign port never reaches it: the guard re-checks every hop, Chromium's sandbox has only the run's ports",
+    "a 302/307 from the run's own port to a foreign port never reaches it: the guard re-checks every hop, Chromium's sandbox has only the page pin",
     async () => {
       // Opus R3 P0-3: the guard saw only the first request of a redirect chain, and Chromium ran outside the
       // OS sandbox, so a redirect from the run's port delivered requests to any loopback listener.
@@ -998,9 +1060,11 @@ describe("guardedContext redirects (hop by hop) and the browser sandbox", () => 
         expect(nav).toBe("failed");
         // The run's own processes may not reach it either (the run sandbox), so nothing did.
         expect(hits).toEqual([]);
-        expect(blocked().sort()).toEqual(
+        // The hops the browser follows itself also reach the page pin, which refuses them before contacting anything.
+        expect(blocked().filter((entry) => !entry.startsWith("PIN ")).sort()).toEqual(
           [`REDIRECT http://127.0.0.1:${FOREIGN}/chain-secret`, `REDIRECT http://127.0.0.1:${FOREIGN}/fetch-secret`, `REDIRECT http://127.0.0.1:${FOREIGN}/img-secret`, `REDIRECT http://127.0.0.1:${FOREIGN}/nav-secret`].sort(),
         );
+        expect(blocked().filter((entry) => entry.startsWith("PIN ")).every((entry) => entry.includes(`:${FOREIGN}/`) && entry.endsWith("(not a port of the run)"))).toBe(true);
         expect(running.violations ?? []).toEqual(expect.arrayContaining([expect.stringContaining(`a redirect chain left the run's ports: ${running.baseUrl}/hop?status=307`)]));
         // A page without the guard, straight in the sandboxed browser, cannot reach the foreign port either.
         const bare = await browser.newContext();
@@ -1011,6 +1075,9 @@ describe("guardedContext redirects (hop by hop) and the browser sandbox", () => 
             (error: unknown) => String(error).split("\n")[0],
           );
           expect(direct).toContain("ERR_ACCESS_DENIED");
+          // Nor the run's own port: the sandboxed browser may connect to the page pin only.
+          const own = await barePage.goto(`${running.baseUrl}/ping`).then(() => "loaded", (error: unknown) => String(error).split("\n")[0]);
+          expect(own).toContain("ERR_ACCESS_DENIED");
         } finally {
           await bare.close();
         }

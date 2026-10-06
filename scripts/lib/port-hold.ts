@@ -33,21 +33,31 @@ export const LOOPBACK_ADDRESSES: readonly LoopbackAddress[] = ["127.0.0.1", "::1
 export type HoldState = "free" | "runner" | "tainted";
 const STATES: HoldState[] = ["free", "runner", "tainted"];
 
-/** Shared-memory layout: [state x 2N][watch x 2N][control]; index = portIndex * 2 + family (0 = 127.0.0.1, 1 = ::1). */
-export interface HoldLayout {
-  ports: number[];
-  sab: SharedArrayBuffer;
-}
+/**
+ * How old the worker's heartbeat may be before the hold counts as stalled: nothing is verified then (the
+ * guard refuses until it beats again). The worker beats about every millisecond.
+ */
+export const HEARTBEAT_STALE_MS = 250;
 
 export class BlockHold {
   readonly ports: readonly number[];
   private readonly view: Int32Array;
   private readonly index = new Map<number, number>();
+  private readonly heartbeat = new BigInt64Array(new SharedArrayBuffer(8));
   private worker?: Worker;
   private stopped = false;
+  /** Set when the worker died or failed after it started: every address is tainted from then on. */
+  private dead?: string;
 
-  /** `ports`: the run's block. Call start() before the first run process starts. */
-  constructor(ports: readonly number[]) {
+  /**
+   * `ports`: the run's block. `onDead`: called once if the worker dies or fails after start (the runner
+   * records a violation). Call start() before the first run process starts.
+   */
+  constructor(
+    ports: readonly number[],
+    private readonly onDead: (why: string) => void = () => undefined,
+    private readonly onTaint: (address: LoopbackAddress, port: number) => void = () => undefined,
+  ) {
     this.ports = [...ports];
     this.ports.forEach((port, i) => this.index.set(port, i));
     // [state x 2N][watch x 2N][control][verified x 2N]
@@ -62,9 +72,22 @@ export class BlockHold {
     const ready = await new Promise<{ ok: boolean; problems: string[] }>((resolve) => {
       worker.addEventListener("message", (event: MessageEvent) => resolve(event.data), { once: true });
       worker.addEventListener("error", (event: any) => resolve({ ok: false, problems: [`the port-hold worker failed: ${event?.message ?? String(event)}`] }), { once: true });
-      worker.postMessage({ ports: this.ports, sab: this.view.buffer });
+      worker.postMessage({ ports: this.ports, sab: this.view.buffer, heartbeat: this.heartbeat.buffer });
     });
     worker.unref?.();
+    // After start, any error or exit that stop() did not ask for leaves the run with no verification: fail
+    // closed (every address tainted, verified nowhere) and tell the runner.
+    const died = (why: string) => {
+      if (this.stopped || this.dead) return;
+      this.dead = why;
+      this.onDead(why);
+    };
+    worker.addEventListener("error", (event: any) => died(`the port-hold worker failed: ${event?.message ?? String(event)}`));
+    worker.addEventListener("close", () => died("the port-hold worker exited"));
+    worker.addEventListener("message", (event: MessageEvent) => {
+      const slot = event.data?.tainted;
+      if (typeof slot === "number") this.onTaint(slot % 2 === 1 ? "::1" : "127.0.0.1", this.ports[slot >> 1]!);
+    });
     if (!ready.ok) {
       await this.stop();
       throw new Error(`cannot watch the run's port block: ${ready.problems.join("; ")}`);
@@ -81,19 +104,31 @@ export class BlockHold {
     return this.index.has(port);
   }
 
-  /** The state of a loopback address of a block port; "free" outside the block. */
+  /** Whether the worker is alive and beat within HEARTBEAT_STALE_MS. */
+  healthy(): boolean {
+    return !this.dead && Date.now() - Number(Atomics.load(this.heartbeat, 0)) <= HEARTBEAT_STALE_MS;
+  }
+
+  /** Why the worker died, if it did. */
+  failure(): string | undefined {
+    return this.dead;
+  }
+
+  /** The state of a loopback address of a block port; "free" outside the block; "tainted" everywhere in it once the worker died. */
   state(address: LoopbackAddress, port: number): HoldState {
     const slot = this.slot(address, port);
-    return slot === undefined ? "free" : STATES[Atomics.load(this.view, slot)]!;
+    if (slot === undefined) return "free";
+    return this.dead ? "tainted" : STATES[Atomics.load(this.view, slot)]!;
   }
 
   /**
    * Whether a run process verifiably listens on this watched address right now (checked by the worker
-   * about every millisecond with libproc, against the holders the reads reported).
+   * about every millisecond with libproc, against the holders the reads reported). False while the worker
+   * is stalled or dead.
    */
   verified(address: LoopbackAddress, port: number): boolean {
     const slot = this.slot(address, port);
-    return slot !== undefined && Atomics.load(this.view, 4 * this.ports.length + 1 + slot) === 1;
+    return slot !== undefined && this.healthy() && Atomics.load(this.view, 4 * this.ports.length + 1 + slot) === 1;
   }
 
   /** Takes the address the moment nothing holds it any more (the run let go). */
@@ -114,7 +149,7 @@ export class BlockHold {
   /** Marks an address another process took from the run: refused for the rest of the run (unless the worker takes it back). */
   taint(address: LoopbackAddress, port: number) {
     const slot = this.slot(address, port);
-    if (slot !== undefined) Atomics.compareExchange(this.view, slot, 0, 2);
+    if (slot !== undefined && Atomics.compareExchange(this.view, slot, 0, 2) === 0) this.onTaint(address, port);
   }
 
   /** Releases every hold (after the run's processes are gone). */
