@@ -11,6 +11,7 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
+import { SYSTEM_BIN, SYSTEM_PATH } from "../system-bin";
 import { staleFiles } from "../../build";
 import { DESIGN_SYSTEM_ROOT } from "../registry";
 import type { FileKind } from "../../scan-literals";
@@ -62,7 +63,7 @@ function walk(dir: string, out: string[] = []): string[] {
 const DECLARED_NAME = /(?<![\w-])(--ds-[A-Za-z0-9_-]+)\s*:/g;
 
 function git(dir: string, args: string[]): string | null {
-  const r = spawnSync("git", ["-C", dir, ...args], { encoding: "utf8" });
+  const r = spawnSync(SYSTEM_BIN.git, ["-C", dir, ...args], { encoding: "utf8", env: { ...process.env, PATH: SYSTEM_PATH } });
   return r.status === 0 ? r.stdout.trim() : null;
 }
 

@@ -7,12 +7,19 @@
  *   A live link (workspace, link, npm-file, relative-import) must reach the root's
  *   design-system checkout (any source checkout with tokens/ when the root has none),
  *   never a packed copy or a second checkout.
- * - Every design-system file the entry stylesheet loads is inside the root and comes
- *   from the package the app resolves; a local copy of a design-system file (by its
- *   header) is allowed only for consume.via copy.
- * - vendor-tgz: the tgz and the installed copy each carry a dist/css/tokens.css
- *   whose sha256 equals the current build's.
- * - copy: the copied tokens file the entry stylesheet loads has the build's hash.
+ * - Every design-system file the entry stylesheet loads is inside the root, inside a
+ *   @codecaine-ai/design-system package (decision 20: no other package's copy, such as
+ *   text-measure's fonts.css), and from the package the app resolves; a local copy of a
+ *   design-system file (by its header) is allowed only for consume.via copy.
+ * - vendor-tgz: the tgz (`package/<file>`) and the installed copy each carry every
+ *   shipped file the app needs with the current build's sha256: dist/css/tokens.css,
+ *   every design-system file the entry loads from the installed copy, and every file in
+ *   the build's fonts/ when fonts.css is loaded. One violation per missing or differing
+ *   file and place.
+ * - copy: the entry loads a copied tokens file, and every copied design-system file it
+ *   loads has the hash of its build file (tokens.css, layout.css, fonts.css, the
+ *   Tailwind files, …); for a copied fonts.css, so does each font file its url()s point
+ *   at (next to the copy) against fonts/<name> in the build.
  * - Every library the app uses that itself depends on the package (workspace
  *   packages, followed through their own dependencies, and installed packages
  *   one level deep) resolves inside the root, and so does its copy of the package.
@@ -25,12 +32,15 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
-import { join } from "node:path";
-import { buildFile, fileSha256, sha256 } from "./design-system";
+import { existsSync, readdirSync } from "node:fs";
+import { basename, dirname, join, relative, resolve } from "node:path";
+import { SYSTEM_BIN, SYSTEM_PATH } from "../system-bin";
+import { stripCss } from "../../scan-literals";
+import { buildFile, fileSha256, sha256, type DesignSystemBuild } from "./design-system";
+import { isDsLoad, type Load } from "./loads";
 import type { AppContext, CheckOutput, Finding } from "./types";
 import { PACKAGE_NAME } from "./types";
-import { findPackageDir, isDir, isInside, lineOf, owningPackage, readJson, readText, realpathOrNull } from "./workspace";
+import { findPackageDir, isDir, isFile, isInside, lineAt, lineOf, owningPackage, readJson, readText, realpathOrNull, toPosix } from "./workspace";
 
 const DEP_FIELDS = ["dependencies", "peerDependencies", "devDependencies", "optionalDependencies"] as const;
 
@@ -50,9 +60,100 @@ function declaredSpec(pkg: any, name: string): string | null {
   return null;
 }
 
-function tgzTokensSha(tgz: string, member: string): string | null {
-  const r = spawnSync("tar", ["-xzOf", tgz, `package/${member}`], { maxBuffer: 64 * 1024 * 1024 });
-  return r.status === 0 && r.stdout?.length ? sha256(r.stdout) : null;
+/** tar runs by absolute path with a system-only PATH: a `tar` planted earlier on PATH never runs. */
+const SYSTEM_ENV = { ...process.env, PATH: SYSTEM_PATH };
+
+/** The tgz's member names (`package/…`, a leading `./` dropped); null when tar cannot list it. */
+function tgzMembers(tgz: string): Set<string> | null {
+  const r = spawnSync(SYSTEM_BIN.tar, ["-tzf", tgz], { env: SYSTEM_ENV, encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
+  if (r.status !== 0) return null;
+  return new Set(r.stdout.split("\n").map((l) => l.trim().replace(/^\.\//, "")).filter(Boolean));
+}
+
+function tgzMemberSha(tgz: string, member: string): string | null {
+  const r = spawnSync(SYSTEM_BIN.tar, ["-xzOf", tgz, member], { env: SYSTEM_ENV, maxBuffer: 64 * 1024 * 1024 });
+  return r.status === 0 && r.stdout ? sha256(r.stdout) : null;
+}
+
+/** The build file a copied design-system file stands for, by its load kind. */
+const COPY_MEMBER: Partial<Record<string, string>> = {
+  tokens: "dist/css/tokens.css",
+  "tokens-dark-first": "dist/css/tokens-dark-first.css",
+  "host-contract": "dist/css/host-contract.css",
+  "host-contract-dark-first": "dist/css/host-contract-dark-first.css",
+  layout: "css/layout.css",
+  fonts: "css/fonts.css",
+  "tw-theme": "dist/tailwind/theme.css",
+  "tw-strict": "dist/tailwind/strict.css",
+};
+
+/** Every file in the build's fonts/, as `fonts/<name>`. */
+function buildFonts(ds: DesignSystemBuild): string[] {
+  try {
+    return readdirSync(join(ds.dir, "fonts"), { withFileTypes: true })
+      .filter((e) => e.isFile())
+      .map((e) => `fonts/${e.name}`)
+      .sort();
+  } catch {
+    return [];
+  }
+}
+
+/** The @codecaine-ai/design-system package a file sits in (a nameless package.json, such as dist/'s `type: module`, is looked past); null when none. */
+function designSystemPackageOf(file: string): { dir: string; name: string } | null {
+  let at = file;
+  for (let i = 0; i < 16; i++) {
+    const owner = owningPackage(at);
+    if (!owner || owner.name === PACKAGE_NAME) return owner;
+    if (owner.name) return null;
+    at = owner.dir;
+  }
+  return null;
+}
+
+/** The members a vendored app ships: tokens.css, every design-system file it loads from the installed copy, and the fonts when fonts.css loads. */
+function shippedMembers(ds: DesignSystemBuild, dsReal: string, dsLoads: Load[]): string[] {
+  const members = new Set(["dist/css/tokens.css"]);
+  let fonts = false;
+  for (const l of dsLoads) {
+    if (!l.path || l.copied || !isInside(l.path, dsReal)) continue;
+    members.add(toPosix(relative(dsReal, l.path)));
+    if (l.kind === "fonts") fonts = true;
+  }
+  if (fonts) for (const f of buildFonts(ds)) members.add(f);
+  return [...members];
+}
+
+const CSS_URL = /url\(\s*(["']?)([^"')\s]+)\1\s*\)/g;
+
+/** Each font file a copied fonts.css points at (resolved next to the copy) against fonts/<name> in the build. */
+function copiedFontFiles(ctx: AppContext, fontsCss: string, buildSha: (member: string) => string | null): Finding[] {
+  const out: Finding[] = [];
+  const text = readText(fontsCss) ?? "";
+  const seen = new Set<string>();
+  for (const m of stripCss(text, false).matchAll(CSS_URL)) {
+    const url = m[2].replace(/[?#].*$/, "");
+    if (!url || /^(?:[a-z]+:|\/\/)/i.test(url)) continue;
+    const at = { file: ctx.rel(fontsCss), line: lineAt(text, m.index!) };
+    const file = resolve(dirname(fontsCss), url);
+    if (seen.has(file)) continue;
+    seen.add(file);
+    const member = `fonts/${basename(url)}`;
+    const want = buildSha(member);
+    if (!want) {
+      out.push({ ...at, message: `copied fonts.css points at ${url}; the current build has no ${member}` });
+      continue;
+    }
+    if (!isFile(file)) {
+      out.push({ ...at, message: `copied fonts.css points at ${url}, which does not exist next to the copy (${ctx.rel(file)}); copy ${member} from the build` });
+      continue;
+    }
+    const got = fileSha256(file);
+    if (got !== want) {
+      out.push({ file: ctx.rel(file), line: 0, message: `copied font ${basename(file)} (sha256 ${got?.slice(0, 12)}) differs from the current build's ${member} (${want.slice(0, 12)}); copy it again` });
+    }
+  }
+  return out;
 }
 
 export function checkResolution(ctx: AppContext): CheckOutput {
@@ -110,34 +211,51 @@ export function checkResolution(ctx: AppContext): CheckOutput {
     const f = buildFile(ds, member);
     return f ? fileSha256(f) : null;
   };
+  const graph = ctx.loads();
+  const dsLoads = graph.loads.filter(isDsLoad);
   if (via === "vendor-tgz") {
-    const want = buildSha(tokensMember);
-    if (!want) violations.push({ file: pkgRel, line: depLine, message: `the current build has no ${tokensMember} to compare with` });
+    const members = dsReal ? shippedMembers(ds, dsReal, dsLoads) : [tokensMember];
+    const want = new Map<string, string>();
+    for (const m of members) {
+      const sha = buildSha(m);
+      if (sha) want.set(m, sha);
+      else violations.push({ file: pkgRel, line: depLine, message: `the current build has no ${m} to compare with` });
+    }
     if (spec && /^file:.*\.tgz$/.test(spec)) {
       const tgz = join(appRoot, spec.slice("file:".length));
       const tgzReal = realpathOrNull(tgz);
       if (!tgzReal) violations.push({ file: pkgRel, line: depLine, message: `vendored package ${spec.slice(5)} not found` });
       else {
+        const tgzRel = ctx.rel(tgzReal);
         if (!isInside(tgzReal, root)) violations.push({ file: pkgRel, line: depLine, message: `vendored package ${tgzReal} is outside the root ${root}` });
-        const got = tgzTokensSha(tgzReal, tokensMember);
-        if (!got) violations.push({ file: ctx.rel(tgzReal), line: 0, message: `the tgz has no package/${tokensMember}` });
-        else if (want && got !== want) {
-          violations.push({ file: ctx.rel(tgzReal), line: 0, message: `${tokensMember} in the tgz (sha256 ${got.slice(0, 12)}) differs from the current build (${want.slice(0, 12)}); run \`bun run pack\` and vendor the new tgz` });
+        const listed = tgzMembers(tgzReal);
+        if (!listed) violations.push({ file: tgzRel, line: 0, message: "tar cannot list the vendored tgz" });
+        else {
+          for (const m of members) {
+            const got = listed.has(`package/${m}`) ? tgzMemberSha(tgzReal, `package/${m}`) : null;
+            const w = want.get(m);
+            if (!got) violations.push({ file: tgzRel, line: 0, message: `the tgz has no package/${m}` });
+            else if (w && got !== w) {
+              violations.push({ file: tgzRel, line: 0, message: `${m} in the tgz (sha256 ${got.slice(0, 12)}) differs from the current build (${w.slice(0, 12)}); run \`bun run pack\` and vendor the new tgz` });
+            }
+          }
         }
       }
     }
-    if (dsReal && want) {
-      const installed = fileSha256(join(dsReal, tokensMember));
-      if (!installed) violations.push({ file: ctx.rel(dsReal), line: 0, message: `the installed copy has no ${tokensMember}` });
-      else if (installed !== want) {
-        violations.push({ file: ctx.rel(join(dsReal, tokensMember)), line: 0, message: `the installed copy (sha256 ${installed.slice(0, 12)}) differs from the current build (${want.slice(0, 12)}); reinstall from the vendored tgz` });
+    if (dsReal) {
+      for (const m of members) {
+        const w = want.get(m);
+        if (!w) continue;
+        const got = fileSha256(join(dsReal, m));
+        if (!got) violations.push({ file: ctx.rel(dsReal), line: 0, message: `the installed copy has no ${m}` });
+        else if (got !== w) {
+          violations.push({ file: ctx.rel(join(dsReal, m)), line: 0, message: `${m} in the installed copy (sha256 ${got.slice(0, 12)}) differs from the current build (${w.slice(0, 12)}); reinstall from the vendored tgz` });
+        }
       }
     }
   }
 
   // Every design-system file the entry stylesheet loads comes from where consume.via says.
-  const graph = ctx.loads();
-  const dsLoads = graph.loads.filter((l) => l.kind !== "tailwindcss");
   if (via === "copy" || via === "relative-import") {
     if (!graph.entryExists) {
       violations.push({ file: app.entryStylesheet ?? ctx.rel(appRoot), line: 0, message: `consume.via ${via}: the entry stylesheet is missing, so the design-system files cannot be found` });
@@ -156,8 +274,11 @@ export function checkResolution(ctx: AppContext): CheckOutput {
       if (via !== "copy") violations.push({ ...at, message: `${l.spec} is a copy of a design-system file (${ctx.rel(l.path)}); consume.via ${via} loads it from the package` });
       continue;
     }
-    const owner = owningPackage(l.path);
-    if (owner?.name !== PACKAGE_NAME) continue; // text-measure's fonts.css
+    const owner = designSystemPackageOf(l.path);
+    if (!owner) {
+      violations.push({ ...at, message: `${l.spec} loads ${ctx.rel(l.path)}, which is not inside a ${PACKAGE_NAME} package; load the file from the package` });
+      continue;
+    }
     const ownerReal = realpathOrNull(owner.dir) ?? owner.dir;
     if (dsReal && ownerReal !== dsReal) {
       violations.push({ ...at, message: `${l.spec} loads ${ctx.rel(l.path)}, not the package the app resolves (${ctx.rel(dsReal)})` });
@@ -168,16 +289,23 @@ export function checkResolution(ctx: AppContext): CheckOutput {
   }
   if (via === "copy") {
     const tokens = dsLoads.find((l) => l.copied && (l.kind === "tokens" || l.kind === "tokens-dark-first"));
-    if (!tokens?.path) {
-      if (graph.entryExists) violations.push({ file: ctx.rel(graph.entry!), line: 1, message: "consume.via copy: no copied tokens.css is loaded from the entry stylesheet" });
-    } else {
-      const member = tokens.kind === "tokens-dark-first" ? "dist/css/tokens-dark-first.css" : "dist/css/tokens.css";
+    if (!tokens?.path && graph.entryExists) {
+      violations.push({ file: ctx.rel(graph.entry!), line: 1, message: "consume.via copy: no copied tokens.css is loaded from the entry stylesheet" });
+    }
+    const checked = new Set<string>();
+    for (const l of dsLoads) {
+      if (!l.copied || !l.path || checked.has(l.path)) continue;
+      checked.add(l.path);
+      const member = COPY_MEMBER[l.kind];
+      if (!member) continue;
       const want = buildSha(member);
-      const got = fileSha256(tokens.path);
-      if (!want) violations.push({ file: ctx.rel(tokens.path), line: 0, message: `the current build has no ${member} to compare with` });
+      const got = fileSha256(l.path);
+      const label = l.kind === "tokens" || l.kind === "tokens-dark-first" ? "tokens" : basename(l.path);
+      if (!want) violations.push({ file: ctx.rel(l.path), line: 0, message: `the current build has no ${member} to compare with` });
       else if (got !== want) {
-        violations.push({ file: ctx.rel(tokens.path), line: 0, message: `copied tokens (sha256 ${got?.slice(0, 12)}) differ from the current build's ${member} (${want.slice(0, 12)}); copy it again` });
+        violations.push({ file: ctx.rel(l.path), line: 0, message: `copied ${label} (sha256 ${got?.slice(0, 12)}) differs from the current build's ${member} (${want.slice(0, 12)}); copy it again` });
       }
+      if (l.kind === "fonts") violations.push(...copiedFontFiles(ctx, l.path, buildSha));
     }
   }
 

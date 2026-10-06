@@ -178,8 +178,7 @@ describe("wiring", () => {
     expect(check("html-nested", "wiring")).toMatchObject({ status: "pass", violations: [] });
     expectExactly(check("html-nested-broken", "wiring").violations, [
       at("apps/html-nested/broken/index.html", 5, "/styles/missing.css does not resolve; the entry page links it"),
-      // print.css is linked with media="print": the fonts.css it imports applies only when printing.
-      at("apps/html-nested/styles/print.css", 1, '@codecaine-ai/design-system/fonts.css loads only under "print"'),
+      // print.css (media="print") imports fonts.css again; ds.css already loads it for every view, so that is fine.
     ]);
   });
 
@@ -388,15 +387,17 @@ describe("structure", () => {
   });
 
   test("every .tsx file outside _components/<Name>/index.tsx is a component in the wrong place; entry and hook files are not", () => {
-    // Not flagged: main.tsx, App.tsx, mdx-components.tsx, src/index.tsx, pages/home/page.tsx, app/layout.tsx, app/not-found.tsx,
-    // _components/Shelf/index.tsx, pages/home/_components/Card/index.tsx and its useCard.tsx hook.
+    // Not flagged: main.tsx, App.tsx, mdx-components.tsx, src/index.tsx, pages/home/page.tsx,
+    // _components/Shelf/index.tsx, pages/home/_components/Card/index.tsx and its useCard.ts hook.
     expectExactly(check("wrong-folders", "structure").violations, [
       at("apps/wrong-folders/src/components/Panel/index.tsx", 0, "component file outside _components/<Name>/index.tsx; move it to _components/Panel/index.tsx"),
       at("apps/wrong-folders/src/components/ui/app-sidebar.tsx", 0, "move it to _components/AppSidebar/index.tsx"),
       at("apps/wrong-folders/src/_components/Shelf/ShelfItem.tsx", 0, "component file ShelfItem.tsx in Shelf/; a component folder renders one component"),
-      // Next.js file names are entries only inside an app/ or pages/ router folder.
+      // Next.js file names are entries only in a Next.js app's app/ or pages/ router folder; this app is Vite.
       at("apps/wrong-folders/src/components/icon.tsx", 0, "move it to _components/Icon/index.tsx"),
       at("apps/wrong-folders/src/components/loading.tsx", 0, "move it to _components/Loading/index.tsx"),
+      at("apps/wrong-folders/src/app/layout.tsx", 0, "move it to _components/Layout/index.tsx"),
+      at("apps/wrong-folders/src/app/not-found.tsx", 0, "move it to _components/NotFound/index.tsx"),
     ]);
   });
 

@@ -1,0 +1,6 @@
+@import "@codecaine-ai/design-system/fonts.css";
+@layer base {
+  html { color: CanvasText; }
+}
+@import "@codecaine-ai/design-system/tokens.css";
+@import "@codecaine-ai/design-system/layout.css";

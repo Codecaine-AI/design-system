@@ -1,13 +1,15 @@
 /**
  * Check 3, literals: no hard-coded style values outside the allowlist.
  *
- * - scan-literals runs over the registry scan spec (paths, excludes, ext). Every
- *   hard hit the allowlist does not match is a violation (file:line, literal,
- *   category), and the hard total, allowlisted hits included, must be at or under
- *   `literalFloor`.
+ * - scan-literals runs over the registry scan spec (paths, excludes, ext) plus the
+ *   app's Tailwind config when no scan path holds it (every tailwind.config.* in the
+ *   app root; for a v3 app, the config the wiring check reads). Every hard hit the
+ *   allowlist does not match is a violation (file:line, literal, category), and the
+ *   hard total, allowlisted hits included, must be at or under `literalFloor`.
  * - On Tailwind apps, and on libraries and templates whose host compiles their class
  *   strings (`stack.utilityClasses`), every Tailwind default-scale class
- *   (tailwind-scale.ts) that the allowlist does not match is a violation.
+ *   (tailwind-scale.ts) in the scanned files, the config's safelist included, that
+ *   the allowlist does not match is a violation.
  * - A scan path that does not exist is a violation: the floor would pass on nothing.
  */
 

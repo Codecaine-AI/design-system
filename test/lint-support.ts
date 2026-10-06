@@ -333,3 +333,15 @@ export function checkOf(ws: Workspace, ds: DesignSystemBuild, app: string, check
 }
 
 export const sha256 = (data: string) => createHash("sha256").update(data).digest("hex");
+
+/** lintApps over the fixture workspace with registry entries the test builds itself (not in APPS). */
+export function lintEntries(ws: Workspace, ds: DesignSystemBuild, entries: AppEntry[], pass: PassNumber | null = null): LintReport {
+  return lintApps({ root: ws.root, registry: { version: 1, apps: entries }, registryDir: registryDirOf(ws.registryPath), ds, pass, apps: [] });
+}
+
+/** One check's result for an entry the test builds (see appEntry). */
+export function checkEntry(ws: Workspace, ds: DesignSystemBuild, entry: AppEntry, check: CheckId): CheckResult {
+  const result = lintEntries(ws, ds, [entry]).apps[0].checks.find((c) => c.id === check);
+  if (!result) throw new Error(`${entry.id}: no ${check} result`);
+  return result;
+}

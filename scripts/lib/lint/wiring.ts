@@ -1,33 +1,40 @@
 /**
  * Check 2, wiring: the entry stylesheet loads the design system in order.
  *
- * - fonts.css (the design system's, or @codecaine-ai/text-measure's), then
- *   tokens.css, then layout.css on shell apps. Dark-first surfaces may load
- *   tokens-dark-first.css instead of tokens.css; light-dark apps may not.
+ * - @codecaine-ai/design-system/fonts.css, then tokens.css, then layout.css on shell
+ *   apps (bundle order, across every stylesheet the entry reaches). Dark-first
+ *   surfaces may load tokens-dark-first.css instead of tokens.css; light-dark apps
+ *   may not.
+ * - Fonts come from the design-system package only (decision 20):
+ *   @codecaine-ai/text-measure's fonts.css does not count, and loading it is a
+ *   violation at its line.
  * - host-contract.css is optional; when loaded it sits after the tokens and before
  *   layout.css, and its variant pairs with the tokens' (tokens-dark-first.css with
  *   host-contract-dark-first.css).
- * - Tailwind v4: tailwind-strict.css after `tailwindcss` and before tailwind.css.
+ * - Tailwind v4 compiles each stylesheet a JS module imports or a page links, and
+ *   each <style> block, on its own (a compilation root, see loads.ts). One root must
+ *   import Tailwind (`tailwindcss` or `tailwindcss/theme.css`), then
+ *   tailwind-strict.css, then tailwind.css. In every root, strict comes after
+ *   Tailwind, tailwind.css after strict, and no Tailwind import after strict (it
+ *   restores Tailwind's default theme). Any other root that imports Tailwind without
+ *   strict and tailwind.css after it compiles with Tailwind's default theme.
  * - Tailwind v3: tailwind.config.* (in the app root, else up to the repo root)
  *   exports a config whose `presets` array holds the preset
  *   @codecaine-ai/design-system/tailwind-v3-preset (`require(…)` or a binding of it).
  * - A design-system stylesheet loaded under a media query or supports condition
- *   (`@import "…/tokens.css" print`, `<link media="print">`) does not count: it does
- *   not apply to every view. Each one is a violation.
+ *   (`@import "…/tokens.css" print`, `<link media="print">`) does not apply to every
+ *   view. It is a violation when no unconditional load of the same kind exists
+ *   (tokens.css and tokens-dark-first.css count as one kind; so do the two
+ *   host-contract variants).
+ * - A design-system @import after a rule is ignored (loads.ts `inert`): a violation.
  * - A design-system stylesheet that does not resolve is a violation, and so is any
  *   stylesheet the entry HTML page links itself; another stylesheet that does not
  *   resolve (an alias, say) is a warning.
  */
 
-import { dirname, join } from "node:path";
-import { lexJs } from "../../scan-literals";
-import { resolvePath } from "../registry";
-import type { Load } from "./loads";
+import { isDsLoad, isTailwindLoad, type Load, type LoadKind } from "./loads";
+import { checkPreset } from "./tailwind-config";
 import type { AppContext, CheckOutput, Finding } from "./types";
-import { isFile, isInside, lineOf, readText } from "./workspace";
-
-const PRESET = "@codecaine-ai/design-system/tailwind-v3-preset";
-const TW_CONFIGS = ["tailwind.config.js", "tailwind.config.cjs", "tailwind.config.mjs", "tailwind.config.ts", "tailwind.config.cts", "tailwind.config.mts"];
 
 const NAMES: Record<string, string> = {
   fonts: "fonts.css",
@@ -38,122 +45,17 @@ const NAMES: Record<string, string> = {
   layout: "layout.css",
   "tw-strict": "tailwind-strict.css",
   "tw-theme": "tailwind.css",
-  tailwindcss: '"tailwindcss"',
 };
 
-function findTailwindConfig(start: string, stop: string): string | null {
-  let dir = start;
-  for (;;) {
-    for (const n of TW_CONFIGS) if (isFile(join(dir, n))) return join(dir, n);
-    if (dir === stop || !isInside(dir, stop)) return null;
-    const up = dirname(dir);
-    if (up === dir) return null;
-    dir = up;
-  }
-}
+const DS_FONTS = "@codecaine-ai/design-system/fonts.css";
 
-/** Index of the bracket closing the one at `open` (code characters only), or -1. */
-function closeOf(text: string, inStr: Uint8Array, open: number): number {
-  let depth = 0;
-  for (let i = open; i < text.length; i++) {
-    if (inStr[i]) continue;
-    const ch = text[i];
-    if (ch === "(" || ch === "{" || ch === "[") depth++;
-    else if (ch === ")" || ch === "}" || ch === "]") if (--depth === 0) return i;
-  }
-  return -1;
-}
+/** Kinds that stand in for each other: a conditional load is fine when the group has an unconditional one. */
+const group = (kind: LoadKind) => (kind === "tokens-dark-first" ? "tokens" : kind === "host-contract-dark-first" ? "host-contract" : kind);
 
-/** Top-level comma-separated parts of the bracket span (open, close). */
-function topLevelParts(text: string, inStr: Uint8Array, open: number, close: number): string[] {
-  const parts: string[] = [];
-  let depth = 0;
-  let start = open + 1;
-  for (let i = open + 1; i < close; i++) {
-    if (inStr[i]) continue;
-    const ch = text[i];
-    if (ch === "(" || ch === "{" || ch === "[") depth++;
-    else if (ch === ")" || ch === "}" || ch === "]") depth--;
-    else if (ch === "," && depth === 0) {
-      parts.push(text.slice(start, i).trim());
-      start = i + 1;
-    }
-  }
-  parts.push(text.slice(start, close).trim());
-  return parts.filter(Boolean);
-}
-
-const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
-
-/**
- * True when the config the file exports (`module.exports =`, `export default`, through a
- * `defineConfig(…)`-style wrapper or a `const config = …` binding) has a `presets` array that
- * holds the preset: `require("…preset")` or a name bound to it by `require` or `import`.
- */
-export function exportsPreset(raw: string): boolean {
-  const { text, inStr } = lexJs(raw); // comments blanked: a commented-out preset does not count
-  const code = (i: number) => !inStr[i];
-  const presetSpec = `(?<q>["'])${esc(PRESET)}\\k<q>`;
-  const bindings = new Set<string>();
-  for (const re of [
-    new RegExp(`(?<![\\w$.])(?:const|let|var)\\s+([\\w$]+)\\s*=\\s*require\\(\\s*${presetSpec}\\s*\\)`, "g"),
-    new RegExp(`(?<![\\w$.])import\\s+(?:\\*\\s+as\\s+)?([\\w$]+)\\s+from\\s+${presetSpec}`, "g"),
-  ]) {
-    for (const m of text.matchAll(re)) if (code(m.index!)) bindings.add(m[1]);
-  }
-  const isPreset = (part: string) => {
-    const p = part.replace(/\.default$/, "").replace(/\s+as\s+[\w$.<>]+$/, "").trim();
-    return new RegExp(`^require\\(\\s*${presetSpec}\\s*\\)$`).test(p) || bindings.has(p);
-  };
-
-  // The exported value: skip wrapper calls and follow one binding.
-  const objectAt = (from: number, seen = 0): number => {
-    let i = from;
-    while (/\s/.test(text[i] ?? "")) i++;
-    if (text[i] === "{") return i;
-    if (text[i] === "(") return objectAt(i + 1, seen);
-    const word = /^[\w$.]+/.exec(text.slice(i))?.[0];
-    if (!word || seen > 3) return -1;
-    let j = i + word.length;
-    while (/\s/.test(text[j] ?? "")) j++;
-    if (text[j] === "(") return objectAt(j + 1, seen + 1);
-    const decl = new RegExp(`(?<![\\w$.])(?:const|let|var)\\s+${esc(word)}\\s*(?::[^=]+)?=`, "g").exec(text);
-    return decl && code(decl.index) ? objectAt(decl.index + decl[0].length, seen + 1) : -1;
-  };
-  for (const m of text.matchAll(/(?<![\w$.])(?:module\s*\.\s*exports\s*=|export\s+default\s+)/g)) {
-    if (!code(m.index!)) continue;
-    const open = objectAt(m.index! + m[0].length);
-    if (open === -1) continue;
-    const close = closeOf(text, inStr, open);
-    if (close === -1) continue;
-    const arrayHasPreset = (arrOpen: number) => {
-      const arrClose = closeOf(text, inStr, arrOpen);
-      return arrClose !== -1 && topLevelParts(text, inStr, arrOpen, arrClose).some(isPreset);
-    };
-    for (const part of topLevelParts(text, inStr, open, close)) {
-      const at = text.indexOf(part, open);
-      const kv = /^(["']?)presets\1\s*:\s*/.exec(part);
-      if (kv && text[at + kv[0].length] === "[" && arrayHasPreset(at + kv[0].length)) return true;
-      // `{ presets }` or `presets: list`: a binding to an array.
-      const ref = part === "presets" ? "presets" : kv ? /^[\w$]+$/.exec(part.slice(kv[0].length).trim())?.[0] : undefined;
-      if (ref) {
-        const decl = new RegExp(`(?<![\\w$.])(?:const|let|var)\\s+${esc(ref)}\\s*(?::[^=]+)?=\\s*\\[`, "g").exec(text);
-        if (decl && code(decl.index) && arrayHasPreset(decl.index + decl[0].length - 1)) return true;
-      }
-    }
-  }
-  return false;
-}
-
-function checkPreset(ctx: AppContext): Finding[] {
-  const { app, appRoot } = ctx;
-  const repoRoot = resolvePath(ctx.root, app.repo);
-  const config = findTailwindConfig(appRoot, isInside(appRoot, repoRoot) ? repoRoot : appRoot);
-  if (!config) return [{ file: app.root, line: 0, message: "Tailwind v3 app has no tailwind.config.* in the app root or above it in the repo" }];
-  const raw = readText(config) ?? "";
-  if (exportsPreset(raw)) return [];
-  return [{ file: ctx.rel(config), line: lineOf(raw, "presets"), message: `does not use the preset: add presets: [require("${PRESET}")] to the exported config` }];
-}
+/** Tailwind's full import or its default theme: what tailwind-strict.css must follow. */
+const isTailwindTheme = (l: Load) => l.kind === "tailwindcss" || l.kind === "tailwindcss-theme";
+/** A Tailwind specifier as the author wrote it, quoted. */
+const twName = (l: Load) => `"${l.spec.replace(/[?#].*$/, "")}"`;
 
 export function checkWiring(ctx: AppContext): CheckOutput {
   const { app } = ctx;
@@ -174,18 +76,25 @@ export function checkWiring(ctx: AppContext): CheckOutput {
   }
   const entryRel = ctx.rel(graph.entry!);
   const at = (l: Load) => ({ file: ctx.rel(l.from), line: l.line });
+  const loc = (l: Load) => `${ctx.rel(l.from)}:${l.line}`;
 
   const entryIsPage = /\.(?:html?)$/i.test(graph.entry!);
   for (const u of graph.unresolved) {
-    const isDs = graph.loads.some((l) => l.from === u.from && l.line === u.line && l.spec === u.spec);
+    const isDs = graph.loads.some((l) => isDsLoad(l) && l.from === u.from && l.line === u.line && l.spec === u.spec);
     if (isDs) violations.push({ file: ctx.rel(u.from), line: u.line, message: `${u.spec} does not resolve` });
     else if (entryIsPage && u.from === graph.entry) {
       violations.push({ file: ctx.rel(u.from), line: u.line, message: `${u.spec} does not resolve; the entry page links it, so the page loads no styles from it` });
     } else warnings.push({ file: ctx.rel(u.from), line: u.line, message: `${u.spec} does not resolve` });
   }
 
+  for (const l of graph.inert) {
+    if (!isDsLoad(l)) continue;
+    violations.push({ ...at(l), message: `${l.spec} comes after a rule, so it is ignored; move the @import above the first rule` });
+  }
+
+  const unconditional = new Set(graph.loads.filter((l) => isDsLoad(l) && !l.condition).map((l) => group(l.kind)));
   for (const l of graph.loads) {
-    if (!l.condition || l.kind === "tailwindcss") continue;
+    if (!l.condition || !isDsLoad(l) || unconditional.has(group(l.kind))) continue;
     violations.push({ ...at(l), message: `${l.spec} loads only under "${l.condition}", so it does not apply to every view; load it without a media or supports condition` });
   }
 
@@ -199,18 +108,29 @@ export function checkWiring(ctx: AppContext): CheckOutput {
     const df = first("tokens-dark-first");
     if (df) violations.push({ ...at(df), message: "loads tokens-dark-first.css, which is for dark-first surfaces; this app's theme rule is light-dark (load tokens.css)" });
   }
-  if (!fonts) violations.push({ file: entryRel, line: 1, message: "does not load fonts.css (@codecaine-ai/design-system/fonts.css) before the tokens" });
+  // Decision 20: text-measure's copy of the fonts does not count. Its violation names the fix, so it
+  // replaces the "does not load fonts.css" one.
+  const tmFonts = [...graph.loads, ...graph.inert].filter((l) => l.kind === "text-measure-fonts");
+  for (const l of tmFonts) {
+    violations.push({
+      ...at(l),
+      message: fonts
+        ? `@codecaine-ai/text-measure/fonts.css loads the fonts a second time; ${DS_FONTS} (${loc(fonts)}) already does, so remove it (decision 20)`
+        : `@codecaine-ai/text-measure/fonts.css does not count as the fonts: load ${DS_FONTS} (decision 20)`,
+    });
+  }
+  if (!fonts && !tmFonts.length) violations.push({ file: entryRel, line: 1, message: `does not load fonts.css: load ${DS_FONTS} (decision 20) before the tokens` });
   if (!tokens) {
     violations.push({ file: entryRel, line: 1, message: `does not load @codecaine-ai/design-system/${darkFirst ? "tokens.css or tokens-dark-first.css" : "tokens.css"}` });
   }
   const before = (a: Load | undefined, b: Load | undefined) => (a && b ? graph.loads.indexOf(a) < graph.loads.indexOf(b) : true);
   if (fonts && tokens && !before(fonts, tokens)) {
-    violations.push({ ...at(fonts), message: `fonts.css loads after ${NAMES[tokens.kind]} (${ctx.rel(tokens.from)}:${tokens.line}); load the fonts first` });
+    violations.push({ ...at(fonts), message: `fonts.css loads after ${NAMES[tokens.kind]} (${loc(tokens)}); load the fonts first` });
   }
   if (app.shell) {
     if (!layout) violations.push({ file: entryRel, line: 1, message: "shell app does not load @codecaine-ai/design-system/layout.css" });
     else if (tokens && !before(tokens, layout)) {
-      violations.push({ ...at(layout), message: `layout.css loads before ${NAMES[tokens.kind]} (${ctx.rel(tokens.from)}:${tokens.line}); load it after the tokens` });
+      violations.push({ ...at(layout), message: `layout.css loads before ${NAMES[tokens.kind]} (${loc(tokens)}); load it after the tokens` });
     }
   }
 
@@ -223,27 +143,85 @@ export function checkWiring(ctx: AppContext): CheckOutput {
       violations.push({ ...at(host), message: `loads ${NAMES[host.kind]} with ${NAMES[tokens.kind]}; pair the variants (tokens-dark-first.css with host-contract-dark-first.css)` });
     }
     if (tokens && !before(tokens, host)) {
-      violations.push({ ...at(host), message: `${NAMES[host.kind]} loads before ${NAMES[tokens.kind]} (${ctx.rel(tokens.from)}:${tokens.line}); load it after the tokens` });
+      violations.push({ ...at(host), message: `${NAMES[host.kind]} loads before ${NAMES[tokens.kind]} (${loc(tokens)}); load it after the tokens` });
     }
     if (layout && !before(host, layout)) {
-      violations.push({ ...at(host), message: `${NAMES[host.kind]} loads after layout.css (${ctx.rel(layout.from)}:${layout.line}); load it before layout.css` });
+      violations.push({ ...at(host), message: `${NAMES[host.kind]} loads after layout.css (${loc(layout)}); load it before layout.css` });
     }
   }
 
-  const tw = app.stack?.tailwind ?? "none";
-  if (tw === "v4") {
-    const strict = first("tw-strict");
-    const theme = first("tw-theme");
-    const base = first("tailwindcss");
-    if (!strict) violations.push({ file: entryRel, line: 1, message: "Tailwind v4 app does not import @codecaine-ai/design-system/tailwind-strict.css" });
-    if (!theme) violations.push({ file: entryRel, line: 1, message: "Tailwind v4 app does not import @codecaine-ai/design-system/tailwind.css" });
-    if (strict && theme && !before(strict, theme)) {
-      violations.push({ ...at(strict), message: `tailwind-strict.css loads after tailwind.css (${ctx.rel(theme.from)}:${theme.line}); after it, strict clears the design-system keys` });
-    }
-    if (strict && base && !before(base, strict)) {
-      violations.push({ ...at(strict), message: `tailwind-strict.css loads before "tailwindcss" (${ctx.rel(base.from)}:${base.line}); Tailwind's defaults would come back` });
-    }
-  }
+  if ((app.stack?.tailwind ?? "none") === "v4") violations.push(...tailwindV4(ctx, graph.loads, entryRel));
 
   return { violations, warnings };
+}
+
+/** Tailwind v4: Tailwind, tailwind-strict.css and tailwind.css in order, in one compilation root. */
+function tailwindV4(ctx: AppContext, loads: Load[], entryRel: string): Finding[] {
+  const out: Finding[] = [];
+  const at = (l: Load) => ({ file: ctx.rel(l.from), line: l.line });
+  const loc = (l: Load) => `${ctx.rel(l.from)}:${l.line}`;
+  const rootName = (id: string) => {
+    const hash = id.lastIndexOf("#style");
+    return hash === -1 ? ctx.rel(id) : `${ctx.rel(id.slice(0, hash))}${id.slice(hash)}`;
+  };
+  const live = loads.filter((l) => !l.condition);
+  const strict = live.find((l) => l.kind === "tw-strict");
+  const theme = live.find((l) => l.kind === "tw-theme");
+  const tailwind = live.find(isTailwindTheme);
+  if (!strict) out.push({ file: entryRel, line: 1, message: "Tailwind v4 app does not import @codecaine-ai/design-system/tailwind-strict.css" });
+  if (!theme) out.push({ file: entryRel, line: 1, message: "Tailwind v4 app does not import @codecaine-ai/design-system/tailwind.css" });
+
+  const roots = new Map<string, Load[]>();
+  for (const l of live) {
+    if (!isTailwindLoad(l) && l.kind !== "tw-strict" && l.kind !== "tw-theme") continue;
+    if (!roots.has(l.root)) roots.set(l.root, []);
+    roots.get(l.root)!.push(l);
+  }
+  let good: string | null = null;
+  let misordered = false;
+  /** The first Tailwind import of each root that has no strict and tailwind.css after its last one. */
+  const unfinished: Load[] = [];
+  for (const [id, ls] of roots) {
+    const tws = ls.filter(isTailwindTheme);
+    const s = ls.find((l) => l.kind === "tw-strict");
+    const d = ls.find((l) => l.kind === "tw-theme");
+    if (s && d && ls.indexOf(d) < ls.indexOf(s)) {
+      misordered = true;
+      out.push({ ...at(s), message: `tailwind-strict.css loads after tailwind.css (${loc(d)}); after it, strict clears the design-system keys` });
+    }
+    const afterStrict = s ? tws.find((t) => ls.indexOf(t) > ls.indexOf(s)) : undefined;
+    if (s && afterStrict) {
+      misordered = true;
+      if (tws[0] === afterStrict) {
+        out.push({ ...at(s), message: `tailwind-strict.css loads before ${twName(afterStrict)} (${loc(afterStrict)}); Tailwind's defaults would come back` });
+      } else {
+        out.push({ ...at(afterStrict), message: `${twName(afterStrict)} loads after tailwind-strict.css (${loc(s)}); it restores Tailwind's default theme` });
+      }
+    }
+    if (!tws.length) continue;
+    const last = ls.indexOf(tws[tws.length - 1]);
+    const s2 = ls.findIndex((l, i) => i > last && l.kind === "tw-strict");
+    const done = s2 !== -1 && ls.some((l, i) => i > s2 && l.kind === "tw-theme");
+    if (done) good ??= id;
+    else unfinished.push(tws[0]);
+  }
+
+  if (good) {
+    for (const t of unfinished) {
+      out.push({
+        ...at(t),
+        message: `${twName(t)} starts its own Tailwind compilation (${rootName(t.root)}) without tailwind-strict.css and tailwind.css after it, so Tailwind's default theme applies there; import them after it, as ${rootName(good)} does`,
+      });
+    }
+  } else if (!misordered && strict && theme) {
+    if (!tailwind) {
+      out.push({ file: entryRel, line: 1, message: 'Tailwind v4 app does not import "tailwindcss": @import it before tailwind-strict.css and tailwind.css, in the same stylesheet' });
+    } else {
+      out.push({
+        ...at(tailwind),
+        message: `tailwindcss, tailwind-strict.css and tailwind.css are compiled as separate stylesheets (${loc(tailwind)}, ${loc(strict)}, ${loc(theme)}); @import all three, in that order, in one stylesheet`,
+      });
+    }
+  }
+  return out;
 }

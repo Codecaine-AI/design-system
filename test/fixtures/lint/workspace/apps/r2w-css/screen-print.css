@@ -1,0 +1,6 @@
+@import "@codecaine-ai/design-system/fonts.css";
+@import "tailwindcss";
+@import "@codecaine-ai/design-system/tokens.css" screen, print;
+@import "@codecaine-ai/design-system/tailwind-strict.css";
+@import "@codecaine-ai/design-system/tailwind.css";
+@import "@codecaine-ai/design-system/layout.css" only screen;
