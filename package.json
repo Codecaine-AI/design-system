@@ -72,6 +72,7 @@
     "codemod:literals": "bun scripts/codemod-literals.ts",
     "progress": "bun scripts/progress.ts",
     "pack": "bun scripts/pack.ts",
-    "test:apps": "bun scripts/test-apps.ts"
+    "test:apps": "bun scripts/test-apps.ts",
+    "use:app": "bun scripts/use-app.ts"
   }
 }
