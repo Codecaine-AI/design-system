@@ -70,6 +70,11 @@ export interface RouteSpec {
   /** false = captured but never fails a pixel gate. Requires a reason. */
   gating?: boolean;
   reason?: string;
+  /**
+   * true: the route looks different in dark. `snapshot:diff --exact` fails a gating route whose dark shot
+   * in the judged set (B) is byte-identical to its light shot. Otherwise identical shots are only a warning.
+   */
+  darkDiffers?: boolean;
 }
 
 export interface RunProfile {
@@ -133,16 +138,23 @@ export interface Exception {
   reason: string;
 }
 
+/** The chrome roles verify:apps needs a probe for: page background, a panel, text, a border. */
+export type ProbeRole = "page" | "panel" | "text" | "border";
+export const PROBE_ROLES: readonly ProbeRole[] = ["page", "panel", "text", "border"];
+
 /** How verify:apps proves the app is connected (runtime check). */
 export interface VerifySpec {
   /** Route id to verify on; default the first route. */
   route?: string;
   /**
    * Representative chrome elements and the token each CSS property must compute to
-   * in the active theme: page background, a panel, body text, a border.
+   * in the active theme: page background, a panel, body text, a border (one probe per role at least).
    * Example: { selector: "body", property: "background-color", token: "color.surface.page" }.
+   * `role` overrides the role the token family gives (see probeRole).
    */
-  probes: Array<{ selector: string; property: string; token: string }>;
+  probes: Array<{ selector: string; property: string; token: string; role?: ProbeRole }>;
+  /** Roles the app has no element for, each with the reason. A role needs a probe or a waiver. */
+  waivedRoles?: Array<{ role: ProbeRole; reason: string }>;
   /** How to switch to dark. On dark-first surfaces dark is the default; the check confirms it instead. */
   darkSwitch:
     | { kind: "attribute"; target?: string }
@@ -210,6 +222,28 @@ export interface Registry {
   apps: AppEntry[];
 }
 
+/**
+ * A probe's role: its own `role`, else its token family. color.surface.page is the page; the
+ * surface.panel, sidebar, inset and sunken tokens are panels; color.text.* is text; color.border.*
+ * is a border. Null for any other token (a font, a status color).
+ */
+export function probeRole(probe: VerifySpec["probes"][number]): ProbeRole | null {
+  if (probe.role) return probe.role;
+  const token = probe.token;
+  if (token === "color.surface.page") return "page";
+  if (/^color\.surface\.(?:panel|sidebar|inset|sunken)$/.test(token)) return "panel";
+  if (token.startsWith("color.text.")) return "text";
+  if (token.startsWith("color.border.")) return "border";
+  return null;
+}
+
+/** Roles with neither a probe nor a waiver that gives a reason. */
+export function missingProbeRoles(verify: Pick<VerifySpec, "probes" | "waivedRoles">): ProbeRole[] {
+  const covered = new Set((verify.probes ?? []).map(probeRole));
+  const waived = new Set((verify.waivedRoles ?? []).filter((w) => w.reason?.trim()).map((w) => w.role));
+  return PROBE_ROLES.filter((role) => !covered.has(role) && !waived.has(role));
+}
+
 export const DESIGN_SYSTEM_ROOT = resolve(import.meta.dir, "..", "..");
 export const REGISTRY_PATH = join(DESIGN_SYSTEM_ROOT, "apps.json");
 
@@ -255,6 +289,10 @@ export function validateRegistry(registry: Registry): string[] {
     if (app.run?.mode === "electron" && !app.run.electron) problems.push(`${app.id}: run mode electron needs run.electron`);
     if (runnable && !app.routes?.length) problems.push(`${app.id}: run mode ${app.run.mode} needs at least one route`);
     if (runnable && app.gates?.verify?.required && !app.verify) problems.push(`${app.id}: gates.verify is required but verify is missing`);
+    if (app.verify) {
+      const missing = missingProbeRoles(app.verify);
+      if (missing.length) problems.push(`${app.id}: verify.probes has no ${missing.join(", ")} probe (add one, or a verify.waivedRoles entry with a reason)`);
+    }
     if (!runnable) {
       for (const g of ["verify", "snapshot"] as const)
         if (app.gates?.[g]?.required) problems.push(`${app.id}: gates.${g} is required but run mode is none`);

@@ -29,6 +29,14 @@ function makeTrees() {
   return { root, ds };
 }
 
+/** One probe per role: page, panel, text, border. */
+const PROBES = [
+  { selector: "body", property: "background-color", token: "color.surface.page" },
+  { selector: ".panel", property: "background-color", token: "color.surface.panel" },
+  { selector: "body", property: "color", token: "color.text.body" },
+  { selector: ".panel", property: "border-top-color", token: "color.border.default" },
+];
+
 function entry(over: Partial<AppEntry> = {}): AppEntry {
   return {
     id: "demo",
@@ -62,7 +70,7 @@ function entry(over: Partial<AppEntry> = {}): AppEntry {
       ports: { ui: 47000 },
       proof: { status: "proven", method: "test", date: "2026-10-05" },
     },
-    verify: { probes: [], darkSwitch: { kind: "attribute" } },
+    verify: { probes: PROBES, darkSwitch: { kind: "attribute" } },
     exceptions: [],
     ...over,
   };
@@ -76,6 +84,13 @@ const check = (apps: AppEntry[]) => {
 describe("registry:check", () => {
   test("a complete entry against its trees has no problems", () => {
     expect(check([entry()])).toEqual([]);
+  });
+
+  test("a role is covered by a probe's own role field or by a waiver with a reason", () => {
+    const border = { selector: "hr", property: "color", token: "color.status.neutral.line", role: "border" as const };
+    expect(check([entry({ verify: { probes: [...PROBES.slice(0, 3), border], darkSwitch: { kind: "attribute" } } })])).toEqual([]);
+    const waived = { probes: PROBES.slice(0, 3), waivedRoles: [{ role: "border" as const, reason: "a canvas app with no bordered chrome" }], darkSwitch: { kind: "attribute" as const } };
+    expect(check([entry({ verify: waived })])).toEqual([]);
   });
 
   const profile = (over: Partial<AppEntry["runProfile"]>) => ({ ...entry().runProfile, ...over });
@@ -97,6 +112,16 @@ describe("registry:check", () => {
     ["a proven profile without a date", [entry({ runProfile: profile({ proof: { status: "proven", method: "x" } }) })], "needs proof.method and proof.date"],
     ["a runnable app with an unproven profile", [entry({ runProfile: profile({ proof: { status: "unproven", method: "" } }) })], "needs a proven run profile"],
     ["verify required with run mode none", [entry({ run: { mode: "none", reason: "blocked" } })], "gates.verify is required but run mode is none"],
+    [
+      "verify probes that miss a role",
+      [entry({ verify: { probes: PROBES.slice(0, 3), darkSwitch: { kind: "attribute" } } })],
+      "verify.probes has no border probe",
+    ],
+    [
+      "a role waiver without a reason",
+      [entry({ verify: { probes: PROBES.slice(0, 3), waivedRoles: [{ role: "border", reason: " " }], darkSwitch: { kind: "attribute" } } })],
+      "verify.probes has no border probe",
+    ],
   ])("reports %s", (_, apps, message) => {
     const problems = check(apps);
     expect(problems.some((p) => p.includes(message))).toBe(true);
