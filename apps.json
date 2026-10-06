@@ -853,7 +853,7 @@
       },
       "consume": {
         "via": "workspace",
-        "detail": "Core workspace member (`workspace:*`). Replace the :root and @theme block in src/index.css with tailwind-strict.css + tailwind.css; add fs.allow, optimizeDeps and dedupe to vite.config.ts; the Electron build must bundle the package CSS and fonts."
+        "detail": "Core workspace member (`workspace:*`). Replace the :root and @theme block in src/index.css with tailwind-strict.css + tailwind.css; add the package directory to server.fs.allow in vite.config.ts (no optimizeDeps or dedupe: the package ships CSS and plain JS, consume.md §8); the Electron build must bundle the package CSS and fonts."
       },
       "entryStylesheet": "codecaine/core/canvas/packages/studio/src/main.tsx",
       "theme": {
@@ -1675,7 +1675,7 @@
         },
         "3": {
           "required": false,
-          "reason": "one 28-line file with no components; the audit sets structure N/A"
+          "reason": "background/home.ts (38 lines, no components) plus the 44-line design-system asset route (background/design-system-assets.ts); the audit sets structure N/A"
         }
       },
       "checks": {
@@ -1697,7 +1697,7 @@
         },
         "structure": {
           "required": false,
-          "reason": "one 28-line file with no components; the audit sets structure N/A"
+          "reason": "background/home.ts (38 lines, no components) plus the 44-line design-system asset route (background/design-system-assets.ts); the audit sets structure N/A"
         }
       },
       "gates": {
@@ -3664,7 +3664,7 @@
       },
       "consume": {
         "via": "copy",
-        "detail": "Copy the built tokens.css (and fonts.css with its fonts) into web/vendor/ and add each route to the whitelist in server.py; checked by the hash of tokens.css."
+        "detail": "Copy the built tokens.css, layout.css (pass 2 shell) and fonts.css with its fonts into web/vendor/design-system/ and add each route to the whitelist in server.py; checked by the hash of tokens.css."
       },
       "entryStylesheet": "lascari-ai/agent-skills/manager/web/index.html",
       "theme": {
