@@ -167,7 +167,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 5d0cf5a; run 2026-10-05 21:05 CDT, proof JSON in rollout/tooling/r2-a1/prove-writes): sandboxed (deny-by-default loopback: connect and listen only on its block 47000-47009, owner ports never; writes denied everywhere but --root, the run's temp dir and device files; no .env reads), egress sampled from before spawn (24 lsof samples, 0 failed; 20 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 6/6 route loads (light and dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox denies every write outside --root and the run's temp dir.",
+          "method": "scripts/registry-prove.ts under the final runner (rollout-r2-a1 5d0cf5a merged into rollout-r2-c), re-run 2026-10-05 21:37 CDT by R2-C after the fixture's font change (49e8e71), proof JSON in rollout/tooling/fix-r2c/prove-fixtures: sandboxed (deny-by-default loopback: connect and listen only on its block 47000-47009, owner ports never; writes denied everywhere but --root, the run's temp dir and device files; no .env reads), egress sampled from before spawn (24 lsof samples, 0 failed; 18 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 6/6 route loads (light and dark) rendered with no console error; the guard blocked nothing; stopped clean. Write check around the run (test:apps' check: git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): 0 unexpected, 0 cache writes.",
           "date": "2026-10-05"
         }
       },
@@ -1760,7 +1760,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 5d0cf5a; run 2026-10-05 21:06 CDT, proof JSON in rollout/tooling/r2-a1/prove-writes): sandboxed (deny-by-default loopback: connect and listen only on its block 47060-47069, owner ports never; writes denied everywhere but --root, the run's temp dir and device files; no .env reads), egress sampled from before spawn (8 lsof samples, 0 failed; 5 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 1/1 route loads (dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox denies every write outside --root and the run's temp dir.",
+          "method": "scripts/registry-prove.ts under the final runner (rollout-r2-a1 5d0cf5a merged into rollout-r2-c), re-run 2026-10-05 21:37 CDT by R2-C after the fixture's font change (49e8e71), proof JSON in rollout/tooling/fix-r2c/prove-fixtures: sandboxed (deny-by-default loopback: connect and listen only on its block 47060-47069, owner ports never; writes denied everywhere but --root, the run's temp dir and device files; no .env reads), egress sampled from before spawn (8 lsof samples, 0 failed; 5 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 1/1 route loads (dark) rendered with no console error; the guard blocked nothing; stopped clean. Write check around the run (test:apps' check: git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): 0 unexpected, 0 cache writes.",
           "date": "2026-10-05"
         }
       },
