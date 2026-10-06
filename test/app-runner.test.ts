@@ -16,6 +16,9 @@ import { spawn } from "node:child_process";
 import {
   cleanupRuns,
   guardedContext,
+  profileBlock,
+  registryProblems,
+  validateLoadedRegistry,
   guardVerdict,
   killRun,
   launchBrowser,
@@ -29,7 +32,7 @@ import {
 } from "../scripts/lib/app-runner.ts";
 import { adoptStyleSheet, DETERMINISM_CSS } from "../scripts/lib/capture.ts";
 import { loadPlaywright, playwrightAnchor, playwrightUnavailable } from "../scripts/lib/playwright.ts";
-import type { AppEntry } from "../scripts/lib/registry.ts";
+import { loadRegistry, type AppEntry, type Registry } from "../scripts/lib/registry.ts";
 import { assertNoLeaks } from "./leaks.ts";
 
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-runner-test-")));
@@ -72,8 +75,6 @@ function fixtureApp(ports: Record<string, number>, overrides: Partial<AppEntry> 
         NO_COLOR: "1",
         FIXTURE_PORT: "{port:ui}",
         FIXTURE_HELPER_PORT: "{port:helper}",
-        FIXTURE_STRAY_PORT: "46939",
-        FIXTURE_DEAD_PORT: "46938",
       },
       unsetEnv: [],
       tempHome: true,
@@ -138,6 +139,34 @@ describe("profileEnv", () => {
         else process.env[key] = value;
       }
     }
+  });
+});
+
+describe("validateLoadedRegistry", () => {
+  test("accepts the design-system's own apps.json", () => {
+    const registry = loadRegistry();
+    expect(registryProblems(registry)).toEqual([]);
+    expect(validateLoadedRegistry(registry)).toBe(registry);
+  });
+
+  test("refuses a registry whose profiles break registry:check's port rules, naming each problem", () => {
+    const registry = structuredClone(loadRegistry());
+    const index = registry.apps.findIndex((app, i) => i > 0 && Object.keys(app.runProfile?.ports ?? {}).length > 0);
+    const [app] = registry.apps.splice(index, 1);
+    // Moved to the front: its ports now sit outside the block index 0 gives it.
+    registry.apps.unshift(app!);
+    app!.runProfile.allowedLocalPorts = [5432];
+    const message = (() => {
+      try {
+        validateLoadedRegistry(registry, "planted.json");
+        return "";
+      } catch (error) {
+        return String(error);
+      }
+    })();
+    expect(message).toContain("planted.json:");
+    expect(message).toMatch(new RegExp(`${app!.id}: port \\w+=\\d+ is outside its block 47000-47009`));
+    expect(message).toContain(`${app!.id}: runProfile.allowedLocalPorts lists owner port 5432`);
   });
 });
 
@@ -253,7 +282,8 @@ describe("startApp", () => {
     let hits = 0;
     const other = Bun.serve({ hostname: "127.0.0.1", port: 46939, fetch: () => (hits++, new Response("not the app")) });
     try {
-      const app = fixtureApp({ ui: 46913, helper: 46914 }, {}, { start: "echo 'Local: http://127.0.0.1:46939/'; sleep 30" });
+      // Printed from parts: registry:check's rules already refuse a start command that names the URL.
+      const app = fixtureApp({ ui: 46913, helper: 46914 }, {}, { start: "printf 'Local: http://127.0.0.1:%s/\\n' 46939; sleep 30" });
       await expect(startApp(app, { root: makeRoot(), outDir, timeoutMs: 10_000 })).rejects.toThrow(/not on one of its profile ports/);
       expect(hits).toBe(0);
     } finally {
@@ -268,12 +298,30 @@ describe("startApp", () => {
     ["an unproven profile", fixtureApp({ ui: 46913, helper: 46914 }, {}), /unproven/],
     ["run mode none", fixtureApp({ ui: 46913, helper: 46914 }, {}, { mode: "none", reason: "library only" }), /run mode none \(library only\)/],
     ["an app id that climbs out of the out dir", fixtureApp({ ui: 46913, helper: 46914 }, { id: "../../escape" }), /app id "\.\.\/\.\.\/escape" does not match/],
+    ["a named port outside the block of its first port", fixtureApp({ ui: 46913, helper: 46924 }), /port helper=46924 is outside its block 46910-46919/],
+    ["allowedLocalPorts outside its block", fixtureApp({ ui: 46913, helper: 46914 }), /allowedLocalPorts port 46939 is outside its block 46910-46919/],
+    ["an owner port named in an env value", fixtureApp({ ui: 46913, helper: 46914 }), /runProfile\.env\.API names owner port 5432/],
+    ["a port outside its block named in an env value", fixtureApp({ ui: 46913, helper: 46914 }), /runProfile\.env\.STRAY_PORT names port 46939 outside its block/],
   ])("refuses %s before it spawns anything", async (name, app, message) => {
     if (name === "an unproven profile") app.runProfile.proof = { status: "unproven", method: "" };
     if (name === "an owner port in allowedLocalPorts") app.runProfile.allowedLocalPorts = [4820];
+    if (name === "allowedLocalPorts outside its block") app.runProfile.allowedLocalPorts = [46939];
+    if (name === "an owner port named in an env value") app.runProfile.env.API = "postgres://127.0.0.1:5432/db";
+    if (name === "a port outside its block named in an env value") app.runProfile.env.STRAY_PORT = "46939";
     const root = makeRoot();
     app.run.start = `touch ${join(root, "spawned")} && bun serve.ts`;
     await expect(startApp(app, { root, outDir })).rejects.toThrow(message);
+    expect(existsSync(join(root, "spawned"))).toBe(false);
+  });
+
+  test("refuses ports outside the block its registry index gives it, before it spawns anything", async () => {
+    // Index 1 in the registry it came from: block 47010-47019, whatever block its own ports suggest.
+    const app = fixtureApp({ ui: 46913, helper: 46914 });
+    const root = makeRoot();
+    app.run.start = `touch ${join(root, "spawned")} && bun serve.ts`;
+    const registry = { version: 1, apps: [fixtureApp({ ui: 47000 }, { id: "first" }), app] } as Registry;
+    expect(profileBlock(app, registry)).toEqual({ start: 47010, size: 10 });
+    await expect(startApp(app, { root, outDir, registry })).rejects.toThrow(/port ui=46913 is outside its block 47010-47019/);
     expect(existsSync(join(root, "spawned"))).toBe(false);
   });
 
@@ -386,14 +434,16 @@ describe("guardedContext", () => {
     "aborts and records requests to local ports the run did not start and to non-loopback hosts",
     async () => {
       // 46939 is a live server this test started, not the run: only the guard keeps the page off it.
-      // 46938 is a named profile port nothing binds (like a dead kernel URL): blocked, but expected.
+      // 46910 is a named profile port nothing binds (like a dead kernel URL): blocked, but expected.
       let strayHits = 0;
       const stray = Bun.serve({
         hostname: "127.0.0.1",
         port: 46939,
         fetch: () => (strayHits++, new Response("stray", { headers: { "access-control-allow-origin": "*" } })),
       });
-      const running = await start(fixtureApp({ ui: 46916, helper: 46917, deadKernel: 46938 }), makeRoot());
+      const guarded = fixtureApp({ ui: 46916, helper: 46917, deadKernel: 46910 });
+      guarded.runProfile.env.FIXTURE_DEAD_PORT = "{port:deadKernel}";
+      const running = await start(guarded, makeRoot());
       const { chromium } = loadPlaywright(process.env.DS_MIRROR ?? "/Users/Ford/workspace-ds");
       const browser = await chromium.launch({ headless: true });
       try {
@@ -405,7 +455,7 @@ describe("guardedContext", () => {
         expect(strayHits).toBe(0);
         expect(splitBlocked(running, blocked())).toEqual({
           unexpected: ["GET http://127.0.0.1:46939/", "GET http://example.invalid/"],
-          expected: ["GET http://127.0.0.1:46938/"],
+          expected: ["GET http://127.0.0.1:46910/"],
         });
       } finally {
         await browser.close();
@@ -543,10 +593,10 @@ async function portsClosed(ports: number[], ms = 5_000): Promise<boolean> {
 
 describe("a tool that ends without stopping its apps", () => {
   test("process.exit: the exit hook kills the run's processes", async () => {
-    const { tool, tmp } = await lifecycle("exit", [46909, 46910]);
+    const { tool, tmp } = await lifecycle("exit", [46920, 46921]);
     expect(tmp).toBeDefined();
     expect(await tool.exited).toBe(3);
-    expect(await portsClosed([46909, 46910])).toBe(true);
+    expect(await portsClosed([46920, 46921])).toBe(true);
   }, 40_000);
 
   test("an uncaught exception: the handlers stop the apps, then exit 1", async () => {
@@ -573,7 +623,7 @@ describe("a tool that ends without stopping its apps", () => {
   }, 40_000);
 
   test("a signal while startApp waits for the ready line: the spawned server is stopped", async () => {
-    const tool = Bun.spawn(["bun", join(import.meta.dir, "fixtures/runner/lifecycle.ts"), "before-ready", makeRoot(), outDir, "46936", "46929"], {
+    const tool = Bun.spawn(["bun", join(import.meta.dir, "fixtures/runner/lifecycle.ts"), "before-ready", makeRoot(), outDir, "46936", "46938"], {
       stdout: "ignore",
       stderr: "ignore",
     });
@@ -582,7 +632,7 @@ describe("a tool that ends without stopping its apps", () => {
     expect(await portOpen(46936)).toBe(true);
     tool.kill("SIGINT");
     expect(await tool.exited).toBe(130);
-    expect(await portsClosed([46936, 46929], 1_000)).toBe(true);
+    expect(await portsClosed([46936, 46938], 1_000)).toBe(true);
   }, 40_000);
 
   test("SIGKILL: no hook runs, yet the watchdog takes the run's process group down with the tool", async () => {

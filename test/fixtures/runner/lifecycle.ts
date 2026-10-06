@@ -29,7 +29,7 @@ function app(id: string, uiPort: number, helperPort: number): AppEntry {
       readyPattern: mode === "before-ready" ? "never printed: (\\S+)" : "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)",
     },
     runProfile: {
-      env: { NO_COLOR: "1", FIXTURE_PORT: "{port:ui}", FIXTURE_HELPER_PORT: "{port:helper}", FIXTURE_STRAY_PORT: "46937" },
+      env: { NO_COLOR: "1", FIXTURE_PORT: "{port:ui}", FIXTURE_HELPER_PORT: "{port:helper}" },
       unsetEnv: [],
       tempHome: true,
       fixtures: [],

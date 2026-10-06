@@ -60,7 +60,8 @@ import { CONTEXT_OPTIONS, DETERMINISM_CSS, installStyleInitScript, LAUNCH_OPTION
 import { describeConnection, egressConnections, lsofConnections } from "./egress";
 import { OWNER_PORTS } from "./owner";
 import { loadPlaywright, playwrightAnchor } from "./playwright";
-import { DESIGN_SYSTEM_ROOT, resolvePath, type AppEntry } from "./registry";
+import { portProblems, PROFILE_PORTS } from "../registry-check";
+import { DESIGN_SYSTEM_ROOT, resolvePath, validateRegistry, type AppEntry, type Registry } from "./registry";
 import { safeAppId, safeOutputPath } from "./safe-paths";
 import { runPolicy, sandboxCommand, sandboxProfile, sandboxUnavailable, type SandboxPolicy } from "./sandbox";
 
@@ -141,6 +142,11 @@ export interface StartOptions {
    * loud line and sets running.unsandboxed. Default false: startApp throws instead.
    */
   allowUnsandboxed?: boolean;
+  /**
+   * The registry `app` was loaded from. Its index there fixes the app's port block (47000 + 10 x index);
+   * without it the block is the aligned ten-port block of the profile's first port.
+   */
+  registry?: Registry;
 }
 
 // -- placeholders, env, fixtures ---------------------------------------------
@@ -206,15 +212,84 @@ function copyFixtures(app: AppEntry, tmp: string) {
   }
 }
 
-function checkProfilePorts(app: AppEntry) {
-  for (const [name, port] of Object.entries(app.runProfile.ports ?? {})) {
-    if (OWNER_PORTS.includes(port)) throw new Error(`${app.id}: port ${name}=${port} is an owner port`);
-    if (!Number.isInteger(port) || port < RUN_PORT_RANGE.min || port > RUN_PORT_RANGE.max)
-      throw new Error(`${app.id}: port ${name}=${port} is outside ${RUN_PORT_RANGE.min}-${RUN_PORT_RANGE.max}`);
+/** A run's port block: ten ports from `start`. Registry apps get 47000 + 10 x their index; tool tests use 46900-46999. */
+export interface PortBlock {
+  start: number;
+  size: number;
+}
+
+/**
+ * The port block a profile runs in. With the registry it was loaded from: 47000 + 10 x the app's index
+ * there (registry:check's rule). Without one: the aligned ten-port block of its first named port (or
+ * first allowedLocalPorts entry), and checkProfilePorts then requires every other port to share it.
+ * Null when the profile names no port at all.
+ */
+export function profileBlock(app: AppEntry, registry?: Registry): PortBlock | null {
+  if (registry) {
+    const index = registry.apps.findIndex((entry) => entry.id === app.id);
+    if (index < 0) throw new Error(`${app.id}: not in the registry it was started from`);
+    return { start: PROFILE_PORTS.min + PROFILE_PORTS.block * index, size: PROFILE_PORTS.block };
   }
-  for (const port of app.runProfile.allowedLocalPorts ?? []) {
-    if (OWNER_PORTS.includes(port)) throw new Error(`${app.id}: allowedLocalPorts lists owner port ${port}`);
+  const first = [...Object.values(app.runProfile?.ports ?? {}), ...(app.runProfile?.allowedLocalPorts ?? [])].find(Number.isInteger);
+  return first === undefined ? null : { start: first - (first % PROFILE_PORTS.block), size: PROFILE_PORTS.block };
+}
+
+/**
+ * registry:check's profile rules for one app (portProblems in scripts/registry-check.ts), plus the run
+ * range: every named port in 46900-47999, inside `block`, never an owner port; allowedLocalPorts inside
+ * the block, never an owner port; no command, flag or env value naming an owner port or a port outside
+ * the block. One message per problem.
+ */
+export function profilePortProblems(app: AppEntry, block: PortBlock | null): string[] {
+  const problems: string[] = [];
+  const range = block ? `${block.start}-${block.start + block.size - 1}` : "";
+  for (const [name, port] of Object.entries(app.runProfile?.ports ?? {})) {
+    if (OWNER_PORTS.includes(port)) problems.push(`${app.id}: port ${name}=${port} is an owner port`);
+    else if (!Number.isInteger(port) || port < RUN_PORT_RANGE.min || port > RUN_PORT_RANGE.max)
+      problems.push(`${app.id}: port ${name}=${port} is outside ${RUN_PORT_RANGE.min}-${RUN_PORT_RANGE.max}`);
+    else if (block && (port < block.start || port >= block.start + block.size)) problems.push(`${app.id}: port ${name}=${port} is outside its block ${range}`);
   }
+  if (!block) {
+    for (const port of app.runProfile?.allowedLocalPorts ?? [])
+      problems.push(`${app.id}: runProfile.allowedLocalPorts ${OWNER_PORTS.includes(port) ? `lists owner port ${port}` : `port ${port} has no block to be in`}`);
+    return problems;
+  }
+  return [...problems, ...portProblems(app, block)];
+}
+
+function checkProfilePorts(app: AppEntry, block: PortBlock | null) {
+  const problems = profilePortProblems(app, block);
+  if (problems.length) throw new Error(problems.join("; "));
+}
+
+/**
+ * Every problem a loaded registry has before any tool may run from it: validateRegistry's structure, then
+ * registry:check's profile rules for each app in its own block (47000 + 10 x index), each profile port
+ * used once. Path checks against a workspace tree stay in registry:check.
+ */
+export function registryProblems(registry: Registry): string[] {
+  const problems = validateRegistry(registry);
+  const users = new Map<number, string>();
+  registry.apps.forEach((app, index) => {
+    const block = { start: PROFILE_PORTS.min + PROFILE_PORTS.block * index, size: PROFILE_PORTS.block };
+    problems.push(...profilePortProblems(app, block));
+    for (const [name, port] of Object.entries(app.runProfile?.ports ?? {})) {
+      const other = users.get(port);
+      if (other) problems.push(`${app.id}: port ${name}=${port} is also used by ${other}`);
+      else users.set(port, `${app.id}.${name}`);
+    }
+  });
+  return [...new Set(problems)];
+}
+
+/**
+ * For every tool that loads a registry (the canonical apps.json or a --registry file): throws with every
+ * problem registryProblems finds, else returns the registry. `source` names the file in the error.
+ */
+export function validateLoadedRegistry(registry: Registry, source = "apps.json"): Registry {
+  const problems = registryProblems(registry);
+  if (problems.length) throw new Error(`${source}: ${problems.length} registry problem(s); run registry:check:\n  ${problems.join("\n  ")}`);
+  return registry;
 }
 
 // -- processes ----------------------------------------------------------------
@@ -282,7 +357,11 @@ function unreaped(root: RootProc): boolean {
   return root.child !== undefined && root.child.exitCode === null && root.child.signalCode === null;
 }
 
-const OWN_PGID = (() => processTable().find((p) => p.pid === process.pid)?.pgid ?? process.pid)();
+let ownPgid: number | undefined;
+/** This process's group (read once, lazily: importing the runner runs no `ps`). Never signalled. */
+function OWN_PGID(): number {
+  return (ownPgid ??= processTable().find((p) => p.pid === process.pid)?.pgid ?? process.pid);
+}
 
 /** The processes of `procs` that still exist with the same start time, with their current pgid. */
 function stillRunning(procs: readonly ProcInfo[], table: ProcInfo[] = processTable()): ProcInfo[] {
@@ -364,7 +443,7 @@ const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
  */
 function signalRun(procs: readonly ProcInfo[], sig: NodeJS.Signals): number {
   const live = stillRunning(procs).filter((proc) => proc.pid !== process.pid);
-  const groups = new Set(live.map((proc) => proc.pgid).filter((pgid) => pgid > 1 && pgid !== OWN_PGID));
+  const groups = new Set(live.map((proc) => proc.pgid).filter((pgid) => pgid > 1 && pgid !== OWN_PGID()));
   for (const pgid of groups) signal(-pgid, sig);
   for (const proc of live) signal(proc.pid, sig);
   return live.length;
@@ -723,7 +802,9 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
   const root = resolve(opts.root);
   const outDir = safeOutputPath(opts.outDir, { root, label: `${app.id}: outDir` });
   const timeoutMs = opts.timeoutMs ?? 180_000;
-  checkProfilePorts(app);
+  const block = profileBlock(app, opts.registry);
+  checkProfilePorts(app, block);
+  OWN_PGID(); // read while `ps` works, before any signal may need it
   const noSandbox = sandboxUnavailable();
   if (noSandbox && !opts.allowUnsandboxed) throw new Error(`${app.id}: refusing to start without the OS sandbox: ${noSandbox}`);
   for (const [name, port] of Object.entries(app.runProfile.ports ?? {})) {
