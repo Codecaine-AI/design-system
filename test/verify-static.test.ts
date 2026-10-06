@@ -72,6 +72,11 @@ test("a package inside the root with the current tokens.css, and a stylesheet th
   });
 });
 
+test("a stylesheet that loads the package by its URL (/@codecaine-ai/design-system/<path>, decision 30) passes against the package the app resolves", () => {
+  const root = rootWith(inRoot, '@import "/@codecaine-ai/design-system/dist/css/tokens.css";');
+  expect(statuses(root)["entry-stylesheet"]).toEqual(["pass", expect.stringMatching(/loads dist\/css\/tokens\.css/)]);
+});
+
 test("a package linked from outside the root, and a stylesheet without the tokens, fail", () => {
   const found = statuses(rootWith(() => mkdtempSync(join(scratch, "outside-")), "body { color: #333; }"));
   expect(found.package).toEqual(["fail", expect.stringMatching(/is outside the root/)]);

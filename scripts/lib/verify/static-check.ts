@@ -35,11 +35,20 @@ function buildSha(values: BuildValues, member: string): string | null {
   return member === "dist/css/tokens.css" ? values.tokensCssSha256 : sha256(join(values.dir, member));
 }
 
-/** The first tokens stylesheet the entry loads (tokens-dark-first counts on dark-first surfaces), or null. */
+/**
+ * The first tokens stylesheet the entry loads (tokens-dark-first counts on dark-first surfaces), or null.
+ * The load graph is the linter's, with the linter's options (lint/run.ts makeContext): root-absolute URLs
+ * resolve under the app's web root, and `/@codecaine-ai/design-system/<path>` to the package the app
+ * resolves (decision 30).
+ */
 function tokensLoad(app: AppEntry, root: string): { entry: string; exists: boolean; load: Load | null } {
   clearCaches(); // the linter's file and package caches; files may have changed since the last read
   const entry = resolvePath(root, app.entryStylesheet!);
-  const graph = buildLoadGraph(entry);
+  const resolved = findPackageDir(PACKAGE, resolvePath(root, app.root));
+  const graph = buildLoadGraph(entry, {
+    serveRoot: resolvePath(root, app.run?.serveRoot ?? app.run?.cwd ?? app.root),
+    designSystem: resolved ? real(resolved) : null,
+  });
   const kinds = app.theme?.rule === "dark-first" ? ["tokens", "tokens-dark-first"] : ["tokens"];
   return { entry, exists: graph.entryExists, load: graph.loads.find((l) => kinds.includes(l.kind)) ?? null };
 }
