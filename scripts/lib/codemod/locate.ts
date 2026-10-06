@@ -53,12 +53,16 @@ function normalizeHex(h: string): string {
   return s;
 }
 
-/** Property groups whose declaration value carries the literal, per scan-literals category. */
+/**
+ * Property groups whose declaration value carries the literal, per scan-literals category. A custom
+ * property's definition carries one too (`--radius: 8px`, `--mono: "SFMono-Regular", monospace`):
+ * scan-literals counts it like the declaration that reads it.
+ */
 const DECL_NAMES: Record<string, RegExp> = {
-  radius: /^(?:border(?:-(?:top|bottom|start|end)-(?:left|right|start|end))?-radius|border(?:Top|Bottom|Start|End)?(?:Left|Right|Start|End)?Radius)$/,
-  fontFamily: /^(?:font-family|fontFamily|-unity-font(?:-definition)?|font)$/,
-  fontSize: /^(?:font-size|fontSize|font)$/,
-  spacing: /^(?:padding|margin|gap|row-gap|column-gap|rowGap|columnGap|(?:padding|margin)(?:-[a-z-]+|[A-Z]\w*))$/,
+  radius: /^(?:border(?:-(?:top|bottom|start|end)-(?:left|right|start|end))?-radius|border(?:Top|Bottom|Start|End)?(?:Left|Right|Start|End)?Radius|--[\w-]+)$/,
+  fontFamily: /^(?:font-family|fontFamily|-unity-font(?:-definition)?|font|--[\w-]+)$/,
+  fontSize: /^(?:font-size|fontSize|font|--[\w-]+)$/,
+  spacing: /^(?:padding|margin|gap|row-gap|column-gap|rowGap|columnGap|(?:padding|margin)(?:-[a-z-]+|[A-Z]\w*)|--[\w-]+)$/,
 };
 
 const PROP_RE = /(?<![\w$-])(['"]?)([-\w]+)\1\s*:(?!:)/g;
@@ -258,6 +262,8 @@ function candidates(f: SourceFile, hit: Hit, lineHits: readonly Hit[]): Span[] {
       const group = hit.category === "radius" ? "radius" : hit.category === "fontFamily" ? "fontFamily" : hit.category === "pxSpacing" ? "spacing" : "fontSize";
       for (const d of declsOnLine(f, hit.line)) {
         if (!DECL_NAMES[group].test(d.name)) continue;
+        // A definition hit is in its own custom property; any other hit never is (`--offset: 4px; border-radius: 4px`).
+        if (hit.definition ? d.name !== hit.definition : d.name.startsWith("--")) continue;
         const span = matchDecl(f, hit, d);
         if (span) spans.push(span);
       }
@@ -276,6 +282,8 @@ function matchDecl(f: SourceFile, hit: Hit, d: Decl): Span | null {
     return written === hit.value ? { start: d.start, end: d.end, slot } : null;
   }
   if (hit.category === "fontFamily") {
+    // A stack that goes on past the line (`font-family: "Inter",\n  sans-serif;`): replacing this line's part would leave the rest.
+    if (/,\s*$/.test(value)) return null;
     if (isShorthand) {
       const m = value.match(/(?:^|\s)\d*\.?\d+(?:px|rem|em|pt|%)(?:\s*\/\s*[\w.%-]+)?\s+(.+)$/);
       if (!m || firstFamily(m[1]) !== hit.value) return null;

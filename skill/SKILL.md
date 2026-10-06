@@ -45,9 +45,10 @@ Run these in `/Users/Ford/workspace/design-system`. `--root` defaults to the wor
 2. Run `bun run lint:apps <app>` (add `--pass <n>` to check one migration pass). It prints one line per violation and exits 0 when the app is wired and conformant.
 3. Run `bun run verify:apps <app>`. It starts the app under its run profile and proves in a browser that it renders from the tokens in light and dark.
 4. Run `bun run test:apps <app>` for the app's tests (add `--commands typecheck,build` for those; a command the entry does not set is skipped). It runs them under the run profile and the sandbox, fails on a write into the app's own checkout, and compares the results with the baselines in `apps.json`. Never run an app's tests or commands directly.
-5. Never start the app outside its run profile. `verify:apps`, `snapshot` and `test:apps` start and stop it for you.
-6. The app passes when every gate its `apps.json` entry marks required passes: lint, verify, tests, snapshot and pixel diff.
-7. `bun run progress` writes one page with every app's status and literal count.
+5. Run `bun run use:app --app <app>` to use the app under its run profile. It visits every route in each theme, runs the route's steps, toggles the sidebar and hovers buttons and links. It clicks only the registry's route steps, which the managing agent reviews, and the sidebar toggle. A guard checks each click and key press as a second line of defence: it refuses a submit control, anything in a form, a control whose label names a write, and any key but Tab, Escape, the arrows, PageUp/PageDown, Home/End and a plain Enter or Space. It exits 1 on a console error, a failed or blocked request, a refused step, or a change to the app's checkout, and prints the path of its JSON log.
+6. Never start the app outside its run profile. `verify:apps`, `snapshot`, `test:apps` and `use:app` start and stop it for you.
+7. The app passes when every gate its `apps.json` entry marks required passes: lint, verify, tests, snapshot and pixel diff.
+8. `bun run progress` writes one page with every app's status and literal count.
 
 ## Move an Existing App
 

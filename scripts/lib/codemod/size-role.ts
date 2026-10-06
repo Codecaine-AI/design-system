@@ -21,6 +21,8 @@ export interface Pick {
   utility?: string | null;
   /** Color picks: the literal's alpha, kept on the token. */
   keepAlpha?: number;
+  /** Names a token but offers no ready replacement: approving the row is a deliberate hand edit. */
+  handEdit?: true;
 }
 
 const none = (why: string): Pick => ({ path: null, method: null, deltaE: null, why });
@@ -56,6 +58,7 @@ export function pickFontSize(data: TokenData, value: string, ctx: Context): Pick
 
 export function pickRadius(value: string): Pick {
   if (value.includes("/")) return none("elliptical radius: no token");
+  if (/calc\(/i.test(value)) return none(`radius ${value}: a length added in calc(); use the one radius token (radius.base) or radius.pill by hand`);
   const parts = value.trim().split(/\s+/);
   const mapped: string[] = [];
   const paths = new Set<string>();

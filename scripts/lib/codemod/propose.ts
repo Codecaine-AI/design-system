@@ -160,6 +160,7 @@ function replacementFor(f: SourceFile, span: Span | null, pick: Pick, ctx: Conte
   };
   const refused = placed();
   if (!pick.path || refused) return { text: null, why: refused };
+  if (pick.handEdit) return { text: null, why: "no ready replacement: the row is flagged, so applying it is a hand edit" };
   // A nearest pick is a guess; in JS it is proposed only where the slot names a CSS property.
   if (f.kind === "js" && pick.method === "nearest" && !cssRegionAt(f, span.start) && !(slot?.ok && slot.property)) {
     return { text: null, why: "a nearest-color pick in JS with no CSS property in its slot: edit by hand" };
@@ -214,7 +215,8 @@ export function proposeFile(data: TokenData, f: SourceFile, hits: Hit[], opts: P
   const byLine = new Map<number, Hit[]>();
   for (const hit of hits) byLine.set(hit.line, [...(byLine.get(hit.line) ?? []), hit]);
   for (const hit of hits) {
-    const key = `${hit.line}\u0000${hit.category}\u0000${hit.value}`;
+    // A definition hit is numbered among its own property's hits (locate matches it by name).
+    const key = `${hit.line}\u0000${hit.category}\u0000${hit.value}\u0000${hit.definition ?? ""}`;
     const occurrence = seen.get(key) ?? 0;
     seen.set(key, occurrence + 1);
     if (!opts.categories.has(hit.category)) {

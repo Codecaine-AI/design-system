@@ -1,0 +1,21 @@
+/* canvas studio's packages/studio/src/index.css (c7808a3b): a pale --accent wash read at rest by the style
+   rail's count badge, and --accent-foreground read as the badge's text and as a fill elsewhere. */
+:root {
+  --accent: #e8eef8;
+  --accent-foreground: #111111;
+  --background: #f5f3ef;
+}
+
+body {
+  background: var(--background);
+}
+
+.canvas-style-rail-group-count {
+  border-radius: 9999px;
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.canvas-style-rail-swatch-active {
+  background: var(--accent-foreground);
+}

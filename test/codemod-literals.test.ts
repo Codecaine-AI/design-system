@@ -78,7 +78,7 @@ describe("propose: role first", () => {
     // [file, line, literal, proposed token, replacement]
     ["theme.css", 3, "#f5f3ef", "color.surface.page", "var(--ds-color-surface-page)"], // --background: a definition becomes an alias
     ["theme.css", 4, "#62666d", "color.text.muted", "var(--ds-color-text-muted)"], // --muted-foreground
-    ["theme.css", 7, "#e03e3e", "color.status.danger.solid", "var(--ds-color-status-danger-solid)"], // --destructive
+    ["theme.css", 7, "#e03e3e", "color.status.danger.text", "var(--ds-color-status-danger-text)"], // --destructive: the host contract's token
     ["theme.css", 12, "#f6f4f0", "color.fill.hover", "var(--ds-color-fill-hover)"], // :hover
     ["theme.css", 16, "#f9f9f9", "color.surface.sidebar", "var(--ds-color-surface-sidebar)"], // .sidebar
     ["theme.css", 20, "#c62121", "color.status.danger.text", "var(--ds-color-status-danger-text)"], // .error-text
@@ -114,8 +114,10 @@ describe("propose: role first", () => {
   });
 
   test("rows it cannot map say why, and rows that map but must not change get no replacement", () => {
+    // A shadcn channel triplet: the host contract names the token, but the triplet is a hand edit.
+    expect(pick(row("theme.css", 8, "hsl(222 47% 11%)"))).toEqual({ proposed: "color.text.ink", replacement: null });
+    expect(row("theme.css", 8, "hsl(222 47% 11%)").why).toContain("not found on the line as written");
     const unmapped: Array<[string, number, string, string]> = [
-      ["theme.css", 8, "hsl(222 47% 11%)", "not found on the line as written"], // shadcn channel triplet
       ["theme.css", 35, "16px", "16px"], // off the font-size scale
       ["theme.css", 40, "rgb(0 0 0 / 8%)", "shadow"], // a drop shadow's color
       ["theme.css", 50, '"Press Start 2P", monospace', "press start 2p"], // a display face
@@ -204,10 +206,10 @@ describe("propose: roles only structure gives", () => {
     expect(at(css(), "roles.css", 6, "#0a7ae0")).toMatchObject({ proposed: "color.focus-ring", method: "role" }); // .field:focus-visible outline
     expect(at(css(), "roles.css", 3, "#e6e5e3")).toMatchObject({ proposed: "color.border.default", why: "border" }); // 0 0 0 1px ring shadow on .card
     expect(at(tsx(), "widgets.tsx", 3, "#e0e0e0").proposed).toBe("color.border.default"); // <input onFocus> is not a focus selector
-    // --ring is named for the focus ring, but #aeb8c6 is a blue-gray wash, far from the accent: the border family takes it.
+    // --ring is a host-contract name: the contract's focus ring, whatever its ΔE (a blue-gray wash here).
     const ring = row("theme.css", 6, "#aeb8c6");
-    expect(ring.proposed).toBe("color.border.guide");
-    expect(ring.why).toMatch(/^border \(focus ring: /);
+    expect(ring.proposed).toBe("color.focus-ring");
+    expect(ring.why).toMatch(/^host contract: --ring is color\.focus-ring/);
     expect(row("theme.css", 45, "rgb(174 184 198 / 35%)").proposed).toBe("color.border.default");
   });
 
@@ -691,11 +693,12 @@ describe("propose: round-3 review of the role choices", () => {
     expect(r3(rows, "on-solid.tsx", 12, '"#ffffff"').replacement).toBe('"var(--ds-color-text-on-solid)"');
     expect(r3(rows, "on-solid.tsx", 13, "text-white").replacement).toBe("text-on-solid");
     expect(r3(rows, "on-solid.tsx", 14, '"#ffffff"').replacement).toBeNull(); // a class name (btn-primary) is not a fill
-    // A definition named for the glyph on a solid; a light shade (`-50`) is a tint, not a solid.
+    // A definition named for the glyph on a solid; a light shade (`-50`) is a tint, not a solid. --primary-foreground
+    // is a host-contract name: it takes the contract's page color (the glyph on the ink fill).
     const named = r3Rows(["readers.css"]);
-    expect(r3(named, "readers.css", 25, "#ffffff").replacement).toBe("var(--ds-color-text-on-solid)");
-    expect(r3(named, "readers.css", 25, "#ffffff").why).toBe("text; on-solid is near-black in dark: check the fill under it");
-    expect(named.filter((r) => r.line === 25).map((r) => r.replacement)).toEqual(["var(--ds-color-text-on-solid)", null]);
+    expect(r3(named, "readers.css", 28, "#ffffff").replacement).toBe("var(--ds-color-text-on-solid)");
+    expect(r3(named, "readers.css", 28, "#ffffff").why).toBe("text; on-solid is near-black in dark: check the fill under it");
+    expect(named.filter((r) => r.line === 25).map((r) => r.replacement)).toEqual(["var(--ds-color-surface-page)", null]);
     // mainmenu 438 and 487: a dim gray in a dark app was on-solid at ΔE 19.8.
     const dark = r3Rows(["on-solid-dark.tsx"], { theme: "dark" });
     expect(pick(r3(dark, "on-solid-dark.tsx", 2, "text-gray-700"))).toEqual({ proposed: null, replacement: null });
@@ -1186,5 +1189,129 @@ describe("CLI", () => {
     const run = cli("--app", "no-such-app", "--out-dir", mkdtempSync(join(tmpdir(), "codemod-out-")), "propose");
     expect(run.status).toBe(2);
     expect(run.stderr).toContain('apps.json has no app "no-such-app"');
+  });
+});
+
+describe("propose: sequence-studio pilot (its index.css at d5d70a4)", () => {
+  const rows = () => reviewRows("pilot/studio.css");
+  const on = (list: Row[], line: number) => {
+    const found = list.filter((r) => r.file === "review/pilot/studio.css" && r.line === line);
+    if (found.length !== 1) throw new Error(`expected one row on studio.css:${line}, got ${found.length}`);
+    return found[0];
+  };
+
+  test("shadcn-named definitions take the host contract's token before any ΔE pick", () => {
+    const list = rows();
+    const got = Object.fromEntries([4, 5, 6, 7, 8, 9, 11, 12, 13, 15].map((line) => [line, on(list, line).proposed]));
+    expect(got).toEqual({
+      4: "color.surface.page", // --background
+      5: "color.text.body", // --foreground #111111: ΔE alone picked color.text.ink
+      6: "color.surface.panel", // --card
+      7: "color.text.ink", // --primary: ink read as a fill; ΔE alone found no role
+      8: "color.surface.page", // --primary-foreground
+      9: "color.fill.chip", // --secondary
+      11: "color.text.muted", // --muted-foreground
+      12: "color.status.danger.text", // --destructive
+      13: "color.border.default", // --border: ΔE alone picked color.border.strong
+      15: "color.focus-ring", // --ring
+    });
+    for (const line of [4, 5, 13]) {
+      expect(on(list, line)).toMatchObject({ method: "role", replacement: expect.stringMatching(/^var\(--ds-color-/), why: expect.stringMatching(/^host contract: --/) });
+    }
+    // Flagged rows name the token but give no ready replacement: --primary (read as accent-color too),
+    // --muted (hover only), --input (focus only), --ring (ΔE 25.8, far from the contract's focus ring).
+    for (const line of [7, 10, 14, 15]) expect(on(list, line)).toMatchObject({ method: "role", replacement: null, why: expect.stringContaining("no ready replacement") });
+  });
+
+  test("the reason flags an app whose own readers use the name otherwise than the contract's readers do", () => {
+    const list = rows();
+    // --muted is read only as a hover background; the contract's chip is a resting fill.
+    expect(on(list, 10).proposed).toBe("color.fill.chip");
+    expect(on(list, 10).why).toContain("usage differs: the app reads --muted only as a hover background");
+    expect(on(list, 10).why).toContain("color.fill.hover is the hover fill");
+    // --primary is read as a border and an accent-color too, not only as a fill.
+    expect(on(list, 7).why).toMatch(/usage differs: the app reads --primary as accent \(.*\) and background \(.*\) and border \(.*\)/);
+    // --input only on :focus; the focus ring on :focus-visible is its own state, so --ring is not flagged.
+    expect(on(list, 14).why).toContain("usage differs: the app reads --input only as a focus border");
+    expect(on(list, 15).why).not.toContain("usage differs");
+    // Read as the contract reads them: no flag.
+    for (const line of [4, 5, 6, 11, 13]) expect(on(list, line).why).not.toContain("usage differs");
+  });
+
+  test("the root's radius and font stack definitions are rows the codemod can replace", () => {
+    const list = rows();
+    expect(pick(on(list, 16))).toEqual({ proposed: "radius.base", replacement: "var(--ds-radius-base)" }); // --radius: 8px
+    expect(pick(on(list, 17))).toEqual({ proposed: "font.family.mono", replacement: "var(--ds-font-family-mono)" }); // --mono
+    // The multi-line root font-family is counted; its value starts on the next line, so it is a hand edit.
+    expect(on(list, 22)).toMatchObject({ proposed: "font.family.sans", replacement: null });
+  });
+});
+
+describe("propose: the host contract keeps the codemod's ΔE guard", () => {
+  test("canvas studio's pale --accent wash and its --accent-foreground: far from the contract, flagged, no ready replacement", () => {
+    const list = reviewRows("pilot/canvas-accent.css");
+    const at = (line: number) => list.find((r) => r.file === "review/pilot/canvas-accent.css" && r.line === line)!;
+    // --accent: #e8eef8 is a wash the count badge reads at rest; the contract's accent is a solid (ΔE 40.7).
+    expect(at(4)).toMatchObject({ proposed: "color.accent", replacement: null, deltaE: 40.7 });
+    expect(at(4).why).toContain("visible change (ΔE 40.7): the app's color is far from the contract's; check the role");
+    // --accent-foreground: #111111 is ink; the contract's on-solid is white in light (ΔE 82.2), and the app also fills with it.
+    expect(at(5)).toMatchObject({ proposed: "color.text.on-solid", replacement: null });
+    expect(at(5).why).toContain("visible change (ΔE 82.2)");
+    expect(at(5).why).toContain("usage differs: the app reads --accent-foreground as background");
+    // Close and read as the contract reads it: a ready replacement.
+    expect(at(6)).toMatchObject({ proposed: "color.surface.page", replacement: "var(--ds-color-surface-page)" });
+  });
+});
+
+describe("propose: review of the pilot fixes", () => {
+  const rowAt = (list: Row[], file: string, line: number) => {
+    const found = list.filter((r) => r.file === `review/pilot/${file}` && r.line === line);
+    if (!found.length) throw new Error(`no row on ${file}:${line}`);
+    return found;
+  };
+
+  test("stock shadcn on Tailwind v4 reads the names as the contract's readers do: only a hover-only reader is flagged", () => {
+    const list = reviewRows("pilot/v4");
+    // text-primary, fill-primary (an SVG fill is a background), bg-destructive, dark:bg-input/30: as the contract's readers.
+    for (const line of [3, 4, 5]) expect(rowAt(list, "v4/theme.css", line)[0].why).not.toContain("usage differs");
+    // Tailwind v4's bg-(--popover) reads the variable.
+    expect(rowAt(list, "v4/theme.css", 7)[0].why).toBe("host contract: --popover is color.surface.panel (host-contract.css), ΔE 1.8 in light");
+    // hover:bg-accent and group-hover/row:bg-accent: the accent is read only on hover.
+    expect(rowAt(list, "v4/theme.css", 6)[0].why).toContain("usage differs: the app reads --accent only as a hover background");
+  });
+
+  test("readers a Tailwind v3 config hides give no role: the row says its usage is not checked, not that it differs", () => {
+    const [accent] = rowAt(reviewRows("pilot/v3"), "v3/globals.css", 2);
+    expect(accent.proposed).toBe("color.accent");
+    expect(accent.why).toContain("so its usage is not checked");
+    expect(accent.why).not.toContain("usage differs");
+  });
+
+  test("a scoped redefinition is not seeded, a selected state is not an interaction, and a row edits its own declaration", () => {
+    const list = reviewRows("pilot/scoped.css");
+    expect(rowAt(list, "scoped.css", 2)[0].why).not.toStartWith("host contract"); // .toast { --background: #323232 }
+    expect(rowAt(list, "scoped.css", 1)[0].why).not.toContain("usage differs"); // .tab.active and [aria-pressed] read --muted
+    // `.a { --offset: 4px; border-radius: 4px; }`: the counted radius is the declaration's, not --offset's.
+    expect(rowAt(list, "scoped.css", 4).map((r) => r.column)).toEqual([".a { --offset: 4px; border-radius: 4px; }".lastIndexOf("4px") + 1]);
+    expect(rowAt(list, "scoped.css", 5).map((r) => r.column)).toEqual([".ds-shell { --ds-layout-gap: 6px; border-radius: 6px; }".lastIndexOf("6px") + 1]);
+    // `:root { --offset: 4px; --radius: 4px; }`: the counted definition is --radius.
+    expect(rowAt(list, "scoped.css", 6).map((r) => r.column)).toEqual([":root { --offset: 4px; --radius: 4px; }".lastIndexOf("4px") + 1]);
+    // A stack that goes on past its line is a hand edit: replacing this line's part would leave the rest.
+    expect(pick(rowAt(list, "scoped.css", 8)[0])).toEqual({ proposed: "font.family.sans", replacement: null });
+  });
+
+  test("only the root or a theme block is seeded, never a descendant or :host; same-valued hits on a line each find their own declaration", () => {
+    const list = reviewRows("pilot/scope.css");
+    // :root .toast, body .card, .dark .toast, :host: scoped variables. html.dark: a theme block.
+    for (const line of [1, 2, 3, 4]) expect(rowAt(list, "scope.css", line)[0].why).not.toStartWith("host contract");
+    expect(rowAt(list, "scope.css", 5)[0]).toMatchObject({ proposed: "color.surface.page", why: expect.stringMatching(/^host contract: --background/) });
+    // `:root{--radius:8px}.d{border-radius:8px}` and `:root{--radius-sm:8px;--radius-md:8px}`: two rows, two columns, both replaced.
+    for (const [line, text] of [[6, ":root{--radius:8px}.d{border-radius:8px}"], [7, ":root{--radius-sm:8px;--radius-md:8px}"]] as const) {
+      const rows = rowAt(list, "scope.css", line);
+      expect(rows.map((r) => [r.column, r.replacement])).toEqual([
+        [text.indexOf("8px") + 1, "var(--ds-radius-base)"],
+        [text.lastIndexOf("8px") + 1, "var(--ds-radius-base)"],
+      ]);
+    }
   });
 });

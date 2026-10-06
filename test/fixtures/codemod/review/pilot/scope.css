@@ -1,0 +1,7 @@
+:root .toast { --background: #ffffff; }
+body .card { --primary: #222222; }
+.dark .toast { --background: #0a0a0a; }
+:host { --background: #ffffff; }
+html.dark { --background: #0a0a0a; }
+:root{--radius:8px}.d{border-radius:8px}
+:root{--radius-sm:8px;--radius-md:8px}

@@ -142,8 +142,8 @@ function writeSet(w: Work, set: string, shots: Shot[], opts: SetOptions = {}) {
   writeFileSync(join(dir, "manifest.json"), JSON.stringify(manifest));
 }
 
-function cli(w: Work, args: string[], script = "snapshot-diff.ts") {
-  const result = Bun.spawnSync(["bun", `scripts/${script}`, "--app", "demo", "--exact", "--out-dir", w.out, "--registry", w.registry, "--root", TREE, ...args], { cwd: PKG });
+function cli(w: Work, args: string[], script = "snapshot-diff.ts", exact = true) {
+  const result = Bun.spawnSync(["bun", `scripts/${script}`, "--app", "demo", ...(exact ? ["--exact"] : []), "--out-dir", w.out, "--registry", w.registry, "--root", TREE, ...args], { cwd: PKG });
   const reportPath = join(w.out, "demo", "diffs", `${args[args.indexOf("--a") + 1]}-vs-${args[args.indexOf("--b") + 1]}`, "report.json");
   return {
     exitCode: result.exitCode,
@@ -253,6 +253,28 @@ test("a size change counts every pixel outside the smaller image, masked or not"
   const masks = [{ selector: ".page", boxes: [{ x: 0, y: 0, width: W, height: H + 5 }] }];
   const { report } = runDiff([{ key: "home-light", png: png([], W, H + 5), masks }], { a: [{ key: "home-light", png: png(), masks }], routes: { home: { masks: [".page"] } } });
   expect(report.shots[0]).toMatchObject({ status: "changed", sizeMatch: false, changedPixels: W * 5, maskedPixels: W * H });
+});
+
+test("without --exact a changed gating shot is reported as changed, not as a gating failure; --exact still fails it", () => {
+  const w = work(registryApp(["home-light", "home-dark"]));
+  writeSet(w, "a", [{ key: "home-light", png: png() }, { key: "home-dark", png: png() }]);
+  writeSet(w, "b", [{ key: "home-light", png: png([[20, 15]]) }, { key: "home-dark", png: png([[21, 15]]) }]);
+  const loose = cli(w, ["--a", "a", "--b", "b"], "snapshot-diff.ts", false);
+  expect(loose.exitCode).toBe(0);
+  expect(loose.stdout).toContain("0/2 identical, 2 changed (expected without --exact), 0 missing, 0 gating problem(s), 0 set problem(s)");
+  expect(loose.stdout).not.toContain("gating failure");
+  const exact = cli(w, ["--a", "a", "--b", "b"]);
+  expect(exact.exitCode).toBe(1);
+  expect(exact.stdout).toContain("0/2 identical, 2 changed, 0 missing, 2 gating failure(s), 0 set problem(s)");
+  expect(loose.report.totals).toEqual(exact.report.totals);
+});
+
+test("without --exact a missing or unsettled gating shot is still a gating problem", () => {
+  const w = work(registryApp(["home-light", "home-dark"]));
+  writeSet(w, "a", [{ key: "home-light", png: png() }, { key: "home-dark", png: png() }]);
+  writeSet(w, "b", [{ key: "home-light", png: png([[20, 15]]), stable: false }, { key: "home-dark", png: null }]);
+  const loose = cli(w, ["--a", "a", "--b", "b"], "snapshot-diff.ts", false);
+  expect(loose.stdout).toContain("0/2 identical, 1 changed (expected without --exact), 1 missing, 2 gating problem(s)");
 });
 
 test("the same set twice, an --only id the registry does not name, and an invalid registry exit 2", () => {

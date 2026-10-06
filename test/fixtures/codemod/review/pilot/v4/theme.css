@@ -1,0 +1,14 @@
+/* Stock shadcn on Tailwind v4: the contract's names, read through @theme inline by utility classes. */
+:root {
+  --primary: #111111;
+  --destructive: #c62121;
+  --input: #e6e5e3;
+  --accent: #f1efeb;
+  --popover: #fffefa;
+}
+@theme inline {
+  --color-primary: var(--primary);
+  --color-destructive: var(--destructive);
+  --color-input: var(--input);
+  --color-accent: var(--accent);
+}

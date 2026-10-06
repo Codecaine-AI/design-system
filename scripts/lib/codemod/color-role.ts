@@ -11,14 +11,17 @@
  */
 
 import { chroma, composite, deltaE, rgbToOklab, toHex, type Rgba } from "./color.ts";
-import { selectorBranches, type Context, type Surface } from "./context.ts";
+import { branches, selectorBranches, themeOf, type Context, type Surface } from "./context.ts";
 import type { Theme, TokenData } from "./tokens.ts";
+import { HOST_CONTRACT, type HostAlias, type HostRead } from "../host-contract.ts";
 
 export interface ColorPick {
   path: string | null;
   method: "role" | "nearest" | null;
   deltaE: number | null;
   why: string;
+  /** The row names a token but gets no ready replacement: approving it is a deliberate hand edit (a flagged host-contract row). */
+  handEdit?: true;
   /** The literal's alpha, kept on the token: color-mix(in srgb, var(--ds-x) N%, transparent), or a Tailwind /N modifier. */
   keepAlpha?: number;
 }
@@ -504,6 +507,93 @@ export interface ConsumerIndex {
   rolesOf(name: string): Set<string>;
   /** One reader per role (`src/a.css:12`), for the row's reason. */
   where?(name: string): Map<string, string>;
+  /** Every reader, with the interaction states it paints in (`hover`, `active`, `focus`), for the host-contract check. */
+  readers?(name: string): Reader[];
+}
+
+export interface Reader {
+  role: string;
+  at: string;
+  states: string[];
+}
+
+/** The shadcn names of the published host contract (scripts/lib/host-contract.ts): `--muted` -> its alias. */
+const CONTRACT = new Map(
+  HOST_CONTRACT.flatMap(({ aliases }) => aliases)
+    .filter((a): a is HostAlias & { reads: HostRead[] } => a.reads !== undefined)
+    .map((a) => [`--${a.name}`, a]),
+);
+
+/**
+ * A definition at the document root or on a theme block (`:root`, `html.dark`, `.dark`,
+ * `[data-theme="dark"]`, `@theme`): every branch is one compound selector (no descendant or child
+ * combinator), the root or marked with a theme. Not a component's scoped variable (`.toast`,
+ * `:root .toast`, `.dark .card`, a web component's `:host`).
+ */
+function themeScope(ctx: Context): boolean {
+  if (!ctx.inCss || !ctx.chain.length) return false;
+  const compound = (b: string) => !/[\s>+~]/.test(b.trim().replace(/\[[^\]]*\]|\([^)]*\)/g, ""));
+  const root = (b: string) => /^\s*(?::root|html|body)(?![\w-])/i.test(b);
+  return ctx.chain.every((prelude) => /^\s*@/.test(prelude) || branches(prelude).every((b) => compound(b) && (root(b) || themeOf(b) !== null)));
+}
+
+const article = (word: string) => (/^[aeiou]/i.test(word) ? "an" : "a");
+
+/**
+ * An app's own root or theme definition of a shadcn host-contract name (`:root { --muted: #eceae6 }`)
+ * takes the token the published contract maps it to, before any ΔE pick: hosts that load
+ * host-contract.css get that value, so the app's copy should match it. The reason says when the app's
+ * readers use the name otherwise than the contract's readers do (`--primary` read as accent-color),
+ * or only in an interaction state (`--muted` read only on :hover), or when the token is far from the
+ * app's color (ΔE over ROLE_MAX_DE): such a row names the token but gets no ready replacement, so the
+ * reviewer checks it instead of trusting the role. A scoped redefinition (`.toast { --background: … }`) is left to the
+ * role and ΔE rules.
+ */
+function contractPick(data: TokenData, literal: Rgba, ctx: Context, consumers?: ConsumerIndex): ColorPick | null {
+  const name = ctx.definition;
+  const alias = name ? CONTRACT.get(name) : undefined;
+  const token = alias ? data.colors.get(alias.token) : undefined;
+  if (!name || !alias || !token || !themeScope(ctx)) return null;
+  const theme = ctx.theme;
+  const de = round(deltaE(literal, token[theme], data.page[theme]));
+  const notes: string[] = [];
+  if (literal.a < 0.99) notes.push(`the literal's alpha ${round2(literal.a)} is dropped: the contract color is opaque`);
+  if (consumers) {
+    // An SVG fill paints an area and an SVG stroke a line: the contract's background and border.
+    const asContract = (r: string) => (r === "svgFill" ? "background" : r === "svgStroke" ? "border" : r);
+    const read = new Set([...consumers.rolesOf(name)].map(asContract));
+    const known = [...read].filter((r) => r !== "other").sort();
+    const at = consumers.where?.(name);
+    const label = (r: string) => {
+      const place = at?.get(r) ?? at?.get(r === "background" ? "svgFill" : r === "border" ? "svgStroke" : r);
+      return place ? `${r} (${place})` : r;
+    };
+    const expected = alias.reads.join(", ");
+    if (read.size === 0) notes.push(`${name} is read nowhere in the scanned files`);
+    else if (!known.length) notes.push(`its readers give no color role in the scanned files (${label("other")}), so its usage is not checked`);
+    else if (known.some((r) => !alias.reads.includes(r as HostRead))) {
+      notes.push(`usage differs: the app reads ${name} as ${known.map(label).join(" and ")}; the contract's readers use it as ${expected}`);
+    } else {
+      const own = (consumers.readers?.(name) ?? []).filter((r) => alias.reads.includes(asContract(r.role) as HostRead));
+      // The focus ring paints on focus: that state is its own.
+      const inState = own.map((r) => r.states.filter((s) => !(s === "focus" && alias.token === "color.focus-ring")));
+      if (own.length && inState.every((s) => s.length)) {
+        const which = [...new Set(inState.flat())].sort().join(" or ");
+        const roles = [...new Set(own.map((r) => asContract(r.role)))].sort().join(" and ");
+        const more = own.length > 1 ? ` and ${own.length - 1} more` : "";
+        const hover = which === "hover" && roles === "background" && data.colors.has("color.fill.hover") ? "; color.fill.hover is the hover fill" : "";
+        notes.push(`usage differs: the app reads ${name} only as ${article(which)} ${which} ${roles} (${own[0].at}${more}); the contract's ${alias.token} is a resting ${roles}${hover}`);
+      }
+    }
+  }
+  // The codemod's own guard: a pick this far from the literal means the role is probably misread.
+  const far = de > ROLE_MAX_DE;
+  if (far) notes.push(`visible change (ΔE ${de}): the app's color is far from the contract's; check the role`);
+  const why = `host contract: ${name} is ${alias.token} (host-contract.css), ΔE ${de} in ${theme}`;
+  // A flagged row (far, or read otherwise than the contract's readers do) names the token but offers no
+  // ready replacement, so approving it on its role alone cannot repaint a wash as a solid.
+  const flagged = far || notes.some((note) => note.startsWith("usage differs"));
+  return { path: alias.token, method: "role", deltaE: de, why: notes.length ? `${why}; ${notes.join("; ")}` : why, ...(flagged ? { handEdit: true as const } : {}) };
 }
 
 const isHue = (p: string) => HUES.some((x) => p.startsWith(`color.${x}.`));
@@ -523,6 +613,8 @@ export function pickColor(data: TokenData, literal: Rgba, ctx: Context, opts: Al
   }
   const fixed = fixedRegion(data, ctx);
   if (fixed) return none(fixed);
+  const contract = contractPick(data, literal, ctx, opts.consumers);
+  if (contract) return contract;
   const theme = ctx.theme;
   const page = data.page[theme];
   let role = propRoleOf(ctx.property);

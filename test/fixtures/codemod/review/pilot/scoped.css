@@ -1,0 +1,10 @@
+:root { --muted: #ebebe9; }
+.toast { --background: #323232; background: var(--background); color: #ffffff; }
+.tab.active, .tab[aria-pressed="true"] { background: var(--muted); }
+.a { --offset: 4px; border-radius: 4px; }
+.ds-shell { --ds-layout-gap: 6px; border-radius: 6px; }
+:root { --offset: 4px; --radius: 4px; }
+.stack {
+  font-family: "Inter",
+    system-ui, sans-serif;
+}

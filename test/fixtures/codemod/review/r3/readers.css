@@ -25,3 +25,5 @@ html.dark { --prism-comment: #4D4D4D; }
 :root { --primary-foreground: #ffffff; --primary-50-foreground: #ffffff; }
 .btn { color: var(--primary-foreground); }
 .tint { color: var(--primary-50-foreground); }
+:root { --cta-foreground: #ffffff; }
+.cta { color: var(--cta-foreground); }
