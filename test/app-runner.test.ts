@@ -11,10 +11,14 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
+import { spawn } from "node:child_process";
+
 import {
+  cleanupRuns,
   guardedContext,
   guardVerdict,
   killRun,
+  launchBrowser,
   profileEnv,
   readyUrl,
   rootProc,
@@ -110,7 +114,7 @@ describe("profileEnv", () => {
       app.runProfile.unsetEnv = ["DROP_ME", "LANG"];
       const env = profileEnv(app, { root: "/r", tmp: "/t/run" });
 
-      const allowed = new Set(["PATH", "TERM", "TMPDIR", "HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME", "DATA_DIR", "API_URL", "FIXTURES"]);
+      const allowed = new Set(["PATH", "TERM", "TMPDIR", "HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME", "BUN_OPTIONS", "DATA_DIR", "API_URL", "FIXTURES"]);
       expect(Object.keys(env).filter((key) => !allowed.has(key) && !key.startsWith("BUN_INSTALL"))).toEqual([]);
       expect(env.PATH).toBe(process.env.PATH!);
       expect(env.HOME).toBe("/t/run");
@@ -119,6 +123,8 @@ describe("profileEnv", () => {
       expect(env.API_URL).toBe("http://127.0.0.1:47011");
       expect(env.FIXTURES).toBe(join(import.meta.dir, "..", "apps/fixtures"));
       expect("LANG" in env).toBe(false);
+      // The sandbox denies .env reads; bun must skip them instead of exiting 1 without a word.
+      expect(env.BUN_OPTIONS).toBe("--no-env-file");
     } finally {
       for (const [key, value] of Object.entries(saved)) {
         if (value === undefined) delete process.env[key];
@@ -183,6 +189,24 @@ describe("killRun", () => {
       other.kill();
     }
   });
+
+  test("stops a descendant seen earlier that left the run's groups, revalidating its start time first", async () => {
+    // Detached: its own session and group, like a daemon a run process spawned with setsid.
+    const daemon = spawn("sleep", ["30"], { detached: true, stdio: "ignore" });
+    const reused = spawn("sleep", ["30"], { detached: true, stdio: "ignore" });
+    const exited = new Promise((done) => daemon.once("exit", done));
+    try {
+      const seen = (pid: number, started: string) => ({ pid, ppid: 1, pgid: pid, started });
+      await killRun([], 2_000, [seen(daemon.pid!, rootProc(daemon.pid!).started), seen(reused.pid!, "Thu Jan  1 00:00:00 1970")]);
+      await exited;
+      expect(daemon.exitCode ?? daemon.signalCode).not.toBeNull();
+      expect(reused.exitCode).toBeNull();
+      expect(reused.signalCode).toBeNull();
+    } finally {
+      daemon.kill("SIGKILL");
+      reused.kill("SIGKILL");
+    }
+  });
 });
 
 describe("startApp", () => {
@@ -236,6 +260,7 @@ describe("startApp", () => {
     ["a port outside the run range", fixtureApp({ ui: 5000, helper: 46914 }), /outside 46900-47999/],
     ["an unproven profile", fixtureApp({ ui: 46913, helper: 46914 }, {}), /unproven/],
     ["run mode none", fixtureApp({ ui: 46913, helper: 46914 }, {}, { mode: "none", reason: "library only" }), /run mode none \(library only\)/],
+    ["an app id that climbs out of the out dir", fixtureApp({ ui: 46913, helper: 46914 }, { id: "../../escape" }), /app id "\.\.\/\.\.\/escape" does not match/],
   ])("refuses %s before it spawns anything", async (name, app, message) => {
     if (name === "an unproven profile") app.runProfile.proof = { status: "unproven", method: "" };
     if (name === "an owner port in allowedLocalPorts") app.runProfile.allowedLocalPorts = [4820];
@@ -246,19 +271,70 @@ describe("startApp", () => {
   });
 
   test("static mode builds, then serves staticDir with an SPA fallback", async () => {
+    const secret = join(mkdtempSync(join(scratch, "outside-")), "owner-data.json");
+    writeFileSync(secret, '{"token":"planted"}');
     const app = fixtureApp(
       { http: 46915 },
-      { commands: { cwd: "app", build: "mkdir -p dist && printf '<h1>home</h1>' > dist/index.html && printf 'js' > dist/app.js" } },
+      {
+        commands: {
+          cwd: "app",
+          build: `mkdir -p dist && printf '<h1>home</h1>' > dist/index.html && printf 'js' > dist/app.js && ln -s '${secret}' dist/data.json`,
+        },
+      },
       { mode: "static", start: undefined, readyPattern: undefined, staticDir: "app/dist" },
     );
     app.runProfile.env = {};
     const running = await start(app, makeRoot());
     expect(await (await fetch(`${running.baseUrl}/app.js`)).text()).toBe("js");
+    // A symlink in the static dir that points outside it is never served.
+    expect((await fetch(`${running.baseUrl}/data.json`)).status).toBe(404);
     expect(await (await fetch(`${running.baseUrl}/gallery/item`)).text()).toBe("<h1>home</h1>");
     expect((await fetch(`${running.baseUrl}/missing.js`)).status).toBe(404);
     expect(servedFromRoot(running, running.servedFiles!())).toEqual({ ok: true, outside: [], unresolved: [] });
     await running.stop();
     expect(await portOpen(46915)).toBe(false);
+  });
+
+  test("refuses an out dir that resolves into the owner's tree, before it creates or spawns anything", async () => {
+    const root = makeRoot();
+    const link = join(scratch, `owner-link-${Date.now()}`);
+    symlinkSync("/Users/Ford/workspace", link); // only stat'ed: the refusal comes before any write
+    const app = fixtureApp({ ui: 46913, helper: 46914 });
+    app.run.start = `touch ${join(root, "spawned")} && bun serve.ts`;
+    await expect(startApp(app, { root, outDir: join(link, "ds-runner-test-out") })).rejects.toThrow(/owner's tree/);
+    expect(existsSync("/Users/Ford/workspace/ds-runner-test-out")).toBe(false);
+    expect(existsSync(join(root, "spawned"))).toBe(false);
+  });
+
+  test("runs its processes in the OS sandbox: no non-loopback egress, no .env reads, and bun still starts next to a .env", async () => {
+    const root = makeRoot();
+    writeFileSync(join(root, "app/.env"), "FIXTURE_SECRET=planted\n");
+    // TEST-NET-1 (192.0.2.1) is unroutable: the sandbox refuses the connect before a packet leaves.
+    const probe = "(cat .env > \"$HOME/dotenv.txt\" 2>&1; /usr/bin/nc -v -z -G 2 192.0.2.1 9 > \"$HOME/nc.txt\" 2>&1)";
+    const running = await start(fixtureApp({ ui: 46901, helper: 46902 }, {}, { start: `${probe}; bun serve.ts` }), root);
+    expect(running.unsandboxed).toBeUndefined();
+    expect(readFileSync(join(running.tmp, "dotenv.txt"), "utf8")).toContain("Operation not permitted");
+    expect(readFileSync(join(running.tmp, "nc.txt"), "utf8")).toContain("Operation not permitted");
+    expect(JSON.parse(readFileSync(join(running.tmp, "env.json"), "utf8")).FIXTURE_SECRET).toBeUndefined();
+  });
+
+  test("records a server-side connection to a loopback port the run does not own as a violation", async () => {
+    const foreign = Bun.serve({ hostname: "127.0.0.1", port: 46939, fetch: () => new Response("foreign"), idleTimeout: 30 });
+    try {
+      // A run process that, after the run is ready, holds a connection to 46939 (not an owner port, so the
+      // sandbox lets it through: only the egress sampling sees it).
+      const app = fixtureApp({ ui: 46903, helper: 46904 }, {}, { start: "(sleep 1; /usr/bin/nc -d 127.0.0.1 46939) & bun serve.ts" });
+      const running = await start(app, makeRoot());
+      expect(running.violations ?? []).toEqual([]);
+      const deadline = Date.now() + 8_000;
+      while (!(running.violations ?? []).some((v) => v.includes("->127.0.0.1:46939")) && Date.now() < deadline) await Bun.sleep(100);
+      await running.stop();
+      expect(running.violations).toEqual([expect.stringMatching(/^egress: nc\(\d+\) TCP 127\.0\.0\.1:\d+->127\.0\.0\.1:46939/)]);
+      expect(running.egress!.samples).toBeGreaterThan(0);
+      expect(running.egress!.failures).toEqual([]);
+    } finally {
+      foreign.stop(true);
+    }
   });
 });
 
@@ -333,6 +409,36 @@ describe("guardedContext", () => {
   );
 });
 
+describe("guardedContext and ports the run gave up", () => {
+  test.skipIf(Boolean(noPlaywright))(
+    "blocks a port the run once held after another process takes it over",
+    async () => {
+      const running = await start(fixtureApp({ ui: 46905, helper: 46906 }), makeRoot());
+      expect(running.startedPorts).toContain(46906);
+      // The run's helper exits; an unrelated server (this test) binds its old port.
+      for (const pid of Bun.spawnSync(["lsof", "-nP", "-iTCP:46906", "-sTCP:LISTEN", "-t"]).stdout.toString().trim().split("\n").map(Number)) process.kill(pid, "SIGKILL");
+      while (await portOpen(46906)) await Bun.sleep(50);
+      let hits = 0;
+      const squatter = Bun.serve({ hostname: "127.0.0.1", port: 46906, fetch: () => (hits++, new Response("squatter", { headers: { "access-control-allow-origin": "*" } })) });
+      const browser = await launchBrowser(process.env.DS_MIRROR ?? "/Users/Ford/workspace-ds");
+      try {
+        await Bun.sleep(700); // past the guard's listener cache
+        const { context, blocked } = await guardedContext(browser, running);
+        const page = await context.newPage();
+        await page.goto(`${running.baseUrl}/ping`);
+        const result = await page.evaluate(() => fetch("http://127.0.0.1:46906/").then(() => "ok", () => "failed"));
+        expect(result).toBe("failed");
+        expect(hits).toBe(0);
+        expect(blocked()).toEqual(["GET http://127.0.0.1:46906/"]);
+      } finally {
+        await browser.close();
+        squatter.stop(true);
+      }
+    },
+    30_000,
+  );
+});
+
 describe("guardedContext determinism", () => {
   test.skipIf(Boolean(noPlaywright))(
     "applies DETERMINISM_CSS on a page whose CSP blocks inline styles (guarded context and Electron's injection)",
@@ -397,6 +503,121 @@ describe("installSignalHandlers", () => {
   );
 });
 
+/** Runs test/fixtures/runner/lifecycle.ts; resolves once it printed READY, with its tmp dir. */
+async function lifecycle(mode: string, ports: number[], outDirFor = outDir) {
+  const tool = Bun.spawn(["bun", join(import.meta.dir, "fixtures/runner/lifecycle.ts"), mode, makeRoot(), outDirFor, ...ports.map(String)], {
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  let output = "";
+  const reader = tool.stdout.getReader();
+  const read = async (until: string, ms: number) => {
+    const deadline = Date.now() + ms;
+    while (!output.includes(until) && Date.now() < deadline) {
+      const { value, done } = await Promise.race([reader.read(), Bun.sleep(ms).then(() => ({ value: undefined, done: true }))]);
+      if (done) break;
+      output += new TextDecoder().decode(value);
+    }
+    return output;
+  };
+  await read("READY", 25_000);
+  const tmp = /READY (\S+)/.exec(output)?.[1];
+  return { tool, tmp, read };
+}
+
+async function portsClosed(ports: number[], ms = 5_000): Promise<boolean> {
+  const deadline = Date.now() + ms;
+  while (Date.now() < deadline) {
+    if (!(await Promise.all(ports.map(portOpen))).some(Boolean)) return true;
+    await Bun.sleep(100);
+  }
+  return false;
+}
+
+describe("a tool that ends without stopping its apps", () => {
+  test("process.exit: the exit hook kills the run's processes", async () => {
+    const { tool, tmp } = await lifecycle("exit", [46909, 46910]);
+    expect(tmp).toBeDefined();
+    expect(await tool.exited).toBe(3);
+    expect(await portsClosed([46909, 46910])).toBe(true);
+  }, 40_000);
+
+  test("an uncaught exception: the handlers stop the apps, then exit 1", async () => {
+    const { tool, tmp } = await lifecycle("throw", [46922, 46923]);
+    expect(await tool.exited).toBe(1);
+    expect(await portsClosed([46922, 46923], 1_000)).toBe(true);
+    expect(existsSync(tmp!)).toBe(false);
+  }, 40_000);
+
+  test("a signal: a run started during shutdown is refused", async () => {
+    const { tool, read } = await lifecycle("restart", [46927, 46928, 46932, 46933]);
+    tool.kill("SIGINT");
+    expect(await read("REFUSED", 15_000)).toMatch(/REFUSED .*shutting down/);
+    expect(await tool.exited).toBe(130);
+    expect(await portsClosed([46927, 46928, 46932, 46933], 1_000)).toBe(true);
+  }, 40_000);
+
+  test("a signal while the tool's own stop() is in flight: the handler waits for it, nothing is left", async () => {
+    const { tool, tmp } = await lifecycle("stop-race", [46934, 46935]);
+    expect(tmp).toBeDefined();
+    expect(await tool.exited).toBe(130);
+    expect(await portsClosed([46934, 46935], 1_000)).toBe(true);
+    expect(existsSync(tmp!)).toBe(false);
+  }, 40_000);
+
+  test("a signal while startApp waits for the ready line: the spawned server is stopped", async () => {
+    const tool = Bun.spawn(["bun", join(import.meta.dir, "fixtures/runner/lifecycle.ts"), "before-ready", makeRoot(), outDir, "46936", "46929"], {
+      stdout: "ignore",
+      stderr: "ignore",
+    });
+    const deadline = Date.now() + 20_000;
+    while (!(await portOpen(46936)) && Date.now() < deadline) await Bun.sleep(50);
+    expect(await portOpen(46936)).toBe(true);
+    tool.kill("SIGINT");
+    expect(await tool.exited).toBe(130);
+    expect(await portsClosed([46936, 46929], 1_000)).toBe(true);
+  }, 40_000);
+
+  test("SIGKILL: the run record lets --cleanup stop exactly the orphans", async () => {
+    const records = join(scratch, "cleanup-out");
+    const { tool, tmp } = await lifecycle("kill", [46907, 46908], records);
+    tool.kill("SIGKILL");
+    await tool.exited;
+    expect(await portOpen(46907)).toBe(true); // orphaned: no hook ran
+    expect(existsSync(join(records, "runs", "lifecycle-fixture.json"))).toBe(true);
+    const report = await cleanupRuns(records);
+    expect(report).toEqual([expect.stringMatching(/^lifecycle-fixture: stopped (\d+) of \1 leftover process\(es\)/)]);
+    expect(await portsClosed([46907, 46908], 2_000)).toBe(true);
+    expect(existsSync(join(records, "runs", "lifecycle-fixture.json"))).toBe(false);
+    expect(existsSync(tmp!)).toBe(false);
+  }, 40_000);
+});
+
+describe("launchBrowser", () => {
+  test("starts the browser with the sanitized env and a temp HOME it removes afterwards", async () => {
+    // A stand-in browser executable that records the environment it got, then fails the launch.
+    const dump = join(scratch, "browser-env.txt");
+    const fake = join(scratch, "fake-browser");
+    writeFileSync(fake, `#!/bin/sh\nenv > '${dump}'\nexit 1\n`, { mode: 0o755 });
+    process.env.GITHUB_TOKEN = "ghp_planted";
+    try {
+      await expect(launchBrowser(process.env.DS_MIRROR ?? "/Users/Ford/workspace-ds", { executablePath: fake, timeout: 10_000 })).rejects.toThrow();
+    } finally {
+      delete process.env.GITHUB_TOKEN;
+    }
+    const env = Object.fromEntries(
+      readFileSync(dump, "utf8")
+        .trim()
+        .split("\n")
+        .map((line) => [line.slice(0, line.indexOf("=")), line.slice(line.indexOf("=") + 1)]),
+    );
+    expect(env.GITHUB_TOKEN).toBeUndefined();
+    expect(env.HOME).toStartWith(join(realpathSync(tmpdir()), "ds-browser-"));
+    expect(env.XDG_CONFIG_HOME).toStartWith(env.HOME);
+    expect(existsSync(env.HOME)).toBe(false);
+  }, 30_000);
+});
+
 const mirror = process.env.DS_MIRROR ?? "/Users/Ford/workspace-ds";
 const electronDir = (() => {
   try {
@@ -405,10 +626,15 @@ const electronDir = (() => {
     return null;
   }
 })();
-if (!electronDir) console.warn("skipping the electron test: electron does not resolve from the mirror's system-view");
+// Opt-in: any real Electron launch makes cfprefsd write the owner's shared ~/Library/Preferences/com.github.Electron.plist,
+// which the sandbox cannot stop (cfprefsd writes it, not the app). `bun run test` launches no Electron.
+const electronOptIn = process.env.DS_TEST_ELECTRON === "1";
+if (!electronOptIn)
+  console.warn("skipping the electron test: set DS_TEST_ELECTRON=1 to run it; any Electron launch writes ~/Library/Preferences/com.github.Electron.plist through cfprefsd");
+else if (!electronDir) console.warn("skipping the electron test: electron does not resolve from the mirror's system-view");
 
 describe("startApp electron", () => {
-  test.skipIf(Boolean(noPlaywright) || !electronDir)(
+  test.skipIf(!electronOptIn || Boolean(noPlaywright) || !electronDir)(
     "guards the first window's first load, and stop() ends the app and keeps Playwright's signal handlers out",
     async () => {
       const root = makeRoot();
@@ -421,6 +647,13 @@ describe("startApp electron", () => {
       writeFileSync(
         join(root, "app/main.js"),
         `const { app, BrowserWindow } = require("electron");
+// The main process is inside the OS sandbox: a non-loopback connect (TEST-NET-1) is refused at once.
+globalThis.__egress = new Promise((done) => {
+  const socket = require("net").connect({ host: "192.0.2.1", port: 9 });
+  socket.once("error", (error) => done(error.code));
+  socket.once("connect", () => (socket.destroy(), done("connected")));
+  setTimeout(() => done("timeout"), 3000);
+});
 app.whenReady().then(() => {
   const win = new BrowserWindow({ width: 320, height: 240, show: false });
   win.loadURL("data:text/html,<title>stand-in</title><script>fetch('http://127.0.0.1:46937/first-load').catch(() => {})</script>");
@@ -444,6 +677,7 @@ app.on("window-all-closed", () => app.quit());`,
       );
       for (const [name, path] of Object.entries(paths as Record<string, string>)) expect(`${name} ${path}`).toStartWith(`${name} ${running.tmp}/`);
       expect(await running.electron!.app.evaluate(() => process.argv.some((arg: string) => arg.startsWith("--user-data-dir")))).toBe(false);
+      expect(await running.electron!.app.evaluate(() => (globalThis as any).__egress)).toBe("EPERM");
       const pid = running.electron!.app.process().pid;
       await running.stop();
       expect(() => process.kill(pid, 0)).toThrow();

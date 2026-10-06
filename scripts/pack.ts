@@ -20,11 +20,12 @@
 
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdirSync, readFileSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, posix, resolve } from "node:path";
+import { join, posix } from "node:path";
 import { gunzipSync } from "node:zlib";
 import { ROOT, staleFiles, TokenError } from "./build.ts";
+import { safeOutputPath, UnsafePathError } from "./lib/safe-paths.ts";
 
 /** Every path in an npm-packed tgz starts with this folder. */
 export const TGZ_ROOT = "package/";
@@ -238,6 +239,43 @@ export interface PackOptions {
   out?: string;
 }
 
+/** Temp homes npmEnv made; removed when the process exits. */
+const npmHomes: string[] = [];
+
+/**
+ * The only environment npm pack gets: PATH, LANG, TERM and TMPDIR from `from`, and a fresh temp HOME
+ * (removed at exit) holding the XDG dirs, the npm cache and empty user and global npmrc files. So npm
+ * never reads the owner's ~/.npmrc or tokens, never writes ~/.npm, and runs no lifecycle scripts.
+ */
+export function npmEnv(from: NodeJS.ProcessEnv = process.env): Record<string, string> {
+  const home = mkdtempSync(join(tmpdir(), "ds-pack-npm-"));
+  if (!npmHomes.length) process.once("exit", () => npmHomes.forEach((dir) => rmSync(dir, { recursive: true, force: true })));
+  npmHomes.push(home);
+  const env: Record<string, string> = {};
+  for (const name of ["PATH", "LANG", "TERM", "TMPDIR"]) {
+    const value = from[name];
+    if (value !== undefined) env[name] = value;
+  }
+  const userconfig = join(home, "npmrc");
+  const globalconfig = join(home, "global-npmrc");
+  writeFileSync(userconfig, "");
+  writeFileSync(globalconfig, "");
+  return {
+    ...env,
+    HOME: home,
+    XDG_CONFIG_HOME: join(home, ".config"),
+    XDG_CACHE_HOME: join(home, ".cache"),
+    XDG_DATA_HOME: join(home, ".local", "share"),
+    npm_config_cache: join(home, ".npm"),
+    npm_config_userconfig: userconfig,
+    npm_config_globalconfig: globalconfig,
+    npm_config_update_notifier: "false",
+    npm_config_fund: "false",
+    npm_config_audit: "false",
+    npm_config_ignore_scripts: "true",
+  };
+}
+
 export interface PackResult {
   /** Absolute path of the tgz. */
   tgz: string;
@@ -245,7 +283,10 @@ export interface PackResult {
   tokensCssSha256: string;
 }
 
-/** Builds-checks, packs and verifies. Throws PackError (after deleting a bad tgz) when anything fails. */
+/**
+ * Builds-checks, packs and verifies. Throws PackError (after deleting a bad tgz) when anything fails,
+ * and UnsafePathError before creating anything when the destination resolves into the owner's tree.
+ */
 export async function pack(opts: PackOptions = {}): Promise<PackResult> {
   let stale: string[];
   try {
@@ -256,12 +297,12 @@ export async function pack(opts: PackOptions = {}): Promise<PackResult> {
   }
   if (stale.length) throw new PackError("design-system: build outputs are stale (run `bun run build`); nothing packed:", stale);
 
-  const out = resolve(opts.out ?? defaultOutDir());
+  const out = safeOutputPath(opts.out ?? defaultOutDir(), { label: "pack --out" });
   mkdirSync(out, { recursive: true });
-  const npm = spawnSync("npm", ["pack", "--pack-destination", out, "--json"], {
+  const npm = spawnSync("npm", ["pack", "--ignore-scripts", "--pack-destination", out, "--json"], {
     cwd: ROOT,
     encoding: "utf8",
-    env: { ...process.env, npm_config_update_notifier: "false", npm_config_fund: "false", npm_config_audit: "false" },
+    env: npmEnv(),
   });
   if (npm.error) throw new PackError(`design-system: could not run npm: ${npm.error.message}`);
   if (npm.status !== 0) throw new PackError(`design-system: npm pack exited ${npm.status}:\n${npm.stderr.trim()}`);
@@ -318,6 +359,10 @@ export async function cli(argv: string[] = process.argv.slice(2)): Promise<numbe
   } catch (error) {
     if (error instanceof PackError) {
       console.error(error.message);
+      return 1;
+    }
+    if (error instanceof UnsafePathError) {
+      console.error(`design-system: ${error.message}; nothing packed`);
       return 1;
     }
     throw error;
