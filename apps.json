@@ -3747,11 +3747,11 @@
           "tests.safe[0]": {
             "cmd": "PYTHONDONTWRITEBYTECODE=1 python3 manager/test_server.py",
             "exit": 0,
-            "pass": 10,
+            "pass": 11,
             "fail": 0,
             "errors": 0,
-            "date": "2026-10-05",
-            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs"
+            "date": "2026-10-06",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs; 11 tests from the pass-1 commit 85f4411 on (new StaticRouteTests guards the vendored design-system copy and the route whitelist)"
           }
         }
       },
