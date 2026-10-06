@@ -183,7 +183,7 @@ export async function checkPage(page: any, opts: PageCheckOptions): Promise<Asse
   const first: Theme = darkFirst ? "dark" : "light";
   const firstReadings = await readProbes(page, verify.probes.filter((probe) => probeActive(probe, first)), opts.values, first);
   out.push(...probeAssertions(firstReadings, first, darkFirst ? "dark (default)" : "light"));
-  // Nothing before this forces a font load: readFonts reads what the page loaded, then forces only IBM Plex Mono when the route does not render it.
+  // Nothing before this forces a font load: readFonts reads what the page loaded, then forces only IBM Plex Mono's regular face when the route does not render it or renders it only in other faces.
   out.push(...fontAssertions(await readFonts(page, { textProbes: fontProbeSelectors(verify) }), opts.responses, opts.fontSource));
 
   if (!darkFirst) {

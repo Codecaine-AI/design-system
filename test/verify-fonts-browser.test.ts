@@ -1,7 +1,8 @@
 /**
  * verify:apps font checks in Chromium, through checkPage: the check judges the faces the page loaded
  * on its own. Inter declared but used by no text fails (the check never forces it); IBM Plex Mono that
- * no text uses is force-loaded and passes as available, not rendered. Byte copies of the package's
+ * no text uses is force-loaded and passes as available, not rendered; IBM Plex Mono rendered only at 500
+ * and 600 passes when those faces and the forced regular face come from the package. Byte copies of the package's
  * fonts pass only when the winning @font-face rule sits in a copy of the package's fonts.css, followed
  * through @import; text-measure's fonts.css loaded last (the sequence-renderer fixture's order) fails.
  */
@@ -95,6 +96,23 @@ describe.skipIf(Boolean(browserSkip))("font checks in Chromium", () => {
     expect(await fonts("fonts-unrendered")).toEqual({
       "font: Inter": { status: "fail", message: expect.stringMatching(/^regular face of Inter: none loaded by the page before the check \(400 normal unloaded\)/) },
       "font: IBM Plex Mono": { status: "pass", message: expect.stringMatching(new RegExp(`^available, not rendered on this route: regular face loaded from ${ORIGIN}/fonts/IBMPlexMono-Regular\\.woff2`)) },
+    });
+  }, 30_000);
+
+  test("IBM Plex Mono rendered only at 500 and 600 from the package: the check forces the regular face and passes", async () => {
+    expect(await fonts("fonts-mono-other-faces")).toEqual({
+      "font: Inter": { status: "pass", message: expect.stringMatching(/^regular face loaded from /) },
+      "font: IBM Plex Mono": {
+        status: "pass",
+        message: `renders only in faces 500 normal, 600 normal, each from the package; regular face loaded when the check forced it from ${ORIGIN}/fonts/IBMPlexMono-Regular.woff2 (the package's fonts/ (${FONT_DIR}))`,
+      },
+    });
+  }, 30_000);
+
+  test("IBM Plex Mono rendered only at 500 and 600, the 600 face declared outside the package's fonts.css: fails naming the face", async () => {
+    expect((await fonts("fonts-mono-other-faces-elsewhere"))["font: IBM Plex Mono"]).toEqual({
+      status: "fail",
+      message: `the 600 normal face loads from ${join(copies, "design-system/fonts/IBMPlexMono-SemiBold.woff2")}: ${DECISION_20}: it is in an inline <style> or a constructed stylesheet; IBM Plex Mono renders on this route only in faces other than the regular one (faces 500 normal loaded, 600 normal loaded)`,
     });
   }, 30_000);
 
