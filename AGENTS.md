@@ -33,6 +33,7 @@
 2. `bun run lint:apps <app>` proves the app is wired and conformant: the package resolves inside the workspace, the entry stylesheet loads the CSS in order, no literal sits outside the allowlist, every `--ds-*` name exists, the app uses the shell and the code follows the folder structure.
 3. `bun run verify:apps <app>` proves the app renders from the tokens in a real browser: token probes in light and dark, the fonts, the sidebar state, served files and blocked requests.
 4. Never run an app outside its run profile (temp `HOME`, cleaned environment, the ports in its block, the macOS `sandbox-exec` profile: loopback-only network, no owner ports, no writes under your home outside `--root` and the run folder, no `.env` reads). `verify:apps` and `snapshot` start and stop it under the profile. After a crashed tool, `bun scripts/lib/app-runner.ts --cleanup --out-dir <dir>` stops exactly the processes its runs recorded.
+   Electron runs still write `~/Library/Preferences/com.github.Electron.plist` through cfprefsd, which the sandbox cannot stop, so the Electron runner test runs only with `DS_TEST_ELECTRON=1`.
 5. An app passes when `lint:apps` and `verify:apps` both exit 0. Screenshots and results go to `--out-dir` (default `$DS_RUN`, else `<tmpdir>/ds-rollout`), never into a git checkout.
 
 ## Commands

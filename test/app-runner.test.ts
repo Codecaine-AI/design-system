@@ -626,10 +626,15 @@ const electronDir = (() => {
     return null;
   }
 })();
-if (!electronDir) console.warn("skipping the electron test: electron does not resolve from the mirror's system-view");
+// Opt-in: any real Electron launch makes cfprefsd write the owner's shared ~/Library/Preferences/com.github.Electron.plist,
+// which the sandbox cannot stop (cfprefsd writes it, not the app). `bun run test` launches no Electron.
+const electronOptIn = process.env.DS_TEST_ELECTRON === "1";
+if (!electronOptIn)
+  console.warn("skipping the electron test: set DS_TEST_ELECTRON=1 to run it; any Electron launch writes ~/Library/Preferences/com.github.Electron.plist through cfprefsd");
+else if (!electronDir) console.warn("skipping the electron test: electron does not resolve from the mirror's system-view");
 
 describe("startApp electron", () => {
-  test.skipIf(Boolean(noPlaywright) || !electronDir)(
+  test.skipIf(!electronOptIn || Boolean(noPlaywright) || !electronDir)(
     "guards the first window's first load, and stop() ends the app and keeps Playwright's signal handlers out",
     async () => {
       const root = makeRoot();
