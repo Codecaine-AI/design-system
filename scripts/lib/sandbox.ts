@@ -11,16 +11,27 @@
  *            (~/.bun, ~/.nvm) and the Playwright browser cache (plus stat of home and the dirs on the way to
  *            them, so realpath works); never a `.env*` file anywhere; never a credential store or the
  *            owner's tree (HOME_SECRETS, OWNER_TREE unless it is the --root), even inside a readable dir
- *   writes   nowhere (deny file-write* under "/") except the --root tree, the run's temp dir and the
- *            device files runtimes open; never the design-system checkout the tool runs from or the tool's
- *            out dir (logs, run records), even inside --root. Nothing on PATH (/usr/local/bin is the
- *            owner's), no other temp dir, no cache dir: a run can plant nothing an unsandboxed process runs
+ *   writes   nowhere (deny file-write* under "/") except the app's own checkouts (checkouts.ts appScope:
+ *            decision 29), the run's temp dir and the device files runtimes open. Inside those, never a
+ *            `.git` entry or anything under one, never a git dir inside --root, never another repository's
+ *            checkout nested there. Everything else under --root is read-only: the run folder and the
+ *            tool's out dir, .tooling/*, .bun-global, every design-system checkout, Core's node_modules
+ *            with Playwright and Electron (also listed by name, toolPackageDirs). Nothing on PATH
+ *            (/usr/local/bin is the owner's), no other temp dir, no cache dir: a run can plant nothing an
+ *            unsandboxed process runs
+ *   services no LaunchServices open (lsopen), no AppleEvents, no lookup of cfprefsd or LaunchServices
+ *            (`open` would start an unsandboxed app; cfprefsd reads and writes ~/Library/Preferences on a
+ *            process's behalf, past the file rules: denied, CFPreferences falls back to the files)
  *   signals  only processes inside this same sandbox (the run's own)
+ *
+ * Policies: runPolicy (app runs; with `suiteNetwork` or the older `anyLoopback`, test suites), packPolicy
+ * (npm pack: writes only its staging and npm HOME, no network) and browserPolicy (Chromium for snapshot,
+ * verify and the profile proof: the run's ports only, writes only its own profile and temp dir).
  *
  * Seatbelt matches the kernel's canonical path (realpath, on-disk case, /Users rather than the firmlink
  * spelling), so every path in the profile is canonicalized first. Later rules win over earlier ones. The
  * profile is inherited by every descendant. Chromium cannot install its own Seatbelt sandbox inside one,
- * so a sandboxed Electron app runs with `--no-sandbox` (the outer profile still contains the whole tree).
+ * so a sandboxed Chromium or Electron runs with `--no-sandbox` (the outer profile still contains the tree).
  *
  * The kernel does not log denials of sandbox-exec profiles on this macOS (26.x): `log show --predicate
  * 'sender == "Sandbox"'` lists only system daemons' denials, with `(debug deny)` and `(with message ...)`
@@ -35,18 +46,23 @@
  * the profile text. Deny rules were reliable in every shape. So the Unix-socket rules come before the IP
  * rules, and binding is a single `(deny network-bind (require-not (require-any <the allowed ports and the
  * run's socket dir>)))`; test/sandbox.test.ts re-scans every block with the generated profile.
+ * Seatbelt has no port ranges ("localhost:49152-65535" is an invalid address): a suite's ephemeral range
+ * is 16384 rules (about 4.5 s to compile, so such a profile goes to sandbox-exec as a file, -f), and a bind
+ * to port 0 matches no single port, so a suite's binds stay a deny list (owner ports and the listeners
+ * found at start) while its connects are the allow list.
  *
  * Fail closed: sandboxCommand throws SandboxUnavailable when sandbox-exec is missing or cannot apply a
  * profile (for example when the tool itself already runs inside a sandbox that forbids nesting).
  */
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 
 import { HOME_SECRETS, OWNER_PORTS, OWNER_TREE } from "./owner";
+import { toolPackageDirs } from "./playwright";
 import { SYSTEM_BIN } from "./system-bin";
 import { DESIGN_SYSTEM_ROOT } from "./registry";
-import { canonicalPath, realHome, sameDir } from "./safe-paths";
+import { canonicalPath, realHome, safeTempBase, sameDir } from "./safe-paths";
 
 export { realHome };
 
@@ -59,8 +75,12 @@ export class SandboxUnavailable extends Error {
 export interface SandboxPolicy {
   /** The real user's home. Reads and writes under it are denied except as listed below. */
   home: string;
-  /** Directories the run may write (the --root tree, the run's temp dir). */
+  /** Directories the run may write (the app's own checkouts, the run's temp dir). */
   writable: string[];
+  /** Names of sandbox-exec -D parameters whose values are writable dirs (Chromium's profile dir). */
+  writableParams?: string[];
+  /** Directories inside which every `.git` entry, and everything under one, is read-only (the writable checkouts). */
+  gitProtected?: string[];
   /** Directories inside `writable` the run may not write (the design-system checkout, the tool's out dir). */
   readOnly?: string[];
   /** Directories under `home` the run may read (the --root tree, runtimes, the browser cache). */
@@ -89,6 +109,16 @@ export const ENV_FILE_REGEX = String.raw`/\.env[^/]*$`;
 export const SYSTEM_UNIX_SOCKETS = ["/private/var/run/mDNSResponder", "/private/var/run/syslog"];
 
 /**
+ * Mach services no run process may look up: cfprefsd (it reads and writes ~/Library/Preferences for the
+ * caller, past the file rules) and LaunchServices (`open`, which starts apps outside the sandbox).
+ */
+export const DENIED_MACH_SERVICES = ["com.apple.cfprefsd.daemon", "com.apple.cfprefsd.agent", "com.apple.coreservices.launchservicesd"];
+export const DENIED_MACH_PREFIXES = ["com.apple.lsd."];
+
+/** The macOS ephemeral port range (net.inet.ip.portrange.first/last): where a suite's own servers listen. */
+export const EPHEMERAL_PORTS = { min: 49152, max: 65535 } as const;
+
+/**
  * Device files a run may open for writing: the null/zero devices, its terminal, inherited descriptors
  * (/dev/stdout is /dev/fd/1), pseudo-terminals, and dtrace's helper (the dynamic linker opens it).
  */
@@ -100,6 +130,9 @@ const WRITABLE_DEVICES = [
 
 /** Runtime dirs under the real home that apps start from (relative to it): bun, nvm's node, Playwright's browsers. */
 export const HOME_RUNTIMES = [".bun", ".nvm", "Library/Caches/ms-playwright"];
+
+/** The sandbox-exec -D parameter that carries Chromium's profile dir into browserPolicy's profile. */
+export const BROWSER_PROFILE_PARAM = "DS_PROFILE_DIR";
 
 function sbString(text: string): string {
   return `"${text.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
@@ -113,6 +146,12 @@ function filters(kind: "subpath" | "literal", paths: readonly string[]): string 
   return canonicalAll(paths)
     .map((path) => `(${kind} ${sbString(path)})`)
     .join(" ");
+}
+
+/** A path as a literal inside a Seatbelt #"..." regex (which ends at a `"`, so a path with one is refused). */
+function regexLiteral(path: string): string {
+  if (path.includes('"')) throw new Error(`sandbox: a path with a double quote cannot go into a profile regex: ${path}`);
+  return path.replace(/[.^$*+?()[\]{}|\\]/g, "\\$&");
 }
 
 function checkPort(port: number) {
@@ -134,6 +173,12 @@ export function sandboxProfile(policy: SandboxPolicy): string {
   const lines = ["(version 1)", "(allow default)"];
 
   lines.push(";; signals: only this sandbox's own processes", "(deny signal)", "(allow signal (target same-sandbox))");
+  lines.push(
+    ";; services: no LaunchServices open, no AppleEvents, no cfprefsd or LaunchServices lookup",
+    "(deny lsopen)",
+    "(deny appleevent-send)",
+    `(deny mach-lookup ${[...DENIED_MACH_SERVICES.map((name) => `(global-name ${sbString(name)})`), ...DENIED_MACH_PREFIXES.map((prefix) => `(global-name-prefix ${sbString(prefix)})`)].join(" ")})`,
+  );
 
   // Rule order and shape below work around Seatbelt bugs found on macOS 26.5 by scanning every port block
   // (see NETWORK RULE SHAPES in the header): a Unix-socket rule placed after the IP allow rules, or a
@@ -166,9 +211,12 @@ export function sandboxProfile(policy: SandboxPolicy): string {
 
   lines.push(";; writes: nowhere but the writable dirs and the devices every runtime opens; never their read-only parts");
   lines.push('(deny file-write* (subpath "/"))');
-  if (policy.writable.length) lines.push(`(allow file-write* ${filters("subpath", policy.writable)})`);
+  const writable = [...(policy.writable.length ? [filters("subpath", policy.writable)] : []), ...(policy.writableParams ?? []).map((name) => `(subpath (param ${sbString(name)}))`)];
+  if (writable.length) lines.push(`(allow file-write* ${writable.join(" ")})`);
   lines.push(`(allow file-write* ${WRITABLE_DEVICES})`);
   if (policy.readOnly?.length) lines.push(`(deny file-write* ${filters("subpath", policy.readOnly)})`);
+  // Every `.git` entry (file or dir) at any depth, and everything under one: git config, hooks, the index.
+  for (const dir of canonicalAll(policy.gitProtected ?? [])) lines.push(`(deny file-write* (regex #"^${regexLiteral(dir)}/(.*/)?\\.git(/|$)"))`);
 
   if (policy.readable) {
     lines.push(";; reads under home: only the readable dirs (and stat of home and the dirs on the way to them)");
@@ -192,6 +240,14 @@ export interface RunPolicyOptions {
   tmp: string;
   /** The tool's out dir (logs, run records): readable, never writable by the run. */
   outDir: string;
+  /**
+   * The dirs under --root the run may write: the app's own checkouts (checkouts.ts appScope().writable,
+   * decision 29), or the checkouts test:apps scans. Default: none, so a run writes only its temp dir.
+   * Every `.git` entry inside them stays read-only.
+   */
+  writable?: string[];
+  /** Inside `writable`, never writable: other repositories' checkouts nested there, git dirs inside --root. */
+  readOnly?: string[];
   home?: string;
   ownerTree?: string;
   /**
@@ -206,25 +262,45 @@ export interface RunPolicyOptions {
   /** Electron: listen on any non-owner loopback port (DevTools, the inspector). */
   bindAnyPort?: boolean;
   /**
-   * Test suites that start their own servers on ephemeral ports (test:apps): connect to and listen on any
-   * loopback port except `deniedPorts`. The deny-list policy runs had before decision 22; never for app runs.
+   * Test suites (decision 31): connect only to the app's block and the ephemeral range 49152-65535, minus
+   * `listeners` (every port something listened on when the run started) and the denied ports; listen on
+   * any loopback port but those (Seatbelt cannot single out a bind to port 0). Owner ports never.
+   */
+  suiteNetwork?: { listeners: readonly number[] };
+  /**
+   * Superseded by suiteNetwork (decision 31): connect to and listen on any loopback port except
+   * `deniedPorts` and `extraDeniedPorts` (decision 27). Never for app runs.
    */
   anyLoopback?: boolean;
   /** The ports never contacted or bound (default OWNER_PORTS; tests pass stand-ins). */
   deniedPorts?: readonly number[];
-  /**
-   * Denied on top of `deniedPorts`: with `anyLoopback`, every loopback port that already has a listener
-   * when the run starts (decision 22: a listener the run did not start is an owner service).
-   */
+  /** Denied on top of `deniedPorts` (with anyLoopback: the listeners found at start). */
   extraDeniedPorts?: readonly number[];
 }
 
+/** The read-only dirs under --root every run gets, whatever it may write: the tool's and the run's own. */
+function toolDirsUnder(root: string, outDir: string, designSystems: string[]): string[] {
+  const dirs = [
+    ...designSystems,
+    outDir,
+    // The run folder ($DS_RUN), the tooling worktrees, the bun link registry the run.env points at.
+    process.env.DS_RUN,
+    join(root, ".tooling"),
+    join(root, ".bun-global"),
+    process.env.BUN_INSTALL_GLOBAL_DIR,
+    process.env.BUN_INSTALL_BIN,
+    // Playwright and Electron, which the tool loads from Core's node_modules.
+    ...toolPackageDirs(root),
+  ];
+  return [...new Set(dirs.filter((dir): dir is string => typeof dir === "string" && dir.length > 0 && existsSync(dir)))];
+}
+
 /**
- * The run policy: writes only in `root` and the run's temp dir, never in the design-system checkout or
- * the out dir; reads under home only in `root`, the runtimes and the browser cache; credential stores and
- * the owner's tree hidden (the owner's tree is readable and writable when it is `root` itself; the
- * design-system checkout stays readable inside a hidden owner tree); network only to the app's own block
- * and allowedLocalPorts; listening only on its block; owner ports never.
+ * The run policy: writes only in the given dirs (the app's own checkouts) and the run's temp dir, never a
+ * `.git` entry there, never the tool's dirs (toolDirsUnder); reads under home only in `root`, the runtimes
+ * and the browser cache; credential stores and the owner's tree hidden (the owner's tree is readable when
+ * it is `root` itself; the design-system checkout stays readable inside a hidden owner tree); network only
+ * to the app's own block and allowedLocalPorts; listening only on its block; owner ports never.
  */
 export function runPolicy(opts: RunPolicyOptions): SandboxPolicy {
   const home = opts.home ?? realHome();
@@ -238,17 +314,98 @@ export function runPolicy(opts: RunPolicyOptions): SandboxPolicy {
   const hidden = HOME_SECRETS.map((rel) => join(home, rel));
   if (!ownerRun) hidden.push(owner);
   const block = opts.blockPorts ?? [];
+  const denied = [...new Set([...(opts.deniedPorts ?? OWNER_PORTS), ...(opts.extraDeniedPorts ?? [])])];
+  const writable = opts.writable ?? [];
+  let connectPorts: number[] | undefined = [...block, ...(opts.allowedLocalPorts ?? [])];
+  let bindPorts: number[] | "any" = opts.bindAnyPort ? "any" : block;
+  let deniedPorts = denied;
+  if (opts.suiteNetwork) {
+    const listeners = new Set(opts.suiteNetwork.listeners);
+    const ephemeral = Array.from({ length: EPHEMERAL_PORTS.max - EPHEMERAL_PORTS.min + 1 }, (_, i) => EPHEMERAL_PORTS.min + i);
+    connectPorts = [...block, ...ephemeral].filter((port) => !listeners.has(port));
+    bindPorts = "any";
+    deniedPorts = [...new Set([...denied, ...listeners])].sort((a, b) => a - b);
+  } else if (opts.anyLoopback) {
+    connectPorts = undefined;
+    bindPorts = "any";
+  }
   return {
     home,
-    writable: [opts.root, opts.tmp],
-    readOnly: [...designSystems, opts.outDir],
+    writable: [...writable, opts.tmp],
+    gitProtected: writable,
+    readOnly: [...new Set([...toolDirsUnder(opts.root, opts.outDir, designSystems), ...(opts.readOnly ?? [])])],
     readable: [opts.root, opts.tmp, opts.outDir, ...designSystems, ...HOME_RUNTIMES.map((rel) => join(home, rel))],
     hidden,
     readableInHidden: [designSystem],
-    connectPorts: opts.anyLoopback ? undefined : [...block, ...(opts.allowedLocalPorts ?? [])],
-    bindPorts: opts.anyLoopback || opts.bindAnyPort ? "any" : block,
+    connectPorts,
+    bindPorts,
     unixSockets: { paths: SYSTEM_UNIX_SOCKETS, dirs: [opts.tmp] },
-    deniedPorts: [...new Set([...(opts.deniedPorts ?? OWNER_PORTS), ...(opts.extraDeniedPorts ?? [])])],
+    deniedPorts,
+  };
+}
+
+export interface PackPolicyOptions {
+  /** The package being packed (npm's cwd): readable, never writable. */
+  packageRoot: string;
+  /** npm's --pack-destination. */
+  staging: string;
+  /** npm's HOME (its cache, config and TMPDIR live there). */
+  npmHome: string;
+  home?: string;
+  ownerTree?: string;
+}
+
+/**
+ * npm pack (decision 31): writes only `staging` and `npmHome`; no network at all (no IP, no Unix socket,
+ * no bind); reads under home only the package and the runtimes (~/.nvm holds npm and node); credential
+ * stores and the owner's tree hidden (the package stays readable inside it). PATH is the caller's to pin.
+ */
+export function packPolicy(opts: PackPolicyOptions): SandboxPolicy {
+  const home = opts.home ?? realHome();
+  return {
+    home,
+    writable: [opts.staging, opts.npmHome],
+    readOnly: [opts.packageRoot],
+    readable: [opts.packageRoot, opts.staging, opts.npmHome, ...HOME_RUNTIMES.map((rel) => join(home, rel))],
+    hidden: [...HOME_SECRETS.map((rel) => join(home, rel)), opts.ownerTree ?? OWNER_TREE],
+    readableInHidden: [opts.packageRoot],
+    connectPorts: [],
+    bindPorts: [],
+    unixSockets: { paths: [], dirs: [] },
+    deniedPorts: OWNER_PORTS,
+  };
+}
+
+export interface BrowserPolicyOptions {
+  /** The browser's own HOME and TMPDIR (a fresh temp dir of the tool's). */
+  browserHome: string;
+  /** Loopback ports the browser may connect to: the running app's block and allowedLocalPorts. */
+  connectPorts: number[];
+  /** More dirs under the home it may read (snapshot:sheet's file: pages). */
+  readable?: string[];
+  home?: string;
+  ownerTree?: string;
+  deniedPorts?: readonly number[];
+}
+
+/**
+ * Chromium (decision 29): connect only to the run's ports on loopback; no listening; writes only its
+ * own temp dir and its profile dir (the sandbox-exec -D parameter BROWSER_PROFILE_PARAM, which the
+ * launcher sets from Playwright's --user-data-dir); reads under home only the Playwright browser cache;
+ * credential stores and the owner's tree hidden.
+ */
+export function browserPolicy(opts: BrowserPolicyOptions): SandboxPolicy {
+  const home = opts.home ?? realHome();
+  return {
+    home,
+    writable: [opts.browserHome],
+    writableParams: [BROWSER_PROFILE_PARAM],
+    readable: [opts.browserHome, join(home, "Library/Caches/ms-playwright"), ...(opts.readable ?? [])],
+    hidden: [...HOME_SECRETS.map((rel) => join(home, rel)), opts.ownerTree ?? OWNER_TREE],
+    connectPorts: opts.connectPorts,
+    bindPorts: [],
+    unixSockets: { paths: SYSTEM_UNIX_SOCKETS, dirs: [opts.browserHome] },
+    deniedPorts: opts.deniedPorts ?? OWNER_PORTS,
   };
 }
 
@@ -272,9 +429,38 @@ export function sandboxUnavailable(sandboxExec = SANDBOX_EXEC): string | null {
   return reason;
 }
 
-/** `argv` wrapped in sandbox-exec under `policy`. Throws SandboxUnavailable when it cannot be contained. */
-export function sandboxCommand(policy: SandboxPolicy, argv: string[], sandboxExec = SANDBOX_EXEC): string[] {
+/** A profile longer than this goes to sandbox-exec as a file: argv is limited (ARG_MAX, 1 MiB with the environment). */
+export const INLINE_PROFILE_MAX = 64 * 1024;
+
+let profileDir: string | undefined;
+
+/**
+ * Writes a profile to a file in a dir of the tool's own (a fresh dir under the system temp dir, which no
+ * run can write; removed when this process exits) and returns its path.
+ */
+export function writeProfileFile(profile: string, dir?: string): string {
+  if (!dir) {
+    if (!profileDir || !existsSync(profileDir)) {
+      profileDir = mkdtempSync(join(safeTempBase(), "ds-sbpl-"));
+      const made = profileDir;
+      process.once("exit", () => rmSync(made, { recursive: true, force: true }));
+    }
+    dir = profileDir;
+  }
+  const path = join(dir, `profile-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}.sb`);
+  writeFileSync(path, profile, { mode: 0o600, flag: "wx" });
+  return path;
+}
+
+/**
+ * `argv` wrapped in sandbox-exec under `policy`, with `params` as -D parameters (a policy's
+ * writableParams need theirs). Throws SandboxUnavailable when it cannot be contained.
+ */
+export function sandboxCommand(policy: SandboxPolicy, argv: string[], sandboxExec = SANDBOX_EXEC, params: Record<string, string> = {}): string[] {
   const reason = sandboxUnavailable(sandboxExec);
   if (reason) throw new SandboxUnavailable(`no OS sandbox for run processes: ${reason}`);
-  return [sandboxExec, "-p", sandboxProfile(policy), ...argv];
+  for (const name of policy.writableParams ?? []) if (!params[name]) throw new Error(`sandbox: the profile needs the parameter ${name}`);
+  const defines = Object.entries(params).flatMap(([name, value]) => ["-D", `${name}=${canonicalPath(value)}`]);
+  const profile = sandboxProfile(policy);
+  return profile.length > INLINE_PROFILE_MAX ? [sandboxExec, ...defines, "-f", writeProfileFile(profile), ...argv] : [sandboxExec, ...defines, "-p", profile, ...argv];
 }

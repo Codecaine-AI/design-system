@@ -8,12 +8,13 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { gunzipSync, gzipSync } from "node:zlib";
-import { UnsafePathError } from "../scripts/lib/safe-paths.ts";
-import { pack, packOutput, readTgz, tgzProblems, tokensCssSha256 } from "../scripts/pack.ts";
+import { realHome, UnsafePathError } from "../scripts/lib/safe-paths.ts";
+import { sandboxUnavailable } from "../scripts/lib/sandbox.ts";
+import { defaultOutDir, pack, packOutput, readTgz, tgzProblems, tokensCssSha256 } from "../scripts/pack.ts";
 import { PKG, readJson, readText } from "./support.ts";
 
 function run(command: string, args: string[], cwd: string, env: Record<string, string> = {}) {
@@ -215,6 +216,64 @@ test("npm sees none of the caller's npm config or HOME, and its temp HOME is gon
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+/** An executable `#!/bin/sh` script at `path`. */
+function script(path: string, body: string) {
+  writeFileSync(path, `#!/bin/sh\n${body}\n`);
+  chmodSync(path, 0o755);
+}
+
+describe("npm and node: never from a plantable PATH dir, and npm only inside the sandbox", () => {
+  test.each(["npm", "node"])("a %s planted in a user-writable dir before the nvm dir on PATH never runs: exit 1, nothing created", (name) => {
+    const dir = realpathSync(mkdtempSync(join(tmpdir(), "design-system-pack-planted-")));
+    try {
+      const bin = join(dir, "bin");
+      mkdirSync(bin);
+      const marker = join(dir, "ran.txt");
+      // Answers like a working tool would (npm prints a tgz name), so only the refusal can stop it.
+      script(join(bin, name), `echo "$0 $*" >> '${marker}'\necho '[{"filename":"x.tgz"}]'`);
+      const out = join(dir, "out");
+      const result = run(process.execPath, ["scripts/pack.ts", "--out", out], PKG, { PATH: `${bin}:${process.env.PATH ?? ""}` });
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain(`refusing to run ${name}: the first ${name} on PATH is ${join(bin, name)}, in a directory this user can write, before the nvm dir`);
+      expect(existsSync(marker)).toBe(false);
+      expect(existsSync(out)).toBe(false);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test.skipIf(!!sandboxUnavailable())("npm runs inside the sandbox: no write outside its staging folder and HOME, no network", async () => {
+    const dir = realpathSync(mkdtempSync(join(tmpdir(), "design-system-pack-sandbox-")));
+    // A listener in its own process (this one blocks in spawnSync while npm runs), counting hits in a file.
+    const port = 46944;
+    writeFileSync(join(dir, "listener.mjs"), `import { appendFileSync } from "node:fs";\nBun.serve({ hostname: "127.0.0.1", port: ${port}, fetch: () => (appendFileSync("hits.txt", "x"), new Response("")) });\n`);
+    const listener = Bun.spawn([process.execPath, "--no-env-file", "listener.mjs"], { cwd: dir, stdio: ["ignore", "ignore", "inherit"] });
+    try {
+      for (let i = 0; i < 100 && !(await fetch(`http://127.0.0.1:${port}/`).then(() => true, () => false)); i++) await Bun.sleep(50);
+      rmSync(join(dir, "hits.txt"), { force: true }); // the readiness probe's own hit
+      // A home whose ~/.nvm holds the npm and node pack takes: an npm that tries to escape, then fails.
+      const home = join(dir, "home");
+      const bin = join(home, ".nvm/versions/node/v0/bin");
+      mkdirSync(bin, { recursive: true });
+      const outside = join(dir, "outside.txt");
+      script(join(bin, "npm"), `echo planted > '${outside}'\n/usr/bin/curl -s -m 3 http://127.0.0.1:${port}/ >/dev/null\nexit 7`);
+      script(join(bin, "node"), "exit 9");
+      await expect(pack({ out: join(dir, "out"), home, pathEnv: `${bin}:/usr/bin:/bin` })).rejects.toThrow("npm pack exited 7");
+      expect(existsSync(outside)).toBe(false);
+      expect(existsSync(join(dir, "hits.txt"))).toBe(false);
+    } finally {
+      listener.kill("SIGKILL");
+      await listener.exited;
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+test("the default destination ($DS_RUN/pack, else under the temp base) refuses a TMPDIR that is the home itself", () => {
+  expect(defaultOutDir({ DS_RUN: "/run/folder" })).toBe("/run/folder/pack");
+  expect(() => defaultOutDir({ TMPDIR: realHome() })).toThrow("is the home directory itself");
 });
 
 /**
