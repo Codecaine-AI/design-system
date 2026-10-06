@@ -70,6 +70,16 @@ describe("names: a --ds-layout-* override is allowed on the shell (decision 32)"
         at(`${R}/index.css`, 23, `--ds-layout-lane-wide ${OUTSIDE}`),
         // On the shell, but the build has no such token.
         at(`${R}/index.css`, 25, "--ds-layout-nope is not defined by the current build"),
+        // Round-3 close (R3-B3): a :is()/:where() branch that is not the shell, a pseudo-element, a class in an
+        // attribute value. Lines 37-40 (every branch the shell, in @layer, @media and nesting) pass.
+        at(`${R}/index.css`, 28, `--ds-layout-sidebar-width ${OUTSIDE}`), // :is(.ds-shell, .ordinary)
+        at(`${R}/index.css`, 29, `--ds-layout-lane-text ${OUTSIDE}`), // :is(.ds-shell, :root)
+        at(`${R}/index.css`, 30, `--ds-layout-lane-code ${OUTSIDE}`), // .ds-shell::before
+        at(`${R}/index.css`, 31, `--ds-layout-lane-code ${OUTSIDE}`), // .ds-shell:after
+        at(`${R}/index.css`, 32, `--ds-layout-lane-wide ${OUTSIDE}`), // :where(.ds-shell)::after, .ds-shell
+        at(`${R}/index.css`, 33, `--ds-layout-inspector-width ${OUTSIDE}`), // [data-x=".ds-shell"]
+        at(`${R}/index.css`, 34, `--ds-layout-lane-text ${OUTSIDE}`), // .x:where(.ds-shell .y)
+        at(`${R}/index.css`, 35, `--ds-layout-lane-wide ${OUTSIDE}`), // &::before in .ds-shell
       ],
     );
   });
@@ -89,6 +99,10 @@ describe("names: a --ds-layout-* override is allowed on the shell (decision 32)"
         at(`${R}/App.tsx`, 19, `--ds-layout-sidebar-width ${OUTSIDE}`),
         // Line 25: CSS in a string on .ds-shell passes; line 26: on :root fails.
         at(`${R}/App.tsx`, 26, `--ds-layout-sidebar-width ${OUTSIDE}`),
+        // Round-3 close (R3-B3), computed keys: line 31, a layout key on the ds-shell tag after a spread, passes;
+        // a color key on the shell tag and a layout key on another tag fail.
+        at(`${R}/App.tsx`, 32, `--ds-color-accent ${DECLARED}`),
+        at(`${R}/App.tsx`, 33, `--ds-layout-lane-text ${OUTSIDE}`),
       ],
     );
   });

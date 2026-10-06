@@ -38,7 +38,8 @@
  *   Token-path strings outside the token API count only as near misses (edit distance 2, or one segment off with three or more
  *   segments): `"color.surface.page.x"` or a two-segment key far from every path passes. A
  *   `--ds-layout-*` override counts as on the shell only in a rule whose selector subjects carry
- *   `.ds-shell` (CSS, HTML <style>, one JS string), on a tag whose class holds `ds-shell` (its
+ *   `.ds-shell` (every `:is()`/`:where()` branch too; not a pseudo-element or an attribute value)
+ *   (CSS, HTML <style>, one JS string), on a tag whose class holds `ds-shell` (its
  *   style, a Tailwind arbitrary property), or through `setProperty` on a receiver the file binds
  *   to the shell (documentElement, a querySelector/closest of .ds-shell, a ref on the ds-shell
  *   tag); an element passed in as a parameter or found another way fails. A non-optional TS type key
