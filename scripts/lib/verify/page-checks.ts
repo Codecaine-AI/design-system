@@ -7,7 +7,7 @@
 import { runSteps } from "../capture";
 import { type AppEntry, type PassId, probeActive, probeRole, switchRoles, verifySpecProblems, type VerifySpec } from "../registry";
 import { type Assertion, fail, pass, type ResponseLog } from "./assertions";
-import { fontAssertions, type FontSourceJudge, readFonts } from "./fonts";
+import { fontAssertions, fontProbeSelectors, type FontSourceJudge, readFonts } from "./fonts";
 import { checkSidebar } from "./sidebar";
 import { type BuildValues, buildValue, sameComputedValue, type Theme, tokenCssVar } from "./tokens";
 
@@ -143,7 +143,7 @@ export interface PageCheckOptions {
   app: Pick<AppEntry, "id" | "shell" | "theme" | "verify">;
   values: BuildValues;
   responses: ResponseLog;
-  /** Where a fetched font url() came from (font-source.ts): only the package's fonts/ (or a copy of them) passes. */
+  /** Where a fetched font url() came from (font-source.ts): only the package's fonts/ (or a copy of them declared in its fonts.css) passes. */
   fontSource: FontSourceJudge;
   /** --pass; undefined means every check (final acceptance). */
   pass?: PassId;
@@ -183,7 +183,8 @@ export async function checkPage(page: any, opts: PageCheckOptions): Promise<Asse
   const first: Theme = darkFirst ? "dark" : "light";
   const firstReadings = await readProbes(page, verify.probes.filter((probe) => probeActive(probe, first)), opts.values, first);
   out.push(...probeAssertions(firstReadings, first, darkFirst ? "dark (default)" : "light"));
-  out.push(...fontAssertions(await readFonts(page), opts.responses, opts.fontSource));
+  // Nothing before this forces a font load: readFonts reads what the page loaded, then forces only IBM Plex Mono when the route does not render it.
+  out.push(...fontAssertions(await readFonts(page, { textProbes: fontProbeSelectors(verify) }), opts.responses, opts.fontSource));
 
   if (!darkFirst) {
     // theme.switch judges each role checked in both themes (waived in neither) by its probes checked in both

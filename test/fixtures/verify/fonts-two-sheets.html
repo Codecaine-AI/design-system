@@ -1,0 +1,17 @@
+<!doctype html>
+<!-- verify:apps fixture: the sequence-renderer fixture's order, a copy of the package's fonts.css and then a copy of text-measure's, whose rules win. The font files are byte copies of the package's. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>fonts from two fonts.css copies</title>
+    <link rel="stylesheet" href="/copy/design-system/css/fonts.css" />
+    <link rel="stylesheet" href="/copy/text-measure/fonts.css" />
+    <style>
+      body { margin: 0; font-family: Inter, sans-serif; }
+      code { font-family: "IBM Plex Mono", monospace; }
+    </style>
+  </head>
+  <body>
+    <p>Text in Inter, <code>code in IBM Plex Mono</code>.</p>
+  </body>
+</html>

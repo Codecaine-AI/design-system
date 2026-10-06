@@ -2,15 +2,18 @@
  * Run mode none: verify:apps resolves the package from the app the way node would and follows the
  * entry stylesheet's active imports to the package's tokens.css, never starts anything, and says the
  * app is not runtime-verified. The CLI runs this static check for every mode-none app, also when the
- * registry marks the runtime verify gate n/a.
+ * registry marks the runtime verify gate n/a. The CLI refuses, with exit 2 and before it writes
+ * anything, an --out-dir inside a git checkout, a result dir reached through a symlink, and a registry
+ * that fails registry:check's rules.
  */
 import { afterAll, expect, test } from "bun:test";
-import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { type AppEntry, DESIGN_SYSTEM_ROOT } from "../scripts/lib/registry.ts";
 import { packageCheck, staticCheck } from "../scripts/lib/verify/static-check.ts";
 import { loadBuildValues } from "../scripts/lib/verify/tokens.ts";
+import { fixtureApp } from "./verify-support.ts";
 
 const values = loadBuildValues(DESIGN_SYSTEM_ROOT);
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-verify-static-")));
@@ -37,15 +40,27 @@ function rootWith(packageDir: (root: string) => string, css: string): string {
 }
 const inRoot = (root: string) => join(root, "design-system");
 
-const app = {
+/** A complete registry entry (it passes registry:check's rules) for a library with no UI. */
+const app = fixtureApp({
   id: "lib",
-  root: "app",
+  name: "lib",
   entryStylesheet: "app/src/index.css",
-  theme: { rule: "light-dark" },
-  consume: { via: "workspace" },
+  consume: { via: "workspace", detail: "" },
   run: { mode: "none", reason: "a library" },
-} as AppEntry;
+  gates: { ...fixtureApp().gates, verify: { required: false, reason: "a library: nothing to start" } },
+});
 const statuses = (root: string) => Object.fromEntries(staticCheck(app, root, values).map((a) => [a.id, [a.status, a.message]]));
+
+/** verify:apps on `root` with a registry listing `apps`; returns the exit code and stderr. */
+function verifyCli(root: string, out: string, apps: unknown[]) {
+  const registry = join(root, "apps.json");
+  writeFileSync(registry, JSON.stringify({ version: 1, apps }));
+  const result = Bun.spawnSync([process.execPath, "scripts/verify-apps.ts", "--root", root, "--out-dir", out, "--registry", registry, "lib"], {
+    cwd: DESIGN_SYSTEM_ROOT,
+    env: { ...process.env, DS_RUN: out },
+  });
+  return { code: result.exitCode, stderr: result.stderr.toString() };
+}
 
 test("a package inside the root with the current tokens.css, and a stylesheet that loads it, pass; the app is not runtime-verified", () => {
   const found = statuses(rootWith(inRoot, IMPORT));
@@ -76,21 +91,40 @@ test("an import inside a comment does not load the tokens; a stale tokens.css in
 
 test("verify:apps runs the static check for a mode-none app whose verify gate is n/a, and fails it on a commented-out import", () => {
   const run = (css: string) => {
-    const root = rootWith(inRoot, css);
     const out = mkdtempSync(join(scratch, "out-"));
-    const registry = join(root, "apps.json");
-    const gateNa = { required: false, reason: "a library: nothing to start" };
-    writeFileSync(registry, JSON.stringify({ version: 1, apps: [{ ...app, name: "lib", gates: { verify: gateNa } }] }));
-    const result = Bun.spawnSync([process.execPath, "scripts/verify-apps.ts", "--root", root, "--out-dir", out, "--registry", registry, "lib"], {
-      cwd: DESIGN_SYSTEM_ROOT,
-      env: { ...process.env, DS_RUN: out },
-    });
+    const { code } = verifyCli(rootWith(inRoot, css), out, [app]);
     const dir = join(out, "lib/verify");
     const report = JSON.parse(readFileSync(join(dir, readdirSync(dir)[0]!), "utf8"));
-    return { code: result.exitCode, assertions: Object.fromEntries(report.assertions.map((a: any) => [a.id, a.status])) };
+    return { code, assertions: Object.fromEntries(report.assertions.map((a: any) => [a.id, a.status])) };
   };
   expect(run(IMPORT)).toEqual({ code: 0, assertions: { runtime: "n/a", package: "pass", "entry-stylesheet": "pass", gate: "n/a" } });
   expect(run(`/* ${IMPORT} */`)).toEqual({ code: 1, assertions: { runtime: "n/a", package: "pass", "entry-stylesheet": "fail", gate: "n/a" } });
+});
+
+test("verify:apps refuses an --out-dir inside a git checkout and writes nothing", () => {
+  const checkout = mkdtempSync(join(scratch, "checkout-"));
+  mkdirSync(join(checkout, ".git"));
+  const out = join(checkout, "out");
+  expect(verifyCli(rootWith(inRoot, IMPORT), out, [app])).toEqual({ code: 2, stderr: expect.stringContaining(`is inside the git checkout ${checkout}`) });
+  expect(existsSync(out)).toBe(false);
+});
+
+test("verify:apps refuses a result dir reached through a symlink and writes nothing through it", () => {
+  const out = mkdtempSync(join(scratch, "out-"));
+  const elsewhere = mkdtempSync(join(scratch, "elsewhere-"));
+  mkdirSync(join(out, "lib"));
+  symlinkSync(elsewhere, join(out, "lib/verify"));
+  expect(verifyCli(rootWith(inRoot, IMPORT), out, [app])).toEqual({ code: 2, stderr: expect.stringContaining(`${join(out, "lib/verify")} is a symlink`) });
+  expect(readdirSync(elsewhere)).toEqual([]);
+});
+
+test("verify:apps refuses a registry that fails registry:check's rules, listing every problem, before it checks or writes anything", () => {
+  const out = mkdtempSync(join(scratch, "out-"));
+  const { passes: _passes, ...withoutPasses } = app;
+  const result = verifyCli(rootWith(inRoot, IMPORT), out, [{ ...withoutPasses, gates: { ...app.gates, lint: undefined } }]);
+  expect(result).toEqual({ code: 2, stderr: expect.stringContaining("registry problem(s)") });
+  for (const problem of ["lib: passes.1 is missing", "lib: gates.lint is missing"]) expect(result.stderr).toContain(problem);
+  expect(readdirSync(out)).toEqual([]);
 });
 
 test("packageCheck, which every run mode applies: relative-import follows the stylesheet to the package, copy checks the copied file, host-css is n/a", () => {

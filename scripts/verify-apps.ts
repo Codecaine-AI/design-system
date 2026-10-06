@@ -16,14 +16,18 @@
  * runtime-verified; the verify gate's n/a reason covers only the runtime part.
  * Refuses to run while a propagate journal is unrestored or a build holds the sentinel color.
  *
- * Writes <out-dir>/<app>/verify/<ISO timestamp>.json per app and prints a summary. Exit 1 on any failure.
+ * Writes <out-dir>/<app>/verify/<timestamp>.json per app (the ISO time with ':' written as '-'; the JSON
+ * keeps the ISO `timestamp`) and prints a summary. Exit 1 on any failure; exit 2 on bad arguments, an
+ * --out-dir in the owner's tree or in a git checkout, an invalid registry (registry:check's rules), or
+ * a result or journal path through a symlink.
  */
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { type AppEntry, DESIGN_SYSTEM_ROOT, getApp, loadRegistry, type PassId, REGISTRY_PATH, type Registry, resolvePath } from "./lib/registry";
-import { safeAppId, safeOutputPath } from "./lib/safe-paths";
+import { toolOutputDir } from "./lib/output-dir";
+import { safeAppId, safeChildPath, UnsafePathError } from "./lib/safe-paths";
 import { type Assertion, fail, na, pass } from "./lib/verify/assertions";
 import { checkPage, sentinelAssertions } from "./lib/verify/page-checks";
 import {
@@ -80,8 +84,8 @@ function parseArgs(argv: string[]): Args {
     else args.apps.push(arg);
   }
   if (args.propagate && args.restore) throw new Error("--propagate and --restore are exclusive");
-  // Never the owner's tree (unless --root is that tree): the shared destination check.
-  args.outDir = safeOutputPath(args.outDir, { root: args.root, label: "--out-dir" });
+  // Never the owner's tree (unless --root is that tree) and never a git checkout: the shared destination check.
+  args.outDir = toolOutputDir(args.outDir, { root: args.root, label: "--out-dir" });
   return args;
 }
 
@@ -155,12 +159,22 @@ function absorb(result: AppResult, report: RuntimeReport) {
   if (report.clock) result.clock = report.clock;
 }
 
-function writeResult(outDir: string, result: AppResult): string {
+/** <out-dir>/<segments...>, every segment safe and no component a symlink (safeChildPath); throws UnsafePathError. */
+function outPath(args: Args, label: string, ...segments: string[]): string {
+  return safeChildPath({ base: args.outDir, root: args.root, label }, ...segments);
+}
+
+/** <out-dir>/<app>/verify: checked before an app runs, so a planted symlink refuses the run instead of its result. */
+const resultDir = (args: Args, app: string) => outPath(args, "verify result", safeAppId(app), "verify");
+
+function writeResult(args: Args, result: AppResult): string {
   result.ok = !result.assertions.some((a) => a.status === "fail");
-  const dir = join(outDir, safeAppId(result.app), "verify");
-  mkdirSync(dir, { recursive: true });
-  const path = join(dir, `${result.timestamp}.json`);
-  writeFileSync(path, `${JSON.stringify(result, null, 2)}\n`);
+  // An ISO timestamp has ':', which is not a safe path segment; the JSON keeps the ISO form.
+  const segments = [safeAppId(result.app), "verify", `${result.timestamp.replace(/:/g, "-")}.json`];
+  mkdirSync(dirname(outPath(args, "verify result", ...segments)), { recursive: true });
+  // Checked again after mkdir (a link planted meanwhile is refused); "wx" never follows a link at the file itself.
+  const path = outPath(args, "verify result", ...segments);
+  writeFileSync(path, `${JSON.stringify(result, null, 2)}\n`, { flag: "wx" });
   return path;
 }
 
@@ -227,9 +241,10 @@ async function verifyMode(args: Args, registry: Registry): Promise<number> {
     console.error("verify:apps: apps.json lists no apps");
     return 1;
   }
+  for (const app of apps) resultDir(args, app.id);
   const runtimeApps = apps.filter((app) => app.gates.verify.required && app.run.mode !== "none");
   const { browser, version, error } = await openBrowser(root, runtimeApps);
-  const session: Session = { browser, root, outDir: args.outDir };
+  const session: Session = { browser, root, outDir: args.outDir, registry };
   const results: Array<{ result: AppResult; path: string }> = [];
   try {
     for (const app of apps) {
@@ -262,6 +277,7 @@ async function verifyMode(args: Args, registry: Registry): Promise<number> {
                 fontSource: fontSourceJudge({
                   packageDirs,
                   buildFontsDir: join(DESIGN_SYSTEM_ROOT, "fonts"),
+                  buildFontsCss: join(DESIGN_SYSTEM_ROOT, "css/fonts.css"),
                   copyDirs: [ctx.running.tmp, ...(app.consume.via === "copy" ? [resolvePath(root, app.repo)] : [])],
                   diskPath: (url) => fontDiskPath(ctx.running, url),
                 }),
@@ -270,7 +286,7 @@ async function verifyMode(args: Args, registry: Registry): Promise<number> {
           );
         }
       }
-      results.push({ result, path: writeResult(args.outDir, result) });
+      results.push({ result, path: writeResult(args, result) });
     }
   } finally {
     await browser?.close().catch(() => undefined);
@@ -282,7 +298,7 @@ async function verifyMode(args: Args, registry: Registry): Promise<number> {
 async function propagateMode(args: Args, registry: Registry): Promise<number> {
   const root = checkPropagateRoot(args.root);
   const dsDir = join(root, "design-system");
-  const journalDir = join(args.outDir, "propagate-journal");
+  const journalDir = outPath(args, "propagate journal", "propagate-journal");
   const statePath = join(process.env.DS_RUN || args.outDir, "STATE.md");
   const eligibility = eligibleApps(registry, args.apps, existsSync(statePath) ? readFileSync(statePath, "utf8") : null);
   for (const problem of eligibility.problems) console.error(`verify:apps: --propagate: ledger: ${problem}`);
@@ -291,10 +307,11 @@ async function propagateMode(args: Args, registry: Registry): Promise<number> {
     console.error("verify:apps: --propagate found no eligible app (none listed, none done in the ledger with a live link); nothing changed");
     return 1;
   }
+  for (const app of eligibility.apps) resultDir(args, app.id);
   const values = loadBuildValues(DESIGN_SYSTEM_ROOT);
   const meta = designSystemMeta(values);
   const { browser, version, error } = await openBrowser(root, eligibility.apps);
-  const session: Session = { browser, root, outDir: args.outDir };
+  const session: Session = { browser, root, outDir: args.outDir, registry };
   // Content, not git status: a file already modified before the run must come back byte-for-byte too.
   const hashesBefore = buildHashes(dsDir);
   const pending: AppResult[] = [];
@@ -335,7 +352,7 @@ async function propagateMode(args: Args, registry: Registry): Promise<number> {
   const results = pending.map((result) => {
     result.assertions.push(...restoreAssertions);
     result.propagate!.restore = { ...restore, build: restore.build.ok, check: restore.check.ok };
-    return { result, path: writeResult(args.outDir, result) };
+    return { result, path: writeResult(args, result) };
   });
   printSummary(results);
   return results.every(({ result }) => result.ok) ? 0 : 1;
@@ -343,7 +360,7 @@ async function propagateMode(args: Args, registry: Registry): Promise<number> {
 
 function restoreMode(args: Args): number {
   const root = checkPropagateRoot(args.root, "--restore");
-  const journalDir = join(args.outDir, "propagate-journal");
+  const journalDir = outPath(args, "propagate journal", "propagate-journal");
   const manifest = readJournal(journalDir);
   if (!manifest) {
     console.error(`verify:apps --restore: no propagate journal at ${journalDir}; nothing restored`);
@@ -352,6 +369,8 @@ function restoreMode(args: Args): number {
   const dsDir = realpathSync(join(root, "design-system"));
   if (manifest.dsDir !== dsDir) throw new Refusal(`--restore: the journal is for ${manifest.dsDir}, not ${dsDir}`);
   const result = restoreFromJournal(journalDir);
+  // A build the crashed run left running is stopped before anything is restored.
+  if (result.stoppedBuild) console.log(`verify:apps --restore: earlier build ${result.stoppedBuild.script} (pid ${result.stoppedBuild.pid}): ${result.stoppedBuild.outcome}`);
   console.log(
     `verify:apps --restore: ${result.restored.length ? `restored ${result.restored.join(", ")}` : `journal already restored at ${readJournal(journalDir)?.restoredAt}`} in ${dsDir}; build ${result.build.ok ? "ok" : "FAILED"}, check ${result.check.ok ? "ok" : "FAILED"}`,
   );
@@ -368,16 +387,27 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
     return 2;
   }
   // Ctrl-C stops every app this process started (and runs the cleanups registered later) before exiting 130.
-  const { installSignalHandlers } = await import("./lib/app-runner");
+  const { installSignalHandlers, validateLoadedRegistry } = await import("./lib/app-runner");
   installSignalHandlers();
   try {
     if (args.restore) return restoreMode(args);
-    const registry = loadRegistry(args.registry);
+    let registry: Registry;
+    try {
+      // registry:check's rules, before anything is checked or started.
+      registry = validateLoadedRegistry(loadRegistry(args.registry), args.registry);
+    } catch (error) {
+      console.error(`verify:apps: ${(error as Error).message}`);
+      return 2;
+    }
     return args.propagate ? await propagateMode(args, registry) : await verifyMode(args, registry);
   } catch (error) {
     if (error instanceof Refusal) {
       console.error(`verify:apps: ${error.message}`);
       return 1;
+    }
+    if (error instanceof UnsafePathError) {
+      console.error(`verify:apps: ${error.message}`);
+      return 2;
     }
     throw error;
   }
