@@ -859,7 +859,7 @@
       "theme": {
         "rule": "light-dark"
       },
-      "literalFloor": 6,
+      "literalFloor": 9,
       "allowlist": "apps/allowlists/canvas-studio.json",
       "shell": true,
       "folderStandard": true,

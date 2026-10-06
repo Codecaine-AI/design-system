@@ -13,7 +13,31 @@
       "category": "hex",
       "kind": "inline",
       "reason": "color-input fallback in the Style rail's color controls; owner decision: style engines hide color controls but keep the code, and <input type=color> needs a hex value"
+    },
+    {
+      "file": "codecaine/core/canvas/packages/studio/src/style/StyleRail.tsx",
+      "match": "^max-w-\\[calc\\(100vw-2rem\\)\\]$",
+      "category": "twArbitrary",
+      "reason": "viewport clamp on a floating panel (w-80 at right-4) so it stays inside narrow windows; layout geometry with no token, kept (decision 43)"
+    },
+    {
+      "file": "codecaine/core/canvas/packages/studio/src/agent/AgentSidebar.tsx",
+      "match": "^max-w-\\[calc\\(100vw-2rem\\)\\]$",
+      "category": "twArbitrary",
+      "reason": "viewport clamp on a floating panel (w-80 at right-4) so it stays inside narrow windows; layout geometry with no token, kept (decision 43)"
+    },
+    {
+      "file": "codecaine/core/canvas/packages/studio/src/App.tsx",
+      "match": "^max-w-\\[50vw\\]$",
+      "category": "twArbitrary",
+      "reason": "viewport clamp that truncates the /view header board title; layout geometry with no token, kept (decision 43)"
     }
   ],
-  "twClasses": []
+  "twClasses": [
+    {
+      "file": "codecaine/core/canvas/packages/studio/src/agent/AgentSidebar.tsx",
+      "className": "^animate-pulse$",
+      "reason": "the agent session working-status dot pulses (Tailwind 2 s pulse); no looping-motion token exists, and dropping it would change product behavior"
+    }
+  ]
 }
