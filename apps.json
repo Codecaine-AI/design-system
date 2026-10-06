@@ -4088,7 +4088,7 @@
             "token": "color.surface.page"
           },
           {
-            "selector": "aside",
+            "selector": "aside.ds-sidebar",
             "property": "background-color",
             "token": "color.surface.sidebar"
           },
@@ -4098,8 +4098,8 @@
             "token": "color.text.body"
           },
           {
-            "selector": "aside",
-            "property": "border-right-color",
+            "selector": "header.ds-topbar",
+            "property": "border-bottom-color",
             "token": "color.border.default"
           }
         ],
