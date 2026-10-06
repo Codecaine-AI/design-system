@@ -1083,7 +1083,7 @@
         },
         {
           "what": "the boards list page fetches http://localhost:4803/api/canvases",
-          "reason": "4803 is the owner's docs-system self-docs dev API (docs-system/Makefile:23-45: make dev, dev-web, docs). The origin is DEFAULT_PROJECT_SERVER_ORIGIN in packages/studio/src/project/docs-server.ts:18, read in ProjectBoardsSection.tsx:33; the only override is localStorage studio.project-server-origin (docs-server.ts:20), with no env var, flag or config. The guard blocks it (2 requests per capture of the boards route) and the linked-boards section stays quiet, so rendering does not need it; verify runs on the gallery route, which makes no such request. A dev-only override (or a route storage seed) would let the boards route point it at a dead port in this block"
+          "reason": "4803 is the owner's docs-system self-docs dev API (docs-system/Makefile:23-45: make dev, dev-web, docs). The origin is DEFAULT_PROJECT_SERVER_ORIGIN in packages/studio/src/shared/docs-server.ts (DEFAULT_PROJECT_SERVER_ORIGIN), read in _components/BoardsPage/_components/ProjectBoardsSection/index.tsx; the only override is localStorage studio.project-server-origin (shared/docs-server.ts), with no env var, flag or config. The guard blocks it (2 requests per capture of the boards route) and the linked-boards section stays quiet, so rendering does not need it; verify runs on the gallery route, which makes no such request. A dev-only override (or a route storage seed) would let the boards route point it at a dead port in this block"
         },
         {
           "what": "the dev server proxies /api/agent/* and /api/canvases/:id/agent/* to the owner's :4820",
@@ -1382,7 +1382,7 @@
         },
         {
           "what": "the boards list page fetches http://localhost:4803/api/canvases",
-          "reason": "4803 is the owner's docs-system self-docs dev API (docs-system/Makefile:23-45: make dev, dev-web, docs). The origin is DEFAULT_PROJECT_SERVER_ORIGIN in packages/studio/src/project/docs-server.ts:18, read in ProjectBoardsSection.tsx:33; the only override is localStorage studio.project-server-origin (docs-server.ts:20), with no env var, flag or config. The guard blocks it (2 requests per capture of the boards route) and the linked-boards section stays quiet, so rendering does not need it; verify runs on the gallery route, which makes no such request. A dev-only override (or a route storage seed) would let the boards route point it at a dead port in this block"
+          "reason": "4803 is the owner's docs-system self-docs dev API (docs-system/Makefile:23-45: make dev, dev-web, docs). The origin is DEFAULT_PROJECT_SERVER_ORIGIN in packages/studio/src/shared/docs-server.ts (DEFAULT_PROJECT_SERVER_ORIGIN), read in _components/BoardsPage/_components/ProjectBoardsSection/index.tsx; the only override is localStorage studio.project-server-origin (shared/docs-server.ts), with no env var, flag or config. The guard blocks it (2 requests per capture of the boards route) and the linked-boards section stays quiet, so rendering does not need it; verify runs on the gallery route, which makes no such request. A dev-only override (or a route storage seed) would let the boards route point it at a dead port in this block"
         },
         {
           "what": "the dev server proxies /api/agent/* and /api/canvases/:id/agent/* to the owner's :4820",
