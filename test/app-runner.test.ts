@@ -536,10 +536,10 @@ async function portsClosed(ports: number[], ms = 5_000): Promise<boolean> {
 
 describe("a tool that ends without stopping its apps", () => {
   test("process.exit: the exit hook kills the run's processes", async () => {
-    const { tool, tmp } = await lifecycle("exit", [46920, 46921]);
+    const { tool, tmp } = await lifecycle("exit", [46909, 46910]);
     expect(tmp).toBeDefined();
     expect(await tool.exited).toBe(3);
-    expect(await portsClosed([46920, 46921])).toBe(true);
+    expect(await portsClosed([46909, 46910])).toBe(true);
   }, 40_000);
 
   test("an uncaught exception: the handlers stop the apps, then exit 1", async () => {
