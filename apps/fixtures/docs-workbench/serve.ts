@@ -11,7 +11,7 @@
  *    `themes/` to <tmp>/docs-workbench/repo-themes (the backlinks index lands in the copy).
  * 2. Refuses to start unless CODECAINE_DOCS_STATE_DIR, _GLOBAL_THEMES and _CODE_THEMES point
  *    under --tmp, and unless DOCS_SHARED_API_*, DOCS_STATIC and DOCS_API are unset.
- * 3. Runs `docs-cli serve --standalone --dev` (never the central service) with --root and
+ * 3. Runs `bun --no-env-file docs-cli serve --standalone --dev` (never the central service) with --root and
  *    --themes-root at the copies and --kernel-url at a dead port in the app's own block.
  *    Children stay in this process group, so stopping the group stops serve and vite.
  *
@@ -59,7 +59,7 @@ async function main() {
   for (const name of STATE_VARS) ensureTmpDir(args.tmp, process.env[name]!);
 
   const cmd = [
-    "bun", "packages/docs-cli/src/index.ts", "serve", "--standalone",
+    "bun", "--no-env-file", "packages/docs-cli/src/index.ts", "serve", "--standalone",
     "--root", corpus, "--themes-root", themes, "--dev",
     "--port", String(api), "--ui-port", String(ui),
     "--kernel-url", `http://127.0.0.1:${deadKernel}`,

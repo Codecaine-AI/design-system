@@ -89,18 +89,18 @@
       "run": {
         "mode": "static",
         "cwd": "codecaine/core/sequence",
-        "start": "bun {ds}/apps/fixtures/sequence-renderer/serve.ts {flags}",
+        "start": "bun --no-env-file {ds}/apps/fixtures/sequence-renderer/serve.ts {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)",
         "staticDir": "{tmp}/sequence-renderer-site"
       },
       "commands": {
         "cwd": "codecaine/core/sequence",
-        "typecheck": "bun run typecheck:sequence"
+        "typecheck": "bun --no-env-file run typecheck:sequence"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test packages/sequence/src",
+            "cmd": "bun --no-env-file test packages/sequence/src",
             "cwd": "codecaine/core/sequence"
           }
         ]
@@ -466,7 +466,7 @@
       "run": {
         "mode": "browser",
         "cwd": "codecaine/core/docs-system",
-        "start": "bun {ds}/apps/fixtures/docs-workbench/serve.ts {flags}",
+        "start": "bun --no-env-file {ds}/apps/fixtures/docs-workbench/serve.ts {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)",
         "serveRoot": "codecaine/core/docs-system/packages/docs-workbench/web"
       },
@@ -477,7 +477,7 @@
       "tests": {
         "safe": [
           {
-            "cmd": "bun test packages/docs-workbench/src packages/docs-workbench/web/src",
+            "cmd": "bun --no-env-file test ./packages/docs-workbench/src/__tests__/serve-fs-watch.test.ts ./packages/docs-workbench/src/__tests__/shared-api.test.ts ./packages/docs-workbench/src/pdf-export.test.ts ./packages/docs-workbench/web/src/__tests__/annotate-range.test.ts ./packages/docs-workbench/web/src/__tests__/api.test.ts ./packages/docs-workbench/web/src/__tests__/block-selection-wash.test.ts ./packages/docs-workbench/web/src/__tests__/canvas-embed.test.tsx ./packages/docs-workbench/web/src/__tests__/code-theme.test.tsx ./packages/docs-workbench/web/src/__tests__/default-fonts.test.ts ./packages/docs-workbench/web/src/__tests__/doc-peek.test.tsx ./packages/docs-workbench/web/src/__tests__/doc-title.test.ts ./packages/docs-workbench/web/src/__tests__/global-theme.test.tsx ./packages/docs-workbench/web/src/__tests__/grain-code-mask.test.ts ./packages/docs-workbench/web/src/__tests__/inline-svg.test.ts ./packages/docs-workbench/web/src/__tests__/layout-metrics-drift.test.ts ./packages/docs-workbench/web/src/__tests__/pdf-export.test.tsx ./packages/docs-workbench/web/src/__tests__/sequence-embed.test.tsx ./packages/docs-workbench/web/src/__tests__/shared-events.test.ts ./packages/docs-workbench/web/src/__tests__/sidebar.test.tsx ./packages/docs-workbench/web/src/__tests__/style-rail-static-head.test.ts ./packages/docs-workbench/web/src/__tests__/style-rail-token-wiring.test.ts ./packages/docs-workbench/web/src/__tests__/style-rail.test.tsx ./packages/docs-workbench/web/src/__tests__/workbench.test.tsx ./packages/docs-workbench/web/src/lab/__tests__/DocLab.test.tsx ./packages/docs-workbench/web/src/lab/__tests__/doc-lab-changeset-messages.test.ts ./packages/docs-workbench/web/src/lab/__tests__/doc-lab-changesets.test.ts ./packages/docs-workbench/web/src/lab/__tests__/doc-lab-controller.test.tsx ./packages/docs-workbench/web/src/lab/__tests__/doc-lab-projection.test.ts ./packages/docs-workbench/web/src/lab/__tests__/docs-kernel-client.test.ts ./packages/docs-workbench/web/src/lab/__tests__/docs-kernel-session-source.test.ts",
             "cwd": "codecaine/core/docs-system"
           }
         ],
@@ -493,6 +493,10 @@
           {
             "cmd": "docs-cli serve without --standalone",
             "reason": "hands off to the installed central docs service (:4820) whenever background.json exists"
+          },
+          {
+            "cmd": "bun test packages/docs-workbench/src/__tests__/serve-routes.test.ts",
+            "reason": "writes into the repo: seeds packages/docs-workbench/web/dist-static/index.html (serve-routes.test.ts:331-336, also 377, 451, 490), and its export path runs ensureSpaBuilt (src/spa.ts:105), which runs `bun x vite build` into the checkout"
           }
         ]
       },
@@ -575,8 +579,8 @@
           "CODECAINE_DOCS_STATE_DIR": "{tmp}/docs-state",
           "CODECAINE_DOCS_GLOBAL_THEMES": "{tmp}/docs-state/themes",
           "CODECAINE_DOCS_CODE_THEMES": "{tmp}/docs-state/code-themes",
-          "CANVAS_STUDIO_URL": "http://localhost:3999",
-          "SEQUENCE_STUDIO_URL": "http://localhost:3998"
+          "CANVAS_STUDIO_URL": "http://127.0.0.1:{port:deadCanvasStudio}",
+          "SEQUENCE_STUDIO_URL": "http://127.0.0.1:{port:deadSequenceStudio}"
         },
         "unsetEnv": [
           "DOCS_SHARED_API_URL",
@@ -609,7 +613,9 @@
         "ports": {
           "api": 47020,
           "ui": 47021,
-          "deadKernel": 47022
+          "deadKernel": 47022,
+          "deadCanvasStudio": 47023,
+          "deadSequenceStudio": 47024
         },
         "proof": {
           "status": "proven",
@@ -669,8 +675,8 @@
           "reason": "the frozen verification tarball holds private workspace docs; the fixture copies repo content into {tmp} at start"
         },
         {
-          "what": "CANVAS_STUDIO_URL and SEQUENCE_STUDIO_URL point at the owner's ports 3999/3998",
-          "reason": "build-time defines baked into links only (open-in-studio buttons); nothing fetches them, and the browser guard blocks any request to them"
+          "what": "CANVAS_STUDIO_URL and SEQUENCE_STUDIO_URL point at dead ports in the app's block",
+          "reason": "web/vite.config.ts:45-50 bakes them into the open-in-studio links (defaults are the owner's :3999 and :3998); the profile points them at 47023 and 47024, named ports nothing binds, so a click reaches nobody and the guard counts it as expected-blocked"
         },
         {
           "what": "routes omit the side peek and the link editor",
@@ -783,7 +789,7 @@
       "tests": {
         "safe": [
           {
-            "cmd": "bun test packages/studio",
+            "cmd": "bun --no-env-file test packages/studio",
             "cwd": "codecaine/core/canvas"
           }
         ],
@@ -911,8 +917,8 @@
           "reason": "4803 is the owner's docs-system self-docs dev API (docs-system/Makefile:23-45: make dev, dev-web, docs). The origin is DEFAULT_PROJECT_SERVER_ORIGIN in packages/studio/src/project/docs-server.ts:18, read in ProjectBoardsSection.tsx:33; the only override is localStorage studio.project-server-origin (docs-server.ts:20), with no env var, flag or config. The guard blocks it (2 requests per capture of the boards route) and the linked-boards section stays quiet, so rendering does not need it; verify runs on the gallery route, which makes no such request. A dev-only override (or a route storage seed) would let the boards route point it at a dead port in this block"
         },
         {
-          "what": "no route opens the AI panel",
-          "reason": "the agent panel talks to /api/agent/*, which the dev server proxies to the owner's harness on :4820 (hard-coded in server/agent-proxy.ts); routes stay off it"
+          "what": "the dev server proxies /api/agent/* and /api/canvases/:id/agent/* to the owner's :4820",
+          "reason": "packages/studio/vite.config.ts:59 mounts createAgentProxyHandler({}) with no target; server/agent-proxy.ts:21 (AGENT_PATH_PATTERN: /api/agent, /api/agent/*, /api/agent?..., /api/canvases/<id>/agent[/...]) pipes method, headers and body to DEFAULT_TARGET http://127.0.0.1:4820 (agent-proxy.ts:23); no env var, flag or config overrides the target. These are the only proxied prefixes in the dev server. No registry route, step or verify probe requests them (checked from the per-route request log); the AI panel that calls them is never opened. The run sandbox (decision 12) denies the connection to :4820 as the hard boundary"
         },
         {
           "what": "baseline test failures",
@@ -920,7 +926,7 @@
         },
         {
           "what": "allowlist",
-          "reason": "the swatch checkerboard (transparency art) and the Style rail's theme-card previews of the canvas presets (board data, color-control code kept per owner decision)"
+          "reason": "the swatch checkerboard in src/index.css:300-305 (transparency art behind color swatches, 5 hits) and the color-input fallback #000000 in src/style/StyleRail.tsx:514 (color-control code kept per owner decision; <input type=color> needs a hex value)"
         }
       ]
     },
@@ -944,6 +950,7 @@
       "stack": {
         "summary": "TypeScript library: DOM and SVG with inline styles; static SVG renderer runs in Node and is rasterized with resvg",
         "tailwind": "none",
+        "utilityClasses": true,
         "packageManager": "bun"
       },
       "consume": {
@@ -1019,12 +1026,12 @@
       },
       "commands": {
         "cwd": "codecaine/core/canvas",
-        "typecheck": "bun run typecheck:canvas"
+        "typecheck": "bun --no-env-file run typecheck:canvas"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test packages/canvas/src",
+            "cmd": "bun --no-env-file test packages/canvas/src",
             "cwd": "codecaine/core/canvas"
           }
         ],
@@ -1149,8 +1156,8 @@
           "reason": "4803 is the owner's docs-system self-docs dev API (docs-system/Makefile:23-45: make dev, dev-web, docs). The origin is DEFAULT_PROJECT_SERVER_ORIGIN in packages/studio/src/project/docs-server.ts:18, read in ProjectBoardsSection.tsx:33; the only override is localStorage studio.project-server-origin (docs-server.ts:20), with no env var, flag or config. The guard blocks it (2 requests per capture of the boards route) and the linked-boards section stays quiet, so rendering does not need it; verify runs on the gallery route, which makes no such request. A dev-only override (or a route storage seed) would let the boards route point it at a dead port in this block"
         },
         {
-          "what": "no route opens the AI panel",
-          "reason": "the agent panel talks to /api/agent/*, which the dev server proxies to the owner's harness on :4820 (hard-coded in server/agent-proxy.ts); routes stay off it"
+          "what": "the dev server proxies /api/agent/* and /api/canvases/:id/agent/* to the owner's :4820",
+          "reason": "packages/studio/vite.config.ts:59 mounts createAgentProxyHandler({}) with no target; server/agent-proxy.ts:21 (AGENT_PATH_PATTERN: /api/agent, /api/agent/*, /api/agent?..., /api/canvases/<id>/agent[/...]) pipes method, headers and body to DEFAULT_TARGET http://127.0.0.1:4820 (agent-proxy.ts:23); no env var, flag or config overrides the target. These are the only proxied prefixes in the dev server. No registry route, step or verify probe requests them (checked from the per-route request log); the AI panel that calls them is never opened. The run sandbox (decision 12) denies the connection to :4820 as the hard boundary"
         }
       ]
     },
@@ -1247,12 +1254,12 @@
       },
       "commands": {
         "cwd": "codecaine/core/canvas",
-        "typecheck": "bun run typecheck:canvas-agent"
+        "typecheck": "bun --no-env-file run typecheck:canvas-agent"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test test/viewer-extension.test.ts",
+            "cmd": "bun --no-env-file test test/viewer-extension.test.ts",
             "cwd": "codecaine/core/canvas/packages/canvas-agent"
           }
         ],
@@ -1329,6 +1336,11 @@
             "selector": "aside.w-56",
             "property": "background-color",
             "token": "color.surface.sidebar"
+          },
+          {
+            "selector": ".research-style-shell",
+            "property": "color",
+            "token": "color.text.body"
           },
           {
             "selector": "aside.w-56",
@@ -1443,18 +1455,18 @@
       "run": {
         "mode": "static",
         "cwd": "codecaine/core/docs-system/packages/docs-mcp",
-        "start": "bun {ds}/apps/fixtures/docs-mcp-home/serve.ts {flags}",
+        "start": "bun --no-env-file {ds}/apps/fixtures/docs-mcp-home/serve.ts {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)",
         "staticDir": "{tmp}/docs-mcp-home-site"
       },
       "commands": {
         "cwd": "codecaine/core/docs-system/packages/docs-mcp",
-        "typecheck": "bun run typecheck"
+        "typecheck": "bun --no-env-file run typecheck"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test src/__tests__/device-discovery.test.ts",
+            "cmd": "bun --no-env-file test src/__tests__/device-discovery.test.ts",
             "cwd": "codecaine/core/docs-system/packages/docs-mcp"
           }
         ],
@@ -1526,6 +1538,11 @@
             "selector": "#search",
             "property": "background-color",
             "token": "color.surface.panel"
+          },
+          {
+            "selector": "body",
+            "property": "color",
+            "token": "color.text.body"
           },
           {
             "selector": "h1",
@@ -1639,7 +1656,7 @@
       "run": {
         "mode": "browser",
         "cwd": "codecaine/core/docs-system",
-        "start": "bun {ds}/apps/fixtures/docs-workbench/serve.ts {flags}",
+        "start": "bun --no-env-file {ds}/apps/fixtures/docs-workbench/serve.ts {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)",
         "serveRoot": "codecaine/core/docs-system/packages/docs-workbench/web"
       },
@@ -1650,7 +1667,7 @@
       "tests": {
         "safe": [
           {
-            "cmd": "bun test src/components src/editor src/lab src/peek src/transitions",
+            "cmd": "bun --no-env-file test src/components src/editor src/lab src/peek src/transitions",
             "cwd": "codecaine/core/docs-system/packages/docs-viewer"
           }
         ],
@@ -1699,8 +1716,8 @@
           "CODECAINE_DOCS_STATE_DIR": "{tmp}/docs-state",
           "CODECAINE_DOCS_GLOBAL_THEMES": "{tmp}/docs-state/themes",
           "CODECAINE_DOCS_CODE_THEMES": "{tmp}/docs-state/code-themes",
-          "CANVAS_STUDIO_URL": "http://localhost:3999",
-          "SEQUENCE_STUDIO_URL": "http://localhost:3998"
+          "CANVAS_STUDIO_URL": "http://127.0.0.1:{port:deadCanvasStudio}",
+          "SEQUENCE_STUDIO_URL": "http://127.0.0.1:{port:deadSequenceStudio}"
         },
         "unsetEnv": [
           "DOCS_SHARED_API_URL",
@@ -1733,7 +1750,9 @@
         "ports": {
           "api": 47070,
           "ui": 47071,
-          "deadKernel": 47072
+          "deadKernel": 47072,
+          "deadCanvasStudio": 47073,
+          "deadSequenceStudio": 47074
         },
         "proof": {
           "status": "proven",
@@ -1772,7 +1791,11 @@
         },
         {
           "what": "literal floor 307",
-          "reason": "audit: keep literal var() fallbacks so the viewer renders without the host stylesheet. 197 fallbacks today plus the 110 color definitions, which may move behind var(--ds-*, <literal>); every literal left must be a fallback (allowlist kind fallback)"
+          "reason": "audit 'Keep literal fallbacks': the viewer must render without the host stylesheet. 197 var() fallbacks (allowlist kind fallback, src/**) plus 110 custom-property definitions whose value is var(--host-name, <literal>) in 7 component files (allowlist kind definition, one entry per file with its count); the floor caps the total, so a new literal fails the check"
+        },
+        {
+          "what": "CANVAS_STUDIO_URL and SEQUENCE_STUDIO_URL point at dead ports in the app's block",
+          "reason": "web/vite.config.ts:45-50 bakes them into the open-in-studio links (defaults are the owner's :3999 and :3998); the profile points them at 47073 and 47074, named ports nothing binds, so a click reaches nobody and the guard counts it as expected-blocked"
         }
       ]
     },
@@ -1866,12 +1889,12 @@
       },
       "commands": {
         "cwd": "codecaine/core/docs-system/packages/docs-publish",
-        "build": "bun build.ts"
+        "build": "bun --no-env-file build.ts"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test src",
+            "cmd": "bun --no-env-file test src",
             "cwd": "codecaine/core/docs-system/packages/docs-publish"
           }
         ]
@@ -1904,7 +1927,7 @@
       "exceptions": [
         {
           "what": "allowlist",
-          "reason": "src/editor.css keeps its neutral var() fallbacks for the host's --color-* and --site-* names on purpose (comment at editor.css:63-65)"
+          "reason": "src/editor.css .docs-draft-editor block (lines 67-105, comment 63-66): 22 custom-property definitions with the editor's container defaults (host --color-*/--site-* fallbacks at 68-76, status and accent palette at 82-103), scoped to that file, kind definition, category hex and the block's 8 literal values; the floor of 22 caps them, so any new definition in the file fails the check. The fallback at editor.css:171 and the inline literals in styles.css:44-46 migrate"
         },
         {
           "what": "commands.build writes the package's own dist/",
@@ -1928,6 +1951,7 @@
       "stack": {
         "summary": "React 19 library shipped as TS source; style-system.css plus runtime styleVars(); host Tailwind",
         "tailwind": "none",
+        "utilityClasses": true,
         "packageManager": "bun"
       },
       "consume": {
@@ -2004,12 +2028,12 @@
       },
       "commands": {
         "cwd": "codecaine/core/agent-kernel",
-        "typecheck": "bun run typecheck:viewer-shell"
+        "typecheck": "bun --no-env-file run typecheck:viewer-shell"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test ./packages/viewer-shell/src",
+            "cmd": "bun --no-env-file test ./packages/viewer-shell/src",
             "cwd": "codecaine/core/agent-kernel"
           }
         ]
@@ -2121,6 +2145,7 @@
       "stack": {
         "summary": "React 19 library; host Tailwind (v3 config or v4 @theme inline + @source) and trace-viewer.css",
         "tailwind": "none",
+        "utilityClasses": true,
         "packageManager": "bun"
       },
       "consume": {
@@ -2197,16 +2222,21 @@
       },
       "commands": {
         "cwd": "codecaine/core/agent-kernel",
-        "typecheck": "bun run typecheck:viewer-ui"
+        "typecheck": "bun --no-env-file run typecheck:viewer-ui"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test src",
+            "cmd": "bun --no-env-file test ./src/agent-viewer/catalog-client.test.ts ./src/agent-viewer/prompt-edit-client.test.ts ./src/agent-viewer/prompt-edit-loop.e2e.test.ts ./src/agent-viewer/prompt-edit-session-view.test.ts ./src/agent-viewer/prompt-lab-session-controller.test.ts ./src/agent-viewer/prompt-lab-session-mode.test.ts ./src/kernel-route-parity.test.ts ./src/trace-viewer/SpanCard/span-indent.test.tsx ./src/trace-viewer/detail-panel/DetailShell.test.tsx ./src/trace-viewer/detail-panel/DetailShellExtensions.test.tsx ./src/trace-viewer/detail-panel/DetailsView.test.tsx ./src/trace-viewer/detail-panel/blocks.test.tsx ./src/trace-viewer/detail-panel/contract-conformance.test.tsx ./src/trace-viewer/detail-panel/doc-figure/Clamped.test.tsx ./src/trace-viewer/detail-panel/doc-figure/DocFigure.test.tsx ./src/trace-viewer/detail-panel/doc-figure/rendered-height.test.ts ./src/trace-viewer/detail-panel/doc-figure/tokenize.test.ts ./src/trace-viewer/detail-panel/renderers/AggregateBodies.test.tsx ./src/trace-viewer/detail-panel/renderers/ContextBuildBody.test.tsx ./src/trace-viewer/detail-panel/renderers/FactCard.test.tsx ./src/trace-viewer/detail-panel/renderers/MessageBody.test.tsx ./src/trace-viewer/detail-panel/renderers/ToolBody.test.tsx ./src/trace-viewer/detail-panel/renderers/TurnBody.test.tsx ./src/trace-viewer/detail-panel/renderers/json-document.test.ts ./src/trace-viewer/detail-panel/renderers/real-snapshot-render.test.tsx ./src/trace-viewer/detail-panel/renderers/request-snapshot-api.test.tsx ./src/trace-viewer/detail-panel/renderers/snapshot-message-view.test.tsx ./src/trace-viewer/detail-panel/renderers/turn-sections.test.tsx ./src/trace-viewer/detail-panel/renderers/turn/ToolsSection.test.tsx ./src/trace-viewer/detail-panel/renderers/turn/turn-block-content.test.tsx ./src/trace-viewer/icons/span-icons.test.tsx ./src/trace-viewer/selection.test.tsx ./src/trace-viewer/trace-tree-utils.test.ts ./src/trace-viewer/usage-summary.test.ts",
             "cwd": "codecaine/core/agent-kernel/packages/viewer-ui"
           }
         ],
-        "unsafe": []
+        "unsafe": [
+          {
+            "cmd": "bun test ./src/trace-viewer/detail-panel/DetailShell.overflow.test.tsx ./src/trace-viewer/detail-panel/renderers/hierarchy-live-review.test.tsx ./src/trace-viewer/detail-panel/renderers/state-outline.test.ts ./src/trace-viewer/detail-panel/state-tab-postures.test.tsx",
+            "reason": "open the owner's live kernel trace DB canvas/.agent-kernel/trace.db (read-only, WAL) through reviewed-capture.test-helper.ts:29 and DetailShell.overflow.test.tsx:21-23, state-tab-postures.test.tsx:45-47, renderers/hierarchy-live-review.test.tsx:35-37, renderers/state-outline.test.ts:18-20; real trace data is never test input"
+          }
+        ]
       },
       "routes": [],
       "runProfile": {
@@ -2240,8 +2270,8 @@
           "reason": "trace-viewer.css keeps hex var() fallbacks for the prompt-editor surface (hosts without the contract still render)"
         },
         {
-          "what": "three safe tests read real trace data when it exists",
-          "reason": "state-tab-postures, DetailShell.overflow and hierarchy-live-review read canvas/.agent-kernel/trace.db read-only and skip when it is absent, as it is in the mirror; keep it out of the mirror"
+          "what": "safe tests: explicit files",
+          "reason": "tests.safe lists the 34 test files that open no trace data; the 4 files that read canvas/.agent-kernel/trace.db are in tests.unsafe, so a new test file is not run until it is checked and listed"
         }
       ]
     },
@@ -2337,12 +2367,12 @@
       },
       "commands": {
         "cwd": "codecaine/core/agent-kernel/examples/simple-research-kernel",
-        "typecheck": "bun run typecheck"
+        "typecheck": "bun --no-env-file run typecheck"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test ./examples/simple-research-kernel/src",
+            "cmd": "bun --no-env-file test ./examples/simple-research-kernel/src",
             "cwd": "codecaine/core/agent-kernel"
           }
         ],
@@ -2473,6 +2503,7 @@
       "stack": {
         "summary": "React 19 library; host Tailwind, about 112 inline style sites and injected <style> blocks; editor-surface rules ship in viewer-ui",
         "tailwind": "none",
+        "utilityClasses": true,
         "packageManager": "bun"
       },
       "consume": {
@@ -2550,12 +2581,12 @@
       },
       "commands": {
         "cwd": "codecaine/core/prompt-kit/packages/prompt-kit",
-        "typecheck": "bun run typecheck"
+        "typecheck": "bun --no-env-file run typecheck"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test tests",
+            "cmd": "bun --no-env-file test tests",
             "cwd": "codecaine/core/prompt-kit/packages/prompt-kit"
           }
         ]
@@ -2683,14 +2714,14 @@
         "reason": "the docs origin is hard-coded: `export const SERVICE_ORIGIN = 'http://127.0.0.1:4820'` (src/main/tree-model.ts:5), which src/main/docs-service.ts polls every 5 s (GET /api/projects, /projects/<id>/docs/api/tree), and the renderer builds viewer URLs from a literal http://127.0.0.1:4820 (src/renderer/src/App.tsx:114). SYSTEM_VIEW_OPEN_URL (src/main/dev-hooks.ts:8) only opens one URL at startup; polling still targets 4820. No env var, setting or flag redirects it, and a second instance hands focus to the owner's running app (single-instance lock). Runnable once SERVICE_ORIGIN and App.tsx:114 read one env var that a profile points at a run-started docs-workbench fixture",
         "cwd": "system-view",
         "electron": {
-          "build": "bun run build",
+          "build": "bun --no-env-file run build",
           "main": "system-view/out/main/index.js"
         }
       },
       "commands": {
         "cwd": "system-view",
-        "typecheck": "bun run typecheck",
-        "build": "bun run build"
+        "typecheck": "bun --no-env-file run typecheck",
+        "build": "bun --no-env-file run build"
       },
       "tests": {
         "safe": [],
@@ -2756,9 +2787,14 @@
             "token": "color.surface.sidebar"
           },
           {
-            "selector": ".sidebar-title",
+            "selector": ".tree",
             "property": "color",
             "token": "color.text.body"
+          },
+          {
+            "selector": ".sidebar-title",
+            "property": "color",
+            "token": "color.text.ink"
           },
           {
             "selector": ".sidebar",
@@ -3419,6 +3455,16 @@
             "selector": "aside",
             "property": "background-color",
             "token": "color.surface.sidebar"
+          },
+          {
+            "selector": "body",
+            "property": "color",
+            "token": "color.text.body"
+          },
+          {
+            "selector": "aside",
+            "property": "border-right-color",
+            "token": "color.border.default"
           }
         ],
         "darkSwitch": {
@@ -3433,7 +3479,7 @@
       "exceptions": [
         {
           "what": "allowlist",
-          "reason": "owner decision: the landing hero (src/app/(guest)/page.tsx) and the serif display face (Cormorant Garamond) are brand and stay"
+          "reason": "owner decision: the landing hero src/app/(guest)/page.tsx is brand and stays (129 literal hits and every class in that file). The serif display face Cormorant Garamond loads through next/font (src/app/layout.tsx:4,20-23; --font-display in globals.css:18), which is not a literal hit, so the allowlist has no entry for it"
         },
         {
           "what": "dormant since 2026-04-08",
@@ -3457,6 +3503,7 @@
       "stack": {
         "summary": "React 19 peer library; the load-bearing CSS is an injected TARGETING_CSS string; host Tailwind compiles the utilities",
         "tailwind": "none",
+        "utilityClasses": true,
         "packageManager": "bun"
       },
       "consume": {
@@ -3533,12 +3580,12 @@
       },
       "commands": {
         "cwd": "codecaine/core/annotations",
-        "typecheck": "bun run typecheck"
+        "typecheck": "bun --no-env-file run typecheck"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test src",
+            "cmd": "bun --no-env-file test src",
             "cwd": "codecaine/core/annotations"
           }
         ]
@@ -3682,7 +3729,7 @@
       },
       "commands": {
         "cwd": "codecaine/core/observatory",
-        "typecheck": "bun run typecheck"
+        "typecheck": "bun --no-env-file run typecheck"
       },
       "tests": {
         "safe": [],
@@ -3747,6 +3794,21 @@
             "selector": "div.research-style-shell",
             "property": "background-color",
             "token": "color.surface.page"
+          },
+          {
+            "selector": "aside",
+            "property": "background-color",
+            "token": "color.surface.sidebar"
+          },
+          {
+            "selector": "div.research-style-shell",
+            "property": "color",
+            "token": "color.text.body"
+          },
+          {
+            "selector": "aside",
+            "property": "border-right-color",
+            "token": "color.border.default"
           }
         ],
         "darkSwitch": {
@@ -3859,18 +3921,18 @@
         "mode": "none",
         "reason": "blocked by uncommitted owner work; profile unproven",
         "cwd": "codecaine/tools/variator",
-        "start": "bun src/server/index.ts",
+        "start": "bun --no-env-file src/server/index.ts",
         "readyPattern": "Variator (http://127\\.0\\.0\\.1:\\d+)",
         "serveRoot": "codecaine/tools/variator/src/web"
       },
       "commands": {
         "cwd": "codecaine/tools/variator",
-        "typecheck": "bun run typecheck"
+        "typecheck": "bun --no-env-file run typecheck"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test src",
+            "cmd": "bun --no-env-file test src",
             "cwd": "codecaine/tools/variator"
           }
         ],
@@ -3947,7 +4009,7 @@
         "route": "capture",
         "probes": [
           {
-            "selector": "body",
+            "selector": "html",
             "property": "background-color",
             "token": "color.surface.page"
           },
@@ -3955,6 +4017,11 @@
             "selector": ".capture.panel",
             "property": "background-color",
             "token": "color.surface.panel"
+          },
+          {
+            "selector": ".capture.panel",
+            "property": "color",
+            "token": "color.text.body"
           },
           {
             "selector": ".topbar",
@@ -3982,7 +4049,7 @@
         },
         {
           "what": "allowlist",
-          "reason": "the .brand wordmark in Space Grotesk and the color-picker fallback #808080 (color-control code kept per owner decision)"
+          "reason": "brand art: Space Grotesk only on the .brand wordmark (src/web/style.css:179-180, decision 11; 1 hit, file and literal scoped); the color-picker fallback #808080 in src/web/tuning.tsx (color-control code kept per owner decision; <input type=color> needs a hex value)"
         },
         {
           "what": "theme rule light-dark",
@@ -4011,6 +4078,7 @@
       "stack": {
         "summary": "Slidev 51, Vue 3.5, UnoCSS (Windi-compatible); npm (pnpm lock also present)",
         "tailwind": "none",
+        "utilityClasses": true,
         "packageManager": "npm"
       },
       "consume": {
@@ -4021,8 +4089,8 @@
       "theme": {
         "rule": "light-dark"
       },
-      "literalFloor": 6,
-      "allowlist": "apps/allowlists/slidev-template.json",
+      "literalFloor": 0,
+      "allowlist": null,
       "shell": false,
       "folderStandard": false,
       "passes": {
@@ -4153,6 +4221,21 @@
             "selector": "#slide-content",
             "property": "background-color",
             "token": "color.surface.page"
+          },
+          {
+            "selector": "#slide-content",
+            "property": "color",
+            "token": "color.text.body"
+          }
+        ],
+        "waivedRoles": [
+          {
+            "role": "panel",
+            "reason": "slide 1 has no panel chrome: the template's only panel chrome is the code-block background .slidev-code.shiki (styles/layout.css:89-91) and no deck slide has a code fence; the title slide's QR card (slides/00-title/index.md:14) is gradient art outside the scan paths"
+          },
+          {
+            "role": "border",
+            "reason": "the template layout (styles/layout.css) styles no bordered chrome (blockquote is border-none, layout.css:78; no tables); slide 2's card borders (slides/01-column-cards/index.md:11) are per-slide utilities outside the scan paths; FileExplorer and Terminal are VS Code and terminal replicas (product art)"
           }
         ],
         "darkSwitch": {
@@ -4166,8 +4249,8 @@
           "reason": "uncommitted components/MotionCanvas.vue and slide-templates/motion-canvas/description.md in the owner's tree (inside the scan paths)"
         },
         {
-          "what": "allowlist",
-          "reason": "Styrene (trial license) and Fira Code font faces, and the chart data colors in components/Chart.vue"
+          "what": "no allowlist (floor 0)",
+          "reason": "decision 11: the chart chrome and series colors in components/Chart.vue:36-41 migrate to the color.chart.* tokens and the chrome tokens; the Styrene (trial license, slide-templates/*) and Fira Code (Terminal.vue:245, FileTree/FileExplorer.vue:391) font faces migrate to Inter and IBM Plex Mono; nothing stays literal"
         },
         {
           "what": "theme rule light-dark",
@@ -4272,12 +4355,12 @@
       },
       "commands": {
         "cwd": "life/budget/apps/web",
-        "typecheck": "bun run typecheck"
+        "typecheck": "bun --no-env-file run typecheck"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test apps/web/tests",
+            "cmd": "bun --no-env-file test apps/web/tests",
             "cwd": "life/budget"
           }
         ],
@@ -4373,6 +4456,11 @@
             "token": "color.surface.sidebar"
           },
           {
+            "selector": "section.card.balance .breakdown",
+            "property": "color",
+            "token": "color.text.body"
+          },
+          {
             "selector": "aside.main-sidebar",
             "property": "border-right-color",
             "token": "color.border.default"
@@ -4403,6 +4491,10 @@
         {
           "what": "theme rule light-dark",
           "reason": "light only today; the audit adds dark mode (6.5h QA)"
+        },
+        {
+          "what": "bun --no-env-file on every bun command",
+          "reason": "the owner's life/budget/.env holds MERCURY_* and SIMPLEFIN_* credentials and bun auto-loads .env from its cwd; every bun command here passes --no-env-file, and the run sandbox denies .env reads"
         }
       ]
     },
@@ -4492,19 +4584,19 @@
         "reason": "blocked by uncommitted owner work; profile unproven",
         "cwd": "apps/pen-plotter/apps/desktop",
         "electron": {
-          "build": "bun run build",
+          "build": "bun --no-env-file run build",
           "main": "apps/pen-plotter/apps/desktop/out/main/index.js"
         }
       },
       "commands": {
         "cwd": "apps/pen-plotter/apps/desktop",
-        "typecheck": "bun run typecheck",
-        "build": "bun run build"
+        "typecheck": "bun --no-env-file run typecheck",
+        "build": "bun --no-env-file run build"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test packages apps/desktop/tests",
+            "cmd": "bun --no-env-file test packages apps/desktop/tests",
             "cwd": "apps/pen-plotter"
           }
         ],
@@ -4564,14 +4656,24 @@
         "route": "main",
         "probes": [
           {
+            "selector": "html",
+            "property": "background-color",
+            "token": "color.surface.page"
+          },
+          {
+            "selector": "aside.sidebar.left > section.panel:first-of-type",
+            "property": "background-color",
+            "token": "color.surface.panel"
+          },
+          {
+            "selector": ".drawable",
+            "property": "color",
+            "token": "color.text.body"
+          },
+          {
             "selector": "aside.sidebar.left",
             "property": "border-right-color",
             "token": "color.border.default"
-          },
-          {
-            "selector": "section.panel:first-of-type",
-            "property": "background-color",
-            "token": "color.surface.panel"
           }
         ],
         "darkSwitch": {
@@ -4594,7 +4696,7 @@
         },
         {
           "what": "allowlist",
-          "reason": "the PensPanel ink PALETTE (ink data) and the machine-state canvas colors in Preview.tsx (they encode machine state)"
+          "reason": "only the PensPanel ink PALETTE (src/renderer/src/PensPanel.tsx, 8 hits: the real pen colors, ink data). The machine-state canvas colors in Preview.tsx are not allowlisted: they migrate to status tokens"
         },
         {
           "what": "theme rule light-dark",
@@ -4689,7 +4791,8 @@
           "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
         },
         "tests": {
-          "required": true
+          "required": false,
+          "reason": "no safe test command: the only suite is a pytest file with no project or pinned environment (tests.unsafe); the migration touches only CSS and TSX, which lint, typecheck and snapshots cover"
         }
       },
       "run": {
@@ -4704,12 +4807,7 @@
         "typecheck": "./node_modules/.bin/tsc --noEmit"
       },
       "tests": {
-        "safe": [
-          {
-            "cmd": "uv run pytest tools/asset-extraction-pipeline/tests/test_extraction.py",
-            "cwd": "apps/MainMenu/apps/scene-engine"
-          }
-        ],
+        "safe": [],
         "unsafe": [
           {
             "cmd": "npm run desktop:dev / desktop:pack:mac",
@@ -4718,6 +4816,10 @@
           {
             "cmd": "asset extraction without ASSET_PIPELINE_IMAGE_MODE=placeholder",
             "reason": "calls OpenAI image edits and Anthropic messages"
+          },
+          {
+            "cmd": "uv run pytest tools/asset-extraction-pipeline/tests/test_extraction.py (cwd apps/MainMenu/apps/scene-engine)",
+            "reason": "scene-engine has no pyproject.toml and pytest is not a dependency, so `uv run` either fails or, from another cwd, creates a .venv in the repo and downloads from PyPI; no provisioned, offline test environment exists"
           }
         ]
       },
@@ -4787,6 +4889,11 @@
             "token": "color.surface.sidebar"
           },
           {
+            "selector": ".unity-app-main > main",
+            "property": "color",
+            "token": "color.text.body"
+          },
+          {
             "selector": "aside.unity-sidebar",
             "property": "border-right-color",
             "token": "color.border.default"
@@ -4838,7 +4945,7 @@
       },
       "consume": {
         "via": "link",
-        "detail": "Add ../../design-system to the root workspaces and depend on `workspace:*`, or link:@codecaine-ai/design-system the way it takes prompt-kit; then @import and @source. Never a bun file: dependency."
+        "detail": "link: a `link:@codecaine-ai/design-system` dependency through the repo's bun link registry, the way it already takes prompt-kit (the registrations are recreated when the app unblocks, STATE decision 4); then @import the CSS and @source the package. Never a bun file: dependency."
       },
       "entryStylesheet": "harnesses/gamecube-decomp-harness/apps/frontend/src/main.tsx",
       "theme": {
@@ -4846,7 +4953,7 @@
         "storageKey": "styleSettings.v1"
       },
       "literalFloor": 0,
-      "allowlist": "apps/allowlists/gamecube.json",
+      "allowlist": null,
       "shell": true,
       "folderStandard": true,
       "passes": {
@@ -4904,18 +5011,18 @@
         "mode": "none",
         "reason": "blocked by uncommitted owner work; profile unproven",
         "cwd": "harnesses/gamecube-decomp-harness",
-        "start": "bun apps/server/src/server.ts",
+        "start": "bun --no-env-file apps/server/src/server.ts",
         "readyPattern": "listening on (http://localhost:\\d+)"
       },
       "commands": {
         "cwd": "harnesses/gamecube-decomp-harness",
-        "typecheck": "bun run ui:check",
-        "build": "bun run ui:build"
+        "typecheck": "bun --no-env-file run ui:check",
+        "build": "bun --no-env-file run ui:build"
       },
       "tests": {
         "safe": [
           {
-            "cmd": "bun test ./apps/frontend/src",
+            "cmd": "bun --no-env-file test ./apps/frontend/src",
             "cwd": "harnesses/gamecube-decomp-harness"
           }
         ],
@@ -4987,6 +5094,21 @@
             "selector": "main.app-shell",
             "property": "background-color",
             "token": "color.surface.page"
+          },
+          {
+            "selector": "main.app-shell > section",
+            "property": "background-color",
+            "token": "color.surface.panel"
+          },
+          {
+            "selector": "main.app-shell",
+            "property": "color",
+            "token": "color.text.body"
+          },
+          {
+            "selector": "main.app-shell > section > header",
+            "property": "border-bottom-color",
+            "token": "color.border.default"
           }
         ],
         "darkSwitch": {
@@ -5008,8 +5130,8 @@
           "reason": "the UI is served by the orchestrator server, which writes runtime/state SQLite in the repo and reconciles harnesses; a profile needs its state root in {tmp} and harness auto-start off, plus the link: registrations recreated (STATE decision 4)"
         },
         {
-          "what": "allowlist",
-          "reason": "TX-02 is licensed and part of the app's identity (@font-face blocks and --font-mono in styles.css); the kb-lab palette in knowledge/browser.css is a separate product surface"
+          "what": "no allowlist (floor 0)",
+          "reason": "decision 11: TX-02 in the tool chrome (@font-face blocks and --font-mono in apps/frontend/src/styles.css) migrates to Inter and IBM Plex Mono; the kb-lab palette in knowledge/browser.css migrates too (tool chrome, not a listed product look)"
         },
         {
           "what": "style engine",
@@ -5120,7 +5242,7 @@
       "tests": {
         "safe": [
           {
-            "cmd": "./node_modules/.bin/vitest run",
+            "cmd": "./node_modules/.bin/vitest run --no-cache",
             "cwd": "apps/circle-snakes/CircleSnakesWeb"
           }
         ],
@@ -5185,9 +5307,25 @@
             "token": "color.surface.panel"
           },
           {
-            "selector": "#control-panel h1",
+            "selector": "#control-panel",
             "property": "color",
             "token": "color.text.body"
+          },
+          {
+            "selector": "#control-panel h1",
+            "property": "color",
+            "token": "color.text.ink"
+          },
+          {
+            "selector": "#control-panel",
+            "property": "border-top-color",
+            "token": "color.border.default"
+          }
+        ],
+        "waivedRoles": [
+          {
+            "role": "page",
+            "reason": "no chrome page surface: the panels float over product art, the full-viewport WebGL canvas #scene-root (index.html:10-14, drawn by ThreeRenderer.updateBackground, src/render/ThreeRenderer.ts:285) over a body gradient driven by the scene background settings (src/app/styles.css:3-10,23-25; src/app/main.ts:92-97)"
           }
         ],
         "darkSwitch": {

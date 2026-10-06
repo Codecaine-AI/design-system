@@ -165,7 +165,16 @@ export interface AppEntry {
   /** App package root (holds its package.json), workspace-relative. */
   root: string;
   scan: ScanSpec;
-  stack: { summary: string; tailwind: "v4" | "v3" | "none"; packageManager: "bun" | "npm" | "none" };
+  stack: {
+    summary: string;
+    tailwind: "v4" | "v3" | "none";
+    /**
+     * true: run the Tailwind default-scale class check even though `tailwind` is "none". For libraries
+     * and templates without their own Tailwind build whose class strings their hosts compile.
+     */
+    utilityClasses?: boolean;
+    packageManager: "bun" | "npm" | "none";
+  };
   consume: { via: ConsumeVia; detail: string };
   /** The stylesheet (or HTML/TS file with inline CSS) that must load fonts, tokens and layout. Workspace-relative. Null for host-css libraries. */
   entryStylesheet: string | null;
