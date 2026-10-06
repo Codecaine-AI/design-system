@@ -1912,7 +1912,7 @@
       "theme": {
         "rule": "light-dark"
       },
-      "literalFloor": 307,
+      "literalFloor": 386,
       "allowlist": "apps/allowlists/docs-viewer.json",
       "shell": false,
       "folderStandard": false,

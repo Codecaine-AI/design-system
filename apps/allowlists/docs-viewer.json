@@ -46,7 +46,180 @@
       "match": "^#(1f1f1f|666562|2a2a2a|fdfdfd|151b23|0b6e99|26744f|805f01|6940a5|ad1a72)$",
       "kind": "definition",
       "reason": "audit \"Keep literal fallbacks\": custom-property definitions whose value is var(--host-name, <literal>) (a host-less fallback in definition position), so the viewer renders without the host stylesheet (15 hits)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/components/state-shape/StateShapeDocsBlock.tsx",
+      "match": "^(?:\\[font-style:var\\(--syntax-key-font-style,normal\\)\\]|\\[font-style:var\\(--syntax-string-font-style,normal\\)\\]|\\[font-style:var\\(--syntax-number-font-style,normal\\)\\]|\\[font-style:var\\(--syntax-boolean-font-style,normal\\)\\]|\\[font-style:var\\(--syntax-null-font-style,normal\\)\\]|\\[font-style:var\\(--syntax-punctuation-font-style,normal\\)\\])$",
+      "category": "twArbitrary",
+      "reason": "knob plumbing (decision 55): a Style Rail knob expression kept as written; the owner decision keeps the rail's size, density and opacity controls, and no token can stand in for the knob: the code-theme font-style knobs (--syntax-*-font-style) in the JSON example pane; Tailwind has no font-style utility that reads a value (6 hits)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/render/block-classes.ts",
+      "match": "^(?:mt-\\[calc\\(var\\(--docs-paragraph-spacing,1\\)\\*1em\\)\\]|mb-\\[calc\\(var\\(--docs-paragraph-spacing,1\\)\\*1em\\)\\]|mt-\\[calc\\(var\\(--docs-heading-margin-top,40px\\)\\*0\\.6\\)\\]|mb-\\[calc\\(var\\(--docs-heading-margin-bottom,12px\\)\\*2/3\\)\\]|text-\\[length:calc\\(var\\(--docs-heading-h1-size,1\\.875\\)\\*1em\\)\\]|text-\\[length:calc\\(var\\(--docs-heading-h2-size,1\\.25\\)\\*1em\\)\\]|text-\\[length:calc\\(var\\(--docs-heading-h3-size,1\\)\\*1em\\)\\]|px-\\[calc\\(var\\(--docs-inline-code-pad-x,0\\.35\\)\\*1em\\)\\]|py-\\[calc\\(var\\(--docs-inline-code-pad-y,0\\.1\\)\\*1em\\)\\]|text-\\[length:calc\\(var\\(--docs-inline-code-text-size,0\\.85\\)\\*1em\\)\\])$",
+      "category": "twArbitrary",
+      "reason": "knob plumbing (decision 55): a Style Rail knob expression kept as written; the owner decision keeps the rail's size, density and opacity controls, and no token can stand in for the knob: unitless em-multiplier knobs (paragraph and heading spacing, h1-h3 size, inline-code padding and size) multiplied by 1em so they scale with the reading size (10 hits)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/render/block-classes.ts",
+      "match": "^\\[font-weight:inherit\\]$",
+      "category": "twArbitrary",
+      "reason": "[font-weight:inherit] keeps a link at the weight of the text around it (the Typography plugin bolds links); a CSS keyword with no token or exact utility (1 hit)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/render/block-classes.ts",
+      "match": "^(?:text-\\[0\\.85em\\]|pl-\\[11px\\])$",
+      "category": "twArbitrary",
+      "reason": "kept geometry, no equal token, decision 43: the source-reference mono size is 0.85em of its text (relative, no px token); the callout clipboard card's 11px text inset beside its 3px rail (2 hits)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/lab/annotate/PanelQueue.tsx",
+      "match": "^(?:h-\\[5px\\]|w-\\[5px\\]|max-w-\\[85%\\])$",
+      "category": "twArbitrary",
+      "reason": "kept geometry, no equal token, decision 43: 5px status dots; the message bubble's 85% width cap (5 hits)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/components/code/classes.ts",
+      "match": "^(?:grid-cols-\\[minmax\\(0,1fr\\)_var\\(--docs-code-notes-width,280px\\)\\]|border-b-\\[color:color-mix\\(in_srgb,var\\(--docs-code-rule,var\\(--border\\)\\)_calc\\(var\\(--docs-code-rule-opacity,0\\.5\\)\\*100%\\),transparent\\)\\]|grid-cols-\\[var\\(--docs-code-gutter-width,40px\\)_1fr\\]|right-\\[calc\\(var\\(--docs-code-gutter-pad-x,12px\\)/2-1px\\)\\]|bg-\\[repeating-linear-gradient\\(transparent_0_var\\(--docs-code-line-height,21px\\),var\\(--docs-code-zebra,var\\(--docs-zebra,transparent\\)\\)_var\\(--docs-code-line-height,21px\\)_calc\\(var\\(--docs-code-line-height,21px\\)\\*2\\)\\)\\]|bg-\\[color:color-mix\\(in_srgb,var\\(--docs-code-zebra,var\\(--docs-zebra,transparent\\)\\)_calc\\(var\\(--docs-code-zebra-opacity,1\\)\\*100%\\),transparent\\)\\]|border-t-\\[color:color-mix\\(in_srgb,var\\(--docs-code-rule,var\\(--border\\)\\)_calc\\(var\\(--docs-code-rule-opacity,0\\.5\\)\\*50%\\),transparent\\)\\]|pt-\\[max\\(0px,calc\\(var\\(--docs-code-pad-top,12px\\)-8px\\)\\)\\]|border-t-\\[color:color-mix\\(in_srgb,var\\(--docs-code-rule,var\\(--border\\)\\)_calc\\(var\\(--docs-code-rule-opacity,0\\.5\\)\\*100%\\),transparent\\)\\]|border-l-\\[color:color-mix\\(in_srgb,var\\(--docs-code-rule,var\\(--border\\)\\)_calc\\(var\\(--docs-code-rule-opacity,0\\.5\\)\\*100%\\),transparent\\)\\]|text-\\[length:calc\\(var\\(--docs-code-note-text-size,13px\\)\\+1px\\)\\])$",
+      "category": "twArbitrary",
+      "reason": "knob plumbing (decision 55): a Style Rail knob expression kept as written; the owner decision keeps the rail's size, density and opacity controls, and no token can stand in for the knob: code panel knobs: notes column and gutter width, rule opacity (color-mix by --docs-code-rule-opacity), the zebra period from --docs-code-line-height, the gutter mark offset, notes padding and note label size (12 hits)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/components/code/classes.ts",
+      "match": "^(?:h-\\[11px\\]|w-\\[11px\\]|px-\\[5px\\]|h-\\[15px\\]|w-\\[15px\\]|top-\\[3px\\]|bottom-\\[3px\\])$",
+      "category": "twArbitrary",
+      "reason": "kept geometry, no equal token, decision 43: 11px tile glyph and 15px copy glyph boxes, the copy button's 5px inline padding, the gutter mark's 3px insets (7 hits)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/components/rich-text/CalloutDocsBlock.tsx",
+      "match": "^text-\\[length:calc\\(1rem\\*var\\(--docs-callout-body-text-scale,1\\)\\)\\]$",
+      "category": "twArbitrary",
+      "reason": "knob plumbing (decision 55): a Style Rail knob expression kept as written; the owner decision keeps the rail's size, density and opacity controls, and no token can stand in for the knob: the callout body text-scale knob (1rem x --docs-callout-body-text-scale) (1 hit)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/components/linked-panels/classes.ts",
+      "match": "^transition-\\[background-color,box-shadow\\]$",
+      "category": "twArbitrary",
+      "reason": "transition property list (which properties animate), not a design value; no token or exact built-in utility (1 hit)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/components/linked-panels/classes.ts",
+      "match": "^(?:shadow-\\[inset_var\\(--docs-link-rail-width,3px\\)_0_0_var\\(--docs-link-pin,#245a81\\)\\]|shadow-\\[inset_var\\(--docs-link-rail-width,3px\\)_0_0_var\\(--docs-link-pin,#4493f8\\)\\]|shadow-\\[inset_var\\(--docs-link-rail-width,3px\\)_0_0_var\\(--docs-link-pin,#245a81\\),0_0_0_var\\(--docs-link-ring-width,1\\.5px\\)_var\\(--docs-link-pin,#245a81\\)\\]|shadow-\\[inset_var\\(--docs-link-rail-width,3px\\)_0_0_var\\(--docs-link-pin,#4493f8\\),0_0_0_var\\(--docs-link-ring-width,1\\.5px\\)_var\\(--docs-link-pin,#4493f8\\)\\]|border-r-\\[color:color-mix\\(in_srgb,var\\(--docs-code-rule,var\\(--border\\)\\)_calc\\(var\\(--docs-code-rule-opacity,0\\.5\\)\\*100%\\),transparent\\)\\]|bg-\\[repeating-linear-gradient\\(to_bottom,var\\(--docs-zebra,transparent\\)_0px,var\\(--docs-zebra,transparent\\)_var\\(--docs-link-line-height,21px\\),transparent_var\\(--docs-link-line-height,21px\\),transparent_calc\\(var\\(--docs-link-line-height,21px\\)\\*2\\)\\)\\]|bg-\\[repeating-linear-gradient\\(to_bottom,transparent_0px,transparent_var\\(--docs-link-line-height,21px\\),var\\(--docs-zebra,transparent\\)_var\\(--docs-link-line-height,21px\\),var\\(--docs-zebra,transparent\\)_calc\\(var\\(--docs-link-line-height,21px\\)\\*2\\)\\)\\])$",
+      "category": "twArbitrary",
+      "reason": "knob plumbing (decision 55): a Style Rail knob expression kept as written; the owner decision keeps the rail's size, density and opacity controls, and no token can stand in for the knob: linked-panel knobs: the pin rail and ring widths (--docs-link-rail-width, --docs-link-ring-width) in the lit and pinned shadows, the code rule opacity, the zebra filler period from --docs-link-line-height (8 hits)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/components/linked-panels/classes.ts",
+      "match": "^(?:align-\\[1px\\]|leading-\\[18px\\])$",
+      "category": "twArbitrary",
+      "reason": "kept geometry, no equal token, decision 43: the range chip's 1px baseline nudge and 18px line box (2 hits)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/components/structured-table/table-classes.ts",
+      "match": "^(?:border-b-\\[color:color-mix\\(in_srgb,var\\(--docs-table-header-rule,var\\(--docs-rule,#e6e5e3\\)\\)_calc\\(var\\(--docs-table-header-rule-opacity,1\\)\\*100%\\),transparent\\)\\]|border-b-\\[color:color-mix\\(in_srgb,var\\(--docs-table-row-rule,var\\(--docs-rule-soft,#efeeec\\)\\)_calc\\(var\\(--docs-table-row-rule-opacity,1\\)\\*100%\\),transparent\\)\\]|text-\\[length:calc\\(var\\(--docs-table-font-size,13\\.5px\\)-0\\.5px\\)\\]|border-r-\\[color:color-mix\\(in_srgb,var\\(--docs-table-column-rule,var\\(--docs-table-row-rule,var\\(--docs-rule-soft,#efeeec\\)\\)\\)_calc\\(var\\(--docs-table-column-rule-opacity,var\\(--docs-table-row-rule-opacity,1\\)\\)\\*100%\\),transparent\\)\\]|min-h-\\[calc\\(var\\(--docs-table-line-height,1\\.45\\)\\*1em\\)\\])$",
+      "category": "twArbitrary",
+      "reason": "knob plumbing (decision 55): a Style Rail knob expression kept as written; the owner decision keeps the rail's size, density and opacity controls, and no token can stand in for the knob: table knobs: header, row and column rule opacity (color-mix by the *-rule-opacity knobs), the identifier cell size (body size minus 0.5px) and the empty-cell floor (line-height knob x 1em) (5 hits)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/lab/glass/GlassPanel.tsx",
+      "match": "^(?:h-\\[5px\\]|w-\\[5px\\])$",
+      "category": "twArbitrary",
+      "reason": "kept geometry, no equal token, decision 43: the 5px breathing dot (2 hits)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/components/rich-text/html.tsx",
+      "match": "^15px$",
+      "category": "pxFontSize",
+      "reason": "the base sheet of the HTML embed iframe (srcdoc): a separate document that cannot read the host's --ds-* variables and loads no web fonts (CSP font-src data:), so the artifact's default text stays system-ui 15px/1.5 (product content, owner decision keeps product looks) (1 hit)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/components/rich-text/html.tsx",
+      "match": "^system-ui$",
+      "category": "fontFamily",
+      "reason": "the base sheet of the HTML embed iframe (srcdoc): a separate document that cannot read the host's --ds-* variables and loads no web fonts (CSP font-src data:), so the artifact's default text stays system-ui 15px/1.5 (product content, owner decision keeps product looks) (1 hit)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/components/rich-text/divider.tsx",
+      "match": "^(?:mt-\\[calc\\(var\\(--docs-divider-spacing,2\\)\\*1em\\)\\]|mb-\\[calc\\(var\\(--docs-divider-spacing,2\\)\\*1em\\)\\]|\\[border-top-width:var\\(--docs-divider-thickness,1px\\)\\])$",
+      "category": "twArbitrary",
+      "reason": "knob plumbing (decision 55): a Style Rail knob expression kept as written; the owner decision keeps the rail's size, density and opacity controls, and no token can stand in for the knob: divider spacing (em multiplier) and thickness knobs; the thickness stays an arbitrary border-top-width so it never sets a border style (divider.tsx comment) (3 hits)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/editor/menus/reference-node.tsx",
+      "match": "^\\[flex-direction:var\\(--docs-ref-icon-direction,row\\)\\]$",
+      "category": "twArbitrary",
+      "reason": "knob plumbing (decision 55): a Style Rail knob expression kept as written; the owner decision keeps the rail's size, density and opacity controls, and no token can stand in for the knob: the reference icon direction knob (--docs-ref-icon-direction); Tailwind has no flex-direction utility that reads a value (1 hit)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/editor/menus/reference-node.tsx",
+      "match": "^max-w-\\[min\\(32rem,calc\\(100vw-1rem\\)\\)\\]$",
+      "category": "twArbitrary",
+      "reason": "kept geometry, no equal token, decision 43: viewport clamp on the reference tooltip (min(32rem, 100vw - 1rem)) (1 hit)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/peek/DocPeekPanel.tsx",
+      "match": "^transition-\\[width\\]$",
+      "category": "twArbitrary",
+      "reason": "transition property list (which properties animate), not a design value; no token or exact built-in utility (1 hit)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/peek/DocPeekPanel.tsx",
+      "match": "^\\[border-left-style:var\\(--docs-peek-divider-style,solid\\)\\]$",
+      "category": "twArbitrary",
+      "reason": "knob plumbing (decision 55): a Style Rail knob expression kept as written; the owner decision keeps the rail's size, density and opacity controls, and no token can stand in for the knob: the peek divider style knob (--docs-peek-divider-style); Tailwind has no per-side border-style utility (1 hit)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/lab/glass/zones.tsx",
+      "match": "^leading-\\[1\\.9\\]$",
+      "category": "twArbitrary",
+      "reason": "kept geometry, no equal token, decision 43: row pitch of the 11px compact view list (line-height 1.9) (1 hit)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/components/structured-table/editor/Handles.tsx",
+      "match": "^(?:h-\\[2\\.5px\\]|w-\\[2\\.5px\\])$",
+      "category": "twArbitrary",
+      "reason": "kept geometry, no equal token, decision 43: 2.5px grip dots (2 hits)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/editor/menus/SlashMenu.tsx",
+      "match": "^z-\\[60\\]$",
+      "category": "twArbitrary",
+      "reason": "kept geometry, no equal token, decision 43: z-index 60 lifts the submenu over its z-50 menu; z.top is for non-interactive layers and z.popover is 50 (1 hit)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/lab/outline/OutlineList.tsx",
+      "match": "^leading-\\[1\\.9\\]$",
+      "category": "twArbitrary",
+      "reason": "kept geometry, no equal token, decision 43: row pitch of the 11px compact outline (line-height 1.9) (1 hit)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/ui/badge.tsx",
+      "match": "^transition-\\[color,box-shadow\\]$",
+      "category": "twArbitrary",
+      "reason": "transition property list (which properties animate), not a design value; no token or exact built-in utility (1 hit)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/ui/input.tsx",
+      "match": "^transition-\\[color,box-shadow\\]$",
+      "category": "twArbitrary",
+      "reason": "transition property list (which properties animate), not a design value; no token or exact built-in utility (1 hit)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/ui/textarea.tsx",
+      "match": "^transition-\\[color,box-shadow\\]$",
+      "category": "twArbitrary",
+      "reason": "transition property list (which properties animate), not a design value; no token or exact built-in utility (1 hit)"
     }
   ],
-  "twClasses": []
+  "twClasses": [
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/lab/annotate/PanelQueue.tsx",
+      "className": "^animate-pulse$",
+      "reason": "the agent status dot pulses while a session runs (Tailwind 2 s pulse); no looping-motion token exists, and dropping it would change product behavior (canvas-studio precedent)"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-viewer/src/ui/cn.ts",
+      "className": "^animate-pulse$",
+      "reason": "getPhaseStatusColor: the in-progress phase dot pulses (Tailwind 2 s pulse); no looping-motion token exists, and dropping it would change product behavior (canvas-studio precedent)"
+    }
+  ]
 }
