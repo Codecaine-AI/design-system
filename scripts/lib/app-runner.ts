@@ -67,14 +67,16 @@ import { tmpdir } from "node:os";
 import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
 
 import { CONTEXT_OPTIONS, DETERMINISM_CSS, installStyleInitScript, LAUNCH_OPTIONS } from "./capture";
+import { appScope } from "./checkouts";
 import { describeConnection, egressConnections, lsofConnections } from "./egress";
+import { markAppsStarted, pinRepos } from "./git";
 import { OWNER_PORTS } from "./owner";
-import { loadPlaywright, playwrightAnchor } from "./playwright";
+import { headlessShellPath, loadPlaywright, pinElectron, pinPlaywright, playwrightAnchor, playwrightDirs } from "./playwright";
 import { portProblems, PROFILE_PORTS } from "../registry-check";
 import { DESIGN_SYSTEM_ROOT, resolvePath, validateRegistry, type AppEntry, type Registry } from "./registry";
-import { safeAppId, safeOutputPath } from "./safe-paths";
+import { safeAppId, safeOutputPath, safeTempBase } from "./safe-paths";
 import { SYSTEM_BIN, SYSTEM_PATH } from "./system-bin";
-import { runPolicy, sandboxCommand, sandboxProfile, sandboxUnavailable, type SandboxPolicy } from "./sandbox";
+import { BROWSER_PROFILE_PARAM, browserPolicy, runPolicy, SANDBOX_EXEC, sandboxCommand, sandboxProfile, sandboxUnavailable, writeProfileFile, type SandboxPolicy } from "./sandbox";
 
 /** The owner's ports (scripts/lib/owner.ts). No run binds or contacts them, whatever its profile says. */
 export { OWNER_PORTS };
@@ -100,6 +102,11 @@ export interface RunningApp {
   baseUrl?: string;
   /** Named ports the run assigned. */
   ports: Record<string, number>;
+  /**
+   * The loopback ports the run's processes may connect to under the sandbox: its port block and
+   * allowedLocalPorts. The browser that visits the run gets exactly these (launchBrowser).
+   */
+  allowedPorts?: number[];
   /** Every port this run's processes bound (history, for reports; the guard authorizes current listeners only). */
   startedPorts: number[];
   /** Per-run HOME/XDG dir, fixtures copied in. Removed by stop(). */
@@ -471,6 +478,29 @@ function portListeners(port: number): number[] | null {
     .split("\n")
     .map((line) => Number(line.trim()))
     .filter((pid) => Number.isInteger(pid) && pid > 0);
+}
+
+/**
+ * Every port of `ports` that something listens on now (any process, any address), with the pids; null
+ * when lsof fails. One lsof call over the span of the ports.
+ */
+export function busyPorts(ports: readonly number[]): Map<number, number[]> | null {
+  const wanted = new Set(ports);
+  const busy = new Map<number, number[]>();
+  if (wanted.size === 0) return busy;
+  const sorted = [...wanted].sort((a, b) => a - b);
+  const out = lsofSync(["-nP", "-w", `-iTCP:${sorted[0]}-${sorted.at(-1)}`, "-sTCP:LISTEN", "-Fpn"]);
+  if (out === null) return null;
+  let pid = 0;
+  for (const line of out.split("\n")) {
+    if (line.startsWith("p")) pid = Number(line.slice(1));
+    else if (line.startsWith("n") && pid) {
+      const port = Number(line.slice(line.lastIndexOf(":") + 1));
+      if (!wanted.has(port)) continue;
+      busy.set(port, [...new Set([...(busy.get(port) ?? []), pid])]);
+    }
+  }
+  return busy;
 }
 
 function signal(target: number, sig: NodeJS.Signals) {
@@ -960,10 +990,28 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
   OWN_PGID(); // read while `ps` works, before any signal may need it
   const noSandbox = sandboxUnavailable();
   if (noSandbox && !opts.allowUnsandboxed) throw new Error(`${app.id}: refusing to start without the OS sandbox: ${noSandbox}`);
-  for (const [name, port] of Object.entries(app.runProfile.ports ?? {})) {
-    const holders = portListeners(port);
-    if (holders === null) throw new Error(`${app.id}: cannot check whether port ${name}=${port} is free (lsof failed)`);
-    if (holders.length) throw new Error(`${app.id}: port ${name}=${port} is in use (pid ${holders.join(", ")}); a previous run may still be up`);
+  // Every port the sandbox lets the run reach (the whole block and allowedLocalPorts, named or not) must be
+  // free now: a listener there is a service the run did not start (decision 22), and the run could reach it.
+  const allowedPorts = [...new Set([...blockPorts(block), ...(app.runProfile.allowedLocalPorts ?? [])])].sort((a, b) => a - b);
+  const busy = busyPorts([...new Set([...allowedPorts, ...Object.values(app.runProfile.ports ?? {})])]);
+  if (busy === null) throw new Error(`${app.id}: cannot check whether its ports ${allowedPorts.join(", ")} are free (lsof failed)`);
+  if (busy.size) {
+    const named = new Map(Object.entries(app.runProfile.ports ?? {}).map(([name, port]) => [port, name]));
+    const list = [...busy].map(([port, pids]) => `${named.has(port) ? `${named.get(port)}=` : ""}${port} (pid ${pids.join(", ")})`);
+    throw new Error(`${app.id}: port(s) the run may reach are in use: ${list.join(", ")}; a previous run may still be up, or another service listens in the app's block`);
+  }
+  // Decision 29: the run writes only the app's own checkouts (and its temp dir). Read before anything
+  // starts, with the repositories every git call of this tool is pinned to and Playwright loaded and hashed.
+  const scope = appScope(root, app);
+  pinRepos([...scope.checkouts, join(root, "design-system"), DESIGN_SYSTEM_ROOT]);
+  if (playwrightDirs(root).length || mode === "electron") pinPlaywright(root);
+  // Electron (opt-in) too: resolved, its package hashed, before anything of the run starts.
+  if (mode === "electron") {
+    try {
+      pinElectron(resolvePath(root, app.root));
+    } catch (error) {
+      throw new Error(`${app.id}: the electron package does not resolve from ${app.root}: ${String(error).split("\n")[0]}`);
+    }
   }
   installRunSignalHandlers();
   installExitHook();
@@ -986,10 +1034,16 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
         root,
         tmp,
         outDir,
+        writable: scope.writable,
+        readOnly: scope.readOnly,
         blockPorts: blockPorts(block),
         allowedLocalPorts: app.runProfile.allowedLocalPorts ?? [],
         bindAnyPort: mode === "electron",
       });
+  appendFileSync(
+    logPath,
+    `# writable: ${scope.writable.join(", ")}${scope.fallback ? ` (in no checkout: the app's own folder)` : ""} and ${tmp}; read-only inside: ${scope.readOnly.join(", ") || "-"}\n`,
+  );
   if (noSandbox) {
     const warning = `!!! ${app.id}: RUNNING WITHOUT THE OS SANDBOX (allowUnsandboxed): ${noSandbox}. Proof/debug only; never for gates.`;
     console.error(warning);
@@ -1124,6 +1178,7 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
     app,
     root,
     ports,
+    allowedPorts,
     startedPorts: [],
     tmp,
     env: {},
@@ -1150,6 +1205,8 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
   };
 
   try {
+    // From here on no repository may be pinned (git.ts): every one a tool reads was recorded above.
+    markAppsStarted();
     persist();
     const flags = (app.runProfile.flags ?? []).map(expand);
     copyFixtures(app, tmp);
@@ -1224,9 +1281,10 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
       if (!existsSync(main)) throw new Error(`${app.id}: electron main ${main} does not exist after the build`);
       let executablePath: string;
       try {
-        executablePath = createRequire(join(resolvePath(root, app.root), "package.json"))("electron") as string;
+        // Hashed on first use, checked on every later one (playwright.ts pinElectron).
+        executablePath = pinElectron(resolvePath(root, app.root));
       } catch (error) {
-        throw new Error(`${app.id}: the electron package does not resolve from ${app.root}: ${String(error).split("\n")[0]}`);
+        throw new Error(`${app.id}: the electron package does not resolve from ${app.root}, or changed: ${String(error).split("\n")[0]}`);
       }
       const launcher = electronLauncher(toolDir, executablePath, policy);
       electronPidFile = launcher.pidFile;
@@ -1439,13 +1497,32 @@ export function splitBlocked(running: RunningApp, entries: string[]): { unexpect
   return { unexpected, expected };
 }
 
+/** Redirect statuses the guard follows itself, one hop at a time. */
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+/** Hops one request may take before the guard gives up (Chromium's own limit is 20). */
+const MAX_REDIRECTS = 20;
+/** How long the tool waits for one routed response. */
+const ROUTE_FETCH_TIMEOUT_MS = 60_000;
+
 /**
  * Installs the request guard on a context; returns the list of blocked requests. A local port is allowed
  * while a run process listens on it right now (re-read at most PORT_CACHE_MS ago, and again before a
  * request is blocked) or when the profile lists it in allowedLocalPorts; a port the run once bound but no
  * longer holds is not.
+ *
+ * Every http(s) request is routed, and redirects are followed hop by hop: the guard fetches each hop
+ * itself (route.fetch with maxRedirects 0), checks the next Location before anything contacts it, and
+ * fulfills the page's request with the final response. A redirect to a URL the guard would block is
+ * aborted, recorded as blocked (`REDIRECT <url>`) and as an isolation violation, which fails the run.
+ * Two kinds go natively once their first URL passed: documents (Chromium's Local Network Access check
+ * blocks every local request, WebSockets included, from a document it did not load from the network
+ * itself) and event streams (Accept: text/event-stream), which a buffered fetch would hold forever. The
+ * browser's OS sandbox (launchBrowser) refuses any hop of theirs to a port outside the run, and every hop
+ * the browser takes itself (seen in the request events) to a URL the guard would block is a violation too.
  */
 export async function installGuard(context: any, running: RunningApp): Promise<() => string[]> {
+  // WebSockets bypass context.route: without routeWebSocket a page could reach any local port. Fail closed.
+  if (typeof context.routeWebSocket !== "function") throw new Error("the request guard needs Playwright's context.routeWebSocket (Playwright 1.48+) to block WebSockets");
   const blocked: string[] = [];
   const allowed = (maxAgeMs: number) => new Set([...ownPorts(running, maxAgeMs), ...(running.app.runProfile?.allowedLocalPorts ?? [])]);
   const decide = (raw: string): boolean => {
@@ -1456,18 +1533,66 @@ export async function installGuard(context: any, running: RunningApp): Promise<(
       return true;
     }
     // A port the app opened after it became ready (a lazily started API) counts once a run process holds it.
+    if (guardVerdict(url, allowed(PORT_CACHE_MS)) === "ok") return true;
     return guardVerdict(url, allowed(0)) === "ok";
   };
-  const needsCheck = (url: URL) => guardVerdict(url, allowed(PORT_CACHE_MS)) !== "ok";
-  await context.route(needsCheck, (route: any) => {
-    const request = route.request();
-    if (decide(request.url())) return route.fallback();
-    blocked.push(`${request.method()} ${request.url()}`);
-    return route.abort("blockedbyclient");
+  const redirectViolation = (from: string, to: string) => {
+    blocked.push(`REDIRECT ${to}`);
+    addViolation(running, `a redirect chain left the run's ports: ${from} -> ${to}`);
+  };
+  const isHttp = (raw: string) => /^https?:/i.test(raw);
+  await context.route(
+    () => true,
+    async (route: any) => {
+      const request = route.request();
+      const first = request.url();
+      try {
+        if (!isHttp(first)) return await route.fallback();
+        if (!decide(first)) {
+          blocked.push(`${request.method()} ${first}`);
+          return await route.abort("blockedbyclient");
+        }
+        // Natively: documents (Chromium's Local Network Access check blocks every local request, WebSockets
+        // included, from a document the browser did not load from the network itself) and event streams.
+        if (request.resourceType() === "document" || /text\/event-stream/i.test(request.headers()["accept"] ?? "")) return await route.fallback();
+        let url = first;
+        let method: string = request.method();
+        let override: Record<string, unknown> = {};
+        for (let hop = 0; ; hop++) {
+          const response = await route.fetch({ ...override, maxRedirects: 0, timeout: ROUTE_FETCH_TIMEOUT_MS });
+          const location = response.headers()["location"];
+          if (!REDIRECT_STATUSES.has(response.status()) || !location) return await route.fulfill({ response });
+          const next = new URL(location, url).toString();
+          if (!isHttp(next) || !decide(next)) {
+            redirectViolation(url, next);
+            return await route.abort("blockedbyclient");
+          }
+          if (hop >= MAX_REDIRECTS) return await route.abort("failed");
+          // The method change browsers make: 303 always to GET (but HEAD), 301 and 302 for a POST.
+          const toGet = (response.status() === 303 && method !== "HEAD") || ([301, 302].includes(response.status()) && method === "POST");
+          if (toGet) method = "GET";
+          const headers = { ...request.headers() };
+          if (toGet) for (const name of Object.keys(headers)) if (/^content-(type|length)$/i.test(name)) delete headers[name];
+          override = { url: next, method, headers, ...(toGet ? { postData: "" } : {}) };
+          url = next;
+        }
+      } catch (error) {
+        // The page or context went away mid-request, or the run's server dropped the connection.
+        await route.abort("failed").catch(() => undefined);
+        if (!/Target (page, context or browser )?(has been )?closed|Route is already handled/i.test(String(error))) {
+          try {
+            appendFileSync(running.logPath, `# guard: ${first}: ${String(error).split("\n")[0]}\n`);
+          } catch {}
+        }
+      }
+    },
+  );
+  // Redirects the browser follows itself (event streams): every hop it takes shows up as a request.
+  context.on("request", (request: any) => {
+    const from = request.redirectedFrom?.();
+    if (from && isHttp(request.url()) && !decide(request.url())) redirectViolation(from.url(), request.url());
   });
-  // WebSockets bypass context.route: without routeWebSocket a page could reach any local port. Fail closed.
-  if (typeof context.routeWebSocket !== "function") throw new Error("the request guard needs Playwright's context.routeWebSocket (Playwright 1.48+) to block WebSockets");
-  await context.routeWebSocket(needsCheck, (ws: any) => {
+  await context.routeWebSocket((url: URL) => guardVerdict(url, allowed(PORT_CACHE_MS)) !== "ok", (ws: any) => {
     if (decide(ws.url())) {
       ws.connectToServer();
       return;
@@ -1516,16 +1641,75 @@ export async function guardedContext(
 
 // -- browsers -------------------------------------------------------------------
 
+export interface BrowserOptions {
+  /**
+   * The run the browser visits: Chromium may connect only to its port block and allowedLocalPorts on
+   * loopback. Without one (snapshot:sheet renders local files) Chromium may connect to no port at all.
+   */
+  running?: RunningApp;
+  /** Launch options on top of LAUNCH_OPTIONS. */
+  launch?: Record<string, unknown>;
+  /** Dirs under the home Chromium may read (snapshot:sheet's out dir, for file: pages); default none. */
+  readable?: string[];
+}
+
 /**
- * Chromium for snapshot, verify and the profile proof: LAUNCH_OPTIONS (plus `overrides`) with a sanitized
- * environment, sanitizedEnv over a fresh temp HOME/XDG dir that is removed when the browser disconnects
- * (or the launch fails). The tool's own HOME, credentials and service variables never reach the browser.
+ * The executable Playwright launches for Chromium: a script in the tool's own dir (no run can write it)
+ * that takes Playwright's --user-data-dir (canonical, and only a Playwright profile dir under the tool's
+ * temp dir), then execs the headless shell inside sandbox-exec under `policy` with that dir writable
+ * (the -D parameter BROWSER_PROFILE_PARAM) and `--no-sandbox` (Chromium cannot nest its own sandbox in ours).
  */
-export async function launchBrowser(root: string, overrides: Record<string, unknown> = {}): Promise<any> {
-  const home = mkdtempSync(join(realTmpRoot(), "ds-browser-"));
-  const remove = () => rmSync(home, { recursive: true, force: true });
+function browserLauncher(dir: string, executable: string, policy: SandboxPolicy): string {
+  const profile = writeProfileFile(sandboxProfile(policy), dir);
+  const profiles = realpathSync(tmpdir()); // where Playwright creates its profile dirs (os.tmpdir() of this process)
+  const path = join(dir, "chromium");
+  writeFileSync(
+    path,
+    [
+      "#!/bin/sh",
+      `prefix=${shellQuote(profiles)}`,
+      'udd=""',
+      'for arg in "$@"; do case "$arg" in --user-data-dir=*) udd="${arg#--user-data-dir=}";; esac; done',
+      '[ -n "$udd" ] && [ -d "$udd" ] || { echo "ds browser launcher: no --user-data-dir" >&2; exit 97; }',
+      'udd=$(cd "$udd" && /bin/pwd -P) || exit 97',
+      'case "$udd" in "$prefix"/playwright_chromiumdev_profile-*) ;; *) echo "ds browser launcher: unexpected --user-data-dir $udd" >&2; exit 97;; esac',
+      `exec ${shellQuote(SANDBOX_EXEC)} -D "${BROWSER_PROFILE_PARAM}=$udd" -f ${shellQuote(profile)} ${shellQuote(executable)} --no-sandbox "$@"`,
+      "",
+    ].join("\n"),
+    { mode: 0o700 },
+  );
+  return path;
+}
+
+/**
+ * Chromium for snapshot, verify and the profile proof: LAUNCH_OPTIONS (plus `opts.launch`), the headless
+ * shell started inside sandbox-exec under browserPolicy (decision 29): it may connect only to the
+ * visited run's ports (`opts.running`) on loopback, write only its own profile and temp dirs, and read
+ * nothing under the home but Playwright's browser cache. A sanitized environment over a fresh temp
+ * HOME/XDG dir, removed when the browser disconnects (or the launch fails): the tool's own HOME,
+ * credentials and service variables never reach the browser. Playwright is the one pinned before the
+ * first app started (pinPlaywright: a changed package refuses). Without a working sandbox-exec it throws,
+ * unless the run it visits was started with allowUnsandboxed (then the browser is unsandboxed as well).
+ */
+export async function launchBrowser(root: string, opts: BrowserOptions = {}): Promise<any> {
+  const playwright = pinPlaywright(root);
+  const base = safeTempBase();
+  const home = mkdtempSync(join(base, "ds-browser-"));
+  const toolDir = mkdtempSync(join(base, "ds-browser-tool-"));
+  const remove = () => {
+    rmSync(home, { recursive: true, force: true });
+    rmSync(toolDir, { recursive: true, force: true });
+  };
   try {
-    const browser = await loadPlaywright(root).chromium.launch({ ...LAUNCH_OPTIONS, ...overrides, env: sanitizedEnv(home) });
+    const noSandbox = sandboxUnavailable();
+    let executablePath: string | undefined;
+    if (noSandbox) {
+      if (!opts.running?.unsandboxed) throw new Error(`refusing to start Chromium without the OS sandbox: ${noSandbox}`);
+    } else {
+      const policy = browserPolicy({ browserHome: home, connectPorts: opts.running?.allowedPorts ?? [], readable: opts.readable });
+      executablePath = browserLauncher(toolDir, headlessShellPath(root), policy);
+    }
+    const browser = await playwright.chromium.launch({ ...LAUNCH_OPTIONS, ...opts.launch, env: sanitizedEnv(home), ...(executablePath ? { executablePath } : {}) });
     browser.on("disconnected", remove);
     return browser;
   } catch (error) {

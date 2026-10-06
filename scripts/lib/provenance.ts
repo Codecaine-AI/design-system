@@ -3,16 +3,21 @@
  * design-system inside the root (HEAD, every file of dist/, css/ and fonts/). snapshot records it per
  * shot; snapshot:diff reads it again at diff time and fails a B set the tree no longer matches.
  *
- *   treeState(root, app, warnings?)   the state now (git through SYSTEM_BIN; a failure hashes its error and warns)
+ *   treeState(root, app, warnings?)   the state now (git through git.ts, pinned and hook-free; a git failure
+ *                                     hashes its error and warns; a pin that changed throws GitPinChanged)
  *   staleFields(recorded, now)        the gated fields a recorded provenance no longer matches
+ *
+ * The repositories are pinned (git.ts) before the first app of the process starts: startApp pins the
+ * app's checkouts and the design-system ones; snapshot:diff and snapshot:sheet, which start no app, pin
+ * them on first use.
  */
-import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, lstatSync, readdirSync, readFileSync, readlinkSync } from "node:fs";
 import { isAbsolute, join, relative } from "node:path";
 
+import { gitEntryState, GitPinError, pinFor, pinnedGit } from "./git";
 import { type AppEntry, resolvePath } from "./registry";
-import { SYSTEM_BIN, SYSTEM_PATH } from "./system-bin";
+import { canonicalPath } from "./safe-paths";
 
 /** Everything a shot's provenance records except the capture time. */
 export interface TreeState {
@@ -48,19 +53,38 @@ export function staleFields(recorded: Partial<TreeState>, now: TreeState): strin
 }
 
 const sha256Hex = (data: string | Uint8Array) => createHash("sha256").update(data).digest("hex");
-/** The system git by absolute path, with a system-only PATH: never a binary planted in PATH. */
-const GIT_ENV = () => ({ ...process.env, PATH: SYSTEM_PATH });
 
-function git(repo: string, args: string[]): string {
-  const result = spawnSync(SYSTEM_BIN.git, ["-C", repo, ...args], { encoding: "utf8", env: GIT_ENV() });
-  return result.status === 0 ? result.stdout.trimEnd() : `ERROR: ${(result.stderr ?? "").trim()}`;
+/**
+ * The repository pin for `repo` (git.ts pinFor), or the reason there is none (in no checkout). A pin
+ * that changed, or a repository first seen after an app started, throws: the caller must not trust it.
+ */
+function pinOf(repo: string): ReturnType<typeof pinFor> | string {
+  try {
+    return pinFor(repo);
+  } catch (error) {
+    if (error instanceof GitPinError && /is in no git checkout/.test(error.message)) return error.message;
+    throw error;
+  }
 }
 
-/** git's raw stdout, or null after recording why it failed. */
+/** git's trimmed stdout through the repo's pin, or "ERROR: ..." when git fails or `repo` is in no checkout. */
+function git(repo: string, args: string[]): string {
+  const pin = pinOf(repo);
+  if (typeof pin === "string" || !pin) return `ERROR: ${pin ?? "no checkout"}`;
+  const result = pinnedGit(pin, args);
+  return result.status === 0 ? result.stdout.trimEnd() : `ERROR: ${(result.error?.message ?? result.stderr ?? "").trim()}`;
+}
+
+/** git's raw stdout through the repo's pin, or null after recording why it failed. */
 function gitBytes(repo: string, args: string[], warnings: Set<string>): Buffer | null {
-  const result = spawnSync(SYSTEM_BIN.git, ["-C", repo, ...args], { maxBuffer: 1 << 30, env: GIT_ENV() });
+  const pin = pinOf(repo);
+  if (typeof pin === "string" || !pin) {
+    warnings.add(`provenance: git ${args.join(" ")} in ${repo} failed: ${pin ?? "no checkout"}`);
+    return null;
+  }
+  const result = pinnedGit(pin, args, { buffer: true, maxBuffer: 1 << 30 });
   if (result.status === 0 && result.stdout) return result.stdout;
-  warnings.add(`provenance: git ${args.join(" ")} in ${repo} failed: ${(result.error?.message ?? result.stderr?.toString() ?? "").trim() || `exit ${result.status}`}`);
+  warnings.add(`provenance: git ${args.join(" ")} in ${repo} failed: ${(result.error?.message ?? result.stderr ?? "").trim() || `exit ${result.status}`}`);
   return null;
 }
 
@@ -85,9 +109,12 @@ function entryHash(path: string, warnings: Set<string>): string {
  */
 function appContentSha256(root: string, app: AppEntry, warnings: Set<string>): string {
   const repo = resolvePath(root, app.repo);
+  // git runs in the checkout's top (its pin): pathspecs and listed files are relative to it.
+  const pin = pinOf(repo);
+  const top = typeof pin === "string" || !pin ? repo : pin.workTree;
   const pathspecs = [app.root, ...(app.scan?.paths ?? [])]
     .filter((path): path is string => typeof path === "string")
-    .map((path) => relative(repo, resolvePath(root, path)))
+    .map((path) => relative(top, canonicalPath(resolvePath(root, path))))
     .filter((rel) => !rel.startsWith("..") && !isAbsolute(rel))
     .map((rel) => rel || ".");
   const hash = createHash("sha256");
@@ -98,7 +125,7 @@ function appContentSha256(root: string, app: AppEntry, warnings: Set<string>): s
     const list = gitBytes(repo, ["ls-files", "--others", "--exclude-standard", "-z", "--", ...pathspecs], warnings);
     if (!list) hash.update("ls-files failed\n");
     const files = (list?.toString("utf8") ?? "").split("\0").filter(Boolean).sort();
-    for (const file of files) hash.update(`${file}\0${entryHash(join(repo, file), warnings)}\n`);
+    for (const file of files) hash.update(`${file}\0${entryHash(join(top, file), warnings)}\n`);
   }
   return hash.digest("hex");
 }
@@ -131,6 +158,24 @@ function designSystemFilesSha256(dsDir: string, warnings: Set<string>): string {
     for (const rel of files) lines.push(`${rel}\0${entryHash(join(dsDir, rel), warnings)}\n`);
   }
   return sha256Hex(lines.sort().join(""));
+}
+
+/** A repository a capture pinned (snapshot manifest `git`): its work tree and `.git` entry then. */
+export interface RecordedRepo {
+  workTree: string;
+  entry: string;
+}
+
+/**
+ * The repositories of a capture's manifest (`git`) whose `.git` entry is not what it was at capture: git
+ * must not run there (it would follow the new entry). One message per changed repository.
+ */
+export function changedGitEntries(recorded: unknown): string[] {
+  if (!Array.isArray(recorded)) return [];
+  return recorded
+    .filter((repo): repo is RecordedRepo => typeof repo?.workTree === "string" && typeof repo?.entry === "string")
+    .filter((repo) => gitEntryState(repo.workTree) !== repo.entry)
+    .map((repo) => `${repo.workTree}: its .git entry changed since the capture (${repo.entry.split("\n")[0]} -> ${gitEntryState(repo.workTree).split("\n")[0]}); refusing to run git there`);
 }
 
 /** The state of the app repo and of `<root>/design-system` right now. Problems reading them go to `warnings`. */

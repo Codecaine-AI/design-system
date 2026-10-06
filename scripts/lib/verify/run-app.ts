@@ -6,12 +6,27 @@
  */
 import { fileURLToPath } from "node:url";
 import { fixClock, runSteps } from "../capture";
-import { type EgressStats, guardedContext, OWNER_PORTS, refreshStartedPorts, type RunningApp, servedFromRoot, splitBlocked, startApp } from "../app-runner";
+import {
+  type EgressStats,
+  guardedContext,
+  installSignalHandlers,
+  launchBrowser,
+  OWNER_PORTS,
+  refreshStartedPorts,
+  type RunningApp,
+  servedFromRoot,
+  splitBlocked,
+  startApp,
+} from "../app-runner";
 import type { AppEntry, Registry, RouteSpec } from "../registry";
 import { type Assertion, fail, pass, type ResponseLog, trackResponses, warn } from "./assertions";
 
 export interface Session {
-  browser: any;
+  /**
+   * A browser the caller owns and closes (tests). Without one, each app gets its own Chromium, started
+   * after the app inside the OS sandbox with that run's ports only (app-runner launchBrowser).
+   */
+  browser?: any;
   root: string;
   outDir: string;
   /** The validated registry the apps come from: startApp takes each app's port block from it. */
@@ -27,7 +42,7 @@ export interface RuntimeReport {
   blockedRequests: string[];
   /** Blocked requests to the profile's own named ports that the run did not bind: reported, not failures. */
   expectedBlocked: string[];
-  servedFiles?: { checked: number; ok: boolean; outside: string[]; unresolved: string[] };
+  servedFiles?: { checked: number; ok: boolean; outside: string[]; unresolved: string[]; crossOrigin?: string[] };
   consoleErrors: string[];
   /** "fixed" when the page saw the fixed clock, else why not. */
   clock?: string;
@@ -76,23 +91,27 @@ const FILE_TYPES = new Set(["script", "stylesheet", "font", "image", "media"]);
 
 /**
  * Files the app served: successful same-origin script, stylesheet, font, image and media responses,
- * file: URLs (Electron), and the runner's static-server log.
+ * file: URLs (Electron), and the runner's static-server log. A file from any other http(s) origin (another
+ * port of the run, a redirect) cannot be mapped to a file under --root: it is listed in `crossOrigin`,
+ * which fails served-from-root.
  */
-async function servedEntries(page: any, responses: ResponseLog, running: RunningApp): Promise<string[]> {
+async function servedEntries(page: any, responses: ResponseLog, running: RunningApp): Promise<{ entries: string[]; crossOrigin: string[] }> {
   const origin = running.baseUrl ? new URL(running.baseUrl).origin : null;
   const entries: string[] = [];
+  const crossOrigin: string[] = [];
   for (const [raw, { status, type }] of responses) {
     if (!FILE_TYPES.has(type) || !((status >= 200 && status < 300) || status === 304)) continue;
     const url = new URL(raw);
     if (url.protocol === "file:") entries.push(fileURLToPath(url));
     else if (origin && url.origin === origin) entries.push(`${url.origin}${url.pathname}`);
+    else if (url.protocol === "http:" || url.protocol === "https:") crossOrigin.push(`${url.origin}${url.pathname}`);
   }
   // Electron may load file: resources without response events.
   const fileUrls: string[] = await page
     .evaluate(() => [location.href, ...performance.getEntriesByType("resource").map((entry) => entry.name)].filter((u) => u.startsWith("file:")))
     .catch(() => []);
   for (const url of fileUrls) entries.push(fileURLToPath(url));
-  return [...new Set([...entries, ...(running.servedFiles?.() ?? [])])].sort();
+  return { entries: [...new Set([...entries, ...(running.servedFiles?.() ?? [])])].sort(), crossOrigin: [...new Set(crossOrigin)].sort() };
 }
 
 /** The loopback port a guard entry ("GET http://...", "WS ws://...") targets, or null. */
@@ -106,14 +125,28 @@ function loopbackPort(entry: string): number | null {
   }
 }
 
-/** served-from-root: outside files fail; unresolved ones fail, except a warning for a static fixture server that builds into {tmp}. */
-function servedAssertion(app: AppEntry, root: string, served: string[], result: { outside: string[]; unresolved: string[] }): Assertion[] {
+/**
+ * served-from-root: outside files fail, and so do files from another origin than the app's (no file under
+ * the root can be named for them); unresolved ones fail, except a warning for a static fixture server that
+ * builds into {tmp}.
+ */
+export function servedAssertion(app: AppEntry, root: string, served: string[], result: { outside: string[]; unresolved: string[]; crossOrigin?: string[] }): Assertion[] {
   const out: Assertion[] = [];
-  if (served.length === 0) return [fail("served-from-root", "no served file was recorded")];
+  const crossOrigin = result.crossOrigin ?? [];
+  if (served.length === 0 && crossOrigin.length === 0) return [fail("served-from-root", "no served file was recorded")];
   out.push(
-    result.outside.length === 0
+    result.outside.length === 0 && crossOrigin.length === 0
       ? pass("served-from-root", `${served.length} served file(s), all inside ${root}`)
-      : fail("served-from-root", `${result.outside.length} served file(s) outside the root: ${result.outside.slice(0, 3).join(", ")}`, { outside: result.outside }),
+      : fail(
+          "served-from-root",
+          [
+            result.outside.length ? `${result.outside.length} served file(s) outside the root: ${result.outside.slice(0, 3).join(", ")}` : "",
+            crossOrigin.length ? `${crossOrigin.length} file(s) from another origin than the app's: ${crossOrigin.slice(0, 3).join(", ")}` : "",
+          ]
+            .filter(Boolean)
+            .join("; "),
+          { outside: result.outside, crossOrigin },
+        ),
   );
   if (result.unresolved.length) {
     const message = `${result.unresolved.length} served URL(s) map to no file: ${result.unresolved.slice(0, 3).join(", ")}`;
@@ -158,6 +191,9 @@ export async function inRunningApp(
   report.startedPorts = running.startedPorts;
   report.logPath = running.logPath;
   let context: any;
+  // This app's own Chromium (sandboxed to its ports) unless the caller brought one.
+  let ownBrowser: any;
+  let removeCleanup: (() => void) | undefined;
   try {
     let page: any;
     let blocked: () => string[];
@@ -166,7 +202,12 @@ export async function inRunningApp(
       page = await running.electron.window();
       blocked = running.blocked ?? (() => []);
     } else {
-      ({ context, blocked } = await guardedContext(session.browser, running, { colorScheme: "light" }));
+      let browser = session.browser;
+      if (!browser) {
+        browser = ownBrowser = await launchBrowser(session.root, { running });
+        removeCleanup = installSignalHandlers(() => ownBrowser?.close());
+      }
+      ({ context, blocked } = await guardedContext(browser, running, { colorScheme: "light" }));
       report.clock = await fixClock(context);
       page = await context.newPage();
     }
@@ -194,10 +235,10 @@ export async function inRunningApp(
       report.assertions.push(fail("page", `the verify route did not finish: ${(error as Error).message.split("\n")[0]}`));
     }
 
-    const served = await servedEntries(page, responses, running);
+    const { entries: served, crossOrigin } = await servedEntries(page, responses, running);
     const fromRoot = servedFromRoot(running, served);
-    report.servedFiles = { checked: served.length, ok: fromRoot.ok, outside: fromRoot.outside, unresolved: fromRoot.unresolved };
-    report.assertions.push(...servedAssertion(app, session.root, served, fromRoot));
+    report.servedFiles = { checked: served.length, ok: fromRoot.ok && crossOrigin.length === 0, outside: fromRoot.outside, unresolved: fromRoot.unresolved, crossOrigin };
+    report.assertions.push(...servedAssertion(app, session.root, served, { ...fromRoot, crossOrigin }));
 
     // Expected: blocks to a named profile port the run never bound (a dead-service URL the profile sets on purpose).
     // An owner port is never expected, whatever the profile says.
@@ -221,6 +262,8 @@ export async function inRunningApp(
     report.assertions.push(fail("session", (error as Error).message.split("\n")[0]));
   } finally {
     await context?.close().catch(() => undefined);
+    await ownBrowser?.close().catch(() => undefined);
+    removeCleanup?.();
     // A port bound after the start (an owner port included) is only known after a fresh read.
     refreshStartedPorts(running);
     report.startedPorts = [...running.startedPorts];

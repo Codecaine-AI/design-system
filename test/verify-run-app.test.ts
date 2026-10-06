@@ -14,7 +14,7 @@ import { type AppEntry, DESIGN_SYSTEM_ROOT } from "../scripts/lib/registry.ts";
 import type { Assertion } from "../scripts/lib/verify/assertions.ts";
 import { checkPage } from "../scripts/lib/verify/page-checks.ts";
 import { fontDiskPath, fontSourceJudge } from "../scripts/lib/verify/font-source.ts";
-import { inRunningApp, isolationAssertions } from "../scripts/lib/verify/run-app.ts";
+import { inRunningApp, isolationAssertions, servedAssertion } from "../scripts/lib/verify/run-app.ts";
 import { loadBuildValues } from "../scripts/lib/verify/tokens.ts";
 import { browserSkip, MIRROR, makeFixtureRoot, runnableFixtureApp } from "./verify-support.ts";
 import { finishScratch } from "./leaks.ts";
@@ -37,6 +37,15 @@ afterAll(async () => {
 
 const makeRoot = () => makeFixtureRoot(scratch);
 const runnableApp = (path = "/") => runnableFixtureApp({ ui: UI_PORT, deadService: DEAD_PORT }, path);
+
+test("served-from-root fails a file served from another origin than the app's (Opus R3 P0-3)", () => {
+  const app = runnableFixtureApp({ ui: UI_PORT });
+  const clean = servedAssertion(app, "/r", ["/r/app/index.html"], { outside: [], unresolved: [], crossOrigin: [] });
+  expect(clean.map((a) => [a.id, a.status])).toEqual([["served-from-root", "pass"]]);
+  const crossed = servedAssertion(app, "/r", ["/r/app/index.html"], { outside: [], unresolved: [], crossOrigin: ["http://127.0.0.1:46964/secret.png"] });
+  expect(crossed.map((a) => [a.id, a.status])).toEqual([["served-from-root", "fail"]]);
+  expect(crossed[0]!.message).toContain("1 file(s) from another origin than the app's: http://127.0.0.1:46964/secret.png");
+});
 
 test("a run with an isolation violation, an unproven profile or no OS sandbox fails, whatever the page showed", () => {
   expect(isolationAssertions({})).toEqual([]);
