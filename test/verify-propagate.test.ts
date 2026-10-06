@@ -29,9 +29,16 @@ import {
   writeJournal,
 } from "../scripts/lib/verify/propagate.ts";
 import { browserSkip, MIRROR, makeFixtureRoot, runnableFixtureApp } from "./verify-support.ts";
+import { assertNoLeaks } from "./leaks.ts";
 
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-verify-propagate-")));
-afterAll(() => rmSync(scratch, { recursive: true, force: true }));
+afterAll(() => {
+  try {
+    assertNoLeaks(scratch); // no app this file started may still listen
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+});
 
 /** A scratch workspace root (or `root`) whose design-system is a freshly built copy of this package. */
 function scratchRoot(root = mkdtempSync(join(scratch, "root-"))) {
@@ -194,14 +201,22 @@ describe.skipIf(Boolean(browserSkip))("the CLI on a scratch tree with a live-lin
     const tree = liveTree();
     const before = snapshot(tree.ds);
     const run = spawnCli(tree);
-    const deadline = Date.now() + 30_000;
-    while (!(await portOpen(UI_PORT)) && Date.now() < deadline) await Bun.sleep(100);
-    expect(pageValue(tree.ds, "light")).toBe("#ff00ff");
-    run.kill("SIGINT");
-    expect(await run.exited).toBe(130);
-    expect(snapshot(tree.ds)).toEqual(before);
-    expect(readJournal(tree.journal)?.restoredAt).toBeString();
-    expect(await portOpen(UI_PORT)).toBe(false);
+    try {
+      const deadline = Date.now() + 30_000;
+      while (!(await portOpen(UI_PORT)) && Date.now() < deadline) await Bun.sleep(100);
+      expect(pageValue(tree.ds, "light")).toBe("#ff00ff");
+      run.kill("SIGINT");
+      expect(await run.exited).toBe(130);
+      expect(snapshot(tree.ds)).toEqual(before);
+      expect(readJournal(tree.journal)?.restoredAt).toBeString();
+      expect(await portOpen(UI_PORT)).toBe(false);
+    } finally {
+      // A failed assertion above must not leave the CLI (and its app) running past the test.
+      if (run.exitCode === null) {
+        run.kill("SIGINT");
+        await run.exited;
+      }
+    }
   }, 60_000);
 });
 

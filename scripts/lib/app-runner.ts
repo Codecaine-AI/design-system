@@ -227,34 +227,59 @@ export interface ProcInfo {
   started: string;
 }
 
-/** A process the run started: its pid and its start time. */
+/** A process the run started: its pid and its start time, and the child handle when this process spawned it. */
 export interface RootProc {
   pid: number;
   started: string;
+  /** While this child has not exited, its pid is still ours (an unreaped pid is never reused), whatever ps says. */
+  child?: { exitCode: number | null; signalCode: NodeJS.Signals | string | null };
 }
 
 const normalizeStart = (text: string) => text.trim().split(/\s+/).join(" ");
 
+/** Every process with its identity. `ps` can fail under load (fork limits); an empty table is retried. */
 function processTable(): ProcInfo[] {
-  const out = spawnSync("ps", ["-A", "-o", "pid=,ppid=,pgid=,lstart="], { encoding: "utf8" }).stdout ?? "";
-  const procs: ProcInfo[] = [];
-  for (const line of out.split("\n")) {
-    const cols = line.trim().split(/\s+/);
-    if (cols.length < 4) continue;
-    const [pid, ppid, pgid] = cols.slice(0, 3).map(Number) as [number, number, number];
-    if (![pid, ppid, pgid].every(Number.isInteger)) continue;
-    procs.push({ pid, ppid, pgid, started: cols.slice(3).join(" ") });
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const out = spawnSync("ps", ["-A", "-o", "pid=,ppid=,pgid=,lstart="], { encoding: "utf8" }).stdout ?? "";
+    const procs: ProcInfo[] = [];
+    for (const line of out.split("\n")) {
+      const cols = line.trim().split(/\s+/);
+      if (cols.length < 4) continue;
+      const [pid, ppid, pgid] = cols.slice(0, 3).map(Number) as [number, number, number];
+      if (![pid, ppid, pgid].every(Number.isInteger)) continue;
+      procs.push({ pid, ppid, pgid, started: cols.slice(3).join(" ") });
+    }
+    if (procs.length) return procs;
   }
-  return procs;
+  return [];
 }
 
-/** `ps -o lstart=` of a pid (whitespace normalized), or "" when it is gone. */
+function exists(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** `ps -o lstart=` of a pid (whitespace normalized), or "" when it is gone. Retried while the pid exists. */
 function startTime(pid: number): string {
-  return normalizeStart(spawnSync("ps", ["-o", "lstart=", "-p", String(pid)], { encoding: "utf8" }).stdout ?? "");
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const started = normalizeStart(spawnSync("ps", ["-o", "lstart=", "-p", String(pid)], { encoding: "utf8" }).stdout ?? "");
+    if (started || !exists(pid)) return started;
+  }
+  return "";
 }
 
-export function rootProc(pid: number): RootProc {
-  return { pid, started: startTime(pid) };
+/** The identity of a process this run started; pass the child handle when this process spawned it. */
+export function rootProc(pid: number, child?: RootProc["child"]): RootProc {
+  return { pid, started: startTime(pid), ...(child ? { child } : {}) };
+}
+
+/** A root this process spawned and that has not exited yet: its pid and process group are certainly ours. */
+function unreaped(root: RootProc): boolean {
+  return root.child !== undefined && root.child.exitCode === null && root.child.signalCode === null;
 }
 
 const OWN_PGID = (() => processTable().find((p) => p.pid === process.pid)?.pgid ?? process.pid)();
@@ -278,6 +303,7 @@ function runProcesses(roots: RootProc[], table: ProcInfo[] = processTable()): Pr
   const byPid = new Map(table.map((proc) => [proc.pid, proc]));
   const rootPids = roots
     .filter((root) => {
+      if (unreaped(root)) return true;
       const now = byPid.get(root.pid);
       return !now || now.started === normalizeStart(root.started); // exited roots: their group may live on
     })
@@ -354,12 +380,23 @@ export async function killRun(roots: RootProc[], graceMs = 8_000, known: readonl
   const captured = new Map<number, ProcInfo>();
   for (const proc of [...stillRunning(known, table), ...runProcesses(roots, table)]) if (proc.pid !== process.pid) captured.set(proc.pid, proc);
   const procs = [...captured.values()];
-  if (signalRun(procs, "SIGTERM") === 0) return;
+  // Roots this process spawned (detached, so each leads its own group) are signalled from their child
+  // handle too: that needs no `ps`, so a failing process table can never leave a root running.
+  const signalAll = (sig: NodeJS.Signals) => {
+    const own = roots.filter(unreaped);
+    for (const root of own) {
+      signal(-root.pid, sig);
+      signal(root.pid, sig);
+    }
+    return signalRun(procs, sig) + own.length;
+  };
+  const anyLeft = () => roots.some(unreaped) || stillRunning(procs).length > 0;
+  if (signalAll("SIGTERM") === 0) return;
   const deadline = Date.now() + graceMs;
-  while (Date.now() < deadline && stillRunning(procs).length) await sleep(100);
-  signalRun(procs, "SIGKILL");
+  while (Date.now() < deadline && anyLeft()) await sleep(100);
+  signalAll("SIGKILL");
   const hard = Date.now() + 3_000;
-  while (Date.now() < hard && stillRunning(procs).length) await sleep(50);
+  while (Date.now() < hard && anyLeft()) await sleep(50);
 }
 
 const ANSI = /\u001b\[[0-9;?]*[ -\/]*[@-~]|\u001b\][^\u0007]*\u0007/g;
@@ -375,11 +412,21 @@ interface Spawned {
   exited(): number | null;
 }
 
-/** Spawns `sh -c cmd` in its own process group, inside the sandbox when `policy` is set. */
+/**
+ * The run dies with this tool: a watchdog in the run's process group reads a pipe (fd 3) whose only
+ * write end this process holds, and kills the group at EOF. EOF comes when this process exits by any
+ * route, SIGKILL included, so no hook has to run. The command itself does not get fd 3.
+ */
+function withWatchdog(cmd: string): string {
+  return `{ cat >/dev/null; kill -KILL 0; } <&3 &\n{\n${cmd}\n} 3<&-`;
+}
+
+/** Spawns `sh -c cmd` in its own process group (with the watchdog), inside the sandbox when `policy` is set. */
 function spawnLogged(cmd: string, cwd: string, env: Record<string, string>, logPath: string, policy: SandboxPolicy | null): Spawned {
   appendFileSync(logPath, `\n$ ${cmd}\n  (cwd ${cwd}${policy ? ", sandboxed" : ", NOT SANDBOXED"})\n`);
-  const argv = policy ? sandboxCommand(policy, ["/bin/sh", "-c", cmd]) : ["/bin/sh", "-c", cmd];
-  const child = spawn(argv[0]!, argv.slice(1), { cwd, env, detached: true, stdio: ["ignore", "pipe", "pipe"] });
+  const shell = ["/bin/sh", "-c", withWatchdog(cmd)];
+  const argv = policy ? sandboxCommand(policy, shell) : shell;
+  const child = spawn(argv[0]!, argv.slice(1), { cwd, env, detached: true, stdio: ["ignore", "pipe", "pipe", "pipe"] });
   let text = "";
   const onData = (chunk: Buffer) => {
     appendFileSync(logPath, chunk);
@@ -416,7 +463,7 @@ async function runToExit(
   const proc = spawnLogged(cmd, cwd, env, logPath, policy);
   const pid = proc.child.pid;
   if (!pid) throw new Error(`failed to spawn ${cmd}`);
-  const root = rootProc(pid);
+  const root = rootProc(pid, proc.child);
   roots.push(root);
   try {
     const deadline = Date.now() + timeoutMs;
@@ -727,9 +774,13 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
       processes: [...internal.known.values()].map(({ pid, pgid, started }) => ({ pid, pgid, started })),
     });
   /** A new root: recorded at once, so a crash right after the spawn still leaves its identity on disk. */
-  const adopt = (pid: number) => {
-    if (roots.some((root) => root.pid === pid)) return;
-    roots.push(rootProc(pid));
+  const adopt = (pid: number, child?: RootProc["child"]) => {
+    const known = roots.find((root) => root.pid === pid);
+    if (known) {
+      if (child && !known.child) known.child = child;
+      return;
+    }
+    roots.push(rootProc(pid, child));
     captureProcesses(internal, persist);
   };
   let sampling = true;
@@ -829,7 +880,7 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
           : cwd;
       const proc = spawnLogged(cmd, cwd, env, logPath, policy);
       if (!proc.child.pid) throw new Error(`${app.id}: failed to spawn ${cmd}`);
-      adopt(proc.child.pid);
+      adopt(proc.child.pid, proc.child);
       const deadline = Date.now() + timeoutMs;
       let ready: ReturnType<typeof readyUrl> = null;
       while (!(ready = readyUrl(proc.output(), app.run.readyPattern))) {
@@ -908,7 +959,7 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
       // they exit before stopAllApps runs. Remove exactly the ones the launch added.
       for (const sig of SIGNALS) for (const fn of process.listeners(sig)) if (!listenersBefore.get(sig)!.has(fn)) process.off(sig, fn as any);
       const pid = electronApp.process()?.pid;
-      if (pid) adopt(pid);
+      if (pid) adopt(pid, electronApp.process());
       stillStarting();
       electronApp.process()?.stdout?.on("data", (chunk: Buffer) => appendFileSync(logPath, chunk));
       electronApp.process()?.stderr?.on("data", (chunk: Buffer) => appendFileSync(logPath, chunk));
