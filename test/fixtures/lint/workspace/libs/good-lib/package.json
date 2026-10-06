@@ -1,0 +1,7 @@
+{
+  "name": "good-lib",
+  "private": true,
+  "dependencies": {
+    "@codecaine-ai/design-system": "workspace:*"
+  }
+}

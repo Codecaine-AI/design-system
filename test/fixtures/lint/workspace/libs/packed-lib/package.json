@@ -1,0 +1,7 @@
+{
+  "name": "packed-lib",
+  "private": true,
+  "dependencies": {
+    "@codecaine-ai/design-system": "file:vendor/design-system.tgz"
+  }
+}

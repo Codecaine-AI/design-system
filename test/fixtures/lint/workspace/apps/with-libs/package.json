@@ -1,0 +1,10 @@
+{
+  "name": "with-libs",
+  "private": true,
+  "dependencies": {
+    "@codecaine-ai/design-system": "workspace:*",
+    "good-lib": "workspace:*",
+    "stale-lib": "workspace:*",
+    "missing-lib": "workspace:*"
+  }
+}

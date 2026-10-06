@@ -119,6 +119,19 @@ describe("resolution", () => {
     ]);
   });
 
+  test("a library's own copy of the package is a violation: a stale link, a stale packed copy, a dependency that does not resolve", () => {
+    expectExactly(check("with-libs", "resolution").violations, [
+      at("apps/with-libs/package.json", 7, "library stale-lib resolves @codecaine-ai/design-system to packed-ds, the app to design-system"),
+      at("apps/with-libs/package.json", 7, "library stale-lib: its @codecaine-ai/design-system reaches packed-ds, not the root's design-system checkout (design-system)"),
+      at("apps/with-libs/package.json", 8, "missing-lib (workspace:*) does not resolve"),
+    ]);
+    const stale = sha256(readFileSync(REAL_TOKENS_CSS, "utf8") + STALE_SUFFIX).slice(0, 12);
+    expectExactly(check("vendored-with-lib", "resolution").violations, [
+      at("apps/vendored-with-lib/package.json", 6, "library packed-lib resolves @codecaine-ai/design-system to libs/packed-lib/node_modules/@codecaine-ai/design-system, the app to apps/vendored-with-lib/node_modules/@codecaine-ai/design-system"),
+      at("apps/vendored-with-lib/package.json", 6, `library packed-lib: dist/css/tokens.css in its copy (libs/packed-lib/node_modules/@codecaine-ai/design-system, sha256 ${stale})`),
+    ]);
+  });
+
   test("copied tokens pass when they match the build and fail with their hash when edited", () => {
     expect(check("copied", "resolution")).toMatchObject({ status: "pass", violations: [] });
     const stale = sha256(readFileSync(REAL_TOKENS_CSS, "utf8") + STALE_SUFFIX).slice(0, 12);

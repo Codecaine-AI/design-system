@@ -172,6 +172,9 @@ export const APPS: AppEntry[] = [
   }),
   appEntry({ id: "tw3-unused", root: "apps/tw3-unused", stack: { summary: "Tailwind v3 (fixture)", tailwind: "v3", packageManager: "bun" } }),
   appEntry({ id: "tw3-bound", root: "apps/tw3-bound", stack: { summary: "Tailwind v3 (fixture)", tailwind: "v3", packageManager: "bun" } }),
+  // Resolution: libraries with their own copy of the package.
+  appEntry({ id: "with-libs", root: "apps/with-libs" }),
+  appEntry({ id: "vendored-with-lib", root: "apps/vendored-with-lib", consume: { via: "vendor-tgz", detail: "file:vendor/design-system.tgz" } }),
   // Structure: component files in every wrong place, and every kind of entry file.
   appEntry({ id: "wrong-folders", root: "apps/wrong-folders" }),
   // Resolution: where each design-system file comes from.
@@ -271,6 +274,25 @@ export function materialize(): Workspace {
   vendoredApp(join(root, "apps/vendored-stale"), root, realTokens + STALE_SUFFIX);
   copiedApp(join(root, "apps/copied"), realTokens);
   copiedApp(join(root, "apps/copied-stale"), realTokens + STALE_SUFFIX);
+
+  // Libraries an app uses: good-lib shares the app's copy of the package (the hoisted link),
+  // stale-lib resolves its own link to the packed copy, missing-lib is not installed.
+  const link = (target: string, at: string) => {
+    mkdirSync(dirname(join(root, at)), { recursive: true });
+    symlinkSync(target, join(root, at));
+  };
+  link("../../../libs/good-lib", "apps/with-libs/node_modules/good-lib");
+  link("../../../libs/stale-lib", "apps/with-libs/node_modules/stale-lib");
+  link("../../../../packed-ds", "libs/stale-lib/node_modules/@codecaine-ai/design-system");
+  // A vendored app whose library installed its own, stale copy of the package.
+  vendoredApp(join(root, "apps/vendored-with-lib"), root, realTokens);
+  const vendoredPkg = join(root, "apps/vendored-with-lib/package.json");
+  const pkg = JSON.parse(readFileSync(vendoredPkg, "utf8"));
+  pkg.dependencies["packed-lib"] = "file:../../libs/packed-lib";
+  write(vendoredPkg, JSON.stringify(pkg, null, 2));
+  link("../../../libs/packed-lib", "apps/vendored-with-lib/node_modules/packed-lib");
+  write(join(root, "libs/packed-lib/node_modules/@codecaine-ai/design-system/package.json"), JSON.stringify({ name: "@codecaine-ai/design-system" }));
+  write(join(root, "libs/packed-lib/node_modules/@codecaine-ai/design-system/dist/css/tokens.css"), realTokens + STALE_SUFFIX);
 
   const registry: Registry = { version: 1, apps: APPS };
   const registryPath = join(root, "registry/apps.json");
