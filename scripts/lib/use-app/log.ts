@@ -36,6 +36,8 @@ export interface Visit {
   consoleErrors: string[];
   /** Requests that failed (not blocked, not aborted by the page) and responses with status >= 400. */
   failedRequests: string[];
+  /** Responses >= 400 the registry's verify.expectedFailures covers, with the reason: reported, not failures. Only on an entry that names some. */
+  expectedFailedRequests?: string[];
   /** Requests the guard blocked that the app should not make. */
   blocked: string[];
   /** Blocked requests to the profile's own named ports the run never bound: reported, not failures. */
@@ -59,6 +61,8 @@ export interface Totals {
   failedActions: number;
   consoleErrors: number;
   failedRequests: number;
+  /** Only when a visit has the list (the entry names verify.expectedFailures). */
+  expectedFailedRequests?: number;
   blocked: number;
   expectedBlocked: number;
   violations: number;
@@ -79,7 +83,7 @@ export function shotName(route: string, theme: Theme, n: number, label: string):
   return safeSegment(`${route}-${theme}-${n}-${label}.png`, "screenshot name");
 }
 
-/** The totals, one line per problem, and ok: no problem at all. Hover errors and expected blocks are not problems. */
+/** The totals, one line per problem, and ok: no problem at all. Hover errors, expected blocks and expected failed requests are not problems. */
 export function judge(visits: Visit[], isolation: Isolation, errors: Array<string | undefined> = []): { totals: Totals; problems: string[]; ok: boolean } {
   const actions = visits.flatMap((visit) => visit.actions.map((action) => ({ visit, action })));
   const hovers = actions.filter(({ action }) => action.kind === "hover");
@@ -95,6 +99,7 @@ export function judge(visits: Visit[], isolation: Isolation, errors: Array<strin
     failedActions: failed.length,
     consoleErrors: sum((visit) => visit.consoleErrors),
     failedRequests: sum((visit) => visit.failedRequests),
+    ...(visits.some((visit) => visit.expectedFailedRequests) ? { expectedFailedRequests: sum((visit) => visit.expectedFailedRequests ?? []) } : {}),
     blocked: sum((visit) => visit.blocked),
     expectedBlocked: sum((visit) => visit.expectedBlocked),
     violations: isolation.violations.length,

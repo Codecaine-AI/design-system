@@ -16,8 +16,8 @@
  * recorded and never run, and the visit stops there, like a failed one.
  */
 import { guardedContext, OWNER_PORTS, type RunningApp, splitBlocked } from "../app-runner";
-import { fixClock, runSteps, SCREENSHOT_OPTIONS, type Step, themePlan } from "../capture";
-import type { RouteSpec } from "../registry";
+import { fixClock, runSteps, SCREENSHOT_OPTIONS, type Step, switchSteps, themePlan } from "../capture";
+import { type ExpectedFailure, expectedFailure, type RouteSpec } from "../registry";
 import type { Action, Theme, Visit } from "./log";
 import { shotName } from "./log";
 import { activates, describeElement, type ElementInfo, HOVER_SELECTOR, hoverTargets, stepRefusal, stepSelector } from "./safety";
@@ -96,12 +96,25 @@ async function openSurface(target: VisitTarget, route: RouteSpec, theme: Theme, 
   }
 }
 
-/** Records console errors, page errors, failed requests and responses >= 400 into the visit; returns the unsubscribe. */
-function watch(page: any, visit: Visit): () => void {
+/** Chromium's console error for a response >= 400: its status; the resource URL is the message's location. */
+const LOAD_FAILED = /^Failed to load resource: the server responded with a status of (\d{3})\b/;
+
+/**
+ * Records console errors, page errors, failed requests and responses >= 400 into the visit; returns the
+ * unsubscribe. A response the registry's verify.expectedFailures covers goes to `expectedFailedRequests`
+ * (with its reason), and so does Chromium's "Failed to load resource" console error for it.
+ */
+function watch(page: any, visit: Visit, expected: { list?: ExpectedFailure[]; origin?: string } = {}): () => void {
+  const covered = (method: string, url: string, status: number) => expectedFailure(expected.list, expected.origin, { method, url, status });
   const handlers: Record<string, (event: any) => void> = {
     console: (message) => {
       // A request the guard blocked is reported in `blocked`, not again as a console error.
-      if (message.type() === "error" && !/net::ERR_BLOCKED_BY_CLIENT/.test(message.text())) visit.consoleErrors.push(message.text().slice(0, 300));
+      if (message.type() !== "error" || /net::ERR_BLOCKED_BY_CLIENT/.test(message.text())) return;
+      const status = Number(LOAD_FAILED.exec(message.text())?.[1]);
+      const url = String(message.location?.()?.url ?? "");
+      // Reported with its response (the console error names the URL and status, not the method; it may come first).
+      if (status && expected.list?.some((e) => covered(e.method, url, status))) return;
+      visit.consoleErrors.push(message.text().slice(0, 300));
     },
     pageerror: (error) => visit.consoleErrors.push(`pageerror: ${String(error?.message ?? error).slice(0, 300)}`),
     requestfailed: (request) => {
@@ -110,7 +123,11 @@ function watch(page: any, visit: Visit): () => void {
       if (!/ERR_BLOCKED_BY_CLIENT|ERR_ABORTED/.test(why)) visit.failedRequests.push(`${request.method()} ${request.url()}: ${why}`);
     },
     response: (response) => {
-      if (response.status() >= 400) visit.failedRequests.push(`${response.status()} ${response.request().method()} ${response.url()}`);
+      if (response.status() < 400) return;
+      const line = `${response.status()} ${response.request().method()} ${response.url()}`;
+      const hit = covered(response.request().method(), response.url(), response.status());
+      if (!hit) return void visit.failedRequests.push(line);
+      (visit.expectedFailedRequests ??= []).push(`${line} (expected: ${hit.reason})`);
     },
   };
   for (const [event, handler] of Object.entries(handlers)) page.on(event, handler);
@@ -138,6 +155,9 @@ export async function visitRoute(target: VisitTarget, route: RouteSpec, theme: T
   const app = target.running.app;
   const plan = themePlan(app, theme);
   const visit: Visit = { route: route.id, theme, url: "", themeMethod: plan.method, actions: [], screenshots: [], consoleErrors: [], failedRequests: [], blocked: [], expectedBlocked: [] };
+  // Only an entry that names expected failures gets the list (every other log stays as it was).
+  const expectedFailures = app.verify?.expectedFailures;
+  if (expectedFailures?.length) visit.expectedFailedRequests = [];
   const record = (action: Action) => {
     visit.actions.push(action);
     return action.ok;
@@ -158,7 +178,7 @@ export async function visitRoute(target: VisitTarget, route: RouteSpec, theme: T
     surface = await openSurface(target, route, theme, plan);
     const { page } = surface;
     visit.url = surface.url;
-    unwatch = watch(page, visit);
+    unwatch = watch(page, visit, { list: expectedFailures, origin: target.running.baseUrl });
 
     /** A registry step, run only when the safety rules let it. */
     const step = async (s: Step, origin: string, kind: Action["kind"] = "step") => {
@@ -205,10 +225,9 @@ export async function visitRoute(target: VisitTarget, route: RouteSpec, theme: T
     const steps = route.steps ?? [];
     if (!steps.length && route.waitFor && !(await waitFor())) return await stop();
 
-    // The theme, the way capture switches it: darkSwitch clicks and steps go through the safety rules.
-    const sw = plan.method === "click" || plan.method === "steps" ? app.verify?.darkSwitch : undefined;
-    const switchSteps: Step[] = sw?.kind === "click" ? [{ action: "click", target: sw.selector }] : sw?.kind === "steps" ? sw.steps : [];
-    for (const s of switchSteps) if (!(await step(s, "darkSwitch "))) return await stop();
+    // The theme, the way capture switches it: darkSwitch clicks and steps, and lightSteps, go through the safety rules.
+    const origin = theme === "light" ? "lightSteps " : "darkSwitch ";
+    for (const s of switchSteps(app, theme)) if (!(await step(s, origin))) return await stop();
     if (plan.method === "attribute" && !(await act("step", "darkSwitch attribute data-theme=dark", () => plan.afterLoad(page, undefined as never)))) return await stop();
 
     for (const s of steps) if (!(await step(s, ""))) return await stop();
@@ -245,6 +264,7 @@ export async function visitRoute(target: VisitTarget, route: RouteSpec, theme: T
     if (surface) Object.assign(visit, splitVisitBlocked(target.running, surface.blocked()));
     await surface?.close();
     for (const key of ["consoleErrors", "failedRequests", "blocked", "expectedBlocked"] as const) visit[key] = [...new Set(visit[key])];
+    if (visit.expectedFailedRequests) visit.expectedFailedRequests = [...new Set(visit.expectedFailedRequests)];
   }
   return visit;
 }

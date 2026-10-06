@@ -2,7 +2,7 @@
  * What `use:app` may click, and what it hovers (APP_BRIEF step 5: navigation and view controls only).
  *
  * use:app clicks only the registry's own navigation steps (a route's `steps`, a `click` or `steps`
- * darkSwitch) and the sidebar toggle. The managing agent reviews those steps; these rules are the second
+ * darkSwitch, verify.lightSteps) and the sidebar toggle. A `check` or `uncheck` step counts as a click. The managing agent reviews those steps; these rules are the second
  * line of defence. A key press is run only for Tab, Escape, the arrows, PageUp/PageDown and Home/End
  * (Shift allowed), or a plain Enter or Space. Before each click, and before each Enter or Space press,
  * the target is described in the page (describeElement) and the step is refused, never run, when:
@@ -137,9 +137,12 @@ export function keyRefusal(step: Step): string | null {
   return `the key ${JSON.stringify(raw)} is not a view key (use:app presses only Tab, Escape, the arrows, PageUp/PageDown and Home/End, and a plain Enter or Space on a checked target)`;
 }
 
-/** Whether the step activates an element: a click, or a plain Enter or Space press. */
+/** A click, or a check or uncheck (which clicks when the control is not in that state yet). */
+const CLICKS = new Set(["click", "check", "uncheck"]);
+
+/** Whether the step activates an element: a click, a check or uncheck, or a plain Enter or Space press. */
 export function activates(step: Step): boolean {
-  if (step.action === "click") return true;
+  if (CLICKS.has(step.action)) return true;
   if (step.action !== "press") return false;
   const { modifiers, key } = splitKey(pressedKey(step));
   return ACTIVATE_KEYS.test(key) && modifiers.length === 0;
@@ -147,7 +150,7 @@ export function activates(step: Step): boolean {
 
 /** The selector of the element an activating step acts on; null for a key press on the focused element. */
 export function stepSelector(step: Step): string | null {
-  if (step.action === "click") return step.target ?? null;
+  if (CLICKS.has(step.action)) return step.target ?? null;
   return step.action === "press" && step.target && step.value !== undefined ? step.target : null;
 }
 

@@ -65,8 +65,12 @@ export interface RouteSpec {
   viewport?: { width: number; height: number };
   /** CSS selector that must be visible before capture. */
   waitFor?: string;
-  /** Navigation/view-only steps to reach the state (click a tab, open a panel). Never submit, save, delete, sync or send. */
-  steps?: Array<{ action: "click" | "press" | "hover" | "scroll" | "wait"; target?: string; value?: string | number }>;
+  /**
+   * Navigation/view-only steps to reach the state (click a tab, open a panel). Never submit, save, delete, sync or send.
+   * `check` and `uncheck` set a checkbox or switch (an input, or an element with role checkbox or switch and
+   * aria-checked) to that state, the way Playwright's setChecked does: a no-op when it is already there.
+   */
+  steps?: Array<{ action: StepAction; target?: string; value?: string | number }>;
   /** CSS selectors whose boxes are masked in diffs. */
   masks?: string[];
   /** false = captured but never fails a pixel gate. Requires a reason. */
@@ -77,6 +81,96 @@ export interface RouteSpec {
    * in the judged set (B) is byte-identical to its light shot. Otherwise identical shots are only a warning.
    */
   darkDiffers?: boolean;
+}
+
+/** The actions a registry step may take (STEP_ACTIONS). */
+export type StepAction = "click" | "press" | "hover" | "scroll" | "wait" | "check" | "uncheck";
+export const STEP_ACTIONS: readonly StepAction[] = ["click", "press", "hover", "scroll", "wait", "check", "uncheck"];
+/** Actions that act on one element and need its selector as `target`. */
+const TARGET_ACTIONS: readonly StepAction[] = ["click", "hover", "check", "uncheck"];
+
+/**
+ * A step list's problems, one message each: an object per step, an action from STEP_ACTIONS, a string
+ * `target` where the action needs one (click, hover, check, uncheck), a string or number `value`.
+ */
+export function stepsProblems(steps: unknown, where: string): string[] {
+  if (!Array.isArray(steps)) return [`${where} must be an array of steps`];
+  const problems: string[] = [];
+  steps.forEach((step, i) => {
+    const name = `${where}[${i}]`;
+    if (step === null || typeof step !== "object" || Array.isArray(step)) return void problems.push(`${name} must be an object { action, target?, value? }`);
+    const s = step as Record<string, unknown>;
+    if (!(STEP_ACTIONS as readonly unknown[]).includes(s.action)) problems.push(`${name}.action ${JSON.stringify(s.action)} is not one of ${STEP_ACTIONS.join(", ")}`);
+    else if (TARGET_ACTIONS.includes(s.action as StepAction) && (typeof s.target !== "string" || s.target.length === 0)) problems.push(`${name}: ${s.action} needs a target selector`);
+    if (s.target !== undefined && typeof s.target !== "string") problems.push(`${name}.target must be a string`);
+    if (s.value !== undefined && typeof s.value !== "string" && typeof s.value !== "number") problems.push(`${name}.value must be a string or a number`);
+  });
+  return problems;
+}
+
+/**
+ * verify.expectedFailures: a failed request the app makes by design (a resource it probes for and
+ * renders without), which use:app reports under expectedFailedRequests instead of failing the run. A
+ * request matches when it goes to the app's own origin (the URL the runner read from the server output),
+ * its method is `method`, it failed with `status`, and `urlPattern` (a regular expression anchored at
+ * the start of the path, "^/") matches its path and query. Its matching "Failed to load resource" console
+ * error is expected too. Only HTTP statuses 400-599; a request that never got a response is never expected.
+ */
+export interface ExpectedFailure {
+  method: string;
+  urlPattern: string;
+  status: number;
+  reason: string;
+}
+
+/** verify.expectedFailures' problems, one message each (see ExpectedFailure). */
+export function expectedFailuresProblems(list: unknown): string[] {
+  const where = "verify.expectedFailures";
+  if (!Array.isArray(list)) return [`${where} must be an array of { method, urlPattern, status, reason }`];
+  const problems: string[] = [];
+  list.forEach((entry, i) => {
+    const name = `${where}[${i}]`;
+    if (entry === null || typeof entry !== "object" || Array.isArray(entry)) return void problems.push(`${name} must be an object { method, urlPattern, status, reason }`);
+    const e = entry as Record<string, unknown>;
+    if (typeof e.method !== "string" || !/^[A-Z]+$/.test(e.method)) problems.push(`${name}.method must be an upper-case HTTP method (GET, POST, ...)`);
+    if (!Number.isInteger(e.status) || (e.status as number) < 400 || (e.status as number) > 599) problems.push(`${name}.status must be an HTTP error status, an integer 400-599`);
+    if (typeof e.reason !== "string" || !e.reason.trim()) problems.push(`${name} has no reason`);
+    if (typeof e.urlPattern !== "string" || !e.urlPattern.startsWith("^/") || e.urlPattern.startsWith("^//")) {
+      problems.push(`${name}.urlPattern must be a regular expression anchored at the start of a path on the app's own origin ("^/api/..."): it is matched against the path and query only`);
+    } else {
+      try {
+        new RegExp(e.urlPattern);
+      } catch (error) {
+        problems.push(`${name}.urlPattern is not a valid regular expression: ${(error as Error).message}`);
+      }
+    }
+  });
+  return problems;
+}
+
+/**
+ * The expected failure that covers a failed request, or undefined. `origin` is the app's own origin;
+ * a request to any other origin (another port, another host) is never expected.
+ */
+export function expectedFailure(list: readonly ExpectedFailure[] | undefined, origin: string | undefined, request: { method: string; url: string; status: number }): ExpectedFailure | undefined {
+  if (!list?.length || !origin) return undefined;
+  let url: URL;
+  try {
+    url = new URL(request.url);
+  } catch {
+    return undefined;
+  }
+  if (url.origin !== new URL(origin).origin) return undefined;
+  const path = `${url.pathname}${url.search}`;
+  return list.find((e) => e.method === request.method && e.status === request.status && safeTest(e.urlPattern, path));
+}
+
+function safeTest(pattern: string, text: string): boolean {
+  try {
+    return new RegExp(pattern).test(text);
+  } catch {
+    return false;
+  }
 }
 
 export interface RunProfile {
@@ -180,6 +274,26 @@ export type ThemeSwitch =
   /** Navigation/view-only steps (for example open the style rail, click its dark-mode toggle). Writes may land only in the run's temp state. */
   | { kind: "steps"; steps: NonNullable<RouteSpec["steps"]> };
 
+/**
+ * verify.lightSteps' problems, one message each: a non-empty step list (stepsProblems), not on a
+ * dark-first entry (verify never reads light there) and not together with a lightSwitch (one way to light).
+ */
+export function lightStepsProblems(steps: unknown, rule: ThemeRule | undefined, lightSwitch: unknown): string[] {
+  const where = "verify.lightSteps";
+  const problems = stepsProblems(steps, where);
+  if (Array.isArray(steps) && steps.length === 0) problems.push(`${where} is empty (omit it when light needs no steps)`);
+  if (rule === "dark-first") problems.push(`${where} is set on a dark-first entry: verify never reads light there, so nothing would check it`);
+  if (lightSwitch !== undefined) problems.push(`${where} and verify.lightSwitch are both set: name one way to reach light`);
+  return problems;
+}
+
+/** The light steps the tools run: the entry's verify.lightSteps, or undefined (none, empty, or a dark-first entry). */
+export function lightSteps(app: { theme?: { rule?: ThemeRule }; verify?: { lightSteps?: unknown } }): NonNullable<RouteSpec["steps"]> | undefined {
+  const steps = app.verify?.lightSteps;
+  if (app.theme?.rule === "dark-first" || !Array.isArray(steps) || steps.length === 0) return undefined;
+  return steps as NonNullable<RouteSpec["steps"]>;
+}
+
 /** verify.lightSwitch: a stored value only (see VerifySpec.lightSwitch for why). */
 export type LightSwitch = { kind: "storage"; key: string; value: string };
 
@@ -245,6 +359,19 @@ export interface VerifySpec {
    * Omit it when the app boots light: then light is the app as it boots, as before.
    */
   lightSwitch?: LightSwitch;
+  /**
+   * Navigation/view-only steps that put the app in light, for an app whose theme state outlives a visit
+   * (it saves the choice on its server, so the previous visit's dark carries into the next load). Use
+   * `check`/`uncheck` steps so they hold whatever state the page loads in, for example open the colors
+   * pane, uncheck the dark-mode toggle, wait for html[data-theme="light"]; the darkSwitch then `check`s it.
+   * Every light visit runs them where a dark visit runs darkSwitch's steps: snapshot capture and use:app
+   * after the page loads (after waitFor when the route has no steps) and before the route's steps;
+   * registry:prove before the route's steps; verify after the route was prepared, before the light reads.
+   * Not with lightSwitch, not on dark-first entries. Omit it when a fresh load is light.
+   */
+  lightSteps?: NonNullable<RouteSpec["steps"]>;
+  /** Failed requests the app makes by design: use:app reports them apart and does not fail on them (ExpectedFailure). */
+  expectedFailures?: ExpectedFailure[];
   /** Shell apps: the sidebar toggle (default ".ds-sidebar-toggle") and the storage key (default "<app>.sidebar"). */
   sidebar?: { toggle?: string; storageKey?: string };
 }
@@ -481,6 +608,11 @@ export function validateRegistry(registry: Registry): string[] {
     if (runnable && app.gates?.verify?.required && !app.verify) problems.push(`${app.id}: gates.verify is required but verify is missing`);
     if (app.verify) for (const problem of verifySpecProblems(app.verify, app.theme?.rule)) problems.push(`${app.id}: ${problem}`);
     if (app.verify?.lightSwitch !== undefined) for (const problem of lightSwitchProblems(app.verify.lightSwitch, app.theme?.rule)) problems.push(`${app.id}: ${problem}`);
+    if (app.verify?.lightSteps !== undefined)
+      for (const problem of lightStepsProblems(app.verify.lightSteps, app.theme?.rule, app.verify.lightSwitch)) problems.push(`${app.id}: ${problem}`);
+    if (app.verify?.expectedFailures !== undefined) for (const problem of expectedFailuresProblems(app.verify.expectedFailures)) problems.push(`${app.id}: ${problem}`);
+    for (const r of app.routes ?? []) if (r.steps !== undefined) for (const problem of stepsProblems(r.steps, `routes.${r.id}.steps`)) problems.push(`${app.id}: ${problem}`);
+    if (app.verify?.darkSwitch?.kind === "steps") for (const problem of stepsProblems(app.verify.darkSwitch.steps, "verify.darkSwitch.steps")) problems.push(`${app.id}: ${problem}`);
     if (!runnable) {
       for (const g of ["verify", "snapshot"] as const)
         if (app.gates?.[g]?.required) problems.push(`${app.id}: gates.${g} is required but run mode is none`);

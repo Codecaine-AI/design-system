@@ -24,6 +24,10 @@
  * The app's checkout (HEAD and `git status`) is read before the start and again after stop(); a change
  * fails the run.
  *
+ * A response the registry's verify.expectedFailures covers (method, status, a path pattern on the app's own
+ * origin, a reason) is recorded per visit under expectedFailedRequests, with Chromium's console error for
+ * it, and does not fail the run; the summary line then reads "failed requests N (expected M)".
+ *
  * Exit: 0 when the app was used cleanly, and for run mode none (nothing to run); 1 on a console error, a
  * failed request, an unexpected blocked request, an isolation problem, a failed or refused step, a change
  * to the app's checkout, or an app that did not start; 2 on bad arguments, an unknown app, an invalid
@@ -187,7 +191,7 @@ async function useApp(app: AppEntry, registry: Registry, args: Args): Promise<nu
   const themes = [...new Set(visits.map((visit) => visit.theme))].join(", ") || "none";
   console.log(
     `use:app ${app.id}: ${totals.visits} visit(s) (${app.routes.length} route(s) x ${themes}), ${totals.screenshots} screenshot(s), ${totals.hovers} hover(s)` +
-      `${totals.hoverErrors ? ` (${totals.hoverErrors} not done)` : ""}; console errors ${totals.consoleErrors}, failed requests ${totals.failedRequests}, ` +
+      `${totals.hoverErrors ? ` (${totals.hoverErrors} not done)` : ""}; console errors ${totals.consoleErrors}, failed requests ${totals.failedRequests}${totals.expectedFailedRequests !== undefined ? ` (expected ${totals.expectedFailedRequests})` : ""}, ` +
       `blocked ${totals.blocked} (expected ${totals.expectedBlocked}), refused ${totals.refused}, failed actions ${totals.failedActions}, violations ${totals.violations}`,
   );
   for (const problem of problems.slice(0, 20)) console.log(`  ${problem}`);

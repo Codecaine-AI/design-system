@@ -1,0 +1,284 @@
+/**
+ * Idempotent theme switches and expected failed requests:
+ * - `check` and `uncheck` steps set a checkbox, a role=switch or a role=checkbox to that state and do
+ *   nothing when it is already there (Playwright setChecked), in runSteps and in use:app's safety rules;
+ * - verify.lightSteps: themePlan and switchSteps run them in every light visit; entries without them get
+ *   exactly the old plan and the old capture spec sha;
+ * - validation of steps, lightSteps and verify.expectedFailures (reason required, a "^/" path pattern);
+ * - expectedFailure matches only the app's own origin, the method, the status and the path pattern;
+ * - end to end through use:app on a stand-in that saves its theme on its server
+ *   (test/fixtures/use-app/persisted-theme-serve.ts, docs-workbench's failure): a click darkSwitch makes
+ *   the second light visit load dark and the second dark visit toggle back to light; check/uncheck with
+ *   lightSteps reach the right theme in every visit, and the expected 404 is reported apart.
+ */
+import { afterAll, expect, test } from "bun:test";
+import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+import { LAUNCH_OPTIONS, runSteps, type Step, switchSteps, themePlan } from "../scripts/lib/capture.ts";
+import { loadPlaywright } from "../scripts/lib/playwright.ts";
+import { decodePng } from "../scripts/lib/png.ts";
+import { type AppEntry, DESIGN_SYSTEM_ROOT, expectedFailure, type ExpectedFailure, validateRegistry, type VerifySpec } from "../scripts/lib/registry.ts";
+import { captureSha256 } from "../scripts/lib/snapshot-set.ts";
+import { judge, type Visit } from "../scripts/lib/use-app/log.ts";
+import { activates, type ElementInfo, stepRefusal, stepSelector } from "../scripts/lib/use-app/safety.ts";
+import { finishScratch } from "./leaks.ts";
+import { snapshotApp, writeRegistry } from "./snapshot-support.ts";
+import { browserSkip, MIRROR } from "./verify-support.ts";
+
+const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-idempotent-switch-")));
+afterAll(async () => {
+  try {
+    await finishScratch(scratch);
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+});
+
+const waived = (["page", "panel", "text", "border"] as const).map((role) => ({ role, reason: "a stand-in page" }));
+const clickDark: VerifySpec["darkSwitch"] = {
+  kind: "steps",
+  steps: [
+    { action: "click", target: "button.colors" },
+    { action: "click", target: "input.dark-toggle" },
+    { action: "wait", target: 'html[data-theme="dark"]' },
+  ],
+};
+const checkDark: VerifySpec["darkSwitch"] = {
+  kind: "steps",
+  steps: [
+    { action: "click", target: "button.colors" },
+    { action: "check", target: "input.dark-toggle" },
+    { action: "wait", target: 'html[data-theme="dark"]' },
+  ],
+};
+const uncheckLight: Step[] = [
+  { action: "click", target: "button.colors" },
+  { action: "uncheck", target: "input.dark-toggle" },
+  { action: "wait", target: 'html[data-theme="light"]' },
+];
+const themeMissing: ExpectedFailure = { method: "GET", urlPattern: "^/api/theme$", status: 404, reason: "no theme is saved until the first switch; the app renders light" };
+
+const entry = (verify: Partial<VerifySpec> = {}, over: Partial<AppEntry> = {}) =>
+  snapshotApp({ verify: { probes: [], waivedRoles: waived, darkSwitch: clickDark, ...verify }, ...over });
+const problemsOf = (app: AppEntry) => validateRegistry({ version: 1, apps: [app] });
+
+// -- the registry ------------------------------------------------------------------------
+
+test("validation: step actions, check/uncheck targets, lightSteps and expectedFailures", () => {
+  expect(problemsOf(entry({ darkSwitch: checkDark, lightSteps: uncheckLight, expectedFailures: [themeMissing] }))).toEqual([]);
+  const cases: Array<[string, AppEntry, RegExp]> = [
+    ["an unknown route step action", entry({}, { routes: [{ id: "home", path: "/", steps: [{ action: "tick" as never, target: "x" }] }] }), /routes\.home\.steps\[0\]\.action "tick" is not one of click, press, hover, scroll, wait, check, uncheck/],
+    ["check without a target", entry({ darkSwitch: { kind: "steps", steps: [{ action: "check" }] } }), /verify\.darkSwitch\.steps\[0\]: check needs a target selector/],
+    ["empty lightSteps", entry({ lightSteps: [] }), /verify\.lightSteps is empty/],
+    ["lightSteps not an array", entry({ lightSteps: { action: "uncheck" } as never }), /verify\.lightSteps must be an array of steps/],
+    ["lightSteps with a lightSwitch", entry({ lightSteps: uncheckLight, lightSwitch: { kind: "storage", key: "mode", value: "light" } }), /lightSteps and verify\.lightSwitch are both set/],
+    ["lightSteps on a dark-first entry", entry({ lightSteps: uncheckLight }, { theme: { rule: "dark-first" } }), /lightSteps is set on a dark-first entry/],
+    ["an expected failure without a reason", entry({ expectedFailures: [{ ...themeMissing, reason: " " }] }), /expectedFailures\[0\] has no reason/],
+    ["a full URL pattern", entry({ expectedFailures: [{ ...themeMissing, urlPattern: "^http://127.0.0.1:47021/api/theme$" }] }), /urlPattern must be a regular expression anchored at the start of a path/],
+    ["an unanchored pattern", entry({ expectedFailures: [{ ...themeMissing, urlPattern: "/api/theme" }] }), /urlPattern must be a regular expression anchored/],
+    ["a protocol-relative pattern", entry({ expectedFailures: [{ ...themeMissing, urlPattern: "^//evil.example/" }] }), /urlPattern must be a regular expression anchored/],
+    ["a bad regex", entry({ expectedFailures: [{ ...themeMissing, urlPattern: "^/api/(" }] }), /urlPattern is not a valid regular expression/],
+    ["a success status", entry({ expectedFailures: [{ ...themeMissing, status: 200 }] }), /status must be an HTTP error status/],
+    ["a lower-case method", entry({ expectedFailures: [{ ...themeMissing, method: "get" }] }), /method must be an upper-case HTTP method/],
+  ];
+  for (const [name, app, message] of cases) expect([name, problemsOf(app).join("\n")]).toEqual([name, expect.stringMatching(message)]);
+});
+
+test("expectedFailure: the app's own origin, the method, the status and the path pattern, nothing else", () => {
+  const origin = "http://127.0.0.1:47021";
+  const list = [themeMissing, { method: "GET", urlPattern: "^/api/sequence\\?src=[^&]*login-flow\\.sequence\\.json$", status: 404, reason: "corpus bug" }];
+  const hit = (method: string, url: string, status: number) => expectedFailure(list, origin, { method, url, status })?.reason ?? null;
+  expect(hit("GET", `${origin}/api/theme`, 404)).toBe(themeMissing.reason);
+  expect(hit("GET", `${origin}/api/sequence?src=docs%2F40-sequence%2Fassets%2Flogin-flow.sequence.json`, 404)).toBe("corpus bug");
+  expect(hit("GET", `${origin}/api/theme#x`, 404)).toBe(themeMissing.reason); // the fragment is not part of the request
+  for (const [method, url, status] of [
+    ["POST", `${origin}/api/theme`, 404], // another method
+    ["GET", `${origin}/api/theme`, 500], // another status
+    ["GET", `${origin}/api/theme/x`, 404], // the pattern is anchored at both ends
+    ["GET", "http://127.0.0.1:47020/api/theme", 404], // another port of the run
+    ["GET", "http://localhost:47021/api/theme", 404], // another host spelling is another origin
+    ["GET", "https://example.com/api/theme", 404],
+  ] as const)
+    expect([method, url, status, hit(method, url, status)]).toEqual([method, url, status, null]);
+  expect(expectedFailure(list, undefined, { method: "GET", url: `${origin}/api/theme`, status: 404 })).toBeUndefined(); // no origin read: nothing is expected
+  expect(expectedFailure(undefined, origin, { method: "GET", url: `${origin}/api/theme`, status: 404 })).toBeUndefined();
+});
+
+test("themePlan and switchSteps: lightSteps in every light visit; entries without them get the old plan and sha", () => {
+  const keys = (app: AppEntry, theme: "light" | "dark") => {
+    const plan = themePlan(app, theme);
+    return { keys: Object.keys(plan).sort(), method: plan.method, init: plan.init ?? null };
+  };
+  const old = entry();
+  const withLight = entry({ darkSwitch: checkDark, lightSteps: uncheckLight });
+  expect(keys(old, "light")).toEqual({ keys: ["afterLoad", "method", "url", "verify"], method: "default", init: null });
+  expect(keys(withLight, "light")).toEqual({ keys: ["afterLoad", "method", "url", "verify"], method: "steps", init: null });
+  expect(keys(withLight, "dark")).toEqual(keys(entry({ darkSwitch: checkDark }), "dark"));
+  expect(switchSteps(old, "light")).toEqual([]);
+  expect(switchSteps(old, "dark")).toEqual(clickDark.kind === "steps" ? clickDark.steps : []);
+  expect(switchSteps(withLight, "light")).toEqual(uncheckLight);
+  expect(switchSteps(entry({ darkSwitch: { kind: "click", selector: "#dark" } }), "dark")).toEqual([{ action: "click", target: "#dark" }]);
+  expect(switchSteps(entry({ darkSwitch: { kind: "attribute" } }), "dark")).toEqual([]);
+  // A dark-first entry never runs lightSteps (validation rejects them there too).
+  expect(switchSteps(entry({ lightSteps: uncheckLight }, { theme: { rule: "dark-first" } }), "light")).toEqual([]);
+  // The capture spec: unchanged without lightSteps; expectedFailures never change it.
+  expect(captureSha256({ ...old, verify: { ...old.verify!, lightSteps: undefined } })).toBe(captureSha256(old));
+  expect(captureSha256(entry({ expectedFailures: [themeMissing] }))).toBe(captureSha256(old));
+  expect(captureSha256(entry({ lightSteps: uncheckLight }))).not.toBe(captureSha256(old));
+});
+
+test("use:app's safety rules treat check and uncheck as clicks", () => {
+  const el = (over: Partial<ElementInfo> = {}): ElementInfo => ({ name: "input", submit: false, inForm: false, names: [], texts: [], visible: true, enabled: true, ...over });
+  for (const action of ["check", "uncheck"] as const) {
+    const step: Step = { action, target: "input.dark-toggle" };
+    expect([action, activates(step), stepSelector(step)]).toEqual([action, true, "input.dark-toggle"]);
+    expect(stepRefusal(step, el({ texts: ["Dark mode"] }))).toBeNull();
+    expect(stepRefusal(step, el({ inForm: true }))).toMatch(/inside a <form>/);
+    expect(stepRefusal(step, el({ names: ["Sync on save"] }))).toMatch(/names a write/);
+    expect(stepRefusal({ action, target: "input.auto-save" }, null)).toMatch(/selector input\.auto-save names a write/);
+  }
+});
+
+test("judge: expected failed requests are counted apart and never fail a run; the key is absent without them", () => {
+  const visit = (over: Partial<Visit> = {}): Visit => ({
+    route: "home",
+    theme: "light",
+    url: "http://127.0.0.1:47021/",
+    themeMethod: "default",
+    actions: [{ kind: "goto", target: "http://127.0.0.1:47021/", ok: true }],
+    screenshots: [],
+    consoleErrors: [],
+    failedRequests: [],
+    blocked: [],
+    expectedBlocked: [],
+    ...over,
+  });
+  const clean = { violations: [], unproven: false, unsandboxed: false };
+  const expected = judge([visit({ expectedFailedRequests: ["404 GET http://127.0.0.1:47021/api/theme (expected: x)"] }), visit({ expectedFailedRequests: [] })], clean);
+  expect([expected.ok, expected.totals.expectedFailedRequests, expected.totals.failedRequests]).toEqual([true, 1, 0]);
+  expect("expectedFailedRequests" in judge([visit()], clean).totals).toBe(false);
+  expect(judge([visit({ failedRequests: ["404 GET http://127.0.0.1:47021/other"], expectedFailedRequests: [] })], clean).ok).toBe(false);
+});
+
+// -- in a browser -----------------------------------------------------------------------
+
+const TOGGLES = `<!doctype html><html><body>
+<label>Native <input class="native" type="checkbox" /></label>
+<div class="switch" role="switch" aria-checked="false" tabindex="0">Switch</div>
+<div class="box" role="checkbox" aria-checked="true" tabindex="0">Box</div>
+<script>
+  window.clicks = { native: 0, switch: 0, box: 0 };
+  document.querySelector(".native").addEventListener("click", () => window.clicks.native++);
+  for (const name of ["switch", "box"]) {
+    const el = document.querySelector("." + name);
+    el.addEventListener("click", () => {
+      window.clicks[name]++;
+      el.setAttribute("aria-checked", el.getAttribute("aria-checked") === "true" ? "false" : "true");
+    });
+  }
+</script></body></html>`;
+
+test.skipIf(Boolean(browserSkip))(
+  "check and uncheck are idempotent on a checkbox input, a role=switch and a role=checkbox",
+  async () => {
+    const browser = await loadPlaywright(MIRROR).chromium.launch(LAUNCH_OPTIONS);
+    try {
+      const page = await browser.newPage();
+      await page.setContent(TOGGLES);
+      const state = () =>
+        page.evaluate(() => ({
+          native: (document.querySelector(".native") as HTMLInputElement).checked,
+          switch: document.querySelector(".switch")!.getAttribute("aria-checked"),
+          box: document.querySelector(".box")!.getAttribute("aria-checked"),
+          clicks: (window as any).clicks,
+        }));
+      const twice = (action: "check" | "uncheck") => ["native", "switch", "box"].flatMap((name): Step[] => [{ action, target: `.${name}` }, { action, target: `.${name}` }]);
+      await runSteps(page, twice("check"));
+      // The box started checked: its two checks clicked nothing. The others were clicked once each.
+      expect(await state()).toEqual({ native: true, switch: "true", box: "true", clicks: { native: 1, switch: 1, box: 0 } });
+      await runSteps(page, twice("uncheck"));
+      expect(await state()).toEqual({ native: false, switch: "false", box: "false", clicks: { native: 2, switch: 2, box: 1 } });
+    } finally {
+      await browser.close();
+    }
+  },
+  60_000,
+);
+
+/** A root with the persisted-theme stand-in at app/ (index.html), and Playwright from the mirror. */
+function tree(): string {
+  const root = mkdtempSync(join(scratch, "root-"));
+  mkdirSync(join(root, "app"));
+  cpSync(join(import.meta.dir, "fixtures/use-app/persisted-theme-serve.ts"), join(root, "app/serve.ts"));
+  cpSync(join(import.meta.dir, "fixtures/use-app/persisted-theme.html"), join(root, "app/index.html"));
+  mkdirSync(join(root, "codecaine"));
+  symlinkSync(join(MIRROR, "codecaine/core"), join(root, "codecaine/core"));
+  return root;
+}
+
+/** Runs use:app on the stand-in with `verify`; the log, and per visit its theme, its steps and the loaded shot's top-left pixel. */
+function useApp(name: string, port: number, verify: Partial<VerifySpec>) {
+  const root = tree();
+  const out = join(scratch, `${name}-out`);
+  const registry = join(mkdtempSync(join(scratch, "registry-")), "apps.json");
+  const routes = ["one", "two"].map((id) => ({ id, path: "/", waitFor: "p.ready" }));
+  writeRegistry(registry, [entry(verify, { routes, runProfile: { ...snapshotApp().runProfile, ports: { ui: port } } })]);
+  const result = Bun.spawnSync([process.execPath, join(DESIGN_SYSTEM_ROOT, "scripts/use-app.ts"), "--app", "demo", "--root", root, "--registry", registry, "--out-dir", out], { env: { ...process.env } });
+  const dir = join(out, "demo", "use-app");
+  const log = JSON.parse(readFileSync(join(dir, readdirSync(dir).find((file) => file.endsWith(".json"))!), "utf8"));
+  const seen = (log.visits as Visit[]).map((visit) => {
+    const shot = visit.screenshots.find((path) => /-(loaded|stopped)\.png$/.test(path));
+    const pixel = shot ? decodePng(readFileSync(shot)).data[0] : undefined;
+    const failed = visit.actions.filter((a) => a.kind === "step" && !a.ok).map((a) => a.target);
+    return `${visit.route}-${visit.theme}: ${pixel === 0 ? "dark" : pixel === 255 ? "light" : `pixel ${pixel}`}${failed.length ? ` (failed: ${failed.join(", ")})` : ""}`;
+  });
+  return { exitCode: result.exitCode, log, seen, stdout: result.stdout.toString() };
+}
+
+test.skipIf(Boolean(browserSkip))(
+  "before: a click darkSwitch on a theme the server keeps loads the second light visit dark and toggles the second dark visit back to light",
+  () => {
+    const { exitCode, log, seen } = useApp("before", 46951, {});
+    expect(seen).toEqual([
+      "one-light: light",
+      "one-dark: dark",
+      "two-light: dark", // the wrong theme: the first dark visit's choice was saved on the server
+      'two-dark: light (failed: darkSwitch wait html[data-theme="dark"])', // the click toggled it back
+    ]);
+    // Without verify.expectedFailures, the first loads' 404 is a failed request and a console error.
+    expect(log.visits[0].failedRequests).toEqual(["404 GET http://127.0.0.1:46951/api/theme"]);
+    expect(log.visits[0].consoleErrors).toEqual([expect.stringMatching(/^Failed to load resource: the server responded with a status of 404/)]);
+    expect("expectedFailedRequests" in log.visits[0]).toBe(false);
+    expect("expectedFailedRequests" in log.totals).toBe(false);
+    expect([exitCode, log.ok]).toEqual([1, false]);
+  },
+  180_000,
+);
+
+test.skipIf(Boolean(browserSkip))(
+  "after: check/uncheck with lightSteps reach the right theme in every visit, and the expected 404 is reported apart",
+  () => {
+    const { exitCode, log, seen, stdout } = useApp("after", 46952, { darkSwitch: checkDark, lightSteps: uncheckLight, expectedFailures: [themeMissing] });
+    expect(seen).toEqual(["one-light: light", "one-dark: dark", "two-light: light", "two-dark: dark"]);
+    expect(log.visits.map((visit: Visit) => [visit.themeMethod, visit.actions.filter((a) => a.kind === "step").map((a) => a.target)])).toEqual([
+      ["steps", ["waitFor p.ready", "lightSteps click button.colors", "lightSteps uncheck input.dark-toggle", 'lightSteps wait html[data-theme="light"]']],
+      ["steps", ["waitFor p.ready", "darkSwitch click button.colors", "darkSwitch check input.dark-toggle", 'darkSwitch wait html[data-theme="dark"]']],
+      ["steps", ["waitFor p.ready", "lightSteps click button.colors", "lightSteps uncheck input.dark-toggle", 'lightSteps wait html[data-theme="light"]']],
+      ["steps", ["waitFor p.ready", "darkSwitch click button.colors", "darkSwitch check input.dark-toggle", 'darkSwitch wait html[data-theme="dark"]']],
+    ]);
+    // The first two loads have no saved theme yet: their 404 (and its console error) is expected, with the reason.
+    const expected = `404 GET http://127.0.0.1:46952/api/theme (expected: ${themeMissing.reason})`;
+    expect(log.visits.map((visit: Visit) => [visit.failedRequests, visit.consoleErrors, visit.expectedFailedRequests])).toEqual([
+      [[], [], [expected]],
+      [[], [], [expected]],
+      [[], [], []],
+      [[], [], []],
+    ]);
+    expect(log.totals).toMatchObject({ failedRequests: 0, expectedFailedRequests: 2, consoleErrors: 0, failedActions: 0, refused: 0 });
+    expect(stdout).toContain("failed requests 0 (expected 2)");
+    expect([exitCode, log.ok]).toEqual([0, true]);
+  },
+  180_000,
+);

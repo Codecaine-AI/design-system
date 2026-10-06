@@ -5,7 +5,7 @@
  * guarding its requests is the runner's job (scripts/lib/app-runner.ts).
  */
 import { runSteps } from "../capture";
-import { type AppEntry, lightSeed, type PassId, probeActive, probeRole, switchRoles, verifySpecProblems, type VerifySpec } from "../registry";
+import { type AppEntry, lightSeed, lightSteps, type PassId, probeActive, probeRole, switchRoles, verifySpecProblems, type VerifySpec } from "../registry";
 import { type Assertion, fail, pass, type ResponseLog } from "./assertions";
 import { fontAssertions, fontProbeSelectors, type FontSourceJudge, readFonts } from "./fonts";
 import { checkSidebar } from "./sidebar";
@@ -170,7 +170,7 @@ const probeKey = (p: { selector: string; property: string; token: string }) => `
 
 /**
  * Every runtime assertion on a page that shows the verify route: the spec covers every role, token
- * probes in the default theme (after the storage lightSwitch, when the entry has one), web fonts, the
+ * probes in the default theme (after the storage lightSwitch or the lightSteps, when the entry has one), web fonts, the
  * dark switch (light-dark apps) and, for shell apps, sidebar persistence. A probe is read only in the themes it lists (default both).
  */
 export async function checkPage(page: any, opts: PageCheckOptions): Promise<Assertion[]> {
@@ -187,6 +187,12 @@ export async function checkPage(page: any, opts: PageCheckOptions): Promise<Asse
     await page.evaluate(([key, value]: [string, string]) => localStorage.setItem(key, value), [light.key, light.value]);
     await page.reload({ waitUntil: "load", timeout: 60_000 });
     if (opts.prepare) await opts.prepare(page);
+    await settle(page);
+  }
+  // An app whose theme outlives a visit: its lightSteps, after the route was prepared, before the light reads.
+  const toLight = darkFirst ? undefined : lightSteps(opts.app);
+  if (toLight) {
+    await runSteps(page, toLight);
     await settle(page);
   }
   const firstReadings = await readProbes(page, verify.probes.filter((probe) => probeActive(probe, first)), opts.values, first);
