@@ -214,7 +214,8 @@ export function proposeFile(data: TokenData, f: SourceFile, hits: Hit[], opts: P
   const byLine = new Map<number, Hit[]>();
   for (const hit of hits) byLine.set(hit.line, [...(byLine.get(hit.line) ?? []), hit]);
   for (const hit of hits) {
-    const key = `${hit.line}\u0000${hit.category}\u0000${hit.value}`;
+    // A definition hit is numbered among its own property's hits (locate matches it by name).
+    const key = `${hit.line}\u0000${hit.category}\u0000${hit.value}\u0000${hit.definition ?? ""}`;
     const occurrence = seen.get(key) ?? 0;
     seen.set(key, occurrence + 1);
     if (!opts.categories.has(hit.category)) {

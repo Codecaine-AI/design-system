@@ -4,6 +4,7 @@
   --destructive: #c62121;
   --input: #e6e5e3;
   --accent: #f1efeb;
+  --popover: #fffefa;
 }
 @theme inline {
   --color-primary: var(--primary);

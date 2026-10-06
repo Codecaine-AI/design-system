@@ -1253,7 +1253,10 @@ describe("propose: review of the pilot fixes", () => {
 
   test("stock shadcn on Tailwind v4 reads the names as the contract's readers do: only a hover-only reader is flagged", () => {
     const list = reviewRows("pilot/v4");
+    // text-primary, fill-primary (an SVG fill is a background), bg-destructive, dark:bg-input/30: as the contract's readers.
     for (const line of [3, 4, 5]) expect(rowAt(list, "v4/theme.css", line)[0].why).not.toContain("usage differs");
+    // Tailwind v4's bg-(--popover) reads the variable.
+    expect(rowAt(list, "v4/theme.css", 7)[0].why).toBe("host contract: --popover is color.surface.panel (host-contract.css), ΔE 1.8 in light");
     // hover:bg-accent and group-hover/row:bg-accent: the accent is read only on hover.
     expect(rowAt(list, "v4/theme.css", 6)[0].why).toContain("usage differs: the app reads --accent only as a hover background");
   });
@@ -1276,5 +1279,20 @@ describe("propose: review of the pilot fixes", () => {
     expect(rowAt(list, "scoped.css", 6).map((r) => r.column)).toEqual([":root { --offset: 4px; --radius: 4px; }".lastIndexOf("4px") + 1]);
     // A stack that goes on past its line is a hand edit: replacing this line's part would leave the rest.
     expect(pick(rowAt(list, "scoped.css", 8)[0])).toEqual({ proposed: "font.family.sans", replacement: null });
+  });
+
+  test("only the root or a theme block is seeded, never a descendant or :host; same-valued hits on a line each find their own declaration", () => {
+    const list = reviewRows("pilot/scope.css");
+    // :root .toast, body .card, .dark .toast, :host: scoped variables. html.dark: a theme block.
+    for (const line of [1, 2, 3, 4]) expect(rowAt(list, "scope.css", line)[0].why).not.toStartWith("host contract");
+    expect(rowAt(list, "scope.css", 5)[0]).toMatchObject({ proposed: "color.surface.page", why: expect.stringMatching(/^host contract: --background/) });
+    // `:root{--radius:8px}.d{border-radius:8px}` and `:root{--radius-sm:8px;--radius-md:8px}`: two rows, two columns, both replaced.
+    for (const [line, text] of [[6, ":root{--radius:8px}.d{border-radius:8px}"], [7, ":root{--radius-sm:8px;--radius-md:8px}"]] as const) {
+      const rows = rowAt(list, "scope.css", line);
+      expect(rows.map((r) => [r.column, r.replacement])).toEqual([
+        [text.indexOf("8px") + 1, "var(--ds-radius-base)"],
+        [text.lastIndexOf("8px") + 1, "var(--ds-radius-base)"],
+      ]);
+    }
   });
 });

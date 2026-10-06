@@ -101,9 +101,15 @@ export function buildConsumers(files: SourceFile[]): Consumers {
     }
     // Class tokens: split at whitespace and quotes, then each tested whole (a long path string is one token, never rescanned).
     for (const m of t.matchAll(/[^\s"'`]+/g)) {
-      let token = m[0].replace(/^[{(,]+|[,;})]+$/g, "");
-      // A closing bracket belongs to the token only when it closes one of its own (`bg-[--b]`, not `["bg-x"]`).
-      while (token.endsWith("]") && (token.match(/\[/g)?.length ?? 0) < (token.match(/\]/g)?.length ?? 0)) token = token.slice(0, -1).replace(/[,;})]+$/, "");
+      let token = m[0].replace(/^[{(,]+|[,;}]+$/g, "");
+      // A closing bracket or parenthesis belongs to the token only when it closes one of its own
+      // (`bg-[--b]`, Tailwind v4's `bg-(--b)`; not `["bg-x"]` or `cn(bg-x)`).
+      const unbalanced = (open: RegExp, close: RegExp) => (token.match(open)?.length ?? 0) < (token.match(close)?.length ?? 0);
+      for (;;) {
+        if (token.endsWith("]") && unbalanced(/\[/g, /\]/g)) token = token.slice(0, -1).replace(/[,;}]+$/, "");
+        else if (token.endsWith(")") && unbalanced(/\(/g, /\)/g)) token = token.slice(0, -1).replace(/[,;}]+$/, "");
+        else break;
+      }
       if (token.length > 160 || !token.includes("-")) continue;
       const v = token.match(VAR_TOKEN);
       if (v) add(v[2] ?? v[3], { role: CLASS_ROLE[v[1]] ?? "other", at: at(m.index!), variants: variantsOf(token) });

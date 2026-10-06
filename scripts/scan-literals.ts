@@ -917,7 +917,7 @@ const NOT_FAMILY_NAME = /size|weight|style|variant|stretch|feature|setting|smoot
 /** Keywords no font is called: CSS-wide values and @font-face font-display values (`--font-display: swap`). */
 const NOT_A_FAMILY = /^(?:inherit|initial|unset|revert|revert-layer|none|normal|auto|block|swap|fallback|optional)$/i;
 /** Whole name segments: --radius, --radius-lg, --card-corner-radius, --rounded (not --shadow-blur-radius). */
-const RADIUS_NAME = /(?:^--|-)(?:radius|rounded|corner)(?:-|$)/i;
+const RADIUS_NAME = /(?:^--|-)(?:radius|rounded)(?:-|$)/i;
 const NOT_RADIUS_NAME = /shadow|blur|spread|glow/i;
 /** --font-size-sm, --fs-body, --text-sm (Tailwind v4 theme), --blog-heading-size, --label-text-size. */
 const FONT_SIZE_NAME =
@@ -935,9 +935,13 @@ function familyList(value: string): string[] | null {
   return items.every((x) => FAMILY_ITEM.test(x)) ? items : null;
 }
 
-/** The kind a custom property's name gives it, or null. A Tailwind sub-property (`--text-sm--line-height`) names none. */
-function kindFromName(name: string): PropKind | null {
-  if (/^--.+--/.test(name)) return null;
+/**
+ * The kind a custom property's name gives it, or null. After a second `--` the name is a
+ * sub-property (Tailwind's `--text-sm--line-height`, BEM's `--button--radius`): that part decides.
+ */
+function kindFromName(full: string): PropKind | null {
+  const inner = full.indexOf("--", 2);
+  const name = inner === -1 ? full : `--${full.slice(full.lastIndexOf("--") + 2)}`;
   if (RADIUS_NAME.test(name) && !NOT_RADIUS_NAME.test(name)) return "radius";
   if (FONT_SIZE_NAME.test(name)) return "fontSize";
   if (FAMILY_NAME.test(name) && !NOT_FAMILY_NAME.test(name)) return "fontFamily";
@@ -989,7 +993,8 @@ function customPropDefs(text: string, kind: FileKind, inStr: Uint8Array | null):
     while (p >= 0 && (text[p] === " " || text[p] === "\t")) p--;
     if (text[p] === "[") continue;
     let i = at + m[0].length;
-    if ((kind === "css" || kind === "scss") && isCssSelector(text, i)) continue;
+    // `--x: 1"] {` on its line: part of a selector (an attribute value), not a declaration.
+    if ((kind === "css" || kind === "scss") && /^[^;{}\n]*\{/.test(text.slice(i, i + 400))) continue;
     while (i < text.length && (text[i] === " " || text[i] === "\t")) i++;
     if (text[i] === "\n" || text[i] === "\r") while (i < text.length && /\s/.test(text[i])) i++;
     let stops = ";{}";
@@ -997,7 +1002,10 @@ function customPropDefs(text: string, kind: FileKind, inStr: Uint8Array | null):
       // Inside a tag: a style="" attribute, which ends at its quote; else a <style> body, which ends at `<`.
       const open = text.lastIndexOf("<", at);
       const inTag = open > text.lastIndexOf(">", at);
-      const quote = inTag ? text.slice(open, at).match(/\bstyle\s*=\s*(["'])[^"']*$/)?.[1] : undefined;
+      const tag = inTag ? text.slice(open, at) : "";
+      const attr = [...tag.matchAll(/\bstyle\s*=\s*(["'])/g)].pop();
+      // The style attribute is still open when its own quote has not come again.
+      const quote = attr && !tag.slice(attr.index! + attr[0].length).includes(attr[1]) ? attr[1] : undefined;
       stops += inTag ? `<>${quote ?? "\"'"}` : "<";
     }
     const value = text.slice(i, valueEnd(text, i, stops, true, inStr)).trim();

@@ -136,3 +136,9 @@ test("a definition read only as a color or a shadow, a Tailwind sub-property, a 
   ].join("\n");
   expect(hitsOf(src).filter((h) => !h.includes("namedColor"))).toEqual(["8 fontFamily def fraunces", "10 pxFontSize 14px"]);
 });
+
+test("after a second `--` the sub-property decides; `corner` alone is no radius; a style attribute with a quoted family before is still read", () => {
+  const css = ":root { --toast-corner-offset: 16px; --button--radius: 8px; --title--font-size: 20px; --text-sm--line-height: 1.25rem; }";
+  expect(hitsOf(css)).toEqual(["1 radius def 8px", "1 pxFontSize def 20px"]);
+  expect(hitsOf(`<div style="--a: 'X', serif; --font: 'Inter', serif"></div>`, "html")).toEqual(["1 fontFamily def x", "1 fontFamily def inter"]);
+});

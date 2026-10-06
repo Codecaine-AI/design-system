@@ -11,7 +11,7 @@
  */
 
 import { chroma, composite, deltaE, rgbToOklab, toHex, type Rgba } from "./color.ts";
-import { branches, rootPrelude, selectorBranches, themeOf, type Context, type Surface } from "./context.ts";
+import { branches, selectorBranches, themeOf, type Context, type Surface } from "./context.ts";
 import type { Theme, TokenData } from "./tokens.ts";
 import { HOST_CONTRACT, type HostAlias, type HostRead } from "../host-contract.ts";
 
@@ -522,10 +522,17 @@ const CONTRACT = new Map(
     .map((a) => [`--${a.name}`, a]),
 );
 
-/** A definition at the document root or in a theme block (`:root`, `.dark`, `[data-theme="dark"]`, `@theme`), not a component's scoped variable. */
+/**
+ * A definition at the document root or on a theme block (`:root`, `html.dark`, `.dark`,
+ * `[data-theme="dark"]`, `@theme`): every branch is one compound selector (no descendant or child
+ * combinator), the root or marked with a theme. Not a component's scoped variable (`.toast`,
+ * `:root .toast`, `.dark .card`, a web component's `:host`).
+ */
 function themeScope(ctx: Context): boolean {
   if (!ctx.inCss || !ctx.chain.length) return false;
-  return ctx.chain.every((prelude) => /^\s*@/.test(prelude) || branches(prelude).every((b) => rootPrelude(b) || themeOf(b) !== null));
+  const compound = (b: string) => !/[\s>+~]/.test(b.trim().replace(/\[[^\]]*\]|\([^)]*\)/g, ""));
+  const root = (b: string) => /^\s*(?::root|html|body)(?![\w-])/i.test(b);
+  return ctx.chain.every((prelude) => /^\s*@/.test(prelude) || branches(prelude).every((b) => compound(b) && (root(b) || themeOf(b) !== null)));
 }
 
 const article = (word: string) => (/^[aeiou]/i.test(word) ? "an" : "a");
@@ -549,22 +556,27 @@ function contractPick(data: TokenData, literal: Rgba, ctx: Context, consumers?: 
   const notes: string[] = [];
   if (literal.a < 0.99) notes.push(`the literal's alpha ${round2(literal.a)} is dropped: the contract color is opaque`);
   if (consumers) {
-    const read = consumers.rolesOf(name);
+    // An SVG fill paints an area and an SVG stroke a line: the contract's background and border.
+    const asContract = (r: string) => (r === "svgFill" ? "background" : r === "svgStroke" ? "border" : r);
+    const read = new Set([...consumers.rolesOf(name)].map(asContract));
     const known = [...read].filter((r) => r !== "other").sort();
     const at = consumers.where?.(name);
-    const label = (r: string) => (at?.get(r) ? `${r} (${at.get(r)})` : r);
+    const label = (r: string) => {
+      const place = at?.get(r) ?? at?.get(r === "background" ? "svgFill" : r === "border" ? "svgStroke" : r);
+      return place ? `${r} (${place})` : r;
+    };
     const expected = alias.reads.join(", ");
     if (read.size === 0) notes.push(`${name} is read nowhere in the scanned files`);
     else if (!known.length) notes.push(`its readers give no color role in the scanned files (${label("other")}), so its usage is not checked`);
     else if (known.some((r) => !alias.reads.includes(r as HostRead))) {
       notes.push(`usage differs: the app reads ${name} as ${known.map(label).join(" and ")}; the contract's readers use it as ${expected}`);
     } else {
-      const own = (consumers.readers?.(name) ?? []).filter((r) => alias.reads.includes(r.role as HostRead));
+      const own = (consumers.readers?.(name) ?? []).filter((r) => alias.reads.includes(asContract(r.role) as HostRead));
       // The focus ring paints on focus: that state is its own.
       const inState = own.map((r) => r.states.filter((s) => !(s === "focus" && alias.token === "color.focus-ring")));
       if (own.length && inState.every((s) => s.length)) {
         const which = [...new Set(inState.flat())].sort().join(" or ");
-        const roles = [...new Set(own.map((r) => r.role))].sort().join(" and ");
+        const roles = [...new Set(own.map((r) => asContract(r.role)))].sort().join(" and ");
         const more = own.length > 1 ? ` and ${own.length - 1} more` : "";
         const hover = which === "hover" && roles === "background" && data.colors.has("color.fill.hover") ? "; color.fill.hover is the hover fill" : "";
         notes.push(`usage differs: the app reads ${name} only as ${article(which)} ${which} ${roles} (${own[0].at}${more}); the contract's ${alias.token} is a resting ${roles}${hover}`);
