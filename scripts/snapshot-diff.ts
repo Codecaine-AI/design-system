@@ -1,32 +1,51 @@
 #!/usr/bin/env bun
 /**
- * Exact pixel diff of two shot sets of one app.
+ * Exact pixel diff of two shot sets of one app, judged against the current registry entry.
  *
  *   bun run snapshot:diff --app <id> --a <set> --b <set> [--exact] [--only <route|key>,...] [--out-dir <dir>]
+ *                         [--registry <apps.json>]
+ *
+ * The expected shots, gating, reasons, darkDiffers and mask selectors come from apps.json (default the
+ * checkout's own; --registry another, which must pass the registry checks), never from a manifest.
  *
  * Writes <out-dir>/<app>/diffs/<a>-vs-<b>/ (the old folder is removed first, so a failed run never
  * leaves a stale report behind):
  *   report.json          per shot: status, gating, size match, changed pixels outside masks, masked
  *                        pixels, % changed, max channel delta, bounding box of the change, problems;
- *                        per set: problems (no manifest, partial set, mixed provenance) and warnings
+ *                        per set: problems and warnings; the registry it was judged against
  *   <key>.png            B faded to gray; changed pixels magenta, masked pixels light blue
  *   compare/<key>.png    A | B | diff side by side
+ * --out-dir is never the owner's tree or a git checkout, and no write under it goes through a symlink.
  *
- * Exit: 2 on bad arguments (same set twice, an --only id that names no route or shot, a missing set).
- * With --exact, 1 when the gate fails (scripts/lib/snapshot-set.ts: a gating shot changed, missing,
- * failed, unstable or unlisted; mask boxes differ; a partial set without --only; mixed provenance;
- * no shot compared); otherwise 0.
+ * Exit: 2 on bad arguments (same set twice, an --only id that names no registry route or shot, a missing
+ * set, an invalid registry, an unsafe output path). With --exact, 1 when the gate fails
+ * (scripts/lib/snapshot-set.ts: a gating shot changed, missing, failed, unstable or unlisted; mask boxes
+ * differ or were never recorded; a partial set without --only; mixed provenance; an incomplete set, a
+ * set captured with another capture spec, a run that broke isolation; no shot compared); otherwise 0.
  */
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { resolve } from "node:path";
 
+import { validateLoadedRegistry } from "./lib/app-runner";
+import { toolOutputDir } from "./lib/output-dir";
 import { decodePng, encodePng } from "./lib/png";
-import { safeAppId, safeOutputPath, safeSegment } from "./lib/safe-paths";
-import { defaultOutDir, diffDir as diffDirOf, diffSets, SET_NAME, setDir, sideBySide } from "./lib/snapshot-set";
+import { getApp, loadRegistry, REGISTRY_PATH, type AppEntry } from "./lib/registry";
+import { safeAppId, safeSegment } from "./lib/safe-paths";
+import { defaultOutDir, diffPath, diffSets, SET_NAME, setPath, sha256Hex, sideBySide } from "./lib/snapshot-set";
 
 function flag(name: string): string | undefined {
   const index = process.argv.indexOf(name);
   return index >= 0 ? process.argv[index + 1] : undefined;
+}
+
+/** The value, or exit 2 with the error's message. */
+function orFail<T>(make: () => T): T {
+  try {
+    return make();
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(2);
+  }
 }
 
 const app = flag("--app");
@@ -34,44 +53,40 @@ const a = flag("--a");
 const b = flag("--b");
 const exact = process.argv.includes("--exact");
 if (!app || !a || !b || [a, b].some((set) => !SET_NAME.test(set))) {
-  console.error("usage: bun run snapshot:diff --app <id> --a <set> --b <set> [--exact] [--only <route|key>,...] [--out-dir <dir>]");
+  console.error("usage: bun run snapshot:diff --app <id> --a <set> --b <set> [--exact] [--only <route|key>,...] [--out-dir <dir>] [--registry <apps.json>]");
   process.exit(2);
 }
-let outDir: string;
-try {
-  // Shared destination check: never the owner's tree; app id and set names stay one path segment.
-  outDir = safeOutputPath(flag("--out-dir") ?? defaultOutDir(), { label: "--out-dir" });
+// Shared destination check: never the owner's tree or a git checkout; app id and set names stay one path segment.
+const outDir = orFail(() => {
   safeAppId(app);
   safeSegment(a, "--a");
   safeSegment(b, "--b");
-} catch (error) {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exit(2);
-}
+  return toolOutputDir(flag("--out-dir") ?? defaultOutDir(), { label: "--out-dir" });
+});
+const registryPath = resolve(flag("--registry") ?? REGISTRY_PATH);
+const entry: AppEntry = orFail(() => getApp(validateLoadedRegistry(loadRegistry(registryPath), registryPath), app));
+const registry = { path: registryPath, sha256: sha256Hex(readFileSync(registryPath)) };
 const only = flag("--only")?.split(",").map((value) => value.trim()).filter(Boolean);
 
-const diffDir = diffDirOf(outDir, app, a, b);
+const out = (...file: string[]) => diffPath(outDir, app, a, b, ...file);
+const diffDir = orFail(() => out());
 rmSync(diffDir, { recursive: true, force: true });
 
-let result: ReturnType<typeof diffSets>;
-try {
-  result = diffSets(outDir, app, a, b, only);
-} catch (error) {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exit(2);
-}
+const result = orFail(() => diffSets(outDir, entry, a, b, only, registry));
 
-mkdirSync(join(diffDir, "compare"), { recursive: true });
-for (const shot of result.shots) {
-  const diff = result.images.get(shot.key);
-  if (!diff) continue;
-  writeFileSync(join(diffDir, `${shot.key}.png`), encodePng(diff.image));
-  const imageA = decodePng(readFileSync(join(setDir(outDir, app, a), `${shot.key}.png`)));
-  const imageB = decodePng(readFileSync(join(setDir(outDir, app, b), `${shot.key}.png`)));
-  writeFileSync(join(diffDir, "compare", `${shot.key}.png`), encodePng(sideBySide([imageA, imageB, diff.image])));
-}
-const { images: _images, ...report } = result;
-writeFileSync(join(diffDir, "report.json"), `${JSON.stringify({ ...report, exact }, null, 2)}\n`);
+orFail(() => {
+  mkdirSync(out("compare"), { recursive: true });
+  for (const shot of result.shots) {
+    const diff = result.images.get(shot.key);
+    if (!diff) continue;
+    writeFileSync(out(`${shot.key}.png`), encodePng(diff.image));
+    const imageA = decodePng(readFileSync(setPath(outDir, app, a, `${shot.key}.png`)));
+    const imageB = decodePng(readFileSync(setPath(outDir, app, b, `${shot.key}.png`)));
+    writeFileSync(out("compare", `${shot.key}.png`), encodePng(sideBySide([imageA, imageB, diff.image])));
+  }
+  const { images: _images, ...report } = result;
+  writeFileSync(out("report.json"), `${JSON.stringify({ ...report, exact }, null, 2)}\n`);
+});
 
 for (const shot of result.shots) {
   const detail =
@@ -87,10 +102,11 @@ for (const shot of result.shots) {
 }
 for (const problem of result.problems) console.log(`  FAIL  set: ${problem}`);
 for (const warning of result.warnings) console.log(`  warn  ${warning}`);
+if (!result.registry.canonical) console.log(`  warn  judged against ${result.registry.path}, not the checkout's apps.json (${REGISTRY_PATH})`);
 const { totals } = result;
 console.log(
   `\n${totals.identical}/${totals.shots} identical, ${totals.changed} changed, ${totals.missing} missing, ` +
-    `${totals.gatingFailures} gating failure(s), ${result.problems.length} set problem(s) -> ${join(diffDir, "report.json")}`,
+    `${totals.gatingFailures} gating failure(s), ${result.problems.length} set problem(s) -> ${out("report.json")}`,
 );
 if (exact && !result.ok) {
   if (totals.shots === 0) console.error("--exact: no shots compared");

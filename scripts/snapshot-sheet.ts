@@ -3,24 +3,30 @@
  * Before/after sheet for two shot sets of one app.
  *
  *   bun run snapshot:sheet --app <id> --a <set> --b <set> [--only <route|key>,...] [--out-dir <dir>] [--root <dir>]
+ *                          [--registry <apps.json>]
  *
  * Writes <out-dir>/<app>/sheets/<a>-vs-<b>.html: per route, one row per theme with A, B and the diff
  * (changed pixels magenta inside a red box, masked pixels light blue). The page links the shot PNGs
  * relatively, so keep the run folder's layout. Next to it, <a>-vs-<b>/ holds the diff PNGs and one
- * sheet PNG per route (<route>.png), rendered by Chromium from the same markup.
+ * sheet PNG per route (<route>.png), rendered by Chromium from the same markup. The diff is judged
+ * against the current registry entry, like snapshot:diff (--registry another apps.json, which must pass
+ * the registry checks). --out-dir is never the owner's tree or a git checkout, and no write or delete
+ * under it goes through a symlink.
  *
  * Playwright resolves from --root (default: the folder that holds this design-system checkout).
- * Exit: 2 on bad arguments or a missing set, 1 when the route PNGs could not be rendered.
+ * Exit: 2 on bad arguments, a missing set, an invalid registry or an unsafe output path; 1 when the
+ * route PNGs could not be rendered.
  */
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { encodePng } from "./lib/png";
-import { installSignalHandlers, launchBrowser } from "./lib/app-runner";
-import { DESIGN_SYSTEM_ROOT } from "./lib/registry";
-import { safeAppId, safeOutputPath, safeSegment } from "./lib/safe-paths";
-import { defaultOutDir, diffSets, readManifest, SET_NAME, setDir, type SetDiff, type ShotDiff } from "./lib/snapshot-set";
+import { installSignalHandlers, launchBrowser, validateLoadedRegistry } from "./lib/app-runner";
+import { toolOutputDir } from "./lib/output-dir";
+import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, REGISTRY_PATH, type AppEntry } from "./lib/registry";
+import { safeAppId, safeSegment } from "./lib/safe-paths";
+import { defaultOutDir, diffSets, readManifest, SET_NAME, setPath, sha256Hex, sheetPath, type SetDiff, type ShotDiff } from "./lib/snapshot-set";
 
 function flag(name: string): string | undefined {
   const index = process.argv.indexOf(name);
@@ -31,39 +37,47 @@ const app = flag("--app");
 const a = flag("--a");
 const b = flag("--b");
 if (!app || !a || !b || [a, b].some((set) => !SET_NAME.test(set))) {
-  console.error("usage: bun run snapshot:sheet --app <id> --a <set> --b <set> [--only <route|key>,...] [--out-dir <dir>] [--root <dir>]");
+  console.error("usage: bun run snapshot:sheet --app <id> --a <set> --b <set> [--only <route|key>,...] [--out-dir <dir>] [--root <dir>] [--registry <apps.json>]");
   process.exit(2);
 }
 const root = resolve(flag("--root") ?? resolve(DESIGN_SYSTEM_ROOT, ".."));
-let outDir: string;
-try {
-  // Shared destination check: never the owner's tree (unless --root is that tree); ids stay one path segment.
-  outDir = safeOutputPath(flag("--out-dir") ?? defaultOutDir(), { root, label: "--out-dir" });
+
+/** The value, or exit 2 with the error's message. */
+function orFail<T>(make: () => T): T {
+  try {
+    return make();
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(2);
+  }
+}
+
+// Shared destination check: never the owner's tree or a git checkout; ids stay one path segment.
+const outDir = orFail(() => {
   safeAppId(app);
   safeSegment(a, "--a");
   safeSegment(b, "--b");
-} catch (error) {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exit(2);
-}
+  return toolOutputDir(flag("--out-dir") ?? defaultOutDir(), { label: "--out-dir" });
+});
+const registryPath = resolve(flag("--registry") ?? REGISTRY_PATH);
+const entry: AppEntry = orFail(() => getApp(validateLoadedRegistry(loadRegistry(registryPath), registryPath), app));
+const registry = { path: registryPath, sha256: sha256Hex(readFileSync(registryPath)) };
 const only = flag("--only")?.split(",").map((value) => value.trim()).filter(Boolean);
 
-const sheetsDir = join(outDir, app, "sheets");
 const name = `${a}-vs-${b}`;
-const assetsDir = join(sheetsDir, name);
+/** `<out>/<app>/sheets/<name...>`: no component on the way may be a symlink. */
+const sheet = (...parts: string[]) => sheetPath(outDir, app, ...parts);
+const assetsDir = orFail(() => sheet(name));
+const htmlPath = orFail(() => sheet(`${name}.html`));
 // The old sheet goes first, so a failed run never leaves a stale one behind.
 rmSync(assetsDir, { recursive: true, force: true });
-rmSync(join(sheetsDir, `${name}.html`), { force: true });
+rmSync(htmlPath, { force: true });
 
-let result: SetDiff;
-try {
-  result = diffSets(outDir, app, a, b, only);
-} catch (error) {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exit(2);
-}
-mkdirSync(assetsDir, { recursive: true });
-for (const [key, diff] of result.images) writeFileSync(join(assetsDir, `${key}.diff.png`), encodePng(diff.image));
+const result: SetDiff = orFail(() => diffSets(outDir, entry, a, b, only, registry));
+orFail(() => {
+  mkdirSync(assetsDir, { recursive: true });
+  for (const [key, diff] of result.images) writeFileSync(sheet(name, `${key}.diff.png`), encodePng(diff.image));
+});
 
 // The sheet is a report page, not app UI. Its few colors are literal on purpose: the sheet must not
 // depend on the token build it is comparing.
@@ -126,7 +140,7 @@ function rowHtml(shot: ShotDiff, rel: { a: string; b: string; diff: string }): s
 }
 
 function describeSet(set: string): string {
-  const manifest = readManifest(setDir(outDir, app!, set)) as Record<string, any> | null;
+  const manifest = readManifest(setPath(outDir, app!, set)) as Record<string, any> | null;
   if (!manifest) return `${escape(set)}: no manifest`;
   const ds = manifest.designSystem?.rendered;
   return `${escape(set)}: captured ${escape(String(manifest.finishedAt ?? "?"))}, design-system ${escape(String(ds?.head ?? "?").slice(0, 10))} (tokens.css ${escape(String(ds?.tokensCssSha256 ?? "?").slice(0, 12))}), app ${escape(String(manifest.appRepo?.head ?? "?").slice(0, 10))}${manifest.appRepo?.status?.length ? ` + ${manifest.appRepo.status.length} uncommitted` : ""}`;
@@ -138,6 +152,7 @@ function page(title: string, sections: string[]): string {
   return `<!doctype html><html><head><meta charset="utf-8"><title>${escape(title)}</title><style>${CSS}</style></head><body>
 <header><h1>${escape(title)}</h1>
 <p>${describeSet(a!)}</p><p>${describeSet(b!)}</p>
+<p>judged against ${escape(result.registry.path)}${result.registry.canonical ? "" : " (not the checkout's apps.json)"}</p>
 <p>${totals.identical}/${totals.shots} identical, ${totals.changed} changed, ${totals.missing} missing, ${totals.gatingFailures} gating failure(s). Exact RGBA outside masks.</p>
 ${result.problems.map((problem) => `<p class="problem">set problem: ${escape(problem)}</p>`).join("")}${result.warnings.map((warning) => `<p>warning: ${escape(warning)}</p>`).join("")}</header>
 ${sections.join("\n")}
@@ -150,9 +165,9 @@ const section = (route: string, rel: { a: string; b: string; diff: string }) =>
     .join("")}</section>`;
 
 // The overview page lives in sheets/; the per-route pages in sheets/<name>/.
-const htmlPath = join(sheetsDir, `${name}.html`);
-writeFileSync(htmlPath, page(`${app}: ${a} vs ${b}`, routes.map((route) => section(route, { a: `../shots/${a}`, b: `../shots/${b}`, diff: name }))));
+writeFileSync(orFail(() => sheet(`${name}.html`)), page(`${app}: ${a} vs ${b}`, routes.map((route) => section(route, { a: `../shots/${a}`, b: `../shots/${b}`, diff: name }))));
 console.log(`sheet: ${htmlPath}`);
+if (!result.registry.canonical) console.log(`  warn  judged against ${result.registry.path}, not the checkout's apps.json (${REGISTRY_PATH})`);
 
 let renderError: string | undefined;
 try {
@@ -163,13 +178,14 @@ try {
     const context = await browser.newContext({ deviceScaleFactor: 1, viewport: { width: 1280, height: 720 } });
     const tab = await context.newPage();
     for (const route of routes) {
-      const routeHtml = join(assetsDir, `${route}.html`);
+      const routeHtml = sheet(name, `${route}.html`);
       writeFileSync(routeHtml, page(`${app} / ${route}: ${a} vs ${b}`, [section(route, { a: `../../shots/${a}`, b: `../../shots/${b}`, diff: "." })]));
       await tab.goto(pathToFileURL(routeHtml).href, { waitUntil: "load" });
       await tab.evaluate(() => Promise.all(Array.from((globalThis as any).document.images as any[]).map((img: any) => img.decode().catch(() => undefined))));
-      await tab.screenshot({ path: join(assetsDir, `${route}.png`), fullPage: true, animations: "disabled" });
-      rmSync(routeHtml);
-      console.log(`  ${join(assetsDir, `${route}.png`)}`);
+      const routePng = sheet(name, `${route}.png`);
+      await tab.screenshot({ path: routePng, fullPage: true, animations: "disabled" });
+      rmSync(sheet(name, `${route}.html`));
+      console.log(`  ${routePng}`);
     }
   } finally {
     await browser.close();
