@@ -16,6 +16,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { DESIGN_SYSTEM_ROOT, REGISTRY_PATH, loadRegistry, validateRegistry } from "./lib/registry";
+import { safeAppId, safeOutputPath } from "./lib/safe-paths";
 import { loadDesignSystem } from "./lib/lint/design-system";
 import { exitCode, formatText, lintApps, registryDirOf } from "./lib/lint/run";
 import type { PassNumber } from "./lib/lint/types";
@@ -32,7 +33,8 @@ const USAGE = `Usage: bun run lint:apps [--root <dir>] [--pass <1|2|3>] [--json]
   app...              app ids (default: every app in the registry)
 
 Exit: 0 when every required check passes, 1 when one fails, 2 on a usage error
-(bad flags, unknown app, unreadable registry, no design-system build).
+(bad flags, unknown app, unreadable or invalid registry, no or stale design-system
+build, an --out-dir in the owner's tree).
 `;
 
 interface Args {
@@ -101,7 +103,28 @@ function main() {
     process.stderr.write(`lint:apps: not in ${args.registry}: ${unknown.join(", ")}\n`);
     process.exit(2);
   }
-  for (const p of validateRegistry(registry)) process.stderr.write(`lint:apps: registry: ${p}\n`);
+  const problems = validateRegistry(registry);
+  for (const app of registry.apps) {
+    try {
+      safeAppId(app.id);
+    } catch (err) {
+      problems.push(`${(err as Error).message}`);
+    }
+  }
+  if (problems.length) {
+    for (const p of problems) process.stderr.write(`lint:apps: registry: ${p}\n`);
+    process.stderr.write(`lint:apps: ${args.registry} has ${problems.length} problem(s); fix the registry first\n`);
+    process.exit(2);
+  }
+  let outDir: string | null = null;
+  if (args.outDir) {
+    try {
+      outDir = safeOutputPath(args.outDir, { root, label: "--out-dir" });
+    } catch (err) {
+      process.stderr.write(`lint:apps: ${(err as Error).message}\n`);
+      process.exit(2);
+    }
+  }
 
   let ds;
   try {
@@ -112,8 +135,8 @@ function main() {
   }
   const report = lintApps({ root, registry, registryDir: registryDirOf(args.registry), ds, pass: args.pass, apps: args.apps });
   const json = JSON.stringify(report, null, 2) + "\n";
-  if (args.outDir) {
-    const dir = join(args.outDir, "lint");
+  if (outDir) {
+    const dir = join(outDir, "lint");
     mkdirSync(dir, { recursive: true });
     const file = join(dir, `${new Date().toISOString().replace(/[:.]/g, "-")}.json`);
     writeFileSync(file, json);

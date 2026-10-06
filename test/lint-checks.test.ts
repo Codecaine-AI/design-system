@@ -5,11 +5,14 @@
  * template come from this checkout's real build.
  */
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { appendFileSync, cpSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { loadDesignSystem, type DesignSystemBuild } from "../scripts/lib/lint/design-system";
 import type { Finding } from "../scripts/lib/lint/types";
 import type { CheckId } from "../scripts/lib/registry";
 import { checkOf, lint, materialize, NA_REASONS, REAL_TOKENS_CSS, sha256, STALE_SUFFIX, type Workspace } from "./lint-support";
+import { PKG } from "./support";
 
 let ws: Workspace;
 let ds: DesignSystemBuild;
@@ -40,6 +43,18 @@ test("a connected app passes every check at pass 3, a 400-line file included", (
   expect(app.literals).toEqual({ hard: 0, floor: 0 });
 });
 
+test("the linter refuses a design-system build whose dist/ is stale against tokens/", () => {
+  const copy = mkdtempSync(join(tmpdir(), "lint-ds-stale-"));
+  try {
+    for (const p of ["tokens", "dist", "css", "templates", "guide/tokens.md"]) cpSync(join(PKG, p), join(copy, p), { recursive: true });
+    expect(loadDesignSystem(copy).tokensCssSha256).toBe(sha256(readFileSync(REAL_TOKENS_CSS, "utf8")));
+    appendFileSync(join(copy, "dist/css/tokens.css"), STALE_SUFFIX);
+    expect(() => loadDesignSystem(copy)).toThrow("dist/css/tokens.css (out of date)");
+  } finally {
+    rmSync(copy, { recursive: true, force: true });
+  }
+});
+
 describe("pass selection", () => {
   test.each([
     [1, ALL_CHECKS.slice(0, 4)],
@@ -54,6 +69,18 @@ describe("pass selection", () => {
     // Without the n/a mark, wiring runs and fails: a library has no entry stylesheet.
     expect(check("widgets-resolution-required", "wiring").status).toBe("fail");
     expect(check("widgets", "wiring")).toEqual({ id: "wiring", status: "n/a", reason: NA_REASONS.libraryWiring, violations: [], warnings: [] });
+    expect(check("widgets", "resolution")).toMatchObject({ status: "n/a", reason: NA_REASONS.libraryResolution });
+  });
+
+  test("a check the registry requires but the app data leaves nothing to check fails: only the registry marks n/a", () => {
+    expect(check("widgets-resolution-required", "resolution")).toMatchObject({
+      status: "fail",
+      violations: [at("libs/widgets", 0, "registry requires resolution but widgets-resolution-required consumes the tokens through its host's CSS")],
+    });
+    expect(check("connected-no-shell", "shell")).toMatchObject({
+      status: "fail",
+      violations: [at("apps/connected", 0, "registry requires shell but connected-no-shell is not a shell app (shell: false in apps.json)")],
+    });
   });
 });
 
@@ -62,14 +89,6 @@ describe("resolution", () => {
     expect(check("unconnected", "resolution").violations).toEqual([
       at("apps/unconnected/package.json", 1, "does not declare @codecaine-ai/design-system"),
     ]);
-  });
-
-  test("a host-css library is n/a: with the registry's reason, or from consume.via when the registry requires it", () => {
-    const marked = check("widgets", "resolution");
-    expect([marked.status, marked.reason]).toEqual(["n/a", NA_REASONS.libraryResolution]);
-    const required = check("widgets-resolution-required", "resolution");
-    expect(required.status).toBe("n/a");
-    expect(required.reason).toContain("consume.via host-css");
   });
 
   test("a vendored tgz passes when its tokens.css matches the build and fails with both hashes when not", () => {
@@ -97,6 +116,19 @@ describe("resolution", () => {
     expect(check("relimp-ok", "resolution")).toMatchObject({ status: "pass", violations: [] });
     expect(check("relimp", "resolution").violations).toEqual([
       at("apps/relimp/src/index.css", 1, "reaches packed-ds, not the root's design-system checkout (design-system)"),
+    ]);
+  });
+
+  test("a library's own copy of the package is a violation: a stale link, a stale packed copy, a dependency that does not resolve", () => {
+    expectExactly(check("with-libs", "resolution").violations, [
+      at("apps/with-libs/package.json", 7, "library stale-lib resolves @codecaine-ai/design-system to packed-ds, the app to design-system"),
+      at("apps/with-libs/package.json", 7, "library stale-lib: its @codecaine-ai/design-system reaches packed-ds, not the root's design-system checkout (design-system)"),
+      at("apps/with-libs/package.json", 8, "missing-lib (workspace:*) does not resolve"),
+    ]);
+    const stale = sha256(readFileSync(REAL_TOKENS_CSS, "utf8") + STALE_SUFFIX).slice(0, 12);
+    expectExactly(check("vendored-with-lib", "resolution").violations, [
+      at("apps/vendored-with-lib/package.json", 6, "library packed-lib resolves @codecaine-ai/design-system to libs/packed-lib/node_modules/@codecaine-ai/design-system, the app to apps/vendored-with-lib/node_modules/@codecaine-ai/design-system"),
+      at("apps/vendored-with-lib/package.json", 6, `library packed-lib: dist/css/tokens.css in its copy (libs/packed-lib/node_modules/@codecaine-ai/design-system, sha256 ${stale})`),
     ]);
   });
 
@@ -133,9 +165,49 @@ describe("wiring", () => {
     expect(check("html-entry", "wiring")).toMatchObject({ status: "pass", violations: [] });
   });
 
-  test("Tailwind v3 needs the preset in tailwind.config.*; a commented-out preset does not count", () => {
-    expect(messages(check("tw3", "wiring").violations).filter((m) => m.includes("preset"))).toEqual([]);
-    expect(check("tw3-commented", "wiring").violations).toContainEqual(at("apps/tw3-commented/tailwind.config.js", 2, "does not use the preset"));
+  test("Tailwind v3 needs the preset in the exported presets array; commented out, required but unused, or elsewhere does not count", () => {
+    const presetFindings = (app: string) => check(app, "wiring").violations.filter((v) => v.message.includes("preset"));
+    expect(presetFindings("tw3")).toEqual([]);
+    expect(presetFindings("tw3-bound")).toEqual([]);
+    expect(presetFindings("tw3-shorthand")).toEqual([]);
+    expect(presetFindings("tw3-commented")).toEqual([at("apps/tw3-commented/tailwind.config.js", 2, "does not use the preset")]);
+    expect(presetFindings("tw3-unused")).toEqual([at("apps/tw3-unused/tailwind.config.js", 3, "does not use the preset")]);
+  });
+
+  test("a root-absolute link on a nested page resolves against the app's web root; an unresolved link on the entry page fails", () => {
+    expect(check("html-nested", "wiring")).toMatchObject({ status: "pass", violations: [] });
+    expectExactly(check("html-nested-broken", "wiring").violations, [
+      at("apps/html-nested/broken/index.html", 5, "/styles/missing.css does not resolve; the entry page links it"),
+      // print.css is linked with media="print": the fonts.css it imports applies only when printing.
+      at("apps/html-nested/styles/print.css", 1, '@codecaine-ai/design-system/fonts.css loads only under "print"'),
+    ]);
+  });
+
+  test("a stylesheet imported under a media query or supports condition does not count; all and screen do", () => {
+    expectExactly(check("conditional", "wiring").violations, [
+      at("apps/wiring/conditional.css", 3, '@codecaine-ai/design-system/tokens.css loads only under "print"'),
+      at("apps/wiring/conditional.css", 5, '@codecaine-ai/design-system/tailwind-strict.css loads only under "supports(display: grid)"'),
+      at("apps/wiring/conditional.css", 1, "does not load @codecaine-ai/design-system/tokens.css"),
+      at("apps/wiring/conditional.css", 1, "Tailwind v4 app does not import @codecaine-ai/design-system/tailwind-strict.css"),
+    ]);
+  });
+
+  test.each(["fonts-url", "fonts-in-string", "fonts-in-jsx"])("%s: an import that injects nothing does not load fonts.css", (app) => {
+    expect(messages(check(app, "wiring").violations)).toEqual([expect.stringContaining("does not load fonts.css")]);
+  });
+
+  test("a server-rendered entry module loads the stylesheets its returned page links", () => {
+    expect(check("ssr-home", "wiring")).toMatchObject({ status: "pass", violations: [] });
+  });
+
+  test("a static import on its own line after a statement without a semicolon still loads", () => {
+    expect(check("asi-import", "wiring")).toMatchObject({ status: "pass", violations: [] });
+  });
+
+  test("Tailwind v4 import options (source(none), layer(…)) are not conditions: the order checks still see the import", () => {
+    expectExactly(check("tw-options", "wiring").violations, [
+      at("apps/wiring/tw-options.css", 4, 'tailwind-strict.css loads before "tailwindcss" (apps/wiring/tw-options.css:5)'),
+    ]);
   });
 
   test("host-contract.css sits between the tokens and layout.css, in the tokens' variant", () => {
@@ -162,7 +234,7 @@ describe("literals", () => {
   });
 
   test("allowlist entries suppress the hits they match; an entry without a reason fails and an unused one warns", () => {
-    const allowlist = "registry/allowlists/unconnected.json";
+    const allowlist = "registry/apps/allowlists/unconnected-allowlisted.json";
     const { violations, warnings } = check("unconnected-allowlisted", "literals");
     const hits = messages(violations);
     expect(hits.some((m) => m.includes("#ff0000"))).toBe(false);
@@ -184,6 +256,42 @@ describe("literals", () => {
       "apps/unconnected/src/Widget.tsx:6 text-sm",
     ]);
   });
+
+  test("bare shadow, blur and numeric leading count only in class contexts; container sizes and animations always; bare rounded never", () => {
+    const tw = check("scale-classes", "literals")
+      .violations.filter((v) => v.message.startsWith("Tailwind default-scale class "))
+      .map((v) => `${v.file.replace("apps/scale-classes/src/", "")}:${v.line} ${v.message.split(" ")[3]}`);
+    // Not flagged: rounded, the MODE constant, title="shadow", the WORDS array, el.title and the title property.
+    // Flagged in class contexts: a className assignment across lines, an overlayClassName prop, a Svelte class={…}.
+    expect(tw.sort()).toEqual([
+      "_components/Panel/index.tsx:10 blur",
+      "_components/Panel/index.tsx:10 inset-shadow",
+      "_components/Panel/index.tsx:7 animate-spin",
+      "_components/Panel/index.tsx:7 max-w-2xl",
+      "_components/Panel/index.tsx:7 shadow",
+      "_components/Panel/index.tsx:8 leading-6",
+      "_components/Panel/index.tsx:8 text-gray-500",
+      "_components/Panel/index.tsx:9 backdrop-blur",
+      "_components/Panel/index.tsx:9 drop-shadow",
+      "dom.ts:4 shadow",
+      "dom.ts:5 backdrop-blur",
+      "dom.ts:6 blur",
+      "dom.ts:6 leading-3",
+      "dom.ts:9 drop-shadow",
+      "dom.ts:13 shadow",
+      "dom.ts:14 blur",
+      "_components/Dialog/index.tsx:4 backdrop-blur",
+      "Badge.svelte:5 blur",
+      "Badge.svelte:5 shadow",
+    ].sort());
+  });
+
+  test("a library without Tailwind gets the class check only when its host compiles its class strings", () => {
+    const twOf = (app: string) => messages(check(app, "literals").violations).filter((m) => m.startsWith("Tailwind default-scale class "));
+    expect(twOf("widgets")).toEqual([]);
+    expect(twOf("widgets-utility-classes")).toEqual([expect.stringContaining("class shadow-md (shadow)")]);
+    expect(messages(check("widgets-utility-classes", "wiring").violations)).toEqual([]);
+  });
 });
 
 describe("names", () => {
@@ -196,9 +304,16 @@ describe("names", () => {
   });
 
   test("token paths are checked even when another import comes before the design-system one", () => {
-    expectExactly(check("names-order", "names").violations, [
+    expectExactly(check("names-order", "names").violations.filter((v) => !v.message.includes("--ds-")), [
       at("apps/names-order/src/tokens-use.ts", 4, "tokens.light.color.surface.nope does not exist"),
       at("apps/names-order/src/tokens-use.ts", 5, 'token path "color.surface.page" is not in flat.base'),
+    ]);
+  });
+
+  test("a name is a prefix only when interpolation or concatenation follows it; a static name cut short fails", () => {
+    expectExactly(check("names-order", "names").violations.filter((v) => v.message.includes("--ds-")), [
+      at("apps/names-order/src/tokens-use.ts", 9, "--ds-color-surface- is not defined by the current build"),
+      at("apps/names-order/src/names.css", 2, "--ds-color-surface- is not defined by the current build"),
     ]);
   });
 
@@ -213,12 +328,6 @@ describe("names", () => {
 describe("shell", () => {
   test("an app without .ds-shell markup or an AppShell copy fails", () => {
     expect(messages(check("unconnected", "shell").violations)).toEqual([expect.stringContaining("renders no .ds-shell markup")]);
-  });
-
-  test("an app with shell: false is n/a", () => {
-    const result = check("connected-no-shell", "shell");
-    expect(result.status).toBe("n/a");
-    expect(result.reason).toContain("shell: false");
   });
 
   test(".ds-shell markup without .ds-topbar names the missing class", () => {
@@ -236,8 +345,31 @@ describe("shell", () => {
   // but it renders the complete .ds-shell markup.
   test("a template copy that no app file imports fails", () => {
     expect(check("templated-unused", "shell").violations).toEqual([
-      at("apps/templated-unused/src/_components/AppShell", 0, "AppShell copy is not imported by any other app file"),
+      at("apps/templated-unused/src/_components/AppShell", 0, "AppShell copy is not imported by any file reachable from the entry (apps/templated-unused/src/main.tsx)"),
     ]);
+  });
+
+  test("only rendered markup counts: a class list in a constant, markup beside the shell, a file nothing imports", () => {
+    // App.tsx renders .ds-shell; its parts sit in a data attribute (PARTS), in other/Panels.tsx (rendered by
+    // main.tsx, outside the shell's subtree) and in legacy/Old.tsx (complete, but nothing imports it).
+    expectExactly(
+      check("shell-dead", "shell").violations,
+      ["ds-sidebar", "ds-sidebar-toggle", "ds-workspace", "ds-topbar", "ds-main"].map((c) =>
+        at("apps/shell-dead/src/App.tsx", 4, `the .ds-shell markup has no .${c} in its file or the modules it imports`),
+      ),
+    );
+  });
+
+  test("markup split across a component subtree passes, through a lazy import, an @/ alias and cn() class lists", () => {
+    expect(check("shell-split", "shell")).toMatchObject({ status: "pass", violations: [] });
+  });
+
+  test("scripts an HTML page loads render into one DOM: markup split across them passes", () => {
+    expect(check("shell-page", "shell")).toMatchObject({ status: "pass", violations: [] });
+  });
+
+  test("a Next.js app router page counts as rendered: the router reaches it without an import", () => {
+    expect(check("shell-next", "shell")).toMatchObject({ status: "pass", violations: [] });
   });
 
   test("a hand-written AppShell folder that renders the complete .ds-shell markup passes", () => {
@@ -252,6 +384,19 @@ describe("structure", () => {
       at("apps/unconnected/src/Widget.tsx", 0, "component file outside _components/<Name>/index.tsx"),
       at("apps/unconnected/src/_components/helpers.ts", 0, "loose file in _components/"),
       at("apps/unconnected/src/big.ts", 0, "401 lines, over the 400-line limit"),
+    ]);
+  });
+
+  test("every .tsx file outside _components/<Name>/index.tsx is a component in the wrong place; entry and hook files are not", () => {
+    // Not flagged: main.tsx, App.tsx, mdx-components.tsx, src/index.tsx, pages/home/page.tsx, app/layout.tsx, app/not-found.tsx,
+    // _components/Shelf/index.tsx, pages/home/_components/Card/index.tsx and its useCard.tsx hook.
+    expectExactly(check("wrong-folders", "structure").violations, [
+      at("apps/wrong-folders/src/components/Panel/index.tsx", 0, "component file outside _components/<Name>/index.tsx; move it to _components/Panel/index.tsx"),
+      at("apps/wrong-folders/src/components/ui/app-sidebar.tsx", 0, "move it to _components/AppSidebar/index.tsx"),
+      at("apps/wrong-folders/src/_components/Shelf/ShelfItem.tsx", 0, "component file ShelfItem.tsx in Shelf/; a component folder renders one component"),
+      // Next.js file names are entries only inside an app/ or pages/ router folder.
+      at("apps/wrong-folders/src/components/icon.tsx", 0, "move it to _components/Icon/index.tsx"),
+      at("apps/wrong-folders/src/components/loading.tsx", 0, "move it to _components/Loading/index.tsx"),
     ]);
   });
 

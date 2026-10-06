@@ -3,8 +3,9 @@
  *
  * - CSS custom properties: every `--ds-*` name in the scan files and in the app's
  *   own stylesheets the entry loads must be declared by the build's generated CSS
- *   (dist/**\/*.css, css/*.css). A name cut short by interpolation
- *   (`--ds-color-${hue}-soft`) must be the prefix of a declared name.
+ *   (dist/**\/*.css, css/*.css). A name cut short by interpolation or concatenation
+ *   (`--ds-color-${hue}-soft`, `"--ds-color-" + hue`) must be the prefix of a declared
+ *   name; any other name, a trailing hyphen included, must match exactly.
  * - JS token paths, in files that import @codecaine-ai/design-system (or its
  *   json/*.json): `cssVar("…")`/`cssVarName("…")` arguments, `flat.<group>["…"]`
  *   keys, `tokens.<group>.a.b` and `tokens["…"]` chains (also through the default
@@ -74,6 +75,16 @@ function parseBindings(text: string, inStr: Uint8Array): Bindings | null {
   return any ? b : null;
 }
 
+/**
+ * True when interpolation or concatenation follows a name that ends at `end`: `${` (template
+ * literal), `#{` (SCSS), `@{` (Less), `{` (Svelte, Vue, JSX text), or a closing quote and then `+`.
+ * Only then is the name a prefix; `var(--ds-color-surface-)` is a static reference to a missing name.
+ */
+function isInterpolated(text: string, end: number): boolean {
+  const rest = text.slice(end, end + 64);
+  return /^(?:\$\{|#\{|@\{|\{)/.test(rest) || /^["'`]\s*\+/.test(rest);
+}
+
 export function checkNames(ctx: AppContext): CheckOutput {
   const { app, ds } = ctx;
   const violations: Finding[] = [];
@@ -113,8 +124,7 @@ export function checkNames(ctx: AppContext): CheckOutput {
     // CSS custom property names.
     for (const m of text.matchAll(DS_NAME)) {
       const name = m[0];
-      const next = text[m.index! + name.length] ?? "";
-      const partial = name.endsWith("-") || next === "$" || next === "{" || (next === "'" || next === '"' || next === "`" ? /^\s*\+/.test(text.slice(m.index! + name.length + 1)) : false);
+      const partial = isInterpolated(text, m.index! + name.length);
       const ln = line(m.index!);
       if (!notionOk && NOTION_NAME.test(name)) {
         add(rel, ln, `${name} is docs-system compat (color.notion.*); only ${NOTION_REPO} may use it`);

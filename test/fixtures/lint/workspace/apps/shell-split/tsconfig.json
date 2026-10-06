@@ -1,0 +1,7 @@
+{
+  // The @/ alias, as Vite apps set it.
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": { "@/*": ["./src/*"], },
+  },
+}

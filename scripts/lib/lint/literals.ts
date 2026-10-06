@@ -5,8 +5,9 @@
  *   hard hit the allowlist does not match is a violation (file:line, literal,
  *   category), and the hard total, allowlisted hits included, must be at or under
  *   `literalFloor`.
- * - On Tailwind apps, every Tailwind default-scale class (tailwind-scale.ts) that
- *   the allowlist does not match is a violation.
+ * - On Tailwind apps, and on libraries and templates whose host compiles their class
+ *   strings (`stack.utilityClasses`), every Tailwind default-scale class
+ *   (tailwind-scale.ts) that the allowlist does not match is a violation.
  * - A scan path that does not exist is a violation: the floor would pass on nothing.
  */
 
@@ -18,6 +19,16 @@ import { lineFinder } from "./workspace";
 
 const HARD_SET = new Set<string>(HARD);
 const COLOR = new Set(["hex", "rgb", "hsl", "oklch", "otherColorFn"]);
+
+/**
+ * True when the app's sources hold utility classes a Tailwind (or Uno) build compiles: a
+ * Tailwind app, or a library or template whose host compiles its class strings
+ * (`stack.utilityClasses`). Only the class check follows it, never a Tailwind wiring rule.
+ */
+export function usesUtilityClasses(app: AppContext["app"]): boolean {
+  // TODO(C1): read the typed `app.stack.utilityClasses` once fixer C1's registry field lands.
+  return (app.stack?.tailwind ?? "none") !== "none" || (app.stack as { utilityClasses?: boolean } | undefined)?.utilityClasses === true;
+}
 
 /** Hard literal count of the scan spec (allowlisted hits included); null when the scan cannot run. */
 export function hardTotal(ctx: AppContext): number | null {
@@ -55,7 +66,7 @@ export function checkLiterals(ctx: AppContext): CheckOutput {
     }
   }
 
-  if ((app.stack?.tailwind ?? "none") !== "none") {
+  if (usesUtilityClasses(app)) {
     for (const f of ctx.sources()) {
       const hits = findDefaultScaleClasses(f.text, f.kind);
       const lineOf = hits.length ? lineFinder(f.text) : () => 0;

@@ -9,6 +9,7 @@
 import type { AppEntry, CheckId } from "../registry";
 import type { DesignSystemBuild } from "./design-system";
 import type { LoadGraph } from "./loads";
+import type { ModuleGraph } from "./modules";
 import type { LiteralScan, SourceFile } from "./workspace";
 
 export type PassNumber = 1 | 2 | 3;
@@ -45,7 +46,7 @@ export interface LintReport {
   apps: AppResult[];
 }
 
-/** What a check returns. `na` lets a check declare itself n/a from app data (a non-shell app has no shell to check). */
+/** What a check returns. `na` says the app data leaves nothing to check (a non-shell app has no shell); for a check the registry requires, that is a violation. */
 export interface CheckOutput {
   violations: Finding[];
   warnings: Finding[];
@@ -68,6 +69,8 @@ export interface AppContext {
   sources(): SourceFile[];
   /** Stylesheet loads reached from the entry stylesheet. */
   loads(): LoadGraph;
+  /** Local modules the app's entry reaches through imports (what it can render). */
+  modules(): ModuleGraph;
   /** scan-literals over the scan spec, with hits. */
   literalScan(): LiteralScan;
 }

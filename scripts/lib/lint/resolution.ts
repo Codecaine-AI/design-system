@@ -16,6 +16,11 @@
  * - Every library the app uses that itself depends on the package (workspace
  *   packages, followed through their own dependencies, and installed packages
  *   one level deep) resolves inside the root, and so does its copy of the package.
+ *   That copy must be the app's own; one that differs is a violation, and it is
+ *   checked like the app's: a live link must reach the root's checkout, a packed
+ *   copy must carry the current build's tokens.css.
+ * - A `workspace:`, `link:` or `file:` dependency that does not resolve is a
+ *   violation: whether it brings its own copy of the package cannot be checked.
  * - host-css: nothing to resolve; the registry marks the check n/a.
  */
 
@@ -191,8 +196,10 @@ export function checkResolution(ctx: AppContext): CheckOutput {
       const real = found ? realpathOrNull(found) : null;
       const where = depth === 0 ? { file: pkgRel, line: lineOf(pkgText, `"${name}"`) } : { file: ctx.rel(join(dir, "package.json")), line: 0 };
       if (!real) {
-        const s = String(p.dependencies?.[name] ?? p.devDependencies?.[name] ?? p.peerDependencies?.[name] ?? "");
-        if (/^(?:workspace|link|file):/.test(s)) warnings.push({ ...where, message: `${name} (${s}) does not resolve; cannot check whether it uses ${PACKAGE_NAME}` });
+        const s = String(p.dependencies?.[name] ?? p.devDependencies?.[name] ?? p.peerDependencies?.[name] ?? p.optionalDependencies?.[name] ?? "");
+        if (/^(?:workspace|link|file):/.test(s)) {
+          violations.push({ ...where, message: `${name} (${s}) does not resolve, so whether it brings its own ${PACKAGE_NAME} cannot be checked; install or link it` });
+        }
         continue;
       }
       if (seen.has(real)) continue;
@@ -207,7 +214,22 @@ export function checkResolution(ctx: AppContext): CheckOutput {
           const libDsReal = libDs ? realpathOrNull(libDs) : null;
           if (!libDsReal) violations.push({ ...where, message: `library ${label} uses ${PACKAGE_NAME}, which does not resolve from ${ctx.rel(real)}` });
           else if (!isInside(libDsReal, root)) violations.push({ ...where, message: `library ${label} resolves ${PACKAGE_NAME} to ${libDsReal}, outside the root ${root}` });
-          else if (dsReal && libDsReal !== dsReal) warnings.push({ ...where, message: `library ${label} resolves ${PACKAGE_NAME} to ${ctx.rel(libDsReal)}, the app to ${ctx.rel(dsReal)}` });
+          else if (libDsReal !== dsReal) {
+            if (dsReal) {
+              violations.push({ ...where, message: `library ${label} resolves ${PACKAGE_NAME} to ${ctx.rel(libDsReal)}, the app to ${ctx.rel(dsReal)}; the app must load one copy` });
+            }
+            if (LIVE.includes(via)) {
+              const problem = notLive(libDsReal);
+              if (problem) violations.push({ ...where, message: `library ${label}: its ${PACKAGE_NAME} ${problem}; consume.via ${via} needs a live link` });
+            } else {
+              const want = buildSha(tokensMember);
+              const got = fileSha256(join(libDsReal, tokensMember));
+              if (!got) violations.push({ ...where, message: `library ${label}: its copy of ${PACKAGE_NAME} (${ctx.rel(libDsReal)}) has no ${tokensMember}` });
+              else if (want && got !== want) {
+                violations.push({ ...where, message: `library ${label}: ${tokensMember} in its copy (${ctx.rel(libDsReal)}, sha256 ${got.slice(0, 12)}) differs from the current build (${want.slice(0, 12)})` });
+              }
+            }
+          }
         }
       }
       // Follow workspace packages (real path outside node_modules); installed packages stay one level deep.

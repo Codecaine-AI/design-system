@@ -2,15 +2,19 @@
  * The current design-system build the linter compares apps against: the checkout
  * the script runs from (DESIGN_SYSTEM_ROOT). Its generated CSS defines the valid
  * --ds-* names, dist/json/tokens.json the valid JS token paths, and
- * templates/react-app-shell the AppShell structure.
+ * templates/react-app-shell the AppShell structure. A dist/ that differs from what
+ * tokens/ builds today (build.ts staleFiles) is refused: the linter would compare
+ * apps against names and hashes that are not current.
  */
 
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
+import { staleFiles } from "../../build";
 import { DESIGN_SYSTEM_ROOT } from "../registry";
-import { lexJs } from "../../scan-literals";
+import type { FileKind } from "../../scan-literals";
+import { classContexts } from "./class-context";
 import { isDir, isFile, toPosix } from "./workspace";
 
 export type TokenGroup = "base" | "light" | "dark";
@@ -30,7 +34,7 @@ export interface DesignSystemBuild {
   prefixes: Set<string>;
   /** dist/json/tokens.json. */
   tree: Record<TokenGroup, any>;
-  /** The AppShell template: its non-test files (relative to the AppShell folder) and the ds-* classes it renders. */
+  /** The AppShell template: its non-test files (relative to the AppShell folder) and the ds-* classes it renders (class contexts only). */
   template: { files: string[]; classes: Set<string> };
 }
 
@@ -64,14 +68,14 @@ function git(dir: string, args: string[]): string | null {
 
 export const TEMPLATE_APPSHELL = "templates/react-app-shell/src/_components/AppShell";
 const TEST_FILE = /\.(test|spec)\.[a-z0-9]+$/i;
-/** A ds-* class in a string: not a CSS selector (.ds-x) and not a custom property (--ds-x). */
-export const DS_CLASS = /(?<![\w.-])ds-[a-z0-9]+(?:-[a-z0-9]+)*(?![\w-])/g;
+/** A ds-* class token: not a CSS selector (.ds-x), a custom property (--ds-x) or a fragment (#ds-x). */
+export const DS_CLASS = /(?<![\w.#-])ds-[a-z0-9]+(?:-[a-z0-9]+)*(?![\w-])/g;
 
-/** ds-* class tokens inside the string literals of a JS/TS source. */
-export function dsClassesInJs(src: string): Map<string, number> {
-  const { text, inStr } = lexJs(src);
+/** The ds-* classes a source renders: tokens in its class contexts (class-context.ts), each at its first offset. */
+export function dsClassesIn(src: string, kind: FileKind): Map<string, number> {
+  const contexts = classContexts(src, kind);
   const found = new Map<string, number>();
-  for (const m of text.matchAll(DS_CLASS)) if (inStr[m.index!] && !found.has(m[0])) found.set(m[0], m.index!);
+  for (const m of src.matchAll(DS_CLASS)) if (contexts.has(m.index!) && !found.has(m[0])) found.set(m[0], m.index!);
   return found;
 }
 
@@ -79,6 +83,12 @@ export function loadDesignSystem(dir: string = DESIGN_SYSTEM_ROOT): DesignSystem
   const tokensCss = join(dir, "dist/css/tokens.css");
   const tokensSha = fileSha256(tokensCss);
   if (!tokensSha) throw new Error(`no build at ${tokensCss}: run \`bun run build\` in ${dir}`);
+  // Names and hashes are compared against dist/, so dist/ must be what tokens/ builds today.
+  const stale = staleFiles(dir);
+  if (stale.length) {
+    const shown = stale.slice(0, 5).join(", ") + (stale.length > 5 ? `, and ${stale.length - 5} more` : "");
+    throw new Error(`the build in ${dir} is stale (${shown}): run \`bun run build\` there`);
+  }
 
   const definedNames = new Set<string>();
   for (const f of [...walk(join(dir, "dist")), ...walk(join(dir, "css"))]) {
@@ -109,7 +119,7 @@ export function loadDesignSystem(dir: string = DESIGN_SYSTEM_ROOT): DesignSystem
     const rel = toPosix(relative(templateDir, f));
     if (TEST_FILE.test(rel)) continue;
     files.push(rel);
-    if (/\.[jt]sx?$/.test(f)) for (const c of dsClassesInJs(readFileSync(f, "utf8")).keys()) classes.add(c);
+    if (/\.[jt]sx?$/.test(f)) for (const c of dsClassesIn(readFileSync(f, "utf8"), "js").keys()) classes.add(c);
   }
   files.sort();
 

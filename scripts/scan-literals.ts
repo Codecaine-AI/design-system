@@ -362,6 +362,8 @@ const REGEX_AFTER = new Set("(,=:[!&|?{};+-*%<>~^".split(""));
 const REGEX_KEYWORDS = new Set([
   "return", "typeof", "instanceof", "in", "of", "new", "delete", "void", "throw", "case", "do", "else", "yield", "await",
 ]);
+/** After `<`, the rest of a JSX closing tag (`</b>`, `</Foo.Bar>`, `</>`): the `/` is not a regex. */
+const JSX_CLOSE_REST = /\s*(?:[A-Za-z_$][\w$.:-]*\s*)?>/y;
 
 /**
  * JS/TS lexer. Blanks comments and marks the characters that sit inside
@@ -404,7 +406,11 @@ export function lexJs(src: string, keepComments = false): { text: string; inStr:
         if (c === '"') { state = DQ; i++; continue; }
         if (c === "`") { state = TPL; i++; continue; }
         if (c === "/") {
-          const allowed = lastSig === "" || (lastSig === "a" ? REGEX_KEYWORDS.has(lastWord) : REGEX_AFTER.has(lastSig));
+          let allowed = lastSig === "" || (lastSig === "a" ? REGEX_KEYWORDS.has(lastWord) : REGEX_AFTER.has(lastSig));
+          if (allowed && lastSig === "<") {
+            JSX_CLOSE_REST.lastIndex = i + 1;
+            if (JSX_CLOSE_REST.test(src)) allowed = false;
+          }
           if (allowed) {
             state = RE;
             reClass = false;

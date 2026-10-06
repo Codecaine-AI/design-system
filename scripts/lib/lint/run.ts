@@ -4,9 +4,10 @@
  * Which checks run: `--pass n` selects the checks whose pass is at most n (1: resolution,
  * wiring, literals, names; 2: + shell; 3: + structure); without `--pass`, all six.
  * The registry's `checks` decides each one: n/a reports the registry's reason, required
- * runs. A check can also report n/a from app data (resolution for host-css apps, shell
- * for `shell: false`). A check that throws becomes one violation, so one broken app does
- * not stop the others.
+ * runs. A required check that finds nothing to check in the app data (resolution for a
+ * host-css app, shell for `shell: false`) fails with "registry requires <check> but …":
+ * the registry and the app disagree, and only the registry may mark a check n/a.
+ * A check that throws becomes one violation, so one broken app does not stop the others.
  */
 
 import { dirname, relative, resolve } from "node:path";
@@ -14,6 +15,7 @@ import type { AppEntry, CheckId, Registry } from "../registry";
 import { resolvePath } from "../registry";
 import type { DesignSystemBuild } from "./design-system";
 import { buildLoadGraph, type LoadGraph } from "./loads";
+import { buildModuleGraph, clearModuleCaches, type ModuleGraph } from "./modules";
 import { checkLiterals, hardTotal } from "./literals";
 import { checkNames } from "./names";
 import { checkResolution } from "./resolution";
@@ -57,6 +59,11 @@ function lazy<T>(make: () => T): () => T {
   };
 }
 
+/** The app's web root, where a root-absolute URL points: `run.serveRoot ?? run.cwd ?? app.root`. */
+export function serveRootOf(app: AppEntry, root: string): string {
+  return resolvePath(root, app.run?.serveRoot ?? app.run?.cwd ?? app.root);
+}
+
 export function makeContext(app: AppEntry, opts: { root: string; registryDir: string; ds: DesignSystemBuild }): AppContext {
   const root = opts.root;
   const rel = (abs: string) => {
@@ -65,8 +72,16 @@ export function makeContext(app: AppEntry, opts: { root: string; registryDir: st
   };
   const setup = lazy(() => scanSetup(app, root));
   const sources = lazy<SourceFile[]>(() => collectSources(setup(), rel));
-  const loads = lazy<LoadGraph>(() => buildLoadGraph(app.entryStylesheet ? resolvePath(root, app.entryStylesheet) : null));
+  const loads = lazy<LoadGraph>(() => buildLoadGraph(app.entryStylesheet ? resolvePath(root, app.entryStylesheet) : null, { serveRoot: serveRootOf(app, root) }));
   const literalScan = lazy<LiteralScan>(() => runLiteralScan(setup()));
+  const modules = lazy<ModuleGraph>(() =>
+    buildModuleGraph({
+      entry: app.entryStylesheet ? resolvePath(root, app.entryStylesheet) : null,
+      serveRoot: serveRootOf(app, root),
+      appRoot: resolvePath(root, app.root),
+      root,
+    }),
+  );
   return {
     app,
     root,
@@ -76,6 +91,7 @@ export function makeContext(app: AppEntry, opts: { root: string; registryDir: st
     rel,
     sources,
     loads,
+    modules,
     literalScan,
   };
 }
@@ -88,7 +104,10 @@ export function lintApp(app: AppEntry, opts: Omit<LintOptions, "registry" | "app
     if (req && !req.required) return { id, status: "n/a", reason: req.reason, violations: [], warnings: [] };
     try {
       const out = CHECKS[id](ctx);
-      if (out.na) return { id, status: "n/a", reason: out.na, violations: [], warnings: out.warnings };
+      if (out.na) {
+        const message = `registry requires ${id} but ${out.na}; mark checks.${id} n/a with that reason in apps.json, or fix the app`;
+        return { id, status: "fail", violations: [{ file: app.root ?? app.id, line: 0, message }], warnings: out.warnings };
+      }
       const status = out.violations.length ? "fail" : out.warnings.length ? "warn" : "pass";
       return { id, status, violations: out.violations, warnings: out.warnings };
     } catch (err) {
@@ -109,6 +128,7 @@ export function lintApp(app: AppEntry, opts: Omit<LintOptions, "registry" | "app
 
 export function lintApps(opts: LintOptions): LintReport {
   clearCaches();
+  clearModuleCaches();
   const ids = opts.apps.length ? opts.apps : opts.registry.apps.map((a) => a.id);
   const apps = ids.map((id) => {
     const app = opts.registry.apps.find((a) => a.id === id);

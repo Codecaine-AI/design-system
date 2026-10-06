@@ -5,7 +5,8 @@
  * should not live in git: the node_modules link to the fake design-system package, files
  * over the 400-line limit, copies of the real AppShell template and tokens.css, vendored
  * tgz files, and registry/apps.json (built here, so every entry carries the full AppEntry
- * shape). Allowlists live in registry/allowlists/, beside apps.json.
+ * shape and passes validateRegistry). Allowlists live in registry/apps/allowlists/, resolved
+ * beside apps.json as the registry convention says.
  */
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
@@ -23,6 +24,7 @@ const APPSHELL_TEMPLATE = join(PKG, "templates/react-app-shell/src/_components/A
 export const REAL_TOKENS_CSS = join(PKG, "dist/css/tokens.css");
 
 const REQUIRED = { required: true } as const;
+const NEVER_RUN = { required: false, reason: "fixture app: never started" } as const;
 
 type EntryInput = Omit<Partial<AppEntry>, "checks"> & {
   id: string;
@@ -49,7 +51,7 @@ export function appEntry(input: EntryInput): AppEntry {
     shell: true,
     folderStandard: true,
     passes: { "1": REQUIRED, "2": REQUIRED, "3": REQUIRED },
-    gates: { lint: REQUIRED, verify: REQUIRED, snapshot: REQUIRED, pixelDiff: REQUIRED, tests: REQUIRED },
+    gates: { lint: REQUIRED, verify: NEVER_RUN, snapshot: NEVER_RUN, pixelDiff: NEVER_RUN, tests: REQUIRED },
     run: { mode: "none", reason: "fixture app: never started" },
     commands: { cwd: root },
     tests: { safe: [] },
@@ -81,17 +83,20 @@ export function appEntry(input: EntryInput): AppEntry {
 export const NA_REASONS = {
   libraryResolution: "widgets ships no CSS: its host app resolves the design system",
   libraryWiring: "widgets has no entry stylesheet: its host app loads the tokens",
+  libraryShell: "widgets is a component library: its host renders the shell",
 };
 
 const UNCONNECTED = "apps/unconnected";
 const WIRING = "apps/wiring";
+const HTML_NESTED = "apps/html-nested";
+const FAKE_LOADS = "apps/fake-loads";
 
 export const APPS: AppEntry[] = [
   appEntry({ id: "connected", root: "apps/connected" }),
   appEntry({ id: "connected-no-shell", root: "apps/connected", shell: false }),
   appEntry({ id: "unconnected", root: UNCONNECTED, entryStylesheet: `${UNCONNECTED}/src/index.css` }),
   // The same sources with an allowlist, a floor at the hard count, and the docs-system repo.
-  appEntry({ id: "unconnected-allowlisted", root: UNCONNECTED, entryStylesheet: `${UNCONNECTED}/src/index.css`, allowlist: "allowlists/unconnected.json" }),
+  appEntry({ id: "unconnected-allowlisted", root: UNCONNECTED, entryStylesheet: `${UNCONNECTED}/src/index.css`, allowlist: "apps/allowlists/unconnected-allowlisted.json" }),
   appEntry({ id: "unconnected-at-floor", root: UNCONNECTED, entryStylesheet: `${UNCONNECTED}/src/index.css`, literalFloor: 2 }),
   appEntry({ id: "unconnected-docs-system", root: UNCONNECTED, repo: "codecaine/core/docs-system", entryStylesheet: `${UNCONNECTED}/src/index.css` }),
   appEntry({ id: "misordered", root: WIRING, scan: { paths: [WIRING], exclude: [] }, entryStylesheet: `${WIRING}/misordered.css` }),
@@ -115,6 +120,7 @@ export const APPS: AppEntry[] = [
     checks: {
       resolution: { required: false, reason: NA_REASONS.libraryResolution },
       wiring: { required: false, reason: NA_REASONS.libraryWiring },
+      shell: { required: false, reason: NA_REASONS.libraryShell },
     },
   }),
   // Registry requires resolution, but consume.via host-css leaves the check nothing to resolve.
@@ -126,8 +132,65 @@ export const APPS: AppEntry[] = [
     entryStylesheet: null,
     shell: false,
     folderStandard: false,
+    checks: { shell: { required: false, reason: NA_REASONS.libraryShell } },
   }),
+  // The widgets sources, with a host that compiles their class strings.
+  appEntry({
+    id: "widgets-utility-classes",
+    root: "libs/widgets",
+    kind: "library",
+    stack: { summary: "React components (fixture)", tailwind: "none", packageManager: "bun", utilityClasses: true } as AppEntry["stack"],
+    consume: { via: "host-css", detail: "names --ds-* variables; the host loads tokens.css" },
+    entryStylesheet: null,
+    shell: false,
+    folderStandard: false,
+    checks: {
+      resolution: { required: false, reason: NA_REASONS.libraryResolution },
+      wiring: { required: false, reason: NA_REASONS.libraryWiring },
+      shell: { required: false, reason: NA_REASONS.libraryShell },
+    },
+  }),
+  // Literals: Tailwind default-scale classes in and out of class contexts.
+  appEntry({ id: "scale-classes", root: "apps/scale-classes" }),
   appEntry({ id: "templated-unused", root: "apps/templated-unused" }),
+  // Wiring: stylesheets under a media or supports condition; root-absolute links on nested pages.
+  appEntry({ id: "conditional", root: WIRING, scan: { paths: [WIRING], exclude: [] }, entryStylesheet: `${WIRING}/conditional.css` }),
+  appEntry({ id: "html-nested", root: HTML_NESTED, scan: { paths: [HTML_NESTED], exclude: [] }, entryStylesheet: `${HTML_NESTED}/about/index.html` }),
+  appEntry({ id: "html-nested-broken", root: HTML_NESTED, scan: { paths: [HTML_NESTED], exclude: [] }, entryStylesheet: `${HTML_NESTED}/broken/index.html` }),
+  // Wiring: imports that load nothing (?url, a <link> in an export template, an import line in JSX text),
+  // and a server-rendered entry whose returned page links the stylesheets.
+  appEntry({ id: "fonts-url", root: FAKE_LOADS, entryStylesheet: `${FAKE_LOADS}/src/url-entry.tsx` }),
+  appEntry({ id: "fonts-in-string", root: FAKE_LOADS, entryStylesheet: `${FAKE_LOADS}/src/string-entry.tsx` }),
+  appEntry({ id: "fonts-in-jsx", root: FAKE_LOADS, entryStylesheet: `${FAKE_LOADS}/src/jsx-entry.tsx` }),
+  appEntry({
+    id: "ssr-home",
+    root: FAKE_LOADS,
+    stack: { summary: "server-rendered page (fixture)", tailwind: "none", packageManager: "bun" },
+    entryStylesheet: `${FAKE_LOADS}/src/home.ts`,
+    shell: false,
+    checks: { shell: { required: false, reason: "a single server-rendered page" } },
+  }),
+  appEntry({ id: "tw3-unused", root: "apps/tw3-unused", stack: { summary: "Tailwind v3 (fixture)", tailwind: "v3", packageManager: "bun" } }),
+  appEntry({ id: "tw3-bound", root: "apps/tw3-bound", stack: { summary: "Tailwind v3 (fixture)", tailwind: "v3", packageManager: "bun" } }),
+  appEntry({ id: "tw3-shorthand", root: "apps/tw3-shorthand", stack: { summary: "Tailwind v3 (fixture)", tailwind: "v3", packageManager: "bun" } }),
+  appEntry({ id: "asi-import", root: FAKE_LOADS, entryStylesheet: `${FAKE_LOADS}/src/asi-entry.tsx` }),
+  appEntry({ id: "tw-options", root: WIRING, scan: { paths: [WIRING], exclude: [] }, entryStylesheet: `${WIRING}/tw-options.css` }),
+  // Shell: markup that is never rendered, split across a component subtree, or reached only by the Next.js router.
+  appEntry({ id: "shell-dead", root: "apps/shell-dead" }),
+  appEntry({ id: "shell-split", root: "apps/shell-split" }),
+  appEntry({
+    id: "shell-page",
+    root: "apps/shell-page",
+    stack: { summary: "static page with classic scripts (fixture)", tailwind: "none", packageManager: "none" },
+    scan: { paths: ["apps/shell-page/web"], exclude: [] },
+    entryStylesheet: "apps/shell-page/web/index.html",
+  }),
+  appEntry({ id: "shell-next", root: "apps/shell-next", scan: { paths: ["apps/shell-next/app"], exclude: [] }, entryStylesheet: "apps/shell-next/app/layout.tsx" }),
+  // Resolution: libraries with their own copy of the package.
+  appEntry({ id: "with-libs", root: "apps/with-libs" }),
+  appEntry({ id: "vendored-with-lib", root: "apps/vendored-with-lib", consume: { via: "vendor-tgz", detail: "file:vendor/design-system.tgz" } }),
+  // Structure: component files in every wrong place, and every kind of entry file.
+  appEntry({ id: "wrong-folders", root: "apps/wrong-folders" }),
   // Resolution: where each design-system file comes from.
   appEntry({ id: "stale-copy", root: "apps/stale-copy", entryStylesheet: "apps/stale-copy/src/index.css" }),
   appEntry({ id: "nested-pkg", root: "apps/nested-pkg", entryStylesheet: "apps/nested-pkg/src/index.css" }),
@@ -168,8 +231,13 @@ function copyAppShell(appDir: string, rendered = true) {
     recursive: true,
     filter: (src) => !/\.(test|spec)\.[jt]sx?$/.test(src),
   });
-  // The app renders its copy, as the template's App.tsx does.
-  if (rendered) write(join(appDir, "src/App.tsx"), 'import { AppShell } from "./_components/AppShell";\n\nexport function App() {\n  return <AppShell appName="Fixture" sections={[]} title="Home">home</AppShell>;\n}\n');
+  // The app renders its copy, as the template's App.tsx does; without it, main.tsx renders something else.
+  if (rendered) {
+    write(join(appDir, "src/App.tsx"), 'import { AppShell } from "./_components/AppShell";\n\nexport function App() {\n  return <AppShell appName="Fixture" sections={[]} title="Home">home</AppShell>;\n}\n');
+    write(join(appDir, "src/main.tsx"), 'import { createRoot } from "react-dom/client";\nimport { App } from "./App";\n\ncreateRoot(document.getElementById("root")!).render(<App />);\n');
+  } else {
+    write(join(appDir, "src/main.tsx"), 'import { createRoot } from "react-dom/client";\n\ncreateRoot(document.getElementById("root")!).render(<main>no shell</main>);\n');
+  }
 }
 
 function vendoredApp(appDir: string, tmp: string, tgzTokens: string) {
@@ -225,6 +293,25 @@ export function materialize(): Workspace {
   vendoredApp(join(root, "apps/vendored-stale"), root, realTokens + STALE_SUFFIX);
   copiedApp(join(root, "apps/copied"), realTokens);
   copiedApp(join(root, "apps/copied-stale"), realTokens + STALE_SUFFIX);
+
+  // Libraries an app uses: good-lib shares the app's copy of the package (the hoisted link),
+  // stale-lib resolves its own link to the packed copy, missing-lib is not installed.
+  const link = (target: string, at: string) => {
+    mkdirSync(dirname(join(root, at)), { recursive: true });
+    symlinkSync(target, join(root, at));
+  };
+  link("../../../libs/good-lib", "apps/with-libs/node_modules/good-lib");
+  link("../../../libs/stale-lib", "apps/with-libs/node_modules/stale-lib");
+  link("../../../../packed-ds", "libs/stale-lib/node_modules/@codecaine-ai/design-system");
+  // A vendored app whose library installed its own, stale copy of the package.
+  vendoredApp(join(root, "apps/vendored-with-lib"), root, realTokens);
+  const vendoredPkg = join(root, "apps/vendored-with-lib/package.json");
+  const pkg = JSON.parse(readFileSync(vendoredPkg, "utf8"));
+  pkg.dependencies["packed-lib"] = "file:../../libs/packed-lib";
+  write(vendoredPkg, JSON.stringify(pkg, null, 2));
+  link("../../../libs/packed-lib", "apps/vendored-with-lib/node_modules/packed-lib");
+  write(join(root, "libs/packed-lib/node_modules/@codecaine-ai/design-system/package.json"), JSON.stringify({ name: "@codecaine-ai/design-system" }));
+  write(join(root, "libs/packed-lib/node_modules/@codecaine-ai/design-system/dist/css/tokens.css"), realTokens + STALE_SUFFIX);
 
   const registry: Registry = { version: 1, apps: APPS };
   const registryPath = join(root, "registry/apps.json");
