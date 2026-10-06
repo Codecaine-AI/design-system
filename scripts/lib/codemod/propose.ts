@@ -17,6 +17,8 @@ import { cssRegionAt, kindOf, lineRange, prepareSource, type SourceFile } from "
 import { fileSha, lineSha, type Row } from "./table.ts";
 import { cssVarRef, type Theme, type TokenData } from "./tokens.ts";
 
+/** scan-literals' generated-file header (its own constant is not exported). */
+const GENERATED_HEADER = /@generated|do not edit|auto-?generated|this file (?:is|was) generated/i;
 const COLORS = new Set(["hex", "rgb", "hsl", "oklch", "otherColorFn", "namedColor"]);
 /** Default rows: every hard category, plus the soft color signals the standard bans. */
 export const DEFAULT_CATEGORIES = [...HARD, "twPalette", "namedColor"];
@@ -285,8 +287,12 @@ export function propose(data: TokenData, input: ScanInput, opts: ProposeOptions)
       const kind = kindOf(file);
       if (!kind || sources.has(file)) continue;
       try {
-        if (statSync(file).size > 2 * 1024 * 1024) continue;
-        sources.set(file, prepareSource(relative(input.root, file).split(sep).join("/"), readFileSync(file, "utf8"), kind));
+        const size = statSync(file).size;
+        if (size > 2 * 1024 * 1024) continue;
+        const src = readFileSync(file, "utf8");
+        // The files scan-literals skips as minified or generated are not read for readers either.
+        if ((size > 100 * 1024 && src.length / src.split("\n").length > 300) || GENERATED_HEADER.test(src.slice(0, 500))) continue;
+        sources.set(file, prepareSource(relative(input.root, file).split(sep).join("/"), src, kind));
       } catch {
         // Unreadable: scan-literals skips it too.
       }

@@ -4,27 +4,34 @@
  *
  * Readers, in every scanned file (comments blanked): a declaration or style key whose value holds
  * `var(--x)` (`border: 1px solid var(--x)`, `backgroundColor: "var(--x)"`), a utility class with
- * the variable in brackets or parentheses (`bg-[var(--x)]`, `text-(--x)`), another custom property
- * (`--y: var(--x)`, followed to its own readers), and for a Tailwind theme variable
- * (`--color-brand`) the utility classes that name it (`bg-brand`, `text-brand`). A reader with no
- * color role (`width`, `transition`, a JS value whose key says nothing) reads as `other`.
+ * the variable in brackets or parentheses (`bg-[var(--x)]`, `bg-[--x]`, `text-(--x)`), another
+ * custom property (`--y: var(--x)`, followed to its own readers), and for a Tailwind theme variable
+ * (`--color-brand`) the utility classes that name it (`bg-brand`, `text-brand`). In JS a key reads
+ * only as the whole holder of the string (`{ color: "var(--x)" }`); a ternary, a call argument, a
+ * JSX attribute or text reads as `other`, as does any reader with no color role.
  */
 
 import { propRoleOf, type ConsumerIndex } from "./color-role.ts";
-import { lineOf, type SourceFile } from "./source.ts";
+import { stringAt } from "./slot.ts";
+import { cssRegionAt, lineOf, type SourceFile } from "./source.ts";
 
 /** Utility roots that take a color, and the role each gives. */
 const CLASS_ROLE: Record<string, string> = {
   bg: "background", from: "background", via: "background", to: "background",
   text: "text", placeholder: "text", decoration: "text", caret: "text",
   border: "border", "border-x": "border", "border-y": "border", "border-t": "border", "border-r": "border", "border-b": "border", "border-l": "border", "border-s": "border", "border-e": "border",
-  ring: "border", "ring-offset": "border", outline: "border", divide: "border",
+  // The ring offset is the gap between an element and its ring: it paints the background's color.
+  ring: "border", "ring-offset": "background", outline: "border", divide: "border",
   fill: "svgFill", stroke: "svgStroke", accent: "accent",
   shadow: "shadow", "inset-shadow": "shadow", "drop-shadow": "shadow", "text-shadow": "shadow", "inset-ring": "border",
 };
 const CLASS_ROOTS = Object.keys(CLASS_ROLE).sort((a, b) => b.length - a.length).join("|");
-/** A utility naming a theme color: `bg-brand`, `hover:text-card-foreground/80`, `!border-input`. */
-const THEME_CLASS = new RegExp(`(?:^|[\\s"'\`{(,])(?:[^\\s"'\`]*?:)?!?-?(${CLASS_ROOTS})-([a-z][a-z0-9-]*?)(?:\\/[\\w.%\\[\\]]+)?!?(?=$|[\\s"'\`,;})\\]])`, "g");
+/** Up to four variants before a utility: `hover:`, `dark:md:`, `[&_svg]:`. */
+const VARIANTS = "(?:[^\\s:]{1,64}:){0,4}!?-?";
+/** One class token naming a theme color: `bg-brand`, `hover:text-card-foreground/80`, `!border-input`. */
+const THEME_TOKEN = new RegExp(`^${VARIANTS}(${CLASS_ROOTS})-([a-z][a-z0-9-]*?)(?:\\/[\\w.%\\[\\]]+)?!?$`);
+/** One class token reading a variable directly: `text-(--x)`, `bg-(color:--x)`, `bg-[--x]` (Tailwind v3). */
+const VAR_TOKEN = new RegExp(`^${VARIANTS}([a-z][a-z-]*?)-(?:\\((?:[a-z-]+:)?(--[\\w-]+)\\)|\\[(?:[a-z-]+:)?(--[\\w-]+)\\])(?:\\/[\\w.%\\[\\]]+)?!?$`);
 /** Tailwind theme namespaces whose variables name utility colors, and the roots that read them. */
 const THEME_NAMESPACES: Array<[RegExp, RegExp]> = [
   [/^--color-(.+)$/, /./],
@@ -52,12 +59,20 @@ export function buildConsumers(files: SourceFile[]): Consumers {
   for (const f of files) {
     const t = f.text;
     const at = (i: number) => `${f.rel}:${lineOf(f, i)}`;
-    for (const m of t.matchAll(/var\(\s*(--[\w-]+)/g)) add(m[1], { ...reader(t, m.index!), at: at(m.index!) });
-    for (const m of t.matchAll(/(?:^|[\s"'`{(,:])!?-?([a-z][a-z-]*?)-\(\s*(?:[a-z-]+:)?(--[\w-]+)\s*\)/g)) add(m[2], { role: CLASS_ROLE[m[1]] ?? "other", at: at(m.index!) });
-    for (const m of t.matchAll(THEME_CLASS)) {
-      const roots = classes.get(m[2]) ?? new Map<string, Where>();
-      if (!roots.has(m[1])) roots.set(m[1], at(m.index!));
-      classes.set(m[2], roots);
+    for (const m of t.matchAll(/var\(\s*(--[\w-]+)/g)) add(m[1], { ...reader(f, m.index!), at: at(m.index!) });
+    // Class tokens: split at whitespace and quotes, then each tested whole (a long path string is one token, never rescanned).
+    for (const m of t.matchAll(/[^\s"'`]+/g)) {
+      let token = m[0].replace(/^[{(,]+|[,;})]+$/g, "");
+      // A closing bracket belongs to the token only when it closes one of its own (`bg-[--b]`, not `["bg-x"]`).
+      while (token.endsWith("]") && (token.match(/\[/g)?.length ?? 0) < (token.match(/\]/g)?.length ?? 0)) token = token.slice(0, -1).replace(/[,;})]+$/, "");
+      if (token.length > 160 || !token.includes("-")) continue;
+      const v = token.match(VAR_TOKEN);
+      if (v) add(v[2] ?? v[3], { role: CLASS_ROLE[v[1]] ?? "other", at: at(m.index!) });
+      const c = token.match(THEME_TOKEN);
+      if (!c) continue;
+      const roots = classes.get(c[2]) ?? new Map<string, Where>();
+      if (!roots.has(c[1])) roots.set(c[1], at(m.index!));
+      classes.set(c[2], roots);
     }
   }
   const memo = new Map<string, Map<string, Where>>();
@@ -95,18 +110,24 @@ function inMix(text: string): boolean {
   return open.includes("color-mix");
 }
 
+/** A JS key that holds a whole value on its own: the text between the holder's start and the string is `key:` and nothing else. */
+const JS_KEY = /^\s*(["'`]?)(--[\w-]+|-?[A-Za-z_$][\w$-]*)\1\s*:\s*$/;
+
 /**
  * What reads the `var(` at `at`: the utility class it sits in (`bg-[var(--x)]`), else the
- * declaration or key whose value holds it (the last `key:` since the statement or block began).
- * Inside `color-mix()` it reads as the mix, which gives no role.
+ * declaration or key whose value holds it. In CSS that is the last `key:` since the declaration
+ * began; in JS the key the string is the whole value of, at an object or statement start. Inside
+ * `color-mix()` it reads as the mix, which gives no role.
  */
-function reader(t: string, at: number): { role: string } | { def: string } {
+function reader(f: SourceFile, at: number): { role: string } | { def: string } {
+  const t = f.text;
   // A class token runs back to whitespace or a quote: `hover:bg-[color:var(--x)]`.
   let s = at;
   while (s > 0 && !/[\s"'`]/.test(t[s - 1]) && at - s < 200) s--;
   const token = t.slice(s, at);
-  const cls = token.match(/^(?:[^\s:]*?:)*!?-?([a-z][a-z0-9-]*?)-[[(]/);
+  const cls = token.match(/^(?:[^\s:]{1,64}:){0,4}!?-?([a-z][a-z0-9-]*?)-[[(]/);
   if (cls && (token.includes("-[") || token.includes("-("))) return { role: inMix(token) ? MIX : (CLASS_ROLE[cls[1]] ?? "other") };
+  if (f.kind === "js" && f.inStr && !cssRegionAt(f, at)) return jsReader(f, at);
   // The declaration: back to the `;`, `{` or `}` that starts it, outside parentheses.
   let depth = 0;
   let k = at - 1;
@@ -120,8 +141,37 @@ function reader(t: string, at: number): { role: string } | { def: string } {
   }
   const seg = t.slice(k + 1, at);
   if (inMix(seg)) return { role: MIX };
-  const keys = [...seg.matchAll(/(?:^|[\s{;,(])(["'`]?)(--[\w-]+|-?[A-Za-z][\w-]*)\1\s*:(?!:)/g)];
+  const keys = [...seg.matchAll(/(?:^|[\s{;,("'])(["'`]?)(--[\w-]+|-?[A-Za-z][\w-]*)\1\s*:(?!:)/g)];
   const key = keys.pop()?.[2];
+  if (!key) return { role: "other" };
+  if (key.startsWith("--")) return { def: key };
+  return { role: propRoleOf(key) ?? "other" };
+}
+
+/**
+ * A JS reader: the string holding the `var(` is the whole value of a key at an object or statement
+ * start (`{ color: "var(--x)" }`, `, border: \`1px solid var(--x)\``). A ternary, a call
+ * argument, an array element, a JSX attribute or text, or code around the string reads as `other`.
+ */
+function jsReader(f: SourceFile, at: number): { role: string } | { def: string } {
+  const t = f.text;
+  const range = stringAt(f, at);
+  if (!range) return { role: "other" };
+  const start = range[0];
+  if (inMix(t.slice(start, at))) return { role: MIX };
+  let depth = 0;
+  let k = start - 1;
+  for (; k >= 0 && start - k < 4000; k--) {
+    if (f.inStr![k] === 1) continue;
+    const ch = t[k];
+    if (ch === ")" || ch === "]" || ch === "}") depth++;
+    else if (ch === "(" || ch === "[" || ch === "{") {
+      if (depth === 0) break;
+      depth--;
+    } else if (depth === 0 && (ch === "," || ch === ";")) break;
+  }
+  if (k >= 0 && (t[k] === "(" || t[k] === "[")) return { role: "other" };
+  const key = t.slice(k + 1, start).match(JS_KEY)?.[2];
   if (!key) return { role: "other" };
   if (key.startsWith("--")) return { def: key };
   return { role: propRoleOf(key) ?? "other" };

@@ -22,3 +22,6 @@ html.dark { --prism-comment: #4D4D4D; }
 @theme inline { --color-brand: #0078df; }
 :root { --err-bg: #fdecec; --err: #a11d1d; }
 .err { background: var(--err-bg); color: var(--err); }
+:root { --primary-foreground: #ffffff; --primary-50-foreground: #ffffff; }
+.btn { color: var(--primary-foreground); }
+.tint { color: var(--primary-50-foreground); }

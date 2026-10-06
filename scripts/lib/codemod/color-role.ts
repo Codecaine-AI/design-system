@@ -11,7 +11,7 @@
  */
 
 import { chroma, composite, deltaE, rgbToOklab, toHex, type Rgba } from "./color.ts";
-import { branches, type Context, type Surface } from "./context.ts";
+import { selectorBranches, type Context, type Surface } from "./context.ts";
 import type { Theme, TokenData } from "./tokens.ts";
 
 export interface ColorPick {
@@ -138,9 +138,17 @@ const QUIET_WORDS = new Set(["soft", "wash", "subtle", "tint", "muted", "faint",
 const SURFACE_SOLID_WORDS = new Set([...SOLID_WORDS, "destructive", "danger", "error", "success", "warning", "info", "brand"]);
 const SURFACE_QUIET_WORDS = new Set([...QUIET_WORDS, "fill", "text", "foreground", "fg", "line", "border", "bg", "background", "surface", "panel", "page"]);
 
-/** Whether the literal's own background is a solid fill: a saturated mid-tone color, or a reference that names a solid. */
+/** A shade step under 400 (`primary-50`, `brand.100`) is a tint, not a solid. */
+const lightShade = (w: string[]) => w.some((x) => /^\d+$/.test(x) && Number(x) < 400);
+
+/**
+ * Whether the literal's own background is a solid fill: a saturated mid-tone color, or one
+ * reference that names a solid; and every other background the same class string paints in a
+ * state (`hover:bg-transparent`) is solid too.
+ */
 function solidSurface(surface: Surface | null): boolean {
   if (!surface) return false;
+  if ((surface.alternates ?? []).some((x) => !solidSurface(x))) return false;
   if (surface.color) {
     if (surface.color.a < 0.9) return false;
     const lab = rgbToOklab({ ...surface.color, a: 1 });
@@ -149,23 +157,20 @@ function solidSurface(surface: Surface | null): boolean {
   // One reference only (`var(--accent)`, `bg-primary`, `theme.accent`): a ternary or a fallback chain is solid only sometimes.
   if (!/^(?:var\(\s*--[\w-]+\s*(?:,[^()]*)?\)|[\w$.[\]-]+)$/.test(surface.text.trim())) return false;
   const w = words(surface.text.replace(/^bg-/, ""));
-  return w.some((x) => SURFACE_SOLID_WORDS.has(x)) && !w.some((x) => SURFACE_QUIET_WORDS.has(x));
+  return w.some((x) => SURFACE_SOLID_WORDS.has(x)) && !w.some((x) => SURFACE_QUIET_WORDS.has(x)) && !lightShade(w);
 }
 
 /**
- * Whether a glyph here sits on a solid fill, so color.text.on-solid fits: a solid, primary or
- * accent word in its own names or classes, or a solid background on the same rule, style object or
- * element. Without one, white text is light text on a fixed dark region, not on-solid (which turns
+ * Whether a glyph here sits on a solid fill, so color.text.on-solid fits: a solid background on
+ * its own rule, style object or class string (`bg-*`), or a definition named for the glyph on a
+ * solid (`--primary-foreground`). Class, selector, component and attribute names never say it.
+ * Without one, white text is light text on a fixed dark region, not on-solid (which turns
  * near-black in dark).
  */
 function onSolidHint(ctx: Context): boolean {
   if (solidSurface(ctx.surface)) return true;
-  const solid = (text: string) =>
-    text.split(/[\s>+~]+/).some((token) => {
-      const w = words(token);
-      return w.some((x) => SOLID_WORDS.has(x)) && !w.some((x) => QUIET_WORDS.has(x));
-    });
-  return solid(ctx.ownHints) || ctx.chain.some((p) => branches(p).every(solid));
+  const w = words(ctx.definition ?? "");
+  return w.some((x) => SOLID_WORDS.has(x)) && !w.some((x) => QUIET_WORDS.has(x)) && !lightShade(w);
 }
 
 /**
@@ -175,7 +180,7 @@ function onSolidHint(ctx: Context): boolean {
  */
 function says(ctx: Context, re: RegExp, raw = false): boolean {
   const norm = (x: string) => (raw ? x : plain(x));
-  return re.test(norm(ctx.ownHints)) || ctx.chain.some((p) => branches(p).every((b) => re.test(norm(b))));
+  return re.test(norm(ctx.ownHints)) || ctx.chain.some((p) => selectorBranches(p).every((b) => re.test(norm(b))));
 }
 
 function genericFamily(data: TokenData, role: PropRole, onSolid: boolean): Family | null {
@@ -210,8 +215,9 @@ function ownName(ctx: Context): string | null {
  * link needs an `a` element, `:link`/`:visited` or a name. Loose words in classes or text never do.
  */
 function structure(ctx: Context) {
-  // A selector says it only when every branch of a prelude's list does (`.field:focus, .card`: no focus ring).
-  const sel = (re: RegExp) => ctx.inCss && ctx.chain.some((p) => branches(p).every((b) => re.test(b)));
+  // A selector says it only when every branch of a prelude's list does (`.field:focus, .card`: no
+  // focus ring), and never inside `:not(…)` or `:has(…)` (`.field:not(:focus)`).
+  const sel = (re: RegExp) => ctx.inCss && ctx.chain.some((p) => selectorBranches(p).every((b) => re.test(b)));
   const v = ctx.variants;
   const name = words(ownName(ctx) ?? "");
   return {
@@ -511,6 +517,10 @@ export function pickColor(data: TokenData, literal: Rgba, ctx: Context, opts: Al
   if (/^(?:flood|lighting)-?color$/i.test(ctx.property ?? "")) return none("an SVG filter input (flood or lighting color): no color token; keep it");
   // Paint inside an SVG <mask>, <clipPath> or a pattern a mask uses is never seen as color: a token would only flip the mask in dark.
   if (ctx.maskedBy) return none(`inside an SVG <${ctx.maskedBy}>: ${ctx.maskedBy === "clipPath" ? "only its shape counts" : "only its luminance and alpha count"}, so no color token; keep it`);
+  if (ctx.island && ctx.island.scheme !== ctx.theme) {
+    const { scheme, prelude } = ctx.island;
+    return none(`a fixed ${scheme} region: \`color-scheme: ${scheme}\` on \`${prelude}\` switches the browser's colors, not the tokens; add data-theme="${scheme}" to it, or map by hand`);
+  }
   const fixed = fixedRegion(data, ctx);
   if (fixed) return none(fixed);
   const theme = ctx.theme;

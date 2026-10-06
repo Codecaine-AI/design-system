@@ -18,6 +18,8 @@ export interface Surface {
   text: string;
   /** The color when the value is one literal color (alpha kept), else null. */
   color: Rgba | null;
+  /** Other backgrounds the same class string paints in a state (`hover:bg-transparent`): the fill is not stable. */
+  alternates?: Surface[];
 }
 
 export interface Context {
@@ -52,8 +54,10 @@ export interface Context {
   states: string[];
   /** The background of the literal's own rule, style object or class string, if it names one. */
   surface: Surface | null;
-  /** The SVG element whose paint is never seen that holds the literal: `mask`, `clipPath`, or a `pattern` a mask uses. */
+  /** The SVG element whose paint is never seen as color that holds the literal: `mask`, `clipPath`, or a paint server a mask uses. */
   maskedBy: string | null;
+  /** An enclosing block that sets `color-scheme` where the token theme does not switch (`.code { color-scheme: dark }`). */
+  island: { scheme: Theme; prelude: string } | null;
 }
 
 /** Selector or key text that puts a region in dark: `[data-theme="dark"]`, any `data-*="dark"`, `.dark`, the media query, a `dark:` JS key. */
@@ -159,40 +163,41 @@ const ENUM_ATTRS = /^(?:variant|tone|intent|severity|status|data-(?:status|varia
 /** State words a name, class or key may carry on its own (`tab-active`, `selectedBg`, `:hover`). */
 const FREE_STATES = new Set(["active", "selected", "current", "checked", "pressed", "dragging", "drop", "target", "hover"]);
 /**
- * State groups a family reads: any member says the group (`.tab.active` and `.tab[aria-selected]`
- * are both selected). A selector list holds a group when every branch has a member of it.
+ * State groups a family reads: any member says the group (`.tab.active` and `.tab[aria-selected="true"]`
+ * are both selected). A selector list holds a group when every branch has a member of it. An open
+ * popover (`data-state="open"`) is not a selected row.
  */
 export const STATE_GROUPS: Record<string, string[]> = {
-  selected: ["active", "selected", "current", "checked", "pressed", "on", "open"],
+  selected: ["active", "selected", "current", "checked", "pressed"],
   outline: ["active", "selected", "current", "checked", "dragging", "drop", "target"],
   hover: ["hover"],
 };
 const groupsOf = (words: Set<string>) => Object.keys(STATE_GROUPS).filter((g) => STATE_GROUPS[g].some((w) => words.has(w)));
-/** Values of `data-state` that mean the element is on. */
-const DATA_STATES = new Set(["active", "on", "checked", "open", "selected", "current", "pressed"]);
+/** Values of `data-state` that name a state of a group. */
+const DATA_STATES = new Set(["active", "checked", "selected", "current", "pressed"]);
 
 /**
  * The state an attribute asserts with `value` (`true` for a bare attribute): a state word, null
- * when it is a state attribute that is off (`aria-selected="false"`, `data-state="closed"`) or not
- * known statically, undefined when the attribute names no state.
+ * when it is a state attribute that is off (`aria-selected="false"`, `data-state="closed"`), bare
+ * (`[aria-selected]` matches "false" too) or not known statically, undefined when the attribute
+ * names no state.
  */
 export function attributeState(name: string, value: string | true | undefined): string | null | undefined {
   const n = name.toLowerCase();
-  const on = (v: string | true | undefined) => v === true || (v !== undefined && !/^(?:false|0|off|no|mixed)?$/i.test(v.trim()));
   const aria = n.match(/^aria-(selected|current|pressed|checked)$/);
-  if (aria) return on(value) ? aria[1] : null;
+  if (aria) return typeof value === "string" && !/^(?:false|0|off|no|mixed)?$/i.test(value.trim()) ? aria[1] : null;
   if (n === "data-state") return typeof value === "string" && DATA_STATES.has(value.trim().toLowerCase()) ? value.trim().toLowerCase() : null;
   const flag = n.match(/^(?:data-)?(active|selected|current|checked|pressed)$/);
   if (flag) return value === true || (typeof value === "string" && /^(?:|true)$/i.test(value.trim())) ? flag[1] : null;
   return undefined;
 }
 
-/** A selector with its `:not(…)` groups (nested too) removed: what they name does not hold. */
-function withoutNot(sel: string): string {
+/** A selector with its `:not(…)` and `:has(…)` groups (nested too) removed: what they name is not this element's state. */
+export function withoutNot(sel: string): string {
   let text = sel;
-  for (let i = text.search(/:not\(/i); i !== -1; i = text.search(/:not\(/i)) {
+  for (let i = text.search(/:(?:not|has)\(/i); i !== -1; i = text.search(/:(?:not|has)\(/i)) {
     let depth = 0;
-    let k = i + 4;
+    let k = text.indexOf("(", i);
     for (; k < text.length; k++) {
       if (text[k] === "(") depth++;
       else if (text[k] === ")" && --depth === 0) break;
@@ -200,6 +205,33 @@ function withoutNot(sel: string): string {
     text = text.slice(0, i) + " " + text.slice(k + 1);
   }
   return text;
+}
+
+/**
+ * A selector prelude as the branches a rule applies to: the list split at top-level commas, each
+ * branch without its `:not(…)`/`:has(…)` groups, and `:is(…)`/`:where(…)` spread into one branch
+ * per argument (`.tab:is(.active, :hover)` is `.tab.active` and `.tab:hover`).
+ */
+export function selectorBranches(prelude: string): string[] {
+  const out: string[] = [];
+  const queue = branches(prelude).map(withoutNot);
+  while (queue.length && out.length + queue.length < 64) {
+    const b = queue.shift()!;
+    const i = b.search(/:(?:is|where|matches|-webkit-any)\(/i);
+    if (i < 0) {
+      out.push(b);
+      continue;
+    }
+    let depth = 0;
+    let k = b.indexOf("(", i);
+    const open = k;
+    for (; k < b.length; k++) {
+      if (b[k] === "(") depth++;
+      else if (b[k] === ")" && --depth === 0) break;
+    }
+    for (const arg of branches(b.slice(open + 1, k))) queue.push(b.slice(0, i) + arg.trim() + b.slice(k + 1));
+  }
+  return [...out, ...queue];
 }
 
 /** States one selector branch asserts: state attributes by their value, other words as written. */
@@ -224,18 +256,22 @@ function chainStates(chain: string[]): Set<string> {
   const out = new Set<string>();
   for (const prelude of chain) {
     if (/^@/.test(prelude.trim())) continue;
-    const per = branches(prelude).map(branchStates);
+    const per = selectorBranches(prelude).map(branchStates);
     for (const s of per[0] ?? []) if (per.every((x) => x.has(s))) out.add(s);
     for (const g of Object.keys(STATE_GROUPS)) if (per.length && per.every((x) => groupsOf(x).includes(g))) out.add(`group:${g}`);
   }
   return out;
 }
 
-/** State words in names, keys, class words and variants (`data-[state=open]` gives its value). */
+/**
+ * State words in names, keys, class words and variants (`data-[state=active]` gives its value).
+ * `not-*` and `has-*` variants, and arbitrary aria/data variants, assert nothing.
+ */
 function wordStates(parts: string[], variants: string[] = []): Set<string> {
   const out = new Set<string>();
   for (const w of nameWords(parts.join(" "))) if (FREE_STATES.has(w)) out.add(w);
   for (const v of variants) {
+    if (/^(?:(?:group|peer)(?:-[\w]+)?-)?(?:not|has|in)-/.test(v) || /^(?:not|has)\b/.test(v)) continue;
     const data = v.match(/^(?:group-|peer-)?data-\[\s*state\s*=\s*["']?(\w+)["']?\s*\]$/);
     if (data && DATA_STATES.has(data[1].toLowerCase())) out.add(data[1].toLowerCase());
     else if (!/^(?:group-|peer-)?(?:data|aria)-\[/.test(v)) for (const w of nameWords(v)) if (FREE_STATES.has(w)) out.add(w);
@@ -390,6 +426,11 @@ function ownDeclarations(f: SourceFile, open: number, js: boolean): Array<{ prop
   return out;
 }
 
+/** A prelude every branch of which is the document root (`:root`, `html`, `body`, `:host`). */
+function rootPrelude(prelude: string): boolean {
+  return branches(prelude).every((b) => /^\s*(?::root|html|body|:host)(?![\w-])/i.test(b));
+}
+
 /** `color-scheme: dark` (or `only dark`) marks its block dark, `light` light; `light dark` and `normal` mark nothing. */
 function schemeOf(decls: Array<{ prop: string; value: string }>): Theme | null {
   const d = [...decls].reverse().find((x) => x.prop.toLowerCase() === "color-scheme");
@@ -442,55 +483,105 @@ function bgClassColor(value: string): Rgba | null {
 function surfaceFromClasses(classes: string, variants: string[]): Surface | null {
   const dark = variants.includes("dark");
   let found: Surface | null = null;
+  const alternates: Surface[] = [];
   for (const raw of classes.split(/\s+/)) {
     const parts = splitVariants(raw);
     const cls = parts.pop()!.replace(/^!|!$/g, "");
-    if (parts.length !== (dark ? 1 : 0) || (dark && parts[0] !== "dark")) continue;
     const m = cls.match(/^bg-(.+)$/);
-    if (m) found = { source: `the class string's ${cls}`, text: cls, color: bgClassColor(m[1]) };
+    if (!m || parts.includes("dark") !== dark) continue;
+    const s = { source: `the class string's ${cls}`, text: cls, color: bgClassColor(m[1]) };
+    if (parts.length === (dark ? 1 : 0)) found = s;
+    else alternates.push(s);
   }
-  return found;
+  return found ? { ...found, alternates } : null;
 }
 
-const svgCache = new WeakMap<SourceFile, Array<{ at: number; name: string; close: boolean; attrs: string }>>();
+type SvgTag = { at: number; end: number; name: string; close: boolean; attrs: string };
+const svgCache = new WeakMap<SourceFile, { tags: SvgTag[]; masks: Array<[number, number]> }>();
+/** Elements whose paint is never seen as color (mask, clipPath) and the paint servers a mask may use. */
+const SVG_PAINT = ["mask", "clipPath", "pattern", "linearGradient", "radialGradient"];
 
-/** `<mask>`, `<clipPath>` and `<pattern>` tags of a markup or JSX file, in order. */
-function svgPaintTags(f: SourceFile) {
-  let tags = svgCache.get(f);
-  if (!tags) {
-    tags = [];
-    for (const m of f.text.matchAll(/<(\/?)(mask|clipPath|pattern)\b((?:[^>"'{}]|"[^"]*"|'[^']*'|\{[^{}]*\})*?)(\/?)>/g)) {
-      if (m[4] === "/") continue;
-      tags.push({ at: m.index!, name: m[2], close: m[1] === "/", attrs: m[3] });
+/**
+ * The end (just past `>`) of the tag whose name ends at `from`, reading quotes, `{…}` expressions
+ * at any depth and template literals (`<mask style={{ maskType: "alpha" }}>`), or -1.
+ */
+function tagEnd(t: string, from: number): { end: number; self: boolean } | null {
+  let depth = 0;
+  let quote: string | null = null;
+  for (let k = from; k < t.length && k - from < 4000; k++) {
+    const ch = t[k];
+    if (quote) {
+      if (ch === "\\") k++;
+      else if (ch === quote) quote = null;
+      continue;
     }
-    svgCache.set(f, tags);
+    if (ch === '"' || ch === "'" || ch === "`") quote = ch;
+    else if (ch === "{") depth++;
+    else if (ch === "}") depth = Math.max(0, depth - 1);
+    else if (ch === "<" && depth === 0) return null;
+    else if (ch === ">" && depth === 0 && t[k - 1] !== "=") return { end: k + 1, self: t[k - 1] === "/" };
   }
-  return tags;
+  return null;
+}
+
+/** The mask, clipPath and paint-server tags of a markup or JSX file, in order, and the ranges masks cover. */
+function svgPaintTags(f: SourceFile) {
+  let hit = svgCache.get(f);
+  if (!hit) {
+    const tags: SvgTag[] = [];
+    const t = f.text;
+    // HTML names are case-insensitive (`<clippath>`, `<MASK>`); in JSX `<Mask>` is a component.
+    const re = new RegExp(`<(\\/?)(${SVG_PAINT.join("|")})(?=[\\s/>])`, f.kind === "html" ? "gi" : "g");
+    for (const m of t.matchAll(re)) {
+      const e = tagEnd(t, m.index! + m[0].length);
+      if (!e || e.self) continue;
+      const name = SVG_PAINT.find((x) => x.toLowerCase() === m[2].toLowerCase())!;
+      tags.push({ at: m.index!, end: e.end, name, close: m[1] === "/", attrs: t.slice(m.index! + m[0].length, e.end - 1) });
+    }
+    const masks: Array<[number, number]> = [];
+    const open: SvgTag[] = [];
+    for (const tag of tags) {
+      if (!tag.close) open.push(tag);
+      else {
+        const i = open.map((x) => x.name).lastIndexOf(tag.name);
+        if (i < 0) continue;
+        if (open[i].name === "mask") masks.push([open[i].at, tag.end]);
+        open.splice(i);
+      }
+    }
+    for (const o of open) if (o.name === "mask") masks.push([o.at, t.length]);
+    svgCache.set(f, (hit = { tags, masks }));
+  }
+  return hit;
 }
 
 /**
- * The SVG element whose paint nobody sees that holds `index`: a `<mask>` (only its luminance and
- * alpha count), a `<clipPath>` (only its geometry), or a `<pattern>` a mask in the file references.
+ * The SVG element whose paint nobody sees as color that holds `index`: a `<mask>` (only its
+ * luminance and alpha count), a `<clipPath>` (only its geometry), or a paint server (`<pattern>`,
+ * `<linearGradient>`, `<radialGradient>`) a mask in the file references.
  */
 function maskedAt(f: SourceFile, index: number): string | null {
   if (f.kind !== "js" && f.kind !== "html") return null;
-  const stack: Array<{ name: string; attrs: string }> = [];
-  for (const tag of svgPaintTags(f)) {
+  const { tags, masks } = svgPaintTags(f);
+  const stack: SvgTag[] = [];
+  for (const tag of tags) {
     if (tag.at >= index) break;
-    if (!tag.close) stack.push({ name: tag.name, attrs: tag.attrs });
-    else {
+    if (!tag.close) {
+      if (tag.end <= index) stack.push(tag);
+    } else {
       const i = stack.map((s) => s.name).lastIndexOf(tag.name);
       if (i >= 0) stack.splice(i);
     }
   }
   for (let i = stack.length - 1; i >= 0; i--) {
     const { name, attrs } = stack[i];
-    if (name !== "pattern") return name;
-    // A pattern counts when a mask in the file references its id (`url(#hatch)`, `url(#${hatchId})`).
+    if (name === "mask" || name === "clipPath") return name;
+    // A paint server counts when a mask references its id (`url(#hatch)`, `url(#${hatchId})`).
     const id = attrs.match(/\bid\s*=\s*(?:"([^"]+)"|'([^']+)'|\{\s*([\w$.]+)\s*\})/);
     const ref = id?.[1] ?? id?.[2] ?? id?.[3];
     if (!ref) continue;
-    for (const m of f.text.matchAll(/<mask\b[\s\S]*?<\/mask>/g)) if (m[0].includes(id![3] ? ref : `#${ref}`)) return "pattern";
+    const needle = id![3] ? ref : `#${ref}`;
+    if (masks.some(([a, b]) => f.text.slice(a, b).includes(needle))) return name;
   }
   return null;
 }
@@ -602,6 +693,7 @@ export function readContext(f: SourceFile, span: Span, opts: { defaultTheme: The
   const chainOnly = new Set<string>();
   let surface: Surface | null = null;
   let maskedBy: string | null = null;
+  let island: { scheme: Theme; prelude: string } | null = null;
 
   if (span.slot === "class") {
     const cls = f.src.slice(span.start, span.end);
@@ -612,8 +704,10 @@ export function readContext(f: SourceFile, span: Span, opts: { defaultTheme: The
     // The class string: siblings tell the role (a button's bg, an input's border).
     let a = span.start;
     let b = span.end;
-    while (a > 0 && !/["'`]/.test(f.src[a - 1]) && span.start - a < 600) a--;
-    while (b < f.src.length && !/["'`]/.test(f.src[b]) && b - span.end < 600) b++;
+    // In CSS the class string is the @apply declaration only: it stops at `;`, `{` or `}`.
+    const stop = css ? /["'`;{}]/ : /["'`]/;
+    while (a > 0 && !stop.test(f.src[a - 1]) && span.start - a < 600) a--;
+    while (b < f.src.length && !stop.test(f.src[b]) && b - span.end < 600) b++;
     selector = f.src.slice(a, b).replace(/\s+/g, " ").trim();
     hintParts.push(classHints(selector), variants.join(" "));
     stateWords.push(classHints(selector));
@@ -639,10 +733,13 @@ export function readContext(f: SourceFile, span: Span, opts: { defaultTheme: The
       if (!states.has(s)) chainOnly.add(s);
       states.add(s);
     }
-    // `color-scheme: dark` in a block puts the block in dark, whatever its selector says.
+    // `color-scheme: dark` marks a block dark only where the tokens switch too: on the root, or with
+    // a theme selector. Elsewhere it switches the browser's colors, not the tokens: an island.
     blocks.forEach((b, i) => {
       const scheme = schemeOf(ownDeclarations(f, b.open, false));
-      darkParts.push(scheme ? `.${scheme}` : chain[i]);
+      const switches = !!scheme && (rootPrelude(chain[i]) || themeOf(chain[i]) !== null);
+      darkParts.push(switches ? `.${scheme}` : chain[i]);
+      if (scheme && !switches) island = { scheme, prelude: chain[i] };
     });
     if (span.slot !== "class" && blocks.length) surface = surfaceFromDecls(ownDeclarations(f, blocks[blocks.length - 1].open, false), "the rule's");
   } else if (f.kind === "js" || f.kind === "html") {
@@ -706,7 +803,7 @@ export function readContext(f: SourceFile, span: Span, opts: { defaultTheme: The
   const data = isDataObject(f, span, property);
   const marked = themeOf(darkParts);
   const theme = marked ?? (/(?:^|[/._-])dark(?:[/._-]|$)/i.test(f.rel) ? "dark" : opts.defaultTheme);
-  return { property, selector, component, theme, variants, definition, data, hints, ownHints: own.join(" "), chain: chainParts, inCss: css, attribute, states: [...states], surface, maskedBy };
+  return { property, selector, component, theme, variants, definition, data, hints, ownHints: own.join(" "), chain: chainParts, inCss: css, attribute, states: [...states], surface, maskedBy, island };
 }
 
 /** A JS object that reads as data: its own keys include id/type/geometry and nothing around it says style. */

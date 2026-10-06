@@ -14,7 +14,9 @@ import { basename, join } from "node:path";
 import { classTarget, designSystemCommit } from "../scripts/codemod-literals.ts";
 import { applyTable } from "../scripts/lib/codemod/apply.ts";
 import { tokenAllowed } from "../scripts/lib/codemod/color-role.ts";
+import { buildConsumers } from "../scripts/lib/codemod/consumers.ts";
 import { applyRoot, tableDir } from "../scripts/lib/codemod/paths.ts";
+import { prepareSource } from "../scripts/lib/codemod/source.ts";
 import { DEFAULT_CATEGORIES, propose } from "../scripts/lib/codemod/propose.ts";
 import { fileSha, lineSha, summarize, type Row, type Table } from "../scripts/lib/codemod/table.ts";
 import { loadTokens } from "../scripts/lib/codemod/tokens.ts";
@@ -175,8 +177,8 @@ describe("propose: Tailwind classes", () => {
   });
 
   test("the same class twice on a line gets one row per occurrence", () => {
-    const [a, b] = [row("widgets.tsx", 6, "text-white", 0), row("widgets.tsx", 6, "text-white", 1)];
-    expect([a.replacement, b.replacement]).toEqual(["text-on-solid", "text-on-solid"]);
+    const [a, b] = [row("widgets.tsx", 6, "text-neutral-900", 0), row("widgets.tsx", 6, "text-neutral-900", 1)];
+    expect([a.replacement, b.replacement]).toEqual(["text-ink", "text-ink"]);
     expect(a.column).toBeLessThan(b.column!);
   });
 });
@@ -688,7 +690,12 @@ describe("propose: round-3 review of the role choices", () => {
     // A solid under it: the rule's own background, a solid class on the element, a primary word.
     expect(r3(rows, "on-solid.tsx", 12, '"#ffffff"').replacement).toBe('"var(--ds-color-text-on-solid)"');
     expect(r3(rows, "on-solid.tsx", 13, "text-white").replacement).toBe("text-on-solid");
-    expect(r3(rows, "on-solid.tsx", 14, '"#ffffff"').replacement).toBe('"var(--ds-color-text-on-solid)"');
+    expect(r3(rows, "on-solid.tsx", 14, '"#ffffff"').replacement).toBeNull(); // a class name (btn-primary) is not a fill
+    // A definition named for the glyph on a solid; a light shade (`-50`) is a tint, not a solid.
+    const named = r3Rows(["readers.css"]);
+    expect(r3(named, "readers.css", 25, "#ffffff").replacement).toBe("var(--ds-color-text-on-solid)");
+    expect(r3(named, "readers.css", 25, "#ffffff").why).toBe("text; on-solid is near-black in dark: check the fill under it");
+    expect(named.filter((r) => r.line === 25).map((r) => r.replacement)).toEqual(["var(--ds-color-text-on-solid)", null]);
     // mainmenu 438 and 487: a dim gray in a dark app was on-solid at ΔE 19.8.
     const dark = r3Rows(["on-solid-dark.tsx"], { theme: "dark" });
     expect(pick(r3(dark, "on-solid-dark.tsx", 2, "text-gray-700"))).toEqual({ proposed: null, replacement: null });
@@ -778,6 +785,101 @@ describe("propose: round-3 review of the role choices", () => {
   });
 });
 
+/** Rows for the round-3 second-pass fixtures (test/fixtures/codemod/review/r3/second), from the internal review's probes. */
+function r3b(paths: string[], opts: { theme?: "light" | "dark" } = {}): Row[] {
+  return r3Rows(paths.map((p) => `second/${p}`), opts);
+}
+
+function at3(list: Row[], file: string, line: number, literal: string, nth = 0): Row {
+  const found = list.filter((r) => r.file === `review/r3/second/${file}` && r.line === line && r.literal === literal);
+  if (!found[nth]) throw new Error(`no row for ${file}:${line} ${literal}; rows on that line: ${list.filter((r) => r.line === line).map((r) => r.literal).join(", ")}`);
+  return found[nth];
+}
+
+describe("propose: round-3 second review of the role choices", () => {
+  test("P1-1: color-scheme off the root, without a theme selector, is a fixed region", () => {
+    const rows = r3b(["island.css"]);
+    for (const [line, literal] of [[2, "#d1d9e0"], [2, "#3d444d"], [3, "#d1d9e0"]] as const) {
+      const r = at3(rows, "island.css", line, literal);
+      expect({ line, literal, ...pick(r), island: r.why.includes("switches the browser's colors, not the tokens; add data-theme=\"dark\"") }).toEqual({ line, literal, proposed: null, replacement: null, island: true });
+    }
+    expect(at3(rows, "island.css", 4, "#2a2a2a")).toMatchObject({ proposed: null, why: expect.stringContaining("`color-scheme: light` on `.x`") });
+    // With a theme selector the tokens switch too: a theme mark.
+    expect(at3(rows, "island.css", 5, "#d1d9e0")).toMatchObject({ proposed: "color.text.body", context: { theme: "dark" } });
+  });
+
+  test("P1-2: a JS key reads a variable only when the string is its whole value", () => {
+    const rows = r3b(["js-readers.tsx", "js-readers.css"]);
+    const read = (literal: string, nth = 0) => rows.filter((r) => r.file.endsWith("js-readers.css") && r.literal === literal)[nth];
+    expect(read("#d4d4d4").why).toContain("--stroke-c is read as other"); // a JSX attribute after a parameter type `{ color: string }`
+    expect(read("#333333").why).toContain("--ink is read as other"); // `color: hovered ? bg : "var(--ink)"`
+    expect(read("#f5f5f5").why).toContain("--surface is read as other"); // `background: hovered ? color : …`, not text
+    expect(read("#e6e5e3").why).toContain("--line is read as other");
+    expect(read("#2a2a2a").proposed).toBe("color.text.body"); // { padding: 4, color: "var(--plain-ink)" }
+  });
+
+  test("P2-11: bg-[--x] reads a variable, and a ring offset paints the background's color", () => {
+    const rows = r3b(["js-readers.tsx", "js-readers.css"]);
+    const chip = rows.filter((r) => r.file.endsWith("js-readers.css") && r.literal === "#ebebe9");
+    expect(chip.map((r) => [r.line, r.proposed])).toEqual([[2, "color.fill.chip"], [3, "color.fill.chip"]]);
+  });
+
+  test("P1-3: the reader index is linear on long unbroken text, and skips generated files", () => {
+    const long = prepareSource("logo.tsx", `export const D = "M0,0${"l1,2".repeat(75000)}";\n`, "js");
+    const t0 = performance.now();
+    buildConsumers([long]);
+    expect(performance.now() - t0).toBeLessThan(2000);
+    const root = mkdtempSync(join(tmpdir(), "codemod-gen-"));
+    mkdirSync(join(root, "src"));
+    writeFileSync(join(root, "src/theme.css"), ":root { --gen-ink: #2a2a2a; }\n");
+    writeFileSync(join(root, "src/out.css"), "/* @generated by a tool */\n.x { color: var(--gen-ink); }\n");
+    const rows = propose(loadTokens(), { root, paths: ["src"], exclude: [] }, { appId: "fixture", defaultTheme: "light", categories: new Set(DEFAULT_CATEGORIES) }).rows;
+    expect(rows.find((r) => r.literal === "#2a2a2a")!.why).toContain("--gen-ink is read nowhere");
+  });
+
+  test("P1-4, P2-8, P2-9: :not() and :has() say nothing, :is() is a branch list, a bare aria-* and data-state=open are no state", () => {
+    const rows = r3b(["not.css"]);
+    const why = (line: number, literal: string) => at3(rows, "not.css", line, literal).why;
+    expect(at3(rows, "not.css", 2, "#ffffff").proposed).toBeNull(); // button:not(.primary): not a primary button
+    expect(why(3, "#fef2f2")).not.toContain("danger"); // .btn:not(.danger)
+    expect(why(4, "#0a7ae0")).not.toContain("focus ring"); // .field:not(:focus)
+    expect(why(5, "#9b9a97")).not.toContain("placeholder"); // input:not(:placeholder-shown)
+    expect(why(6, "#ebebe9")).not.toContain("selected"); // .row:has(.child.active)
+    expect(why(7, "#ebebe9")).not.toMatch(/hover|selected/); // .tab:is(.active, :hover)
+    expect(at3(rows, "not.css", 8, "#c62121").proposed).toBeNull(); // :is(.error, .note) .msg: not a danger rule
+    expect(why(9, "#ebebe9")).not.toContain("selected"); // [aria-selected] matches "false" too
+    expect(why(10, "#ebebe9")).not.toContain("selected"); // an open dialog is not a selected row
+    expect(why(11, "#ebebe9")).toBe("selected fill"); // :is(.active, [aria-selected="true"])
+    const tw = r3b(["variants.tsx"]);
+    expect(at3(tw, "variants.tsx", 2, "bg-[#f2f2f1]").why).not.toContain("hover"); // not-hover:
+    expect(at3(tw, "variants.tsx", 2, "bg-[#ebebe9]", 0).why).not.toContain("selected"); // not-aria-selected:
+    expect(at3(tw, "variants.tsx", 2, "bg-[#ebebe9]", 1).why).toBe("selected fill"); // aria-selected:
+  });
+
+  test("P1-5: an @apply class string ends at its own declaration", () => {
+    const rows = r3b(["apply.css"]);
+    expect(pick(at3(rows, "apply.css", 2, "text-white"))).toEqual({ proposed: null, replacement: null }); // not on .cta's bg-blue-600
+  });
+
+  test("P1-6, P2-10: a mask with a style object, a gradient a mask uses, and HTML's case-insensitive names", () => {
+    const rows = r3b(["masks.tsx", "masks.html"]);
+    expect(at3(rows, "masks.tsx", 8, '"#ffffff"').why).toContain("inside an SVG <mask>"); // <mask style={{ maskType: "alpha" }}>
+    expect(at3(rows, "masks.tsx", 5, '"#ffffff"').why).toContain("inside an SVG <linearGradient>"); // url(#fade) inside <mask id="m">
+    expect(at3(rows, "masks.tsx", 5, '"#000000"').proposed).toBeNull();
+    expect(at3(rows, "masks.tsx", 10, '"#e6e5e3"').replacement).toBe('"var(--ds-color-border-default)"'); // a gradient no mask uses
+    const html = rows.filter((r) => r.file.endsWith("masks.html")).map((r) => [r.literal, r.replacement]);
+    expect(html).toEqual([["#ffffff", null], ["#ffffff", null], ["#e6e5e3", "var(--ds-color-border-default)"]]); // <clippath>, <MASK>
+  });
+
+  test("P2-7: on-solid only from a solid background or a definition name, never a class, tag or attribute name", () => {
+    const rows = r3b(["solid.tsx"]);
+    for (const [line, literal] of [[3, "text-white"], [4, "text-white"], [5, "text-white"], [6, "text-white"], [7, '"#ffffff"'], [8, "text-white"]] as const) {
+      expect({ line, ...pick(at3(rows, "solid.tsx", line, literal)) }).toEqual({ line, proposed: null, replacement: null });
+    }
+    expect(at3(rows, "solid.tsx", 9, "text-white").replacement).toBe("text-on-solid"); // bg-blue-600 hover:bg-blue-700: solid in both
+  });
+});
+
 function pick(r: Row) {
   return { proposed: r.proposed, replacement: r.replacement };
 }
@@ -800,7 +902,7 @@ describe("apply", () => {
   test("changes only approved rows, skips every row of a changed file and replacement-less rows, and dry-run writes nothing", () => {
     const root = tempRoot();
     const fresh = proposeAt(root);
-    const wanted = new Set(["#f5f3ef", "text-white", "w-[320px]", "13", "#c62121", "#ffffff"]);
+    const wanted = new Set(["#f5f3ef", "text-neutral-900", "w-[320px]", "13", "#c62121", "#ffffff"]);
     const list = approved(fresh.rows, (r) => wanted.has(r.literal));
     // Line 20 (.error-text) changes after propose: every row of theme.css is stale, line 3's too.
     const theme = join(root, SRC, "theme.css");
@@ -821,7 +923,7 @@ describe("apply", () => {
     expect(themeLines[2]).toBe("  --background: #f5f3ef;"); // its line is unchanged, but its file is not
     expect(themeLines[19]).toBe("  color: #c00000;");
     expect(widgetLines[3]).toContain('className="w-80 text-[11px]');
-    expect(widgetLines[5]).toContain("text-on-solid text-on-solid"); // both occurrences on one line
+    expect(widgetLines[5]).toContain("text-ink text-ink"); // both occurrences on one line
     expect(widgetLines[6]).toContain('fontSize: "var(--ds-font-size-ui-sm)"');
     expect(widgetLines[15]).toBe('  ctx.fillStyle = "#ffffff";'); // canvas row has no replacement
     expect(result.skipped.map((s) => [s.row.literal, s.reason.split(":")[0]])).toEqual([
