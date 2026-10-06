@@ -11,6 +11,41 @@
  *
  * Registry and token data come from the design-system checkout this script runs from;
  * app sources come from --root (default: the directory that holds this checkout).
+ *
+ * Known limits (static analysis; verify:apps checks runnable apps at runtime):
+ * - wiring: a late @import counts in a root whose closure imports any Tailwind stylesheet
+ *   (Tailwind 4 inlines quoted @imports wherever they stand), and is never judged inert in
+ *   Sass/Less files or in <style> strings of a server-rendered JS entry. A CSS file reached
+ *   from two roots is walked once (the first root gets its loads); an @import cycle can hide
+ *   Tailwind from the closure check. A Tailwind import after the first tailwind-strict.css in
+ *   a root fails even when a later strict clears it again.
+ * - wiring: unused HTML strings in a server-rendered entry still count as its page (decision 21c).
+ * - Tailwind v3 config: writes are read in source order, not run order; `let` reassignments,
+ *   getters and `Object.assign({}, a, b)` as the export are not followed; `exports.presets =`
+ *   after `module.exports =` counts although Node drops it; a spread inside `theme` that is not
+ *   a local object literal is not reported; without dist/tailwind/preset-v3.cjs the theme-key
+ *   rule finds nothing.
+ * - literals: the app's Tailwind config is scanned, but scan-literals counts only its colors,
+ *   not px values nested in a theme object (`fontSize: { sm: "14px" }`); a config that
+ *   scan.exclude or scan.ext filters out stays unscanned. Classes bound through variables
+ *   (`const c = "shadow"; className={c}`) are not class contexts (decision 21c); container
+ *   variants (`@md:`) count in any JS string, as palette classes do.
+ * - names: bindings by aliasing (`const v = cssVar`), `import(pkg).then(({ cssVar }) => …)` and
+ *   nested destructuring are not followed; a re-export cycle can cache a partial export list. In
+ *   a file with no design-system binding only near-miss token strings count (first two segments
+ *   name a real group), so a typo in the second segment passes. A non-optional TS type key
+ *   `{ "--ds-x": string }` or a regex holding `--ds-x:` reads as a declaration. Any file that
+ *   opens with the package's header comment is skipped as a copy.
+ * - shell: only direct importers of the ds-shell file (through up to two barrels) fill its
+ *   slots; a module that renders the shell with props or children counts for parts beside it
+ *   too. Markup in an exported function that is imported but never called still counts
+ *   (decision 21c); the "rendered, not only imported" rule applies only to run.mode none and
+ *   skips import forms it cannot read (`require`, an unbound dynamic import).
+ * - structure: a script an HTML page loads is an entry only when that page is in the scan paths.
+ * - resolution: a library's own packed copy of the package is compared by tokens.css only.
+ * - --out-dir: `lint/` and the report file are checked before the run and again right before
+ *   the write; a symlink swapped in between that check and the write is not caught (Node has
+ *   no O_NOFOLLOW for directories).
  */
 
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
