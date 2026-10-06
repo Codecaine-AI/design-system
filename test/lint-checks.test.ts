@@ -244,9 +244,16 @@ describe("names", () => {
   });
 
   test("token paths are checked even when another import comes before the design-system one", () => {
-    expectExactly(check("names-order", "names").violations, [
+    expectExactly(check("names-order", "names").violations.filter((v) => !v.message.includes("--ds-")), [
       at("apps/names-order/src/tokens-use.ts", 4, "tokens.light.color.surface.nope does not exist"),
       at("apps/names-order/src/tokens-use.ts", 5, 'token path "color.surface.page" is not in flat.base'),
+    ]);
+  });
+
+  test("a name is a prefix only when interpolation or concatenation follows it; a static name cut short fails", () => {
+    expectExactly(check("names-order", "names").violations.filter((v) => v.message.includes("--ds-")), [
+      at("apps/names-order/src/tokens-use.ts", 9, "--ds-color-surface- is not defined by the current build"),
+      at("apps/names-order/src/names.css", 2, "--ds-color-surface- is not defined by the current build"),
     ]);
   });
 
