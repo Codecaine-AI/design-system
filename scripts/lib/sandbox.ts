@@ -46,6 +46,10 @@
  * the profile text. Deny rules were reliable in every shape. So the Unix-socket rules come before the IP
  * rules, and binding is a single `(deny network-bind (require-not (require-any <the allowed ports and the
  * run's socket dir>)))`; test/sandbox.test.ts re-scans every block with the generated profile.
+ * `(local ip "localhost:<port>")` matches every local address, not only loopback, and Seatbelt has no
+ * working inbound peer filter: a run may listen on 0.0.0.0 or a LAN address of an allowed port. The app
+ * runner's egress sampling treats such a listener as a violation and stops the run at once (app-runner.ts);
+ * for test suites (anyLoopback, suiteNetwork) test:apps must do the same with egress.ts exposedListeners.
  * Seatbelt has no port ranges ("localhost:49152-65535" is an invalid address): a suite's ephemeral range
  * is 16384 rules (about 4.5 s to compile, so such a profile goes to sandbox-exec as a file, -f), and a bind
  * to port 0 matches no single port, so a suite's binds stay a deny list (owner ports and the listeners
@@ -214,7 +218,18 @@ export function sandboxProfile(policy: SandboxPolicy): string {
   const writable = [...(policy.writable.length ? [filters("subpath", policy.writable)] : []), ...(policy.writableParams ?? []).map((name) => `(subpath (param ${sbString(name)}))`)];
   if (writable.length) lines.push(`(allow file-write* ${writable.join(" ")})`);
   lines.push(`(allow file-write* ${WRITABLE_DEVICES})`);
-  if (policy.readOnly?.length) lines.push(`(deny file-write* ${filters("subpath", policy.readOnly)})`);
+  if (policy.readOnly?.length) {
+    lines.push(`(deny file-write* ${filters("subpath", policy.readOnly)})`);
+    // Seatbelt checks a rename's two paths, never what the moved dir holds: renaming an ancestor of a
+    // read-only dir (inside a writable one) away, writing into it and renaming it back would get past the
+    // rule above. So every dir between a writable dir and a read-only dir in it can be neither renamed
+    // nor removed (entries in it stay writable: they are checked by their own paths).
+    const writableDirs = canonicalAll(policy.writable);
+    const ancestors = new Set<string>();
+    for (const dir of canonicalAll(policy.readOnly))
+      for (const top of writableDirs) if (dir.startsWith(`${top}/`)) for (let at = dirname(dir); at !== top && at.startsWith(`${top}/`); at = dirname(at)) ancestors.add(at);
+    if (ancestors.size) lines.push(`(deny file-write* ${[...ancestors].sort().map((path) => `(literal ${sbString(path)})`).join(" ")})`);
+  }
   // Every `.git` entry (file or dir) at any depth, and everything under one: git config, hooks, the index.
   for (const dir of canonicalAll(policy.gitProtected ?? [])) lines.push(`(deny file-write* (regex #"^${regexLiteral(dir)}/(.*/)?\\.git(/|$)"))`);
 
@@ -264,7 +279,8 @@ export interface RunPolicyOptions {
   /**
    * Test suites (decision 31): connect only to the app's block and the ephemeral range 49152-65535, minus
    * `listeners` (every port something listened on when the run started) and the denied ports; listen on
-   * any loopback port but those (Seatbelt cannot single out a bind to port 0). Owner ports never.
+   * any port but those (Seatbelt cannot single out a bind to port 0, nor a loopback address from 0.0.0.0:
+   * the caller checks for listeners beyond loopback, egress.ts exposedListeners). Owner ports never.
    */
   suiteNetwork?: { listeners: readonly number[] };
   /**

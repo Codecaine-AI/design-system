@@ -73,10 +73,10 @@ import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
 
 import { CONTEXT_OPTIONS, DETERMINISM_CSS, installStyleInitScript, LAUNCH_OPTIONS } from "./capture";
 import { appScope } from "./checkouts";
-import { describeConnection, egressConnections, lsofConnections } from "./egress";
+import { describeConnection, egressConnections, isExposedListener, lsofConnections } from "./egress";
 import { markAppsStarted, pinRepos } from "./git";
 import { OWNER_PORTS } from "./owner";
-import { headlessShellPath, loadPlaywright, pinElectron, pinPlaywright, playwrightAnchor, playwrightDirs } from "./playwright";
+import { headlessShellPath, loadPlaywright, noteAppStarted, pinElectron, pinPlaywright, playwrightAnchor, playwrightDirs } from "./playwright";
 import { portProblems, PROFILE_PORTS } from "../registry-check";
 import { DESIGN_SYSTEM_ROOT, resolvePath, validateRegistry, type AppEntry, type Registry } from "./registry";
 import { safeAppId, safeOutputPath, safeTempBase } from "./safe-paths";
@@ -902,6 +902,12 @@ async function sampleEgress(running: RunningApp, internal: Internal, egress: Egr
   egress.connections = internal.sockets.size;
   const listening = result.conns.filter((conn) => !conn.remote && conn.state === "LISTEN").map((conn) => conn.local.port);
   recordListeners(running, listening);
+  // Seatbelt's `(local ip "localhost:<port>")` matches every local address, so the sandbox lets a run
+  // listen on 0.0.0.0 or a LAN address, where other hosts reach it (and the tree it can read). That
+  // cannot be expressed in a profile; a run that does it is a violation and is stopped at once.
+  const exposed = result.conns.filter(isExposedListener);
+  for (const conn of exposed) addViolation(running, `a run process listens beyond loopback, reachable from other hosts: ${describeConnection(conn)}`);
+  if (exposed.length) void running.stop().catch(() => undefined);
   const current = [...listening, ...(internal.staticPort ? [internal.staticPort] : [])];
   internal.portCache = { at: Date.now(), ports: new Set(current.filter((port) => !OWNER_PORTS.includes(port))) };
   // Outbound: the run's current listeners, its named profile ports (its own block; a dead kernel URL the
@@ -1013,9 +1019,9 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
   // Electron (opt-in) too: resolved, its package hashed, before anything of the run starts.
   if (mode === "electron") {
     try {
-      pinElectron(resolvePath(root, app.root));
+      pinElectron(resolvePath(root, app.root), scope.writable);
     } catch (error) {
-      throw new Error(`${app.id}: the electron package does not resolve from ${app.root}: ${String(error).split("\n")[0]}`);
+      throw new Error(`${app.id}: the electron package does not resolve from ${app.root}, or may not be used: ${String(error).split("\n")[0]}`);
     }
   }
   installRunSignalHandlers();
@@ -1210,8 +1216,10 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
   };
 
   try {
-    // From here on no repository may be pinned (git.ts): every one a tool reads was recorded above.
+    // From here on no repository may be pinned (git.ts), and no Playwright from this root loaded
+    // (playwright.ts): every one a tool reads was recorded above.
     markAppsStarted();
+    noteAppStarted(root);
     persist();
     const flags = (app.runProfile.flags ?? []).map(expand);
     copyFixtures(app, tmp);
@@ -1287,7 +1295,7 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
       let executablePath: string;
       try {
         // Hashed on first use, checked on every later one (playwright.ts pinElectron).
-        executablePath = pinElectron(resolvePath(root, app.root));
+        executablePath = pinElectron(resolvePath(root, app.root), scope.writable);
       } catch (error) {
         throw new Error(`${app.id}: the electron package does not resolve from ${app.root}, or changed: ${String(error).split("\n")[0]}`);
       }
@@ -1356,11 +1364,16 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
 
     refreshStartedPorts(running);
     captureProcesses(internal, persist);
+    // One more egress sample at ready, so a listener beyond loopback (or a stray connection) made during the
+    // start is never missed between two samples.
+    await sampleOnce();
     if (running.violations?.length) throw new Error(`${app.id}: ${running.violations.join("; ")}`);
     appendFileSync(logPath, `# ready${running.baseUrl ? ` at ${running.baseUrl}` : ""}; listening on ${running.startedPorts.join(", ")}\n`);
     return running;
   } catch (error) {
     await running.stop().catch((stopError) => appendFileSync(logPath, `# stop after failed start: ${stopError}\n`));
+    // A run stopped for an isolation violation (a listener beyond loopback) says why.
+    if (running.violations?.length && !String(error).includes(running.violations[0]!)) throw new Error(`${String(error instanceof Error ? error.message : error)}; ${running.violations.join("; ")}`);
     throw error;
   }
 }
@@ -1502,6 +1515,12 @@ export function splitBlocked(running: RunningApp, entries: string[]): { unexpect
   return { unexpected, expected };
 }
 
+/**
+ * Resource types the guard fetches itself, hop by hop: whole files. Documents go natively (Chromium's
+ * Local Network Access check blocks every local request, WebSockets included, from a document it did not
+ * load from the network itself), and so do fetch/XHR, event streams and media, which may stream.
+ */
+const BUFFERED_TYPES = new Set(["script", "stylesheet", "image", "font", "texttrack", "manifest"]);
 /** Redirect statuses the guard follows itself, one hop at a time. */
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 /** Hops one request may take before the guard gives up (Chromium's own limit is 20). */
@@ -1515,15 +1534,15 @@ const ROUTE_FETCH_TIMEOUT_MS = 60_000;
  * request is blocked) or when the profile lists it in allowedLocalPorts; a port the run once bound but no
  * longer holds is not.
  *
- * Every http(s) request is routed, and redirects are followed hop by hop: the guard fetches each hop
- * itself (route.fetch with maxRedirects 0), checks the next Location before anything contacts it, and
- * fulfills the page's request with the final response. A redirect to a URL the guard would block is
- * aborted, recorded as blocked (`REDIRECT <url>`) and as an isolation violation, which fails the run.
- * Two kinds go natively once their first URL passed: documents (Chromium's Local Network Access check
- * blocks every local request, WebSockets included, from a document it did not load from the network
- * itself) and event streams (Accept: text/event-stream), which a buffered fetch would hold forever. The
- * browser's OS sandbox (launchBrowser) refuses any hop of theirs to a port outside the run, and every hop
- * the browser takes itself (seen in the request events) to a URL the guard would block is a violation too.
+ * Every http(s) request is routed. Whole files (BUFFERED_TYPES: scripts, styles, images, fonts) follow
+ * redirects hop by hop: the guard fetches each hop itself (route.fetch with maxRedirects 0), checks the
+ * next Location before anything contacts it, and fulfills the page's request with the final response.
+ * A redirect to a URL the guard would block is aborted, recorded as blocked (`REDIRECT <url>`) and as an
+ * isolation violation, which fails the run. Documents, fetch/XHR, event streams and media go natively once
+ * their first URL passed (a buffered fetch would hold a streamed response forever; Chromium's Local
+ * Network Access check blocks local requests from a document it did not load itself): the browser's OS
+ * sandbox (launchBrowser) refuses any hop of theirs to a port outside the run, and every hop the browser
+ * takes itself (seen in the request events) to a URL the guard would block is a violation too.
  */
 export async function installGuard(context: any, running: RunningApp): Promise<() => string[]> {
   // WebSockets bypass context.route: without routeWebSocket a page could reach any local port. Fail closed.
@@ -1557,9 +1576,9 @@ export async function installGuard(context: any, running: RunningApp): Promise<(
           blocked.push(`${request.method()} ${first}`);
           return await route.abort("blockedbyclient");
         }
-        // Natively: documents (Chromium's Local Network Access check blocks every local request, WebSockets
-        // included, from a document the browser did not load from the network itself) and event streams.
-        if (request.resourceType() === "document" || /text\/event-stream/i.test(request.headers()["accept"] ?? "")) return await route.fallback();
+        // Only whole files are fetched here (a buffered fetch would hold a streamed response forever); the
+        // rest go natively once their first URL passed (see the doc comment).
+        if (!BUFFERED_TYPES.has(request.resourceType())) return await route.fallback();
         let url = first;
         let method: string = request.method();
         let override: Record<string, unknown> = {};
@@ -1711,8 +1730,10 @@ export async function launchBrowser(root: string, opts: BrowserOptions = {}): Pr
     if (noSandbox) {
       if (!opts.running?.unsandboxed) throw new Error(`refusing to start Chromium without the OS sandbox: ${noSandbox}`);
     } else {
-      const policy = browserPolicy({ browserHome: home, connectPorts: opts.running?.allowedPorts ?? [], readable: opts.readable });
-      executablePath = browserLauncher(toolDir, headlessShellPath(root), policy);
+      const shell = headlessShellPath(root);
+      // The shell's own install dir is readable wherever PLAYWRIGHT_BROWSERS_PATH puts it.
+      const policy = browserPolicy({ browserHome: home, connectPorts: opts.running?.allowedPorts ?? [], readable: [...(opts.readable ?? []), shell.dir] });
+      executablePath = browserLauncher(toolDir, shell.path, policy);
     }
     const browser = await playwright.chromium.launch({ ...LAUNCH_OPTIONS, ...opts.launch, env: sanitizedEnv(home), ...(executablePath ? { executablePath } : {}) });
     browser.on("disconnected", remove);

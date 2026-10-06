@@ -4,13 +4,13 @@
  * P0-2). Scratch trees only; no app, no port.
  */
 import { afterAll, beforeEach, describe, expect, test } from "bun:test";
-import { appendFileSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { appScope, gitDirsOf, writeScope } from "../scripts/lib/checkouts.ts";
 import { markAppsStarted, pinRepos, resetPinsForTests } from "../scripts/lib/git.ts";
-import { PackageChanged, pinPlaywright, playwrightDirs, resetPlaywrightPinsForTests, toolPackageDirs } from "../scripts/lib/playwright.ts";
+import { headlessShellPath, noteAppStarted, PackageChanged, pinElectron, pinPlaywright, playwrightDirs, resetPlaywrightPinsForTests, toolPackageDirs } from "../scripts/lib/playwright.ts";
 import type { AppEntry } from "../scripts/lib/registry.ts";
 import { runPolicy } from "../scripts/lib/sandbox.ts";
 import { SYSTEM_BIN } from "../scripts/lib/system-bin.ts";
@@ -140,5 +140,67 @@ describe("pinPlaywright (Opus R3 P0-2)", () => {
     pinPlaywright(t.root);
     writeFileSync(join(t.core, "node_modules", "playwright", "lazy.js"), "module.exports = 1;\n");
     expect(() => pinPlaywright(t.root)).toThrow(PackageChanged);
+  });
+
+  test("Playwright comes from Core's node_modules only: a copy planted nearer (docs-system/node_modules) is never loaded", () => {
+    const t = tree();
+    const planted = join(t.core, "docs-system", "node_modules", "playwright");
+    mkdirSync(planted, { recursive: true });
+    writeFileSync(join(planted, "package.json"), JSON.stringify({ name: "playwright", version: "9.9.9", main: "index.js" }));
+    writeFileSync(join(planted, "index.js"), "module.exports = { name: 'planted' };\n");
+    expect(pinPlaywright(t.root)).toEqual({ name: "playwright" });
+    expect(playwrightDirs(t.root)[0]).toBe(realpathSync(join(t.core, "node_modules", "playwright")));
+  });
+
+  test("a Playwright that resolves anywhere but Core's own node_modules is refused", () => {
+    const root = mkdtempSync(join(scratch, "elsewhere-"));
+    const outer = join(root, "node_modules", "playwright");
+    mkdirSync(outer, { recursive: true });
+    mkdirSync(join(root, "codecaine", "core"), { recursive: true });
+    writeFileSync(join(outer, "package.json"), JSON.stringify({ name: "playwright", main: "index.js" }));
+    writeFileSync(join(outer, "index.js"), "module.exports = {};\n");
+    expect(() => pinPlaywright(root)).toThrow(/not .*codecaine\/core\/node_modules\/playwright/);
+    expect(playwrightDirs(root)).toEqual([]);
+  });
+
+  test("once an app from the root started, a Playwright not loaded before is refused", () => {
+    const t = tree();
+    noteAppStarted(t.root);
+    expect(() => pinPlaywright(t.root)).toThrow(/not loaded before the first app/);
+  });
+
+  test("the headless shell path takes only a plain revision from browsers.json", () => {
+    const t = tree();
+    writeFileSync(join(t.core, "node_modules", "playwright-core", "browsers.json"), JSON.stringify({ browsers: [{ name: "chromium-headless-shell", revision: "../../../tmp/evil" }] }));
+    expect(() => headlessShellPath(t.root, join(scratch, "home"))).toThrow(/no chromium-headless-shell revision/);
+  });
+});
+
+describe("pinElectron (opt-in Electron)", () => {
+  function electronAt(dir: string, marker: string) {
+    mkdirSync(join(dir, "dist"), { recursive: true });
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "electron", version: "0.0.0", main: "index.js" }));
+    writeFileSync(join(dir, "index.js"), `require("fs").writeFileSync(${JSON.stringify(marker)}, "ran");\nmodule.exports = "/tmp/evil";\n`);
+    writeFileSync(join(dir, "path.txt"), "Electron.app/Contents/MacOS/Electron");
+  }
+
+  test("the executable comes from path.txt (the package's code never runs in the tool); a package inside the run's writable dirs is refused; a change is refused", () => {
+    const t = tree();
+    const marker = join(scratch, `electron-ran-${Date.now()}`);
+    electronAt(join(t.core, "node_modules", "electron"), marker);
+    const appDir = join(t.app, "packages", "desktop");
+    mkdirSync(appDir, { recursive: true });
+    writeFileSync(join(appDir, "package.json"), "{}");
+    expect(pinElectron(appDir, [t.app])).toBe(join(realpathSync(join(t.core, "node_modules", "electron")), "dist", "Electron.app/Contents/MacOS/Electron"));
+    expect(existsSync(marker)).toBe(false);
+    appendFileSync(join(t.core, "node_modules", "electron", "path.txt"), "x");
+    expect(() => pinElectron(appDir, [t.app])).toThrow(PackageChanged);
+    // A copy in the app's own node_modules (the run may write it) wins resolution: refused.
+    const other = join(t.app, "packages", "desktop-2");
+    mkdirSync(other, { recursive: true });
+    writeFileSync(join(other, "package.json"), "{}");
+    electronAt(join(other, "node_modules", "electron"), marker);
+    expect(() => pinElectron(other, [t.app])).toThrow(/which the run may write/);
+    expect(existsSync(marker)).toBe(false);
   });
 });

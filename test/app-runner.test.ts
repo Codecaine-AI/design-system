@@ -442,6 +442,14 @@ describe("startApp", () => {
     }
   });
 
+  test("a run that listens beyond loopback (0.0.0.0) is a violation and is stopped at once", async () => {
+    // The sandbox's `localhost:<port>` bind rule matches every local address (reviewer R3-A P1).
+    const app = fixtureApp({ ui: 46903, helper: 46904 });
+    app.runProfile.env = { ...app.runProfile.env, FIXTURE_HOST: "0.0.0.0" };
+    await expect(start(app, makeRoot())).rejects.toThrow(/listens beyond loopback, reachable from other hosts: egress: bun\(\d+\) TCP \*:46903 \(LISTEN\)/);
+    expect(await portOpen(46903)).toBe(false);
+  });
+
   test("refuses to start while any port of its block or allowedLocalPorts has a listener, named or not", async () => {
     // Codex R3 P0 1: only the named ports were checked; the sandbox then let the run reach an unnamed block
     // port held by a service the run did not start.
@@ -614,6 +622,26 @@ describe("guardedContext redirects (hop by hop) and the browser sandbox", () => 
       }
     },
     60_000,
+  );
+});
+
+describe("guardedContext and streamed responses", () => {
+  test.skipIf(Boolean(noPlaywright))(
+    "a fetch whose response never ends still delivers its first chunk through the guard (no buffering)",
+    async () => {
+      const running = await start(fixtureApp({ ui: 46915, helper: 46917 }), makeRoot());
+      const browser = await launchBrowser(process.env.DS_MIRROR ?? "/Users/Ford/workspace-ds", { running });
+      try {
+        const { context } = await guardedContext(browser, running);
+        const page = await context.newPage();
+        await page.goto(`${running.baseUrl}/stream-probe`);
+        const result = await Promise.race([page.evaluate(() => (globalThis as any).streamResult), Bun.sleep(8_000).then(() => "hung")]);
+        expect(result).toBe("first-chunk");
+      } finally {
+        await browser.close();
+      }
+    },
+    30_000,
   );
 });
 

@@ -9,7 +9,7 @@
  * another capture spec, is refused.
  */
 import { afterAll, expect, test } from "bun:test";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -19,7 +19,7 @@ import { DESIGN_SYSTEM_ROOT } from "../scripts/lib/registry.ts";
 import { finishScratch, leakedListeners } from "./leaks.ts";
 import { plantBin } from "./planted-bin.ts";
 import { snapshotApp, writeRegistry } from "./snapshot-support.ts";
-import { browserSkip, FIXTURES } from "./verify-support.ts";
+import { browserSkip, FIXTURES, MIRROR } from "./verify-support.ts";
 
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-snapshot-cli-")));
 afterAll(async () => {
@@ -52,6 +52,9 @@ function tree(port = 46976) {
   git(app, "init", "-q");
   git(app, "add", ".");
   git(app, "commit", "-q", "-m", "fixture");
+  // Playwright comes from <root>/codecaine/core/node_modules only (playwright.ts), as in the mirror.
+  mkdirSync(join(root, "codecaine"));
+  symlinkSync(join(MIRROR, "codecaine/core"), join(root, "codecaine/core"));
   const entry = snapshotApp({
     routes: [
       { id: "home", path: "/" },

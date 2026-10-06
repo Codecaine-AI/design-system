@@ -151,10 +151,38 @@ export function gitEntryState(workTree: string): string {
   }
 }
 
-/** sha256 over the repository files that decide what git may run: config, config.worktree, info/attributes. */
+/**
+ * Config sections that never make the calls the tools make (rev-parse, status, diff, ls-files) run a
+ * command or read another file: upstream, remote, identity and UI settings. `git push -u` or a branch
+ * upstream change by the owner or another worker edits these while tools run; they are not compared.
+ */
+const INERT_CONFIG = /^(branch|remote|user|pull|push|fetch|gui|rerere|maintenance|advice|color|column|init|i18n|log|format|credential)\./i;
+
+/** The settings of one config file that count (INERT_CONFIG left out), sorted; the raw bytes when git cannot parse it. */
+function configSettings(file: string): string {
+  try {
+    const stat = lstatSync(file);
+    if (!stat.isFile()) return `not a file (${stat.isSymbolicLink() ? `symlink ${readlinkSync(file)}` : "dir"})`;
+  } catch {
+    return "missing";
+  }
+  const out = spawnGit(dirname(file), ["config", "--file", file, "--list", "--no-includes", "-z"], { timeout: 30_000 });
+  if (out.status !== 0 || out.error) return `unparsed ${createHash("sha256").update(readFileSync(file)).digest("hex")}`;
+  return (out.stdout ?? "")
+    .split("\0")
+    .filter((entry) => entry && !INERT_CONFIG.test(entry))
+    .sort()
+    .join("\0");
+}
+
+/**
+ * sha256 over what decides what git may run in a repository: its config and config.worktree (every
+ * setting but INERT_CONFIG's) and info/attributes (whole).
+ */
 function configState(paths: Pick<RepoPaths, "gitDir" | "commonDir">): string {
   const hash = createHash("sha256");
-  for (const file of [join(paths.commonDir, "config"), join(paths.gitDir, "config.worktree"), join(paths.commonDir, "info", "attributes"), join(paths.gitDir, "info", "attributes")]) {
+  for (const file of [join(paths.commonDir, "config"), join(paths.gitDir, "config.worktree")]) hash.update(`${file}\0${configSettings(file)}\n`);
+  for (const file of [join(paths.commonDir, "info", "attributes"), join(paths.gitDir, "info", "attributes")]) {
     hash.update(`${file}\0`);
     try {
       const stat = lstatSync(file);
