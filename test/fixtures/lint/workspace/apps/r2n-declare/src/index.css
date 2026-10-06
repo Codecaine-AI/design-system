@@ -1,0 +1,4 @@
+:root { --ds-color-surface-page: var(--ds-color-red-solid); }
+.panel { --ds-space-2: var(--ds-space-8); }
+.ok { padding: var(--ds-space-2); }
+.own { --ds-app-own: 1px; }
