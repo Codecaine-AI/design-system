@@ -16,14 +16,14 @@ import { join } from "node:path";
 import { FIXED_TIME } from "../scripts/lib/capture.ts";
 import { decodePng } from "../scripts/lib/png.ts";
 import { DESIGN_SYSTEM_ROOT } from "../scripts/lib/registry.ts";
-import { assertNoLeaks, leakedListeners } from "./leaks.ts";
+import { finishScratch, leakedListeners } from "./leaks.ts";
 import { snapshotApp, writeRegistry } from "./snapshot-support.ts";
 import { browserSkip, FIXTURES } from "./verify-support.ts";
 
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-snapshot-cli-")));
-afterAll(() => {
+afterAll(async () => {
   try {
-    assertNoLeaks(scratch); // no app this file started may still listen
+    await finishScratch(scratch); // stop what this file started, clean crashed runs' records, then no listener may be left
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }

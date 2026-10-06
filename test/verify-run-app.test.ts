@@ -17,7 +17,7 @@ import { fontDiskPath, fontSourceJudge } from "../scripts/lib/verify/font-source
 import { inRunningApp, isolationAssertions } from "../scripts/lib/verify/run-app.ts";
 import { loadBuildValues } from "../scripts/lib/verify/tokens.ts";
 import { browserSkip, MIRROR, makeFixtureRoot, runnableFixtureApp } from "./verify-support.ts";
-import { assertNoLeaks } from "./leaks.ts";
+import { finishScratch } from "./leaks.ts";
 
 const UI_PORT = 46963;
 const STRAY_PORT = 46969;
@@ -27,9 +27,9 @@ const DEAD_PORT = 46968;
 const LATE_PORT = 46967;
 const values = loadBuildValues(DESIGN_SYSTEM_ROOT);
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-verify-run-")));
-afterAll(() => {
+afterAll(async () => {
   try {
-    assertNoLeaks(scratch); // no app this file started may still listen
+    await finishScratch(scratch); // stop what this file started, clean crashed runs' records, then no listener may be left
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }

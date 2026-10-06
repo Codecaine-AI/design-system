@@ -32,12 +32,12 @@ import {
   writeJournal,
 } from "../scripts/lib/verify/propagate.ts";
 import { browserSkip, MIRROR, makeFixtureRoot, runnableFixtureApp } from "./verify-support.ts";
-import { assertNoLeaks } from "./leaks.ts";
+import { finishScratch } from "./leaks.ts";
 
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-verify-propagate-")));
-afterAll(() => {
+afterAll(async () => {
   try {
-    assertNoLeaks(scratch); // no app this file started may still listen
+    await finishScratch(scratch); // stop what this file started, clean crashed runs' records, then no listener may be left
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }
