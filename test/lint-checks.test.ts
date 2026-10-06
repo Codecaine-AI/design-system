@@ -178,8 +178,7 @@ describe("wiring", () => {
     expect(check("html-nested", "wiring")).toMatchObject({ status: "pass", violations: [] });
     expectExactly(check("html-nested-broken", "wiring").violations, [
       at("apps/html-nested/broken/index.html", 5, "/styles/missing.css does not resolve; the entry page links it"),
-      // print.css is linked with media="print": the fonts.css it imports applies only when printing.
-      at("apps/html-nested/styles/print.css", 1, '@codecaine-ai/design-system/fonts.css loads only under "print"'),
+      // print.css (media="print") imports fonts.css again; ds.css already loads it for every view, so that is fine.
     ]);
   });
 

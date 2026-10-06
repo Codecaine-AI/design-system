@@ -1,0 +1,4 @@
+@import "@codecaine-ai/design-system/tokens.css";
+@media print {
+  body { color: black; }
+}
