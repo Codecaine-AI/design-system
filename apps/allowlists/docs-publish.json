@@ -2,10 +2,10 @@
   "literals": [
     {
       "file": "codecaine/core/docs-system/packages/docs-publish/src/editor.css",
-      "match": "^#(ffffff|222222|2563eb|f1f1ef|d44c47|2383e2|448361|cb912f)$",
+      "match": "^#(ffffff|222222|2563eb|f1f1ef)$",
       "category": "hex",
       "kind": "definition",
-      "reason": "the .docs-draft-editor block (editor.css 67-105, comment 63-66) defines the editor container defaults hosts may override: var(--color-*/--site-*, <literal>) fallbacks at 68-76 and the status and accent palette at 82-103, so the draft editor renders on a host without them (22 hits; the floor of 22 caps them)"
+      "reason": "host fallbacks only: the .docs-draft-editor definitions at editor.css 68-76 are var(--color-*, <literal>) (#fff, #222, #2563eb, #f1f1ef), so the draft editor renders on a host without the site palette (7 hits; the floor of 7 caps them). The status and accent block at 82-103 (--destructive, --status-*, --color-bg-blue, --color-text-blue) is not excused: pass 1 migrates it to color.status.*"
     }
   ],
   "twClasses": []
