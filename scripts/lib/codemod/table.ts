@@ -15,7 +15,7 @@ export interface Row {
   line: number;
   /** 1-based column of the literal; null when the literal was not found as written. */
   column: number | null;
-  /** sha256 (first 16 hex digits) of the whole source line at propose time; `apply` skips the row when the line differs. */
+  /** sha256 (first 16 hex digits) of the whole source line at propose time; `apply` also checks the whole file (Table.files). */
   lineSha: string | null;
   /** scan-literals category (hex, rgb, twArbitrary, pxFontSize ...). */
   category: string;
@@ -44,13 +44,27 @@ export interface Table {
   createdAt: string;
   designSystem: { root: string; commit: string | null };
   scan: { paths: string[]; exclude: string[]; ext?: string; categories: string[] };
-  /** Tailwind version the class replacements target (the registry's stack.tailwind). */
-  tailwind?: "v4" | "v3" | "none";
+  /**
+   * The Tailwind the class replacements target: the registry's stack.tailwind, or for a library
+   * whose host compiles its classes (stack.utilityClasses) the host's stack.hostTailwind. "uno": no
+   * class rewrites.
+   */
+  tailwind?: "v4" | "v3" | "none" | "uno";
+  /**
+   * sha256 of each file with rows, as propose read it. `apply` edits a file only while its whole
+   * text still hashes the same: any change since propose makes every row of the file stale.
+   */
+  files?: Record<string, string>;
   /** Hits left out because their category is not in `scan.categories` (`--all` includes them), per category. */
   dropped?: Record<string, number>;
-  /** role + nearest + unmapped = rows; handEdit counts mapped rows without a replacement (canvas, data objects, triplets). */
+  /** role + nearest + unmapped = rows; handEdit counts mapped rows without a replacement (canvas, data objects, triplets, values not known to reach CSS, Markdown). */
   summary: { rows: number; role: number; nearest: number; unmapped: number; handEdit: number };
   rows: Row[];
+}
+
+/** What a table stores to recognise a file: sha256 of its whole text. */
+export function fileSha(text: string): string {
+  return createHash("sha256").update(text).digest("hex");
 }
 
 /** What a row stores to recognise its line: sha256 of the line text, first 16 hex digits. */

@@ -77,19 +77,25 @@ function propRoleOf(property: string | null): PropRole {
   return null;
 }
 
+/** Role nouns: the last one in a name is its head and decides the role (`connectorLabelBackground` is a background). */
+const ROLE_NOUNS: Record<string, PropRole> = Object.fromEntries([
+  ...["foreground", "fg", "text", "ink", "label", "glyph", "font"].map((w) => [w, "text"]),
+  ...["shadow"].map((w) => [w, "shadow"]),
+  ...["border", "rule", "divider", "separator", "outline", "line", "stroke", "input", "ring", "focus"].map((w) => [w, "border"]),
+  ...["background", "bg", "surface", "canvas", "page", "paper", "panel", "card", "popover", "fill", "wash", "tint", "scrim", "overlay", "backdrop", "sidebar", "layer", "well", "chip", "highlight"].map((w) => [w, "background"]),
+]);
+/** Modifiers that name a fill only when no noun does (`--primary`, `--muted`; `--text-muted` is text). */
+const ROLE_MODIFIERS = new Set(["primary", "secondary", "muted", "accent", "destructive", "base"]);
+
 /**
- * A role from the words of a variable or key name (`--muted-foreground`, `SCRIM_COLOR`, `bg`).
- * Background words outrank `input`, `ring` and `focus`, so `--input-bg` is a background and
- * `--input` (shadcn's input border) a border.
+ * A role from the words of a variable or key name (`--muted-foreground`, `SCRIM_COLOR`, `bg`): the
+ * last role noun wins, so `--input-bg` is a background, `--input` (shadcn's input border) a border,
+ * `connectorLabelBackground` a background and `labelColor` text.
  */
 function propRoleFromName(name: string): PropRole {
   const w = words(name);
-  if (w.some((x) => ["foreground", "fg", "text", "ink", "label", "glyph", "font"].includes(x))) return "text";
-  if (w.some((x) => ["shadow"].includes(x))) return "shadow";
-  if (w.some((x) => ["border", "rule", "divider", "separator", "outline", "line", "stroke"].includes(x))) return "border";
-  if (w.some((x) => ["background", "bg", "surface", "canvas", "page", "paper", "panel", "card", "popover", "fill", "wash", "tint", "scrim", "overlay", "backdrop", "primary", "secondary", "muted", "accent", "destructive", "sidebar", "base", "layer", "well", "chip", "highlight"].includes(x))) return "background";
-  if (w.some((x) => ["input", "ring", "focus"].includes(x))) return "border";
-  return null;
+  for (let i = w.length - 1; i >= 0; i--) if (ROLE_NOUNS[w[i]]) return ROLE_NOUNS[w[i]];
+  return w.some((x) => ROLE_MODIFIERS.has(x)) ? "background" : null;
 }
 
 const STATUS: Array<[RegExp, string]> = [
@@ -407,6 +413,9 @@ const isHue = (p: string) => HUES.some((x) => p.startsWith(`color.${x}.`));
 
 export function pickColor(data: TokenData, literal: Rgba, ctx: Context, opts: Allow & { ringShadow?: boolean }): ColorPick {
   if (literal.a <= INVISIBLE_ALPHA) return { path: null, method: null, deltaE: null, why: `transparent (alpha ${round2(literal.a)}): keep \`transparent\`, or drop the declaration` };
+  // A mask reads only alpha, and an SVG filter's flood or light color is filter input: neither is a color anyone sees as a role.
+  if (/mask/i.test(ctx.property ?? "")) return { path: null, method: null, deltaE: null, why: "a mask: only its alpha counts, so no color token; keep it" };
+  if (/^(?:flood|lighting)-?color$/i.test(ctx.property ?? "")) return { path: null, method: null, deltaE: null, why: "an SVG filter input (flood or lighting color): no color token; keep it" };
   const theme = ctx.theme;
   const page = data.page[theme];
   let role = propRoleOf(ctx.property);

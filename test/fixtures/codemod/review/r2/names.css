@@ -1,0 +1,5 @@
+/* Codemod review fixture, round 2: the last role word in a name decides its role. */
+:root {
+  --connector-label-background: #f8f8f7;
+  --label-color: #666562;
+}

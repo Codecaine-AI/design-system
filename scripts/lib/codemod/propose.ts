@@ -10,9 +10,10 @@ import { parseColor } from "./color.ts";
 import { pickColor } from "./color-role.ts";
 import { readContext, type Context } from "./context.ts";
 import { locate, type Span } from "./locate.ts";
-import { pickClass, pickFamily, pickFontSize, pickRadius, pickSpacing, type Pick } from "./size-role.ts";
+import { pickClass, pickFamily, pickFontSize, pickRadius, pickSpacing, type Pick, type TailwindTarget } from "./size-role.ts";
+import { jsSlot, markupSlot, typePosition, type Slot } from "./slot.ts";
 import { cssRegionAt, kindOf, lineRange, prepareSource, type SourceFile } from "./source.ts";
-import { lineSha, type Row } from "./table.ts";
+import { fileSha, lineSha, type Row } from "./table.ts";
 import { cssVarRef, type Theme, type TokenData } from "./tokens.ts";
 
 const COLORS = new Set(["hex", "rgb", "hsl", "oklch", "otherColorFn", "namedColor"]);
@@ -24,18 +25,37 @@ export interface ProposeOptions {
   appId: string;
   defaultTheme: Theme;
   categories: Set<string>;
-  /** The app's Tailwind (registry stack.tailwind); class replacements target it. Default v4. */
-  tailwind?: "v4" | "v3" | "none";
+  /**
+   * The Tailwind that compiles the app's classes; class replacements target it. Default v4. "uno":
+   * an UnoCSS host, which gets no class rewrites.
+   */
+  tailwind?: TailwindTarget;
 }
 
 /**
  * How this file calls the package's `cssVar`: `cssVar`, its local alias (`import { cssVar as v }`),
- * `ns.cssVar` for a namespace import, or null when the file does not import it.
+ * `ns.cssVar` for a namespace import, or null when the file does not import it. Only a live import
+ * declaration counts: one at the start of a statement, at the top level, outside comments and
+ * strings (a commented-out import or import text in a string binds nothing).
  */
-export function cssVarBinding(src: string): string | null {
+export function cssVarBinding(f: SourceFile): string | null {
+  if (f.kind !== "js" || !f.inStr) return null;
+  const t = f.text;
+  let depth = 0;
+  let scanned = 0;
   // The clause never crosses another `from`: without semicolons, `import * as React from "react"`
   // must not run on into the next import.
-  for (const m of src.matchAll(/\bimport\s+(?!type\b)((?:(?!\bfrom\b)[^;])*?)\s*\bfrom\s*["']@codecaine-ai\/design-system["']/g)) {
+  for (const m of t.matchAll(/\bimport\s+(?!type\b)((?:(?!\bfrom\b)[^;])*?)\s*\bfrom\s*(["'])@codecaine-ai\/design-system\2/g)) {
+    const at = m.index!;
+    for (; scanned < at; scanned++) {
+      if (f.inStr[scanned] === 1) continue;
+      if (t[scanned] === "{") depth++;
+      else if (t[scanned] === "}") depth--;
+    }
+    const quote = at + m[0].length - "@codecaine-ai/design-system".length - 2;
+    if (depth !== 0 || f.inStr.subarray(at, quote).some((x) => x === 1)) continue;
+    const lead = t.slice(t.lastIndexOf("\n", at - 1) + 1, at);
+    if (!/^\s*$/.test(lead) && !/;\s*$/.test(lead)) continue;
     const clause = m[1];
     const ns = clause.match(/\*\s*as\s+([A-Za-z_$][\w$]*)/);
     if (ns) return `${ns[1]}.cssVar`;
@@ -114,15 +134,26 @@ function jsNonValue(f: SourceFile, span: Span): string | null {
   return null;
 }
 
-/** The text that replaces the literal in its slot, or null with the reason. `cssVarFn` is the file's binding for cssVar. */
-function replacementFor(f: SourceFile, span: Span | null, pick: Pick, ctx: Context, cssVarFn: string | null): { text: string | null; why?: string } {
+/**
+ * The text that replaces the literal in its slot, or null with the reason. `cssVarFn` is the file's
+ * binding for cssVar; `slot` says whether a JS or markup literal reaches CSS (null in a stylesheet).
+ */
+function replacementFor(f: SourceFile, span: Span | null, pick: Pick, ctx: Context, cssVarFn: string | null, slot: Slot | null): { text: string | null; why?: string } {
   if (!span) return { text: null, why: "not found on the line as written (channel triplet, numeric tuple, or a value split across lines): edit by hand" };
-  if (span.slot === "class") return pick.utility ? { text: pick.utility } : { text: null };
+  if (span.slot === "class") {
+    if (slot && !slot.ok) return { text: null, why: slot.why };
+    return pick.utility ? { text: pick.utility } : { text: null };
+  }
   if (!pick.path) return { text: null };
   if (ctx.data) return { text: null, why: "sits in a data object (id/type keys), not a style: check before changing" };
   if (span.slot === "canvas") return { text: null, why: "canvas 2D does not resolve var(): read the token with getComputedStyle, or keep it" };
-  const nonValue = jsNonValue(f, span);
+  const nonValue = jsNonValue(f, span) ?? typePosition(f, span);
   if (nonValue) return { text: null, why: nonValue };
+  if (slot && !slot.ok) return { text: null, why: slot.why };
+  // A nearest pick is a guess; in JS it is proposed only where the slot names a CSS property.
+  if (f.kind === "js" && pick.method === "nearest" && !cssRegionAt(f, span.start) && !(slot?.ok && slot.property)) {
+    return { text: null, why: "a nearest-color pick in JS with no CSS property in its slot: edit by hand" };
+  }
   const single = !pick.path.includes(",");
   const value = pick.css ?? cssVarRef(pick.path);
   switch (span.slot) {
@@ -151,6 +182,14 @@ function contextAnchor(f: SourceFile, line: number): Span {
   return { start: at, end: at, slot: "text" };
 }
 
+/** Whether a JS or markup literal reaches CSS; null for stylesheets, and for JS classes and canvas (decided elsewhere). */
+function slotOf(f: SourceFile, span: Span | null, ctx: Context): Slot | null {
+  if (!span) return null;
+  if (f.kind === "js") return span.slot === "class" || span.slot === "canvas" ? null : jsSlot(f, span, ctx.property);
+  if (f.kind === "html") return markupSlot(f, span, ctx.property);
+  return null;
+}
+
 export interface FileProposal {
   rows: Array<Omit<Row, "id">>;
   /** Hits whose category was left out, per category. */
@@ -161,7 +200,7 @@ export function proposeFile(data: TokenData, f: SourceFile, hits: Hit[], opts: P
   const rows: Array<Omit<Row, "id">> = [];
   const dropped: Record<string, number> = {};
   const seen = new Map<string, number>();
-  const cssVarFn = f.kind === "js" ? cssVarBinding(f.src) : null;
+  const cssVarFn = cssVarBinding(f);
   const byLine = new Map<number, Hit[]>();
   for (const hit of hits) byLine.set(hit.line, [...(byLine.get(hit.line) ?? []), hit]);
   for (const hit of hits) {
@@ -175,8 +214,14 @@ export function proposeFile(data: TokenData, f: SourceFile, hits: Hit[], opts: P
     const span = locate(f, hit, occurrence, byLine.get(hit.line));
     const [ls, le] = lineRange(f, hit.line);
     const ctx = readContext(f, span ?? contextAnchor(f, hit.line), { defaultTheme: opts.defaultTheme });
+    const slot = slotOf(f, span, ctx);
+    // The slot's CSS property (`background` for `background: on ? "#fff" : x` on its own line) when the line alone did not say.
+    if (slot?.ok && slot.property && !ctx.property && f.kind === "js") {
+      ctx.property = slot.property;
+      ctx.hints += ` ${slot.property}`;
+    }
     const pick = pickFor(data, f, hit, span, ctx, opts);
-    const rep = replacementFor(f, span, pick, ctx, cssVarFn);
+    const rep = replacementFor(f, span, pick, ctx, cssVarFn, slot);
     const why = [pick.why, rep.why].filter(Boolean).join("; ");
     rows.push({
       file: f.rel,
@@ -211,9 +256,10 @@ export interface ScanInput {
  * Runs scan-literals with hits over every path (one scan per path, so each report's file paths
  * resolve against that path) and proposes a row per hit. Files keep root-relative paths.
  */
-export function propose(data: TokenData, input: ScanInput, opts: ProposeOptions): { rows: Row[]; dropped: Record<string, number> } {
+export function propose(data: TokenData, input: ScanInput, opts: ProposeOptions): { rows: Row[]; dropped: Record<string, number>; files: Record<string, string> } {
   const rows: Array<Omit<Row, "id">> = [];
   const dropped: Record<string, number> = {};
+  const files: Record<string, string> = {};
   const done = new Set<string>();
   for (const p of input.paths) {
     const abs = resolve(input.root, p);
@@ -230,12 +276,14 @@ export function propose(data: TokenData, input: ScanInput, opts: ProposeOptions)
       const kind = kindOf(file);
       if (!kind || !fr.hits) continue;
       const rel = relative(input.root, file).split(sep).join("/");
-      const p = proposeFile(data, prepareSource(rel, readFileSync(file, "utf8"), kind), fr.hits, opts);
+      const src = readFileSync(file, "utf8");
+      const p = proposeFile(data, prepareSource(rel, src, kind), fr.hits, opts);
+      if (p.rows.length) files[rel] = fileSha(src);
       rows.push(...p.rows);
       for (const [c, n] of Object.entries(p.dropped)) dropped[c] = (dropped[c] ?? 0) + n;
     }
   }
-  return { rows: rows.map((r, i) => ({ id: i + 1, ...r })), dropped };
+  return { rows: rows.map((r, i) => ({ id: i + 1, ...r })), dropped, files };
 }
 
 const DEFAULT_EXTS = ["css", "scss", "sass", "less", "uss", "ts", "tsx", "mts", "cts", "js", "jsx", "mjs", "cjs", "html", "htm", "vue", "svelte", "astro"];

@@ -218,7 +218,7 @@ function enclosingPreludes(f: SourceFile, index: number, limit = 8): string[] {
 }
 
 /** The JSX/HTML tag the literal sits in (as an attribute), and the tag's text up to the literal. */
-function enclosingTag(f: SourceFile, index: number): { name: string; text: string } | null {
+export function enclosingTag(f: SourceFile, index: number): { name: string; text: string } | null {
   const t = f.text;
   let depth = 0;
   let level = 0;
@@ -238,6 +238,17 @@ function enclosingTag(f: SourceFile, index: number): { name: string; text: strin
     }
   }
   return null;
+}
+
+/**
+ * The JSX attribute whose value starts at `index` (the quote or the `{` right after `name=`), at the
+ * tag's own brace level, with the tag's name; null when `index` is not an attribute value.
+ */
+export function attributeAt(f: SourceFile, index: number): { name: string; tag: string } | null {
+  const tag = enclosingTag(f, index);
+  if (!tag || braceDepth(f, index - tag.text.length, index) !== 0) return null;
+  const name = tag.text.match(/(?:^|\s)([A-Za-z_:@][-\w:.]*)\s*=\s*$/)?.[1];
+  return name ? { name, tag: tag.name } : null;
 }
 
 /** `{` minus `}` between two offsets, outside strings. */
