@@ -293,7 +293,7 @@ describe.skipIf(!!noSandbox)("bun run test:apps", () => {
   test("an entry with nothing to run says which --commands it does set", () => {
     const refused = testApps(["--json", "typecheck-only"]);
     expect(refused.status).toBe(1);
-    expect(refused.reports["typecheck-only"].refused).toBe("nothing to run: typecheck-only has no tests.safe command; the entry sets commands.typecheck: run it with --commands typecheck");
+    expect(refused.reports["typecheck-only"].refused).toBe("nothing to run: typecheck-only has no tests.safe command; it sets commands.typecheck: run it with --commands typecheck");
   });
 
   test("a failure the baseline does not list is named, for bun test, vitest and tsc output", () => {

@@ -461,11 +461,16 @@ export function plannedCommands(app: AppEntry, opts: { tests?: boolean; commands
 
 /** Why a run has nothing to execute, with the --commands the entry does set (if any). */
 export function nothingToRun(app: AppEntry, opts: { tests?: boolean; commands?: string[] } = {}): string {
-  const set = NAMED_COMMANDS.filter((name) => app.commands?.[name]);
+  const asked = opts.commands ?? [];
+  const others = NAMED_COMMANDS.filter((name) => app.commands?.[name] && !asked.includes(name));
   const tests = opts.tests === false ? "--no-tests" : `${app.id} has no tests.safe command`;
-  const named = opts.commands?.length ? `, and apps.json sets none of commands.${opts.commands.join(", commands.")}` : "";
-  const hint = set.length ? `the entry sets ${set.map((name) => `commands.${name}`).join(" and ")}: run it with --commands ${set.join(",")}` : "the entry sets no typecheck or build command either";
-  return `nothing to run: ${tests}${named}; ${hint}`;
+  const named = asked.length ? `, and the entry sets none of ${asked.map((name) => `commands.${name}`).join(", ")}` : "";
+  const hint = others.length
+    ? `; it sets ${others.map((name) => `commands.${name}`).join(" and ")}: run it with --commands ${others.join(",")}`
+    : asked.length
+      ? ""
+      : "; it sets no typecheck or build command either";
+  return `nothing to run: ${tests}${named}${hint}`;
 }
 
 /** Fixtures are design-system-relative; apps/fixtures/<id>/<rest> lands at <tmp>/<rest>, anything else at <tmp>/<basename>. No .env files. */
