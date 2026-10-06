@@ -218,20 +218,29 @@ export interface PortBlock {
   size: number;
 }
 
-/**
- * The port block a profile runs in. With the registry it was loaded from: 47000 + 10 x the app's index
- * there (registry:check's rule). Without one: the aligned ten-port block of its first named port (or
- * first allowedLocalPorts entry), and checkProfilePorts then requires every other port to share it.
- * Null when the profile names no port at all.
- */
-export function profileBlock(app: AppEntry, registry?: Registry): PortBlock | null {
-  if (registry) {
-    const index = registry.apps.findIndex((entry) => entry.id === app.id);
-    if (index < 0) throw new Error(`${app.id}: not in the registry it was started from`);
-    return { start: PROFILE_PORTS.min + PROFILE_PORTS.block * index, size: PROFILE_PORTS.block };
-  }
+/** Tool tests' ports (TOOLING_CONTRACT.md); a profile living only here is a test stand-in, not a registry app. */
+export const TEST_PORT_RANGE = { min: 46900, max: 46999 } as const;
+
+/** The aligned ten-port block of the profile's first named port (or first allowedLocalPorts entry); null without any. */
+function alignedBlock(app: AppEntry): PortBlock | null {
   const first = [...Object.values(app.runProfile?.ports ?? {}), ...(app.runProfile?.allowedLocalPorts ?? [])].find(Number.isInteger);
   return first === undefined ? null : { start: first - (first % PROFILE_PORTS.block), size: PROFILE_PORTS.block };
+}
+
+/**
+ * The port block a profile runs in. With the registry it was loaded from: 47000 + 10 x the app's index
+ * there (registry:check's rule), except a test stand-in whose named ports all lie in the tool-test range
+ * 46900-46999, which keeps the aligned rule below. Without a registry: the aligned ten-port block of its
+ * first named port (or first allowedLocalPorts entry), and checkProfilePorts then requires every other
+ * port to share it. Null when the profile names no port at all.
+ */
+export function profileBlock(app: AppEntry, registry?: Registry): PortBlock | null {
+  if (!registry) return alignedBlock(app);
+  const named = Object.values(app.runProfile?.ports ?? {});
+  if (named.length && named.every((port) => Number.isInteger(port) && port >= TEST_PORT_RANGE.min && port <= TEST_PORT_RANGE.max)) return alignedBlock(app);
+  const index = registry.apps.findIndex((entry) => entry.id === app.id);
+  if (index < 0) throw new Error(`${app.id}: not in the registry it was started from`);
+  return { start: PROFILE_PORTS.min + PROFILE_PORTS.block * index, size: PROFILE_PORTS.block };
 }
 
 /**
@@ -264,15 +273,15 @@ function checkProfilePorts(app: AppEntry, block: PortBlock | null) {
 
 /**
  * Every problem a loaded registry has before any tool may run from it: validateRegistry's structure, then
- * registry:check's profile rules for each app in its own block (47000 + 10 x index), each profile port
- * used once. Path checks against a workspace tree stay in registry:check.
+ * registry:check's profile rules for each app in its own block (profileBlock: 47000 + 10 x index, or the
+ * aligned block for a test stand-in on 46900-46999), each profile port used once. Path checks against a
+ * workspace tree, and the canonical apps.json's 47000-47999 requirement, stay in registry:check.
  */
 export function registryProblems(registry: Registry): string[] {
   const problems = validateRegistry(registry);
   const users = new Map<number, string>();
-  registry.apps.forEach((app, index) => {
-    const block = { start: PROFILE_PORTS.min + PROFILE_PORTS.block * index, size: PROFILE_PORTS.block };
-    problems.push(...profilePortProblems(app, block));
+  registry.apps.forEach((app) => {
+    problems.push(...profilePortProblems(app, profileBlock(app, registry)));
     for (const [name, port] of Object.entries(app.runProfile?.ports ?? {})) {
       const other = users.get(port);
       if (other) problems.push(`${app.id}: port ${name}=${port} is also used by ${other}`);
