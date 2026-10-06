@@ -16,8 +16,10 @@
  *   otherColorFn   lab(), lch(), hwb(), color(display-p3 ...)
  *   twArbitrary    Tailwind arbitrary values: bg-[#fff], p-[13px], [mask-type:alpha]
  *   pxFontSize     font-size: 13px, fontSize: 13, font: 12px Inter, fontSize={12}
- *   radius         border-radius declarations with a literal value (not var())
- *   fontFamily     font-family declarations that name fonts (not var())
+ *   radius         border-radius declarations with a literal value (not var()), and
+ *                  var()-based values whose calc() adds a px/rem/em length
+ *   fontFamily     font-family declarations that name fonts (not var()), a value
+ *                  written over several lines included
  *
  * SOFT categories are token-adjacent signals, reported separately:
  *   namedColor     color: white, fill="black", border: 1px solid red
@@ -25,6 +27,13 @@
  *   twArbitraryVar Tailwind arbitrary values that only wrap a var: bg-[var(--x)], bg-(--x)
  *   pxSpacing      padding/margin/gap declarations with literal px values
  *   otherFontSize  literal rem/em/pt/% font sizes
+ *
+ * Custom-property definitions count like the declaration that reads them:
+ *   --mono: "SFMono-Regular", ui-monospace, monospace   fontFamily (a font stack)
+ *   --radius: 8px                                       radius (by name, or because
+ *                                                       the file reads it in border-radius)
+ *   --font-size-sm: 12px, --gap: 8px                    pxFontSize, pxSpacing
+ * A shell-scoped --ds-layout-* override (guide/layout.md) is not a literal.
  *
  * Color literals are split three ways, because each migrates differently:
  *   definitions  --accent: #fff, $accent: #fff, --primary: 222 47% 11%, any
@@ -98,7 +107,10 @@ export interface Hit {
   category: Category;
   value: string;
   line: number;
-  /** Color literal inside a custom-property / SCSS / LESS variable definition, or in a JSON file. */
+  /**
+   * Literal inside a variable definition: a color in a custom-property / SCSS / LESS variable or a
+   * JSON file, or a font stack or size in a custom-property definition (`--mono: …`, `--radius: 8px`).
+   */
   def: boolean;
   /** Color literal used as a var() fallback: var(--x, #fff). */
   fallback: boolean;
@@ -712,13 +724,19 @@ function isCssSelector(text: string, end: number): boolean {
   return false;
 }
 
-function readValue(text: string, start: number, kind: FileKind, inStr: Uint8Array | null): { value: string; vkind: ValueKind } {
+/**
+ * Reads a declaration value. `multiline` (font-family) reads a value that starts on the next line
+ * or runs over several (`font-family:\n  Inter,\n  sans-serif;`); every other value ends at the line.
+ */
+function readValue(text: string, start: number, kind: FileKind, inStr: Uint8Array | null, multiline = false): { value: string; vkind: ValueKind } {
   let i = start;
-  while (i < text.length && (text[i] === " " || text[i] === "\t")) i++;
+  const space = multiline ? /\s/ : /[ \t]/;
+  while (i < text.length && space.test(text[i])) i++;
   const cssInJs = kind === "js" && inStr !== null && inStr[start - 1] === 1;
+  const stops = multiline ? ";{}" : ";{}\n";
   if (kind === "css" || kind === "scss" || cssInJs) {
     let k = i;
-    while (k < text.length && !";{}\n".includes(text[k]) && !(cssInJs && inStr![k] === 0)) k++;
+    while (k < text.length && !stops.includes(text[k]) && !(cssInJs && inStr![k] === 0)) k++;
     return { value: text.slice(i, k).trim(), vkind: "css" };
   }
   const q = text[i];
@@ -729,7 +747,7 @@ function readValue(text: string, start: number, kind: FileKind, inStr: Uint8Arra
   }
   if (kind === "html") {
     let k = i;
-    while (k < text.length && !';{}\n"<>'.includes(text[k])) k++;
+    while (k < text.length && !(stops + '"<>').includes(text[k])) k++;
     const value = text.slice(i, k).trim();
     // A script expression in a template binding (`ok ? 0 : 4`), not a CSS value.
     if (/\?|===|!==|&&|\|\||=>/.test(value)) return { value: "", vkind: "expr" };
@@ -747,6 +765,20 @@ function readValue(text: string, start: number, kind: FileKind, inStr: Uint8Arra
     k++;
   }
   return { value: text.slice(i, k).trim(), vkind: "expr" };
+}
+
+/**
+ * Non-zero px/rem/em lengths inside calc() in a value whose var() groups are already blanked (so a
+ * var() fallback length never counts): `calc(  - 2px)` -> ["2px"].
+ */
+function calcLengths(noVars: string): string[] {
+  const out: string[] = [];
+  for (const m of noVars.matchAll(/calc\(((?:[^()]|\((?:[^()]|\([^()]*\))*\))*)\)/gi)) {
+    for (const len of m[1].matchAll(/(?<![\w.#-])(\d*\.?\d+)(px|rem|em)\b/g)) {
+      if (Number(len[1]) !== 0) out.push(`${len[1]}${len[2]}`);
+    }
+  }
+  return out;
 }
 
 const IS_NUMBER = /^-?\d+(?:\.\d+)?$/;
@@ -772,7 +804,11 @@ function classifyProp(kind: PropKind, raw: string, vkind: ValueKind): Array<[Cat
   const tokenBacked = /var\(|theme\(|\$\{/.test(value);
   switch (kind) {
     case "fontSize": {
-      if (tokenBacked) break;
+      if (tokenBacked) {
+        // calc(var(--base) + 2px): the length is a literal even though the value starts from a token.
+        for (const len of calcLengths(noVars)) out.push(len.endsWith("px") ? ["pxFontSize", len] : ["otherFontSize", len]);
+        break;
+      }
       const px = value.match(/^(-?\d*\.?\d+)px$/);
       if (px && Number(px[1]) === 0) break;
       if (px) out.push(["pxFontSize", `${px[1]}px`]);
@@ -796,6 +832,8 @@ function classifyProp(kind: PropKind, raw: string, vkind: ValueKind): Array<[Cat
       break;
     }
     case "radius": {
+      // calc(var(--radius) - 2px): a radius built from a token plus a literal length.
+      if (tokenBacked && calcLengths(noVars).length) out.push(["radius", value.replace(/\s+/g, " ")]);
       if (tokenBacked || RESET_VALUES.has(value.toLowerCase())) break;
       if (/\d/.test(value)) out.push(["radius", value.replace(/\s+/g, " ")]);
       break;
@@ -838,6 +876,99 @@ function varFallbackMask(text: string): Uint8Array {
     mask.fill(1, start, k);
   }
   return mask;
+}
+
+// ---------------------------------------------------------------------------
+// Custom-property definitions
+
+/** CSS generic family keywords and the system-font aliases stacks start or end with. */
+const GENERIC_FAMILIES = new Set([
+  "serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui", "ui-serif", "ui-sans-serif",
+  "ui-monospace", "ui-rounded", "math", "emoji", "fangsong", "-apple-system", "blinkmacsystemfont",
+]);
+const FAMILY_ITEM = /^(?:"[^"\n]+"|'[^'\n]+'|-?[A-Za-z_][\w-]*(?:\s+[A-Za-z_][\w-]*)*)$/;
+/** Names that hold a font stack: --font-sans, --font-family-mono, --mono, --ff-body, --typeface. */
+const FAMILY_NAME = /(?:^--|-)(?:font|fonts|ff|family|typeface|mono|sans|serif)(?:-|$)/i;
+/** ... unless they name another font property: --font-size-sm, --font-weight-bold, --font-display. */
+const NOT_FAMILY_NAME = /size|weight|style|variant|stretch|feature|setting|display|smooth|synthesis|kerning|optical|height|leading|tracking|spacing|scale/i;
+const RADIUS_NAME = /radius|rounded/i;
+/** --font-size-sm, --fs-body, --text-sm (Tailwind v4 theme), --blog-heading-size, --label-text-size. */
+const FONT_SIZE_NAME =
+  /font-?size|(?:^--|-)fs(?:-|$)|^--text-(?:2xs|xs|sm|base|md|lg|xl|[2-9]xl)$|(?:^--|-)(?:text|font|type|title|subtitle|heading|subheading|body|label|caption|h[1-6])-size(?:-|$)/i;
+/** Whole name segments only: --gap, --content-padding-x, --site-gutter (not --workspace-height). */
+const SPACING_NAME = /(?:^--|-)(?:space|spacing|spacer|gap|gutter|pad|padding|margin)(?:-|$)/i;
+/** A shell-scoped `--ds-layout-*` override is allowed (guide/layout.md, decision 32); the names check owns its scope. */
+const ALLOWED_DEFINITION = /^--ds-layout-/;
+
+/** A comma list of font family names, or null: `"SFMono-Regular", ui-monospace, Menlo`. */
+function familyList(value: string): string[] | null {
+  if (!value || /var\(|\$\{|[();]/.test(value)) return null;
+  const items = value.split(",").map((x) => x.trim().replace(/\s+/g, " "));
+  return items.every((x) => FAMILY_ITEM.test(x)) ? items : null;
+}
+
+/**
+ * The hits a custom-property definition holds: a font stack (fontFamily) or a length (radius,
+ * font size, spacing). How the file reads the property decides first (`border-radius:
+ * var(--radius)`), then its name; a list of families with a generic family or a quoted name is a
+ * font stack whatever its name.
+ */
+function classifyDefinition(name: string, raw: string, readAs: PropKind | null): Array<[Category, string]> {
+  if (ALLOWED_DEFINITION.test(name)) return [];
+  const value = raw.replace(/\s*!important\s*$/i, "").trim();
+  const families = familyList(value);
+  const familyNamed = FAMILY_NAME.test(name) && !NOT_FAMILY_NAME.test(name);
+  const kind: PropKind | null =
+    readAs === "fontFamily" || readAs === "radius" || readAs === "fontSize" || readAs === "spacing"
+      ? readAs
+      : RADIUS_NAME.test(name)
+        ? "radius"
+        : FONT_SIZE_NAME.test(name)
+          ? "fontSize"
+          : familyNamed
+            ? "fontFamily"
+            : SPACING_NAME.test(name)
+              ? "spacing"
+              : null;
+  if (kind === "fontFamily" || (kind === null && families)) {
+    if (!families) return [];
+    const named = families.some((x) => GENERIC_FAMILIES.has(x.toLowerCase()) || /^["']/.test(x));
+    // One bare word is a family only where the name or a reader says so, and only when it looks
+    // like a font name (Inter, monospace), not a keyword such as `inherit` or `bold`.
+    const ok = families.length > 1 ? named : kind === "fontFamily" && (named || /^[A-Z]/.test(families[0]));
+    if (!ok || /^(?:inherit|initial|unset|revert|none)$/i.test(families[0])) return [];
+    return [["fontFamily", firstFamily(value)]];
+  }
+  if (kind === "radius" || kind === "fontSize" || kind === "spacing") return classifyProp(kind, value, "css");
+  return [];
+}
+
+/** Custom-property definitions with their values: CSS and <style> text, CSS strings and quoted keys in JS. */
+function customPropDefs(text: string, kind: FileKind, inStr: Uint8Array | null): Array<{ name: string; value: string; index: number }> {
+  const out: Array<{ name: string; value: string; index: number }> = [];
+  if (kind === "json") return out;
+  for (const m of text.matchAll(/(?<![\w-])(--[\w-]+)\s*:(?!:)\s*([^;{}]*)/g)) {
+    // In JS only inside a string or template (CSS text), never code.
+    if (inStr && !inStr[m.index!]) continue;
+    let value = m[2];
+    if (kind === "html") {
+      // A style="" attribute ends at its quote, markup at < or >: keep a quoted family only when its quotes pair up.
+      value = value.split(/[<>\n]/)[0];
+      if ((value.match(/"/g) ?? []).length % 2) value = value.slice(0, value.indexOf('"'));
+    }
+    if (inStr) {
+      const at = m.index! + m[0].length - m[2].length;
+      let k = 0;
+      while (k < value.length && inStr[at + k]) k++;
+      value = value.slice(0, k);
+    }
+    out.push({ name: m[1], value: value.trim(), index: m.index! });
+  }
+  if (kind === "js") {
+    // A style object key: { "--radius": "8px" }.
+    for (const m of text.matchAll(/(['"])(--[\w-]+)\1\s*:\s*(['"`])([^'"`\n]*)\3/g)) out.push({ name: m[2], value: m[4].trim(), index: m.index! });
+  }
+  return out;
 }
 
 /** Scan one file's text. Pure: no I/O, so other tools can reuse it. */
@@ -893,14 +1024,28 @@ export function scanText(src: string, kind: FileKind, keepComments = false): Hit
 
   // 2. Property declarations: CSS syntax, CSS-in-JS, JS style objects, JSON.
   const declText = kind === "js" || kind === "json" ? text : text.replace(FONT_FACE_RE, blank);
+  /** What each custom property is read as in this file: `border-radius: calc(var(--radius) - 2px)`. */
+  const readAs = new Map<string, PropKind | null>();
   for (const m of declText.matchAll(PROP_RE)) {
     const name = m[2];
     const pkind = PROP_KIND[name];
     const end = m.index! + m[0].length;
     // In CSS-like files, `color:` inside a selector (a:hover) is not a declaration.
     if ((kind === "css" || kind === "scss") && isCssSelector(declText, end)) continue;
-    const { value, vkind } = readValue(declText, end, kind, inStr);
+    const { value, vkind } = readValue(declText, end, kind, inStr, pkind === "fontFamily");
     for (const [category, v] of classifyProp(pkind, value, vkind)) add(category, v, m.index!);
+    if (pkind !== "color") {
+      for (const r of value.matchAll(/var\(\s*(--[\w-]+)/g)) {
+        const was = readAs.get(r[1]);
+        readAs.set(r[1], was === undefined || was === pkind ? pkind : null);
+      }
+    }
+  }
+
+  // 2b. Custom-property definitions of a font stack or a length: `--mono: "SFMono-Regular", monospace`,
+  //     `--radius: 8px`. They count like the declaration that reads them.
+  for (const d of customPropDefs(text, kind, inStr)) {
+    for (const [category, v] of classifyDefinition(d.name, d.value, readAs.get(d.name) ?? null)) add(category, v, d.index, true);
   }
 
   // 3. JSX / HTML / SVG attributes and canvas fonts.
