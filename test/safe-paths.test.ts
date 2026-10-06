@@ -3,11 +3,11 @@
  * destination that reaches the owner's tree by any spelling must be refused.
  */
 import { afterAll, describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { canonicalPath, safeAppId, safeOutputPath, safeSegment, UnsafePathError } from "../scripts/lib/safe-paths.ts";
+import { canonicalPath, safeAppId, safeChildPath, safeOutputPath, safeSegment, safeTempBase, UnsafePathError } from "../scripts/lib/safe-paths.ts";
 
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-safe-paths-")));
 afterAll(() => rmSync(scratch, { recursive: true, force: true }));
@@ -70,5 +70,76 @@ describe("path segments", () => {
   test("accepts registry ids and set names", () => {
     expect(safeAppId("canvas-studio")).toBe("canvas-studio");
     expect(safeSegment("before_v2.1", "--set")).toBe("before_v2.1");
+  });
+});
+
+describe("safeChildPath", () => {
+  const out = join(mirror, "out");
+  mkdirSync(join(out, "app", "shots"), { recursive: true });
+  writeFileSync(join(out, "app", "notes.txt"), "");
+  const elsewhere = join(scratch, "elsewhere");
+  mkdirSync(elsewhere);
+  symlinkSync(elsewhere, join(out, "app", "linked")); // planted after the base was validated
+  writeFileSync(join(elsewhere, "target.png"), "");
+  symlinkSync(join(elsewhere, "target.png"), join(out, "app", "shots", "home-light.png"));
+  const at = (...segments: string[]) => safeChildPath({ base: out, ownerTree: owner }, ...segments);
+
+  test("returns the nested path under the canonical base, existing or not", () => {
+    expect(at("app", "shots", "set-a", "home-dark.png")).toBe(join(out, "app", "shots", "set-a", "home-dark.png"));
+    expect(at("app", "notes.txt")).toBe(join(out, "app", "notes.txt"));
+  });
+
+  test.each([
+    ["a traversal segment", ["app", "..", "x"]],
+    ["a segment with a separator", ["app", "shots/../../x"]],
+    ["a hidden segment", ["app", ".git"]],
+    ["no segment", []],
+  ])("refuses %s", (_, segments) => {
+    expect(() => at(...segments)).toThrow(UnsafePathError);
+  });
+
+  test("refuses a symlinked directory on the way, even one that points outside the owner's tree", () => {
+    expect(() => at("app", "linked", "x.png")).toThrow(/is a symlink/);
+  });
+
+  test("refuses a symlink as the final component (a write would follow it)", () => {
+    expect(() => at("app", "shots", "home-light.png")).toThrow(/is a symlink/);
+  });
+
+  test("refuses a file where a directory must be", () => {
+    expect(() => at("app", "notes.txt", "x")).toThrow(/not a directory/);
+  });
+
+  test("refuses a base in the owner's tree unless --root is that tree", () => {
+    expect(() => safeChildPath({ base: join(owner, "design-system"), ownerTree: owner }, "out")).toThrow(/owner's tree/);
+    expect(() => safeChildPath({ base: join(mirror, "dangling"), ownerTree: owner }, "out")).toThrow(/owner's tree/);
+    expect(safeChildPath({ base: join(owner, "design-system"), ownerTree: owner, root: owner }, "out")).toBe(join(owner, "design-system", "out"));
+  });
+});
+
+describe("safeTempBase", () => {
+  const home = join(scratch, "home");
+  mkdirSync(join(home, "Library", "Caches"), { recursive: true });
+  mkdirSync(join(home, ".ssh"), { recursive: true });
+  mkdirSync(join(home, "tmp"), { recursive: true });
+  const check = (tmp: string) => safeTempBase({ tmp, home, ownerTree: owner });
+
+  test("returns the canonical spelling of a system temp dir", () => {
+    expect(check(tmpdir())).toBe(realpathSync(tmpdir()));
+  });
+
+  test.each([
+    ["the owner's tree", () => join(owner, "design-system")],
+    ["a symlink into the owner's tree", () => join(mirror, "linked")],
+    ["~/Library/Caches", () => join(home, "Library", "Caches")],
+    ["a credential store", () => join(home, ".ssh")],
+    ["the home dir itself", () => home],
+    ["a missing dir", () => join(scratch, "missing")],
+  ])("refuses %s", (_, dir) => {
+    expect(() => check(dir())).toThrow(UnsafePathError);
+  });
+
+  test("an ordinary dir under home that is not forbidden is accepted", () => {
+    expect(check(join(home, "tmp"))).toBe(join(home, "tmp"));
   });
 });
