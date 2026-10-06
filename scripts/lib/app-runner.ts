@@ -71,7 +71,6 @@ import {
   writeFileSync,
 } from "node:fs";
 import { createRequire } from "node:module";
-import { connect } from "node:net";
 import { tmpdir } from "node:os";
 import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
 
@@ -80,6 +79,7 @@ import { appScope, changedCheckouts, checkoutStates } from "./checkouts";
 import { describeConnection, egressConnections, isExposedListener, lsofConnections } from "./egress";
 import { markAppsStarted, pinRepos } from "./git";
 import { OWNER_PORTS } from "./owner";
+import { BlockHold, LOOPBACK_ADDRESSES, type HoldState, type LoopbackAddress } from "./port-hold";
 import { designSystemUrlPath, DS_URL_PREFIX, findPackageDir } from "./lint/workspace";
 import { headlessShellPath, loadPlaywright, noteAppStarted, pinElectron, pinPlaywright, playwrightAnchor, playwrightDirs } from "./playwright";
 import { portProblems, PROFILE_PORTS } from "../registry-check";
@@ -106,8 +106,8 @@ const SAMPLE_INTERVAL_MS = 250;
  * started (its data is no older than that). The guard always uses the newest read; this is the cap for
  * when reads are slow. Egress sampling reads every SAMPLE_INTERVAL_MS plus one lsof (about 2.5 s under
  * load), so the newest completed read is normally younger than this and a request to the run's own port
- * never waits; past it, the request waits (asynchronously) for the next read. Why 5 s is safe: see
- * portGuard.
+ * never waits; past it, the request waits (asynchronously) for the next read. It is not what keeps a
+ * stranger off the run's ports: the block hold is (port-hold.ts, portGuard).
  */
 export const LISTENER_MAX_AGE_MS = 5_000;
 const MAX_VIOLATIONS = 50;
@@ -475,16 +475,29 @@ function lsofSync(args: string[]): string | null {
 }
 
 /** TCP ports in LISTEN state held by these pids; [] when lsof fails (the guard then allows nothing new). */
-function listeningPorts(pids: number[]): number[] {
+/** A TCP listener of a run process: its pid, local address as lsof prints it ("127.0.0.1", "[::1]", "*") and port. */
+interface Listener {
+  pid: number;
+  host: string;
+  port: number;
+}
+
+/** The TCP sockets in LISTEN state these pids hold; null when lsof fails. */
+function listeningSockets(pids: number[]): Listener[] | null {
   if (pids.length === 0) return [];
-  const out = lsofSync(["-nP", "-w", "-a", "-iTCP", "-sTCP:LISTEN", "-p", pids.join(","), "-Fn"]) ?? "";
-  const ports = new Set<number>();
+  const out = lsofSync(["-nP", "-w", "-a", "-iTCP", "-sTCP:LISTEN", "-p", pids.join(","), "-Fpn"]);
+  if (out === null) return null;
+  const found: Listener[] = [];
+  let pid = 0;
   for (const line of out.split("\n")) {
-    if (!line.startsWith("n")) continue;
-    const port = Number(line.slice(line.lastIndexOf(":") + 1));
-    if (Number.isInteger(port) && port > 0) ports.add(port);
+    if (line.startsWith("p")) pid = Number(line.slice(1));
+    else if (line.startsWith("n") && pid) {
+      const i = line.lastIndexOf(":");
+      const port = Number(line.slice(i + 1));
+      if (Number.isInteger(port) && port > 0) found.push({ pid, host: line.slice(1, i), port });
+    }
   }
-  return [...ports].sort((a, b) => a - b);
+  return found;
 }
 
 /** Pids listening on a TCP port (any process), or null when lsof fails. */
@@ -723,6 +736,10 @@ interface Internal {
   reads: ListenerReads;
   /** The ports a run process can listen on: its block under the sandbox; null when the run is unsandboxed. */
   listenable: ReadonlySet<number> | null;
+  /** The runner's exclusive hold on the block (port-hold.ts); set before the first run process starts. */
+  hold?: BlockHold;
+  /** Loopback addresses ("127.0.0.1:47021") a read showed a run process listening on, ever. */
+  runHeld: Set<string>;
   /** Every socket egress sampling saw ("pid local->remote"). */
   sockets: Set<string>;
   /** Electron only, while its launch is in flight or after a stop() that raced it: kill it synchronously. */
@@ -865,9 +882,58 @@ export function refreshStartedPorts(running: RunningApp): number[] {
   return running.startedPorts;
 }
 
-/** The run's own ports from what its processes listen on: plus the built-in static server while it serves, owner ports never. */
-function ownSet(internal: Internal, listening: readonly number[]): Set<number> {
-  return new Set([...listening, ...(internal.staticPort ? [internal.staticPort] : [])].filter((port) => !OWNER_PORTS.includes(port)));
+/** "127.0.0.1", "::1" or "*" (any address) for an lsof local address; null for any other address. */
+function listenerAddress(host: string): string | null {
+  const bare = host.replace(/^\[|\]$/g, "");
+  return bare === "127.0.0.1" || bare === "::1" || bare === "*" ? bare : null;
+}
+
+/**
+ * Records one completed read of the run's listeners: the built-in static server counts while it serves
+ * (this process), owner ports never. Each loopback address a run process listens on is handed to the
+ * block hold: watched (taken the moment the run lets go) with its holder pids (exit-watched); one the run held before and no longer holds, that the runner did not take
+ * back, is tainted: another process took it.
+ */
+function recordRead(running: RunningApp, internal: Internal, started: number, listening: readonly Listener[]): Set<number> {
+  recordListeners(running, listening.map((listener) => listener.port));
+  const all = [...listening, ...(internal.staticPort ? [{ pid: process.pid, host: "127.0.0.1", port: internal.staticPort }] : [])].filter(
+    (listener) => !OWNER_PORTS.includes(listener.port),
+  );
+  const listeners = new Map<string, number[]>();
+  for (const { pid, host, port } of all) {
+    const address = listenerAddress(host);
+    if (address === null) continue;
+    const key = `${address}:${port}`;
+    listeners.set(key, [...new Set([...(listeners.get(key) ?? []), pid])]);
+  }
+  const ports = new Set(all.map((listener) => listener.port));
+  const read: ListenerRead = { started, finished: performance.now(), ports, listeners };
+  internal.reads.record(read);
+  const hold = internal.hold;
+  if (hold && internal.reads.last === read) {
+    const held = new Set<string>();
+    for (const [key, pids] of listeners) {
+      const i = key.lastIndexOf(":");
+      const address = key.slice(0, i);
+      const port = Number(key.slice(i + 1));
+      if (!hold.covers(port)) continue;
+      // Only the families the run listens on: taking the other one would turn a run process's "connection
+      // refused" there (Node tries ::1 first for `localhost`) into a reset, which apps do not retry.
+      for (const family of LOOPBACK_ADDRESSES) {
+        if (address !== family && address !== "*") continue;
+        hold.watch(family, port);
+        hold.holders(family, port, pids);
+        held.add(`${family}:${port}`);
+      }
+    }
+    for (const key of internal.runHeld) {
+      if (held.has(key)) continue;
+      const i = key.lastIndexOf(":");
+      hold.taint(key.slice(0, i) as LoopbackAddress, Number(key.slice(i + 1)));
+    }
+    for (const key of held) internal.runHeld.add(key);
+  }
+  return ports;
 }
 
 /**
@@ -879,11 +945,12 @@ function ownPorts(running: RunningApp): Set<number> {
   if (!internal) return new Set(running.startedPorts.filter((port) => !OWNER_PORTS.includes(port)));
   const started = performance.now();
   const table = readProcessTable(1);
-  const listening = table ? listeningPorts(runProcesses(internal.roots, table, [...internal.known.values()]).map((proc) => proc.pid)) : [];
-  recordListeners(running, listening);
-  const ports = ownSet(internal, listening);
-  internal.reads.record({ started, finished: performance.now(), ports });
-  return ports;
+  const listening = table ? listeningSockets(runProcesses(internal.roots, table, [...internal.known.values()]).map((proc) => proc.pid)) : null;
+  if (listening === null) {
+    internal.reads.fail(started);
+    return new Set(internal.staticPort ? [internal.staticPort] : []);
+  }
+  return recordRead(running, internal, started, listening);
 }
 
 /**
@@ -898,9 +965,7 @@ async function readOwnPorts(running: RunningApp, internal: Internal): Promise<vo
     const pids = runProcesses(internal.roots, table, [...internal.known.values()]).map((proc) => proc.pid);
     const result = await lsofConnections(pids);
     if (!result.ok) return internal.reads.fail(started);
-    const listening = result.conns.filter((conn) => !conn.remote && conn.state === "LISTEN").map((conn) => conn.local.port);
-    recordListeners(running, listening);
-    internal.reads.record({ started, finished: performance.now(), ports: ownSet(internal, listening) });
+    recordRead(running, internal, started, result.conns.filter((conn) => !conn.remote && conn.state === "LISTEN").map((conn) => ({ pid: conn.pid, ...conn.local })));
   } catch {
     internal.reads.fail(started);
   }
@@ -920,9 +985,8 @@ function captureProcesses(internal: Internal, persist: () => void): ProcInfo[] |
   return procs;
 }
 
-/** One egress sample: the run's processes, their identities, their TCP sockets; violations recorded. */
 /**
- * One egress sample, which is also a read of the run's listeners for the request guard: a completed one is
+ * One egress sample (the run's processes, their identities, their TCP sockets; violations recorded), which is also a read of the run's listeners for the request guard: a completed one is
  * recorded in internal.reads, a failed one (ps, lsof, or a throw) settles the guard's waiters with "unknown".
  */
 async function sampleEgress(running: RunningApp, internal: Internal, egress: EgressStats, persist: () => void) {
@@ -945,7 +1009,7 @@ async function takeEgressSample(running: RunningApp, internal: Internal, egress:
   }
   const pids = [...new Set(procs.map((proc) => proc.pid))].filter((pid) => pid !== process.pid);
   if (pids.length === 0) {
-    internal.reads.record({ started, finished: performance.now(), ports: ownSet(internal, []) });
+    recordRead(running, internal, started, []);
     return true;
   }
   const result = await lsofConnections(pids);
@@ -957,8 +1021,8 @@ async function takeEgressSample(running: RunningApp, internal: Internal, egress:
   }
   for (const conn of result.conns) internal.sockets.add(`${conn.pid} ${conn.raw.split(/\s+/).slice(8).join(" ")}`);
   egress.connections = internal.sockets.size;
-  const listening = result.conns.filter((conn) => !conn.remote && conn.state === "LISTEN").map((conn) => conn.local.port);
-  recordListeners(running, listening);
+  const listeningConns = result.conns.filter((conn) => !conn.remote && conn.state === "LISTEN");
+  const listening = listeningConns.map((conn) => conn.local.port);
   // Seatbelt's `(local ip "localhost:<port>")` matches every local address, so the sandbox lets a run
   // listen on 0.0.0.0 or a LAN address, where other hosts reach it (and the tree it can read). That
   // cannot be expressed in a profile; a run that does it is a violation and is stopped at once.
@@ -966,7 +1030,7 @@ async function takeEgressSample(running: RunningApp, internal: Internal, egress:
   for (const conn of exposed) addViolation(running, `a run process listens beyond loopback, reachable from other hosts: ${describeConnection(conn)}`);
   if (exposed.length) void running.stop().catch(() => undefined);
   const current = [...listening, ...(internal.staticPort ? [internal.staticPort] : [])];
-  internal.reads.record({ started, finished: performance.now(), ports: ownSet(internal, listening) });
+  recordRead(running, internal, started, listeningConns.map((conn) => ({ pid: conn.pid, ...conn.local })));
   // Outbound: the run's current listeners, its named profile ports (its own block; a dead kernel URL the
   // profile points at on purpose), the profile's allowedLocalPorts. Inbound: any port it listened on.
   const outbound = new Set([...current, ...Object.values(running.ports), ...(running.app.runProfile?.allowedLocalPorts ?? [])]);
@@ -1128,7 +1192,7 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
   const ctx: PlaceholderContext = { root, tmp, ports };
   const expand = (text: string) => expandPlaceholders(text, ctx);
   const roots: RootProc[] = [];
-  const internal: Internal = { roots, known: new Map(), sockets: new Set(), reads: new ListenerReads(), listenable: noSandbox ? null : new Set(blockPorts(block)) };
+  const internal: Internal = { roots, known: new Map(), sockets: new Set(), reads: new ListenerReads(), listenable: noSandbox ? null : new Set(blockPorts(block)), runHeld: new Set() };
   const knownProcs = () => [...internal.known.values()];
   /** Settles when an Electron launch in flight has resolved or failed (undefined when none is). */
   let launchSettled: Promise<any> | undefined;
@@ -1175,14 +1239,14 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
   let wake: (() => void) | undefined;
   /** Set when the guard waits for a read: the next sample starts as soon as the current one ends. */
   let hurry = false;
-  let ownRead: Promise<void> | undefined;
+  const ownRead = singleFlight(internal.reads, () => readOwnPorts(running, internal));
   // The guard asks for a read: the sampler takes it (no extra lsof), or, while no sampler runs, one
   // asynchronous read of the guard's own at a time.
   internal.reads.request = () => {
     if (sampling) {
       hurry = true;
       wake?.();
-    } else ownRead ??= readOwnPorts(running, internal).finally(() => (ownRead = undefined));
+    } else ownRead();
   };
   const sampleOnce = async () => {
     try {
@@ -1230,6 +1294,9 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
     // The run's processes are gone: its checkouts must be the dirs they were, with the same `.git` entries.
     for (const change of changedCheckouts(scopeBefore, checkoutStates([...scopeBefore.keys()])))
       addViolation(running, `the run replaced a checkout it may write, or its .git entry: ${change}`);
+    // The run's processes are gone (or unconfirmed, and the run record stays): the block goes back, so the
+    // check below sees only listeners that are not the runner's own holds.
+    await internal.hold?.stop();
     const check = [...new Set([...running.startedPorts, ...Object.values(ports)])];
     let busy: string[] = [];
     for (let i = 0; i < 20; i++) {
@@ -1295,6 +1362,13 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
   try {
     // From here on no repository may be pinned (git.ts), and no Playwright from this root loaded
     // (playwright.ts): every one a tool reads was recorded above.
+    // Watching starts before the first run process: every block address a run process listens on is the
+    // run's until it lets go, then the runner's (port-hold.ts).
+    if (block) {
+      internal.hold = new BlockHold(blockPorts(block));
+      await internal.hold.start();
+      stillStarting();
+    }
     markAppsStarted();
     noteAppStarted(root);
     persist();
@@ -1340,7 +1414,7 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
         if (answered) break;
         await sleep(200);
       }
-      if (!ownPorts(running, 0).has(ready.port))
+      if (!ownPorts(running).has(ready.port))
         throw new Error(`${app.id}: ${ready.baseUrl} is not served by this run's processes (they listen on ${running.startedPorts.join(", ") || "nothing"})`);
     } else if (mode === "static") {
       if (!app.run.staticDir) throw new Error(`${app.id}: run mode static needs run.staticDir (or run.start)`);
@@ -1629,11 +1703,15 @@ export function deadPorts(app: AppEntry): Set<number> {
   return new Set(Object.entries(app.runProfile?.ports ?? {}).flatMap(([name, port]) => (/^dead(?![a-z])/.test(name) ? [port] : [])));
 }
 
-/** One completed read of the run's listening ports: when it started and finished (performance.now ms), and the ports. */
+/**
+ * One completed read of the run's listeners: when it started and finished (performance.now ms), the ports,
+ * and the pids listening on each address ("127.0.0.1:47021", "::1:47021", "*:47021" for any address).
+ */
 export interface ListenerRead {
   started: number;
   finished: number;
   ports: ReadonlySet<number>;
+  listeners: ReadonlyMap<string, readonly number[]>;
 }
 
 /**
@@ -1641,6 +1719,22 @@ export interface ListenerRead {
  * readOwnPorts) record each completed read and report each failed one; the guard waits on `next` for a
  * read without ever running lsof itself. Every waiter is a promise: nothing here blocks the event loop.
  */
+/**
+ * A request function for ListenerReads that runs `read` (one at a time) and runs it again when requests
+ * still wait once it ends: a request that arrived while a read was in flight, and that this read could not
+ * answer (it started earlier), is never left waiting.
+ */
+export function singleFlight(reads: Pick<ListenerReads, "waiting">, read: () => Promise<void>): () => void {
+  let inflight: Promise<void> | undefined;
+  const request = () => {
+    inflight ??= read().finally(() => {
+      inflight = undefined;
+      if (reads.waiting()) request();
+    });
+  };
+  return request;
+}
+
 export class ListenerReads {
   /** The newest completed read. */
   last?: ListenerRead;
@@ -1663,8 +1757,15 @@ export class ListenerReads {
     this.settle(read.started, read);
   }
 
+  /** A failed read: nothing the earlier reads showed may be trusted any more (the guard waits for the next one). */
   fail(started: number) {
+    this.last = undefined;
     this.settle(started, null);
+  }
+
+  /** Whether a request still waits for a read. */
+  waiting(): boolean {
+    return this.waiters.length > 0;
   }
 
   /** Resolves the waiters this read (started at `started`) answers; asks again for the ones it cannot. */
@@ -1685,106 +1786,129 @@ export interface GuardInputs {
   /** The profile's dead ports (deadPorts). */
   dead: ReadonlySet<number>;
   reads: Pick<ListenerReads, "last" | "next">;
-  /**
-   * Whether anything may accept connections on the URL's host and port now (acceptsConnections); false
-   * refuses at once. Omitted: every undecided port waits for a read.
-   */
-  accepting?: (url: URL) => Promise<boolean>;
+  /** The runner's hold on the block (BlockHold.state): "free" everywhere when omitted. */
+  hold?: (address: LoopbackAddress, port: number) => HoldState;
+  /** Whether a pid is still alive (a read's holder that died no longer owns its address); true when omitted. */
+  alive?: (pid: number) => boolean;
+  /** Whether a run process verifiably listens on the address now (BlockHold.verified); true when omitted. */
+  owned?: (address: LoopbackAddress, port: number) => boolean;
   /** performance.now() unless a test sets the clock. */
   now?: () => number;
 }
 
+/** The loopback addresses a URL's host stands for (`localhost` is both); null for any other spelling (0.0.0.0, 127.0.0.2). */
+function hostAddresses(host: string): LoopbackAddress[] | null {
+  if (host === "localhost" || host.endsWith(".localhost")) return ["127.0.0.1", "::1"];
+  if (host === "[::1]") return ["::1"];
+  if (host === "127.0.0.1") return ["127.0.0.1"];
+  return null;
+}
+
 /**
- * The request guard's port decisions. A local port is allowed while a run process listens on it: shown by
- * the newest read when that read started at most LISTENER_MAX_AGE_MS ago, else by the next read. A port is
- * refused only on a read that started after the request arrived (or a failed one), except the ports that
- * cannot be the run's own, which are decided at once and never wait for a read:
- *   - an owner port and a non-loopback host (guardVerdict);
+ * The request guard's port decisions. Refused at once, with no read and no contact to any listener:
+ *   - an owner port and a non-loopback host (guardVerdict), and a loopback spelling other than 127.0.0.1,
+ *     [::1] and localhost;
  *   - a port outside the run's block while the run is sandboxed (no run process can listen there);
- *   - a dead port (deadPorts): the app is pointed there on purpose and the run does not serve it. It is
- *     allowed only while a fresh read shows a run listener on it, like any port;
- *   - a port in the block that nothing listens on (`accepting`: a refused connect after the request
- *     arrived): the request could reach no one, so it is refused without waiting for a read.
+ *   - a dead port (deadPorts), and a block port whose every address the host stands for is held by the
+ *     runner (port-hold.ts: an address the run let go) or tainted (another process took it from the run).
+ * Allowed while every address the host stands for is either held by the runner (a connection there is
+ * reset unread) or the run's: shown by a read, started at most LISTENER_MAX_AGE_MS ago, to be listened on by
+ * a run process that is still alive and that the block hold verifies still listens there (BlockHold.verified,
+ * re-checked about every millisecond); at least one address must be the run's. Otherwise the request waits
+ * (asynchronously) for the next read, and a refusal rests on a read that started after the request.
  *
- * Why the age cap is safe: it only ever widens an allow for a port inside the run's own block that a run
- * process listened on at most LISTENER_MAX_AGE_MS ago. Owner ports are refused whatever a read says (and
- * no block holds one, registry:check), so the cap gives no way to an owner service (criterion B). Inside
- * the block, the risk is a stranger binding a port the run gave up within those seconds: other runs are
- * sandboxed to their own blocks, the system's ephemeral ports start at 49152, and Chromium's own sandbox
- * (launchBrowser) already lets the page reach the whole block, so the guard's listener check is the second
- * layer there, not the only one.
+ * Why no stranger receives page bytes (port-hold.ts): the guard allows an address only while a run process
+ * listens there, by a fresh read and by the block hold's millisecond check; no other process can bind an
+ * address while a run process holds it (the kernel); the moment the run lets go, the runner takes the
+ * address, or, when another process got there first, marks it tainted, and from then on it is refused.
  */
 export function portGuard(inputs: GuardInputs): { quick(url: URL): boolean | undefined; decide(url: URL): Promise<boolean> } {
   const now = inputs.now ?? (() => performance.now());
-  const allowedBy = (read: ListenerRead | null | undefined) => new Set([...(read?.ports ?? []), ...inputs.allowedLocalPorts]);
-  const ok = (url: URL, read: ListenerRead | null | undefined) => guardVerdict(url, allowedBy(read)) === "ok";
-  /** true or false when decided without waiting; undefined when it needs the next read. */
-  const quick = (url: URL): boolean | undefined => {
-    const last = inputs.reads.last;
-    const verdict = guardVerdict(url, allowedBy(last && now() - last.started <= LISTENER_MAX_AGE_MS ? last : undefined));
+  const hold = inputs.hold ?? (() => "free" as HoldState);
+  const alive = inputs.alive ?? (() => true);
+  const owned = inputs.owned ?? (() => true);
+  const fresh = (read: ListenerRead | null | undefined): read is ListenerRead => !!read && now() - read.started <= LISTENER_MAX_AGE_MS;
+  /** true or false when no read can change the answer; undefined when it depends on the run's listeners. */
+  const fixed = (url: URL): boolean | undefined => {
+    const verdict = guardVerdict(url, new Set(inputs.allowedLocalPorts));
     if (verdict === "ok") return true;
     if (verdict !== "local-port") return false;
     const port = urlPort(url);
-    if (inputs.dead.has(port)) return false;
+    const addresses = hostAddresses(url.hostname);
+    if (!addresses || inputs.dead.has(port)) return false;
     if (inputs.listenable && !inputs.listenable.has(port)) return false;
+    if (addresses.every((address) => hold(address, port) !== "free")) return false;
     return undefined;
+  };
+  /** Allowed by this read: every address the runner's or the run's (per the read, holder alive), one at least the run's. */
+  const byRead = (url: URL, read: ListenerRead, ignoreOwned = false): boolean => {
+    const port = urlPort(url);
+    const addresses = hostAddresses(url.hostname) ?? [];
+    const runs = (address: LoopbackAddress) =>
+      hold(address, port) === "free" &&
+      (ignoreOwned || owned(address, port)) &&
+      (read.listeners.get(`${address}:${port}`) ?? read.listeners.get(`*:${port}`) ?? []).some(alive);
+    return addresses.some(runs) && addresses.every((address) => runs(address) || hold(address, port) === "runner");
+  };
+  const quick = (url: URL): boolean | undefined => {
+    const known = fixed(url);
+    if (known !== undefined) return known;
+    const last = inputs.reads.last;
+    return fresh(last) && byRead(url, last) ? true : undefined;
   };
   const decide = async (url: URL): Promise<boolean> => {
     const known = quick(url);
     if (known !== undefined) return known;
     const arrived = now();
-    if (inputs.accepting && !(await inputs.accepting(url))) return false;
-    // The read in flight (or the next one): a port it shows is allowed (it has just finished).
-    const next = await inputs.reads.next();
-    if (next && ok(url, next)) return true;
+    // The read in flight (or the next one): a port it shows is allowed while it is fresh. The worker verifies
+    // a newly reported listener within a sweep or two: give it that long.
+    const settled = async (read: ListenerRead | null) => {
+      for (let i = 0; i < 20 && read && fresh(read) && !byRead(url, read) && byRead(url, read, true); i++) await new Promise((done) => setTimeout(done, 5));
+      return read;
+    };
+    const next = await settled(await inputs.reads.next());
+    if (fixed(url) === false) return false;
+    if (fresh(next) && byRead(url, next)) return true;
     if (next && next.started >= arrived) return false;
     // It started before this request: refuse only on a read that started after it (a lazily started API).
-    const after = await inputs.reads.next(arrived);
-    return ok(url, after);
+    const after = await settled(await inputs.reads.next(arrived));
+    return fixed(url) !== false && fresh(after) && byRead(url, after);
   };
   return { quick, decide };
 }
 
-/** The loopback addresses a URL's host stands for: `localhost` is both 127.0.0.1 and ::1. */
-function loopbackAddresses(host: string): string[] {
-  if (host === "localhost" || host.endsWith(".localhost")) return ["127.0.0.1", "::1"];
-  if (host === "[::1]") return ["::1"];
-  if (host === "0.0.0.0") return ["127.0.0.1"];
-  return [host];
+/** Whether a pid exists (signal 0). */
+function pidAlive(pid: number): boolean {
+  if (pid === process.pid) return true;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === "EPERM";
+  }
 }
 
-/** How long a connect probe may take before the port counts as possibly listening. */
-const CONNECT_PROBE_MS = 1_000;
-
-/**
- * Whether anything may accept TCP connections on a loopback URL's port: false only when every address
- * the host stands for refuses the connection (nothing listens). A timeout or any other error counts as
- * possibly listening (the guard then waits for a read). The probe connects from this tool, never the
- * page, and closes at once; it sends nothing.
- */
-export function acceptsConnections(url: URL): Promise<boolean> {
-  const port = urlPort(url);
-  const probe = (host: string) =>
-    new Promise<boolean>((resolve) => {
-      const socket = connect({ host, port });
-      const finish = (accepting: boolean) => {
-        socket.destroy();
-        resolve(accepting);
-      };
-      socket.setTimeout(CONNECT_PROBE_MS, () => finish(true));
-      socket.once("connect", () => finish(true));
-      socket.once("error", (error: NodeJS.ErrnoException) => finish(error.code !== "ECONNREFUSED"));
-    });
-  return Promise.all(loopbackAddresses(url.hostname).map(probe)).then((results) => results.some(Boolean));
-}
-
-/** The guard's inputs for a run: its reads when startApp started it, else its startedPorts as a fixed read. */
+/** The guard's inputs for a run: its reads and block hold when startApp started it, else its startedPorts as a fixed read. */
 function guardInputs(running: RunningApp): GuardInputs {
   const internal = internals.get(running);
   const allowedLocalPorts = running.app.runProfile?.allowedLocalPorts ?? [];
   const dead = deadPorts(running.app);
-  if (internal) return { allowedLocalPorts, listenable: internal.listenable, dead, reads: internal.reads, accepting: acceptsConnections };
-  const fixed = (): ListenerRead => ({ started: performance.now(), finished: performance.now(), ports: new Set(running.startedPorts.filter((port) => !OWNER_PORTS.includes(port))) });
+  if (internal) {
+    const hold = internal.hold;
+    return {
+      allowedLocalPorts,
+      listenable: internal.listenable,
+      dead,
+      reads: internal.reads,
+      hold: hold ? (address, port) => hold.state(address, port) : undefined,
+      owned: hold ? (address, port) => !hold.covers(port) || hold.verified(address, port) : undefined,
+      alive: pidAlive,
+    };
+  }
+  const fixed = (): ListenerRead => {
+    const ports = running.startedPorts.filter((port) => !OWNER_PORTS.includes(port));
+    return { started: performance.now(), finished: performance.now(), ports: new Set(ports), listeners: new Map(ports.map((port) => [`*:${port}`, [process.pid]])) };
+  };
   return { allowedLocalPorts, listenable: null, dead, reads: { get last() { return fixed(); }, next: async () => fixed() } };
 }
 
