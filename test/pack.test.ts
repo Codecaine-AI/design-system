@@ -2,7 +2,8 @@
  * The vendoring contract (`bun run pack`): the tgz an app vendors carries the CSS, the font files and every file
  * package.json exports, the hash it prints is the hash of the tokens.css inside that tgz, and a stale build never packs.
  * The system `tar` is the independent reader: it checks both the tgz and readTgz, which the conformance linter uses.
- * npm runs with none of the caller's environment, and no destination that resolves into the owner's tree is written.
+ * npm runs with none of the caller's environment. A checkout outside the owner's tree never writes into it, a checkout
+ * inside it may (the owner's own vendoring flow); every owner tree here is a temp dir, never the real one.
  */
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
@@ -10,8 +11,9 @@ import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
-import { OWNER_TREE } from "../scripts/lib/owner.ts";
-import { readTgz, tgzProblems, tokensCssSha256 } from "../scripts/pack.ts";
+import { gunzipSync, gzipSync } from "node:zlib";
+import { UnsafePathError } from "../scripts/lib/safe-paths.ts";
+import { pack, packOutput, readTgz, tgzProblems, tokensCssSha256 } from "../scripts/pack.ts";
 import { PKG, readJson, readText } from "./support.ts";
 
 function run(command: string, args: string[], cwd: string, env: Record<string, string> = {}) {
@@ -110,24 +112,47 @@ describe("bun scripts/pack.ts --out <dir>", () => {
     const again = runPack(PKG, "--out", out);
     expect(again.stderr).toBe("");
     expect(again.status).toBe(0);
-    expect(again.stdout.split("\n")).toEqual([...result.stdout.split("\n"), "unchanged: the same bytes were already at this path"]);
+    expect(again.stdout.split("\n")).toEqual([...result.stdout.split("\n"), "unchanged: a tgz with the same files and bytes was already at this path"]);
     expect(readFileSync(tgz).equals(bytes)).toBe(true);
     expect(statSync(tgz).mtimeMs).toBe(before.mtimeMs);
     expect(readdirSync(out)).toEqual([basename(tgz)]);
   });
 
-  test("a tgz of the same name with different bytes is never overwritten: exit 1, its bytes kept, nothing else written", () => {
-    const other = join(tmp, "vendor-old");
-    mkdirSync(other);
-    const stale = Buffer.concat([readFileSync(tgz), Buffer.from([0])]);
-    writeFileSync(join(other, basename(tgz)), stale);
-    const refused = runPack(PKG, "--out", other);
-    expect(refused.status).toBe(1);
-    expect(refused.stdout).toBe("");
-    expect(refused.stderr).toContain(`${join(other, basename(tgz))} already exists with different bytes; refusing to overwrite it`);
-    expect(refused.stderr).toContain("Bump the patch version in package.json");
-    expect(readFileSync(join(other, basename(tgz))).equals(stale)).toBe(true);
-    expect(readdirSync(other)).toEqual([basename(tgz)]);
+  /** A folder holding `bytes` under the tgz's name, for a repack to meet. */
+  function vendorWith(name: string, bytes: Uint8Array): string {
+    const dir = mkdtempSync(join(tmp, `${name}-`));
+    writeFileSync(join(dir, basename(tgz)), bytes);
+    return dir;
+  }
+
+  test("a tgz with the same files but other gzip bytes (another npm or zlib) is unchanged: kept as it is, exit 0", () => {
+    const regzipped = gzipSync(gunzipSync(readFileSync(tgz)), { level: 1 });
+    expect(regzipped.equals(readFileSync(tgz))).toBe(false);
+    const dir = vendorWith("regzipped", regzipped);
+    const again = runPack(PKG, "--out", dir);
+    expect(again.stderr).toBe("");
+    expect(again.status).toBe(0);
+    expect(again.stdout.split("\n")[2]).toBe("unchanged: a tgz with the same files and bytes was already at this path");
+    expect(readFileSync(join(dir, basename(tgz))).equals(regzipped)).toBe(true);
+  });
+
+  test("a tgz of the same name with other content is never overwritten: exit 1, its bytes kept, nothing else written", () => {
+    // One byte of tokens.css changed inside the archive (file data, not a header): the same names, other content.
+    const tar = Buffer.from(gunzipSync(readFileSync(tgz)));
+    const at = tar.indexOf("--ds-color-surface-page");
+    expect(at).toBeGreaterThan(0);
+    tar[at + 2] = "X".charCodeAt(0);
+    const changed = gzipSync(tar);
+    for (const [label, bytes] of [["changed", changed], ["not-a-tgz", Buffer.concat([readFileSync(tgz), Buffer.from("trailing")]).subarray(4)]] as const) {
+      const dir = vendorWith(label, bytes);
+      const refused = runPack(PKG, "--out", dir);
+      expect(refused.status).toBe(1);
+      expect(refused.stdout).toBe("");
+      expect(refused.stderr).toContain(`${join(dir, basename(tgz))} already exists with different content; refusing to overwrite it`);
+      expect(refused.stderr).toContain("Bump the patch version in package.json");
+      expect(readFileSync(join(dir, basename(tgz))).equals(bytes)).toBe(true);
+      expect(readdirSync(dir)).toEqual([basename(tgz)]);
+    }
   });
 });
 
@@ -192,19 +217,61 @@ test("npm sees none of the caller's npm config or HOME, and its temp HOME is gon
   }
 });
 
-test("an --out that resolves into the owner's tree through a symlink is refused before anything is created", () => {
-  const dir = mkdtempSync(join(tmpdir(), "design-system-pack-owner-"));
-  try {
-    // Only a link to the owner's tree: the run stats it and must never write there.
-    symlinkSync(OWNER_TREE, join(dir, "owner"));
-    const name = `ds-pack-refused-${process.pid}`;
-    const result = runPack(PKG, "--out", join(dir, "owner", name));
-    expect(result.status).toBe(1);
-    expect(result.stderr).toContain("pack --out");
-    expect(result.stderr).toContain("resolves into the owner's tree");
-    expect(result.stdout).toBe("");
-    expect(existsSync(join(OWNER_TREE, name))).toBe(false);
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
+/**
+ * A temp "owner tree" (never the real one) holding a copy of this checkout at design-system/ with a fresh
+ * build, and a mirror beside it holding another copy: the two places pack runs from.
+ */
+describe("owner-tree destinations", () => {
+  let dir: string;
+  let owner: string;
+  let mirror: string;
+  const copyCheckout = (to: string) => {
+    for (const path of ["package.json", "tokens", "scripts", "dist", "css", "fonts", "templates", "AGENTS.md", "README.md"]) cpSync(join(PKG, path), join(to, path), { recursive: true });
+    mkdirSync(join(to, "guide"));
+    for (const name of readdirSync(join(PKG, "guide")).filter((n) => n.endsWith(".md"))) cpSync(join(PKG, "guide", name), join(to, "guide", name));
+    expect(run(process.execPath, ["scripts/build.ts"], to).status).toBe(0);
+  };
+
+  beforeAll(() => {
+    dir = realpathSync(mkdtempSync(join(tmpdir(), "design-system-pack-owner-")));
+    owner = join(dir, "workspace");
+    mirror = join(dir, "workspace-ds");
+    mkdirSync(join(owner, "app"), { recursive: true });
+    copyCheckout(join(owner, "design-system"));
+    copyCheckout(join(mirror, "design-system"));
+  });
+  afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+  test("a checkout inside the owner's tree packs into an app's vendor folder there (the owner's own flow)", async () => {
+    const vendor = join(owner, "app", "vendor");
+    const result = await pack({ root: join(owner, "design-system"), out: vendor, ownerTree: owner });
+    expect(result.tgz).toBe(join(vendor, TGZ_NAME));
+    expect(result.unchanged).toBe(false);
+    expect(readdirSync(vendor)).toEqual([TGZ_NAME]);
+    expect(tgzProblems(readTgz(result.tgz))).toEqual([]);
+  });
+
+  test("a checkout outside the owner's tree is refused every destination in it, directly or through a symlink, before anything is created", async () => {
+    symlinkSync(owner, join(dir, "link-to-owner"));
+    for (const out of [join(owner, "app", "vendor-from-mirror"), join(dir, "link-to-owner", "app", "vendor-via-link")]) {
+      expect(() => packOutput(out, { root: join(mirror, "design-system"), ownerTree: owner })).toThrow(UnsafePathError);
+      await expect(pack({ root: join(mirror, "design-system"), out, ownerTree: owner })).rejects.toThrow("resolves into the owner's tree");
+    }
+    expect(readdirSync(join(owner, "app")).filter((name) => name.startsWith("vendor-"))).toEqual([]);
+    // The mirror itself, and a temp dir, stay open to it.
+    expect(packOutput(join(mirror, "app", "vendor"), { root: join(mirror, "design-system"), ownerTree: owner })).toBe(join(mirror, "app", "vendor"));
+  });
+
+  test("with TMPDIR inside the owner's tree, pack refuses before it creates a staging folder or an npm HOME there", async () => {
+    const saved = process.env.TMPDIR;
+    process.env.TMPDIR = join(owner, "tmp");
+    try {
+      mkdirSync(join(owner, "tmp"), { recursive: true });
+      await expect(pack({ root: join(owner, "design-system"), out: join(dir, "out"), ownerTree: owner })).rejects.toThrow("resolves into the owner's tree");
+      expect(readdirSync(join(owner, "tmp"))).toEqual([]);
+    } finally {
+      if (saved === undefined) delete process.env.TMPDIR;
+      else process.env.TMPDIR = saved;
+    }
+  });
 });
