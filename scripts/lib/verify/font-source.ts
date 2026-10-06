@@ -9,11 +9,10 @@
  */
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
-import { isAbsolute, join } from "node:path";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { expandPlaceholders, type RunningApp } from "../app-runner";
+import { type RunningApp, servedDiskPath } from "../app-runner";
 import { isInside } from "../lint/workspace";
-import { resolvePath } from "../registry";
 import type { FontSourceJudge } from "./fonts";
 
 const sha256 = (data: Buffer | Uint8Array) => createHash("sha256").update(data).digest("hex");
@@ -67,27 +66,7 @@ export function fontSourceJudge(opts: FontSourceOptions): FontSourceJudge {
   };
 }
 
-/**
- * The file a served URL maps to, the way servedFromRoot maps it (Vite `/@fs/...`, paths under the
- * serve root, file: URLs). A private copy of app-runner's toDiskPath until app-runner exports it.
- */
-export function servedDiskPath(running: RunningApp, entry: string): string | null {
-  if (entry.startsWith("file:")) return fileURLToPath(entry);
-  const serveRoot =
-    running.serveRoot ??
-    (running.app.run?.serveRoot
-      ? resolvePath(running.root, expandPlaceholders(running.app.run.serveRoot, { root: running.root, tmp: running.tmp, ports: running.ports ?? {} }))
-      : resolvePath(running.root, running.app.run?.cwd ?? running.app.commands?.cwd ?? running.app.root));
-  const basePath = running.baseUrl ? new URL(running.baseUrl).pathname.replace(/\/+$/, "") : "";
-  let path: string;
-  try {
-    path = decodeURIComponent(new URL(entry).pathname);
-  } catch {
-    return null;
-  }
-  if (basePath && (path === basePath || path.startsWith(`${basePath}/`))) path = path.slice(basePath.length) || "/";
-  if (path.startsWith("/@fs/")) return path.slice("/@fs".length);
-  if (path.startsWith("/@") || path.startsWith("/__")) return null;
-  const joined = join(serveRoot, path);
-  return isAbsolute(joined) ? joined : null;
+/** The file a fetched font URL names: a file: URL (Electron) directly, else the runner's served-path mapping. */
+export function fontDiskPath(running: RunningApp, url: string): string | null {
+  return url.startsWith("file:") ? fileURLToPath(url) : servedDiskPath(running, url);
 }

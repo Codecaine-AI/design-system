@@ -42,7 +42,7 @@ import {
   withSentinel,
 } from "./lib/verify/propagate";
 import type { RuntimeReport, Session } from "./lib/verify/run-app";
-import { fontSourceJudge, servedDiskPath } from "./lib/verify/font-source";
+import { fontDiskPath, fontSourceJudge } from "./lib/verify/font-source";
 import { PACKAGE, packageCheck, staticCheck } from "./lib/verify/static-check";
 import { type BuildValues, loadBuildValues } from "./lib/verify/tokens";
 
@@ -108,6 +108,8 @@ interface AppResult {
   startedPorts?: number[];
   logPath?: string;
   consoleErrors: string[];
+  egress?: RuntimeReport["egress"];
+  clock?: string;
 }
 
 function git(dir: string, ...args: string[]): string | null {
@@ -149,6 +151,8 @@ function absorb(result: AppResult, report: RuntimeReport) {
   result.startedPorts = report.startedPorts;
   result.logPath = report.logPath;
   result.consoleErrors = [...new Set(report.consoleErrors)];
+  if (report.egress) result.egress = report.egress;
+  if (report.clock) result.clock = report.clock;
 }
 
 function writeResult(outDir: string, result: AppResult): string {
@@ -178,11 +182,11 @@ function printSummary(results: Array<{ result: AppResult; path: string }>) {
 async function openBrowser(root: string, apps: AppEntry[]): Promise<{ browser?: any; version?: string; error?: string }> {
   if (!apps.some((app) => app.run.mode === "browser" || app.run.mode === "static")) return {};
   try {
-    const { loadPlaywright, playwrightVersion } = await import("./lib/playwright");
-    const { LAUNCH_OPTIONS } = await import("./lib/capture");
-    const { installSignalHandlers } = await import("./lib/app-runner");
-    // LAUNCH_OPTIONS keeps Playwright's own signal handlers off; the runner's handler closes the browser.
-    const browser = await loadPlaywright(root).chromium.launch(LAUNCH_OPTIONS);
+    const { playwrightVersion } = await import("./lib/playwright");
+    const { installSignalHandlers, launchBrowser } = await import("./lib/app-runner");
+    // A sanitized env over a temp HOME; LAUNCH_OPTIONS keeps Playwright's own signal handlers off, and
+    // the runner's handler closes the browser.
+    const browser = await launchBrowser(root);
     installSignalHandlers(() => browser.close());
     return { browser, version: playwrightVersion(root) };
   } catch (error) {
@@ -211,6 +215,9 @@ async function verifyMode(args: Args, registry: Registry): Promise<number> {
   const root = realpathSync(resolve(args.root ?? join(DESIGN_SYSTEM_ROOT, "..")));
   const blocker = propagateBlocker({ outDirs: [args.outDir, process.env.DS_RUN], dsDirs: [join(root, "design-system"), DESIGN_SYSTEM_ROOT] });
   if (blocker) throw new Refusal(`refusing to verify: ${blocker}`);
+  // Processes a crashed earlier run left behind (the runner's records in <out-dir>/runs).
+  const { cleanupRuns } = await import("./lib/app-runner");
+  for (const line of await cleanupRuns(args.outDir)) console.error(`verify:apps: cleanup: ${line}`);
   const values = loadBuildValues(DESIGN_SYSTEM_ROOT);
   const meta = designSystemMeta(values);
   const unknown = args.apps.filter((id) => !registry.apps.some((app) => app.id === id));
@@ -256,7 +263,7 @@ async function verifyMode(args: Args, registry: Registry): Promise<number> {
                   packageDirs,
                   buildFontsDir: join(DESIGN_SYSTEM_ROOT, "fonts"),
                   copyDirs: [ctx.running.tmp, ...(app.consume.via === "copy" ? [resolvePath(root, app.repo)] : [])],
-                  diskPath: (url) => servedDiskPath(ctx.running, url),
+                  diskPath: (url) => fontDiskPath(ctx.running, url),
                 }),
               }),
             ),

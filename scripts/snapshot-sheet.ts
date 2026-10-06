@@ -17,8 +17,7 @@ import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { encodePng } from "./lib/png";
-import { installSignalHandlers } from "./lib/app-runner";
-import { loadPlaywright } from "./lib/playwright";
+import { installSignalHandlers, launchBrowser } from "./lib/app-runner";
 import { DESIGN_SYSTEM_ROOT } from "./lib/registry";
 import { safeAppId, safeOutputPath, safeSegment } from "./lib/safe-paths";
 import { defaultOutDir, diffSets, readManifest, SET_NAME, setDir, type SetDiff, type ShotDiff } from "./lib/snapshot-set";
@@ -157,8 +156,8 @@ console.log(`sheet: ${htmlPath}`);
 
 let renderError: string | undefined;
 try {
-  const { chromium } = loadPlaywright(root);
-  const browser = await chromium.launch({ headless: true, handleSIGINT: false, handleSIGTERM: false, handleSIGHUP: false });
+  // The report page, not an app: the plain headless flags, under the sanitized env and a temp HOME.
+  const browser = await launchBrowser(root, { args: [], ignoreDefaultArgs: undefined });
   installSignalHandlers(() => browser.close());
   try {
     const context = await browser.newContext({ deviceScaleFactor: 1, viewport: { width: 1280, height: 720 } });

@@ -6,7 +6,7 @@
  */
 import { fileURLToPath } from "node:url";
 import { fixClock, runSteps } from "../capture";
-import { guardedContext, OWNER_PORTS, refreshStartedPorts, type RunningApp, servedFromRoot, splitBlocked, startApp } from "../app-runner";
+import { type EgressStats, guardedContext, OWNER_PORTS, refreshStartedPorts, type RunningApp, servedFromRoot, splitBlocked, startApp } from "../app-runner";
 import type { AppEntry, RouteSpec } from "../registry";
 import { type Assertion, fail, pass, type ResponseLog, trackResponses, warn } from "./assertions";
 
@@ -29,6 +29,8 @@ export interface RuntimeReport {
   consoleErrors: string[];
   /** "fixed" when the page saw the fixed clock, else why not. */
   clock?: string;
+  /** The runner's egress sampling of the run's processes. */
+  egress?: EgressStats;
 }
 
 export interface PageContext {
@@ -112,6 +114,18 @@ function servedAssertion(app: AppEntry, root: string, served: string[], result: 
     const fixtureServer = app.run.mode === "static" && Boolean(app.run.start) && !app.run.staticDir;
     out.push(fixtureServer ? warn("served-unresolved", `${message} (static fixture server without a staticDir)`, { unresolved: result.unresolved }) : fail("served-unresolved", message, { unresolved: result.unresolved }));
   }
+  return out;
+}
+
+/**
+ * The run's isolation, read after stop(): every violation the runner found (an owner port a process
+ * listened on, a connection that left the run, a failed egress sample) fails, and so does a run that
+ * was unproven or had no OS sandbox. Such a run never counts for a gate.
+ */
+export function isolationAssertions(running: Pick<RunningApp, "violations" | "unproven" | "unsandboxed">): Assertion[] {
+  const out = (running.violations ?? []).map((violation) => fail("isolation", violation));
+  if (running.unproven) out.push(fail("isolation.profile", "the run profile is unproven: its results do not count for a gate"));
+  if (running.unsandboxed) out.push(fail("isolation.sandbox", "the run had no OS sandbox (allowUnsandboxed): its results do not count for a gate"));
   return out;
 }
 
@@ -204,12 +218,14 @@ export async function inRunningApp(
     // A port bound after the start (an owner port included) is only known after a fresh read.
     refreshStartedPorts(running);
     report.startedPorts = [...running.startedPorts];
-    for (const violation of running.violations ?? []) report.assertions.push(fail("owner-port-bound", violation));
     try {
       await running.stop();
     } catch (error) {
       report.assertions.push(fail("stop", `stopping the app failed: ${(error as Error).message}`));
     }
+    // stop() takes the last egress sample: the violations are complete only now.
+    report.assertions.push(...isolationAssertions(running));
+    report.egress = running.egress;
   }
   return report;
 }

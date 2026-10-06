@@ -13,8 +13,8 @@ import { loadPlaywright } from "../scripts/lib/playwright.ts";
 import { type AppEntry, DESIGN_SYSTEM_ROOT } from "../scripts/lib/registry.ts";
 import type { Assertion } from "../scripts/lib/verify/assertions.ts";
 import { checkPage } from "../scripts/lib/verify/page-checks.ts";
-import { fontSourceJudge, servedDiskPath } from "../scripts/lib/verify/font-source.ts";
-import { inRunningApp } from "../scripts/lib/verify/run-app.ts";
+import { fontDiskPath, fontSourceJudge } from "../scripts/lib/verify/font-source.ts";
+import { inRunningApp, isolationAssertions } from "../scripts/lib/verify/run-app.ts";
 import { loadBuildValues } from "../scripts/lib/verify/tokens.ts";
 import { browserSkip, MIRROR, makeFixtureRoot, runnableFixtureApp } from "./verify-support.ts";
 
@@ -30,6 +30,16 @@ afterAll(() => rmSync(scratch, { recursive: true, force: true }));
 
 const makeRoot = () => makeFixtureRoot(scratch);
 const runnableApp = (path = "/") => runnableFixtureApp({ ui: UI_PORT, deadService: DEAD_PORT }, path);
+
+test("a run with an isolation violation, an unproven profile or no OS sandbox fails, whatever the page showed", () => {
+  expect(isolationAssertions({})).toEqual([]);
+  const found = isolationAssertions({ violations: ["egress: 127.0.0.1:4820 (node 123)"], unproven: true, unsandboxed: true }).map((a) => [a.id, a.status]);
+  expect(found).toEqual([
+    ["isolation", "fail"],
+    ["isolation.profile", "fail"],
+    ["isolation.sandbox", "fail"],
+  ]);
+});
 
 describe.skipIf(Boolean(browserSkip))("inRunningApp", () => {
   let browser: any;
@@ -48,7 +58,7 @@ describe.skipIf(Boolean(browserSkip))("inRunningApp", () => {
         values,
         responses: ctx.responses,
         prepare: ctx.prepare,
-        fontSource: fontSourceJudge({ packageDirs: [], buildFontsDir: join(DESIGN_SYSTEM_ROOT, "fonts"), copyDirs: [root], diskPath: (url) => servedDiskPath(ctx.running, url) }),
+        fontSource: fontSourceJudge({ packageDirs: [], buildFontsDir: join(DESIGN_SYSTEM_ROOT, "fonts"), copyDirs: [root], diskPath: (url) => fontDiskPath(ctx.running, url) }),
       }),
     );
   const byId = (assertions: Assertion[]) => Object.fromEntries(assertions.map((a) => [a.id, a]));

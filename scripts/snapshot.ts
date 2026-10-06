@@ -24,9 +24,9 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
-import { installSignalHandlers, refreshStartedPorts, startApp, type RunningApp } from "./lib/app-runner";
-import { CaptureError, captureRoute, LAUNCH_OPTIONS, routeThemes, shotKey, warmUp } from "./lib/capture";
-import { loadPlaywright, playwrightVersion } from "./lib/playwright";
+import { cleanupRuns, installSignalHandlers, launchBrowser, refreshStartedPorts, startApp, type RunningApp } from "./lib/app-runner";
+import { CaptureError, captureRoute, routeThemes, shotKey, warmUp } from "./lib/capture";
+import { playwrightVersion } from "./lib/playwright";
 import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, REGISTRY_PATH, resolvePath, type RouteSpec } from "./lib/registry";
 import { safeAppId, safeOutputPath, safeSegment } from "./lib/safe-paths";
 import { defaultOutDir, type ExpectedShot, readManifest, SET_NAME, setDir, type SetManifest, type ShotEntry, type ShotProvenance, type Theme } from "./lib/snapshot-set";
@@ -134,12 +134,14 @@ let startError: string | undefined;
 let warmUpBlocked = { blocked: [] as string[], expectedBlocked: [] as string[] };
 
 try {
+  // Processes a crashed earlier run left behind (the runner's records in <out-dir>/runs).
+  for (const line of await cleanupRuns(outDir)) console.error(`[${app.id}] cleanup: ${line}`);
   console.log(`[${app.id}] starting (${app.run.mode}) from ${root}...`);
   running = await startApp(app, { root, outDir });
   console.log(`[${app.id}] ready${running.baseUrl ? ` at ${running.baseUrl}` : ""}; listening on ${running.startedPorts.join(", ")}`);
   if (!running.electron) {
-    const { chromium } = loadPlaywright(root);
-    browser = await chromium.launch(LAUNCH_OPTIONS);
+    // A sanitized env over a temp HOME, never the tool's own.
+    browser = await launchBrowser(root);
     chromiumVersion = browser.version();
     console.log(`[${app.id}] warming up: ${[...new Set(routes.map((route) => route.path || "/"))].join(" ")}`);
     warmUpBlocked = await warmUp(browser, running, routes);
@@ -220,14 +222,21 @@ try {
   await browser?.close().catch(() => undefined);
   if (running) {
     refreshStartedPorts(running);
-    if (running.violations?.length) {
-      console.error(`[${app.id}] ${running.violations.join("; ")}`);
-      failures += 1;
-    }
     await running.stop().catch((error) => {
       stopError = error instanceof Error ? error.message : String(error);
       console.error(`[${app.id}] stop: ${stopError}`);
     });
+    // stop() takes the last egress sample: the violations are complete only now. A run without the
+    // sandbox or with an unproven profile never makes a set that counts.
+    const isolation = [
+      ...(running.violations ?? []),
+      ...(running.unproven ? ["the run profile is unproven"] : []),
+      ...(running.unsandboxed ? ["the run had no OS sandbox"] : []),
+    ];
+    if (isolation.length) {
+      console.error(`[${app.id}] isolation: ${isolation.join("; ")}`);
+      failures += 1;
+    }
   }
 }
 
@@ -267,7 +276,9 @@ const manifest: SetManifest = {
         logPath: running.logPath,
         profileProof: app.runProfile.proof,
         ...(running.unproven ? { unproven: true } : {}),
+        ...(running.unsandboxed ? { unsandboxed: true } : {}),
         ...(running.violations?.length ? { violations: running.violations } : {}),
+        ...(running.egress ? { egress: running.egress } : {}),
         ...(stopError ? { stopError } : {}),
       }
     : { mode: app.run.mode, startError },
