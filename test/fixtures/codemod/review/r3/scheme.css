@@ -1,0 +1,21 @@
+/* Codemod review fixture, round 3 (P1-3): color-scheme marks a block's theme (canvas-agent agent-theme.css); a block whose own background is of the other theme is a fixed region (observatory index.css). */
+:root {
+  color-scheme: dark;
+  --background: #1b1b1c;
+  --foreground: #d4d4d4;
+  --card-foreground: #d4d4d4;
+}
+.instrument {
+  --background: #1b1b1c;
+  --foreground: #d4d4d4;
+  --editor-guide: rgb(255 255 255 / 0.08);
+  --editor-landmark: rgb(255 255 255 / 0.028);
+}
+.prose {
+  color-scheme: light dark;
+  --foreground: #2a2a2a;
+}
+body { background: var(--background); color: var(--foreground); }
+.card { color: var(--card-foreground); }
+.editor-guide { background: var(--editor-guide); }
+.editor-landmark { background: var(--editor-landmark); }

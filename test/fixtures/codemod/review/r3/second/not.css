@@ -1,0 +1,11 @@
+/* Codemod review fixture, round 3 second pass (P1-4, P2-8, P2-9): :not(), :has(), :is(), bare aria and open states. */
+.toolbar button:not(.primary) { color: #ffffff; }
+.btn:not(.danger) { background: #fef2f2; }
+.field:not(:focus) { border-color: #0a7ae0; }
+input:not(:placeholder-shown) { color: #9b9a97; }
+.row:has(.child.active) { background: #ebebe9; }
+.tab:is(.active, :hover) { background: #ebebe9; }
+:is(.error, .note) .msg { color: #c62121; }
+.option[aria-selected] { background: #ebebe9; }
+.DialogContent[data-state="open"] { background: #ebebe9; }
+.tab:is(.active, [aria-selected="true"]) { background: #ebebe9; }

@@ -1,0 +1,3 @@
+/* Codemod review fixture, round 3 second pass (P1-5): an @apply class string ends at its declaration. */
+.ghost-link { @apply text-white underline; }
+.cta { @apply bg-blue-600 px-2; }

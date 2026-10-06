@@ -12,7 +12,7 @@
  * with ΔE) and an empty `approve`. apply changes only rows with `"approve": "yes"`, and only in
  * files whose whole text is still what propose read.
  *
- * Known limits (round 2; each either leaves a row without a replacement or needs the reviewer):
+ * Known limits (round 3; each either leaves a row without a replacement or needs the reviewer):
  * - JS: a value gets a replacement only where the code at the literal shows it reaches CSS: a JSX
  *   style object (style, sx, css, *Style props), an object a style-named holder or a CSSProperties
  *   type holds, `el.style.x =`, `el.style.setProperty`, `setAttribute("style" | an SVG color)`, a
@@ -49,6 +49,24 @@
  * - Tailwind targets come from the registry (stack.tailwind; stack.hostTailwind for a library its
  *   hosts compile). A library with hosts on different Tailwinds is proposed for the one named.
  *   Classes with one radius per corner (`rounded-[6px_0_0_6px]`) stay unmapped (no per-corner set).
+ * - Roles (round 3): a CSS custom property takes the role its readers in the scanned files give it
+ *   (`prop: var(--x)`, `bg-[var(--x)]`, `bg-[--x]`, `--y: var(--x)` followed on, a `--color-*`
+ *   theme variable's utilities); in JS only a key whose whole value is the string reads (a ternary,
+ *   a call argument or a JSX attribute does not). Read nowhere, in two roles, or only inside
+ *   color-mix(), it gets no token, so a theme read only by files outside the scan paths, or by
+ *   minified or generated files, is a hand edit. color.text.on-solid needs a solid background on
+ *   the same rule, style object or class string (every state's `bg-*` solid too) or a definition
+ *   named for it (`--primary-foreground`); class, selector, tag and attribute names never count.
+ *   `color-scheme` marks a theme only on the root or with a theme selector; elsewhere, and in a
+ *   rule, style object or class string whose own background is of the other theme, the block is a
+ *   fixed region and gets no color token. A state attribute counts only by its static value (a bare
+ *   `[aria-selected]` and `data-state="open"` are no state), a selector list says a word only when
+ *   every branch does (`:is()` and `:where()` spread, `:not()` and `:has()` say nothing), and
+ *   Tailwind `not-*`/`has-*` variants are no state. A nearest pick keeps a translucent literal's
+ *   alpha or gets none, and color.backdrop needs a scrim, overlay, backdrop or modal hint. Paint
+ *   inside an SVG <mask> or <clipPath>, or in a pattern or gradient a mask references, gets no
+ *   token. A generic background may still take fill.hover or fill.active without a hover or
+ *   selected state, and a faint hued wash may take a gray fill (categorical badges lose their hue).
  * - apply refuses every row of a file whose text changed since propose (whole-file hash): re-run
  *   propose after any edit, including an earlier apply of part of the same table.
  * - By design (decision 21a), `--root` naming the owner's tree itself is allowed for the owner's
