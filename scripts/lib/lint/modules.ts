@@ -195,7 +195,8 @@ function moduleFile(base: string): string | null {
   return null;
 }
 
-function resolveModule(spec: string, fromFile: string, serveRoot: string, stop: string): string | null {
+/** A module specifier to a local file: relative, root-absolute (against `serveRoot`), or a tsconfig `paths` alias (lookups stop at `stop`). Null for bare packages. */
+export function resolveModule(spec: string, fromFile: string, serveRoot: string, stop: string): string | null {
   const clean = spec.replace(/[?#].*$/, "");
   if (!clean || /^(?:[a-z]+:|\/\/)/i.test(clean)) return null;
   if (clean.startsWith(".")) return moduleFile(resolve(dirname(fromFile), clean));

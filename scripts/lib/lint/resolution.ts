@@ -28,6 +28,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { buildFile, fileSha256, sha256 } from "./design-system";
+import { isDsLoad } from "./loads";
 import type { AppContext, CheckOutput, Finding } from "./types";
 import { PACKAGE_NAME } from "./types";
 import { findPackageDir, isDir, isInside, lineOf, owningPackage, readJson, readText, realpathOrNull } from "./workspace";
@@ -137,7 +138,7 @@ export function checkResolution(ctx: AppContext): CheckOutput {
 
   // Every design-system file the entry stylesheet loads comes from where consume.via says.
   const graph = ctx.loads();
-  const dsLoads = graph.loads.filter((l) => l.kind !== "tailwindcss");
+  const dsLoads = graph.loads.filter(isDsLoad);
   if (via === "copy" || via === "relative-import") {
     if (!graph.entryExists) {
       violations.push({ file: app.entryStylesheet ?? ctx.rel(appRoot), line: 0, message: `consume.via ${via}: the entry stylesheet is missing, so the design-system files cannot be found` });

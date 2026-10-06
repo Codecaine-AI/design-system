@@ -58,6 +58,11 @@ export interface Load {
   condition?: string;
 }
 
+/** A design-system stylesheet (not `tailwindcss` or any other recorded non-design-system load). */
+export function isDsLoad(l: Load): boolean {
+  return l.kind !== "tailwindcss";
+}
+
 export interface Unresolved {
   spec: string;
   from: string;
