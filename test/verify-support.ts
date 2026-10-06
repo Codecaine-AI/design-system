@@ -1,6 +1,7 @@
 /**
  * Shared fixtures for the verify:apps tests: the fixture pages, the web fonts they load, the
- * Playwright root, and a registry entry whose probes cover page, panel, text, border and font.
+ * Playwright root, and a complete registry entry (it passes validateLoadedRegistry) whose probes cover
+ * page, panel, text, border and font.
  */
 import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -54,6 +55,7 @@ export function fixtureFontSource(): FontSourceJudge {
   return fontSourceJudge({
     packageDirs: [dirname(FONT_DIR!)],
     buildFontsDir: join(DESIGN_SYSTEM_ROOT, "fonts"),
+    buildFontsCss: join(DESIGN_SYSTEM_ROOT, "css/fonts.css"),
     copyDirs: [],
     diskPath: (url) => {
       const { pathname } = new URL(url);
@@ -62,27 +64,60 @@ export function fixtureFontSource(): FontSourceJudge {
   });
 }
 
-/** A registry entry for a fixture app; tests override what they exercise. */
+const REQUIRED = { required: true } as const;
+const NOT_HERE = { required: false, reason: "not part of this fixture" } as const;
+
+/**
+ * A complete registry entry for a fixture app: a page the test serves itself (run mode none, the
+ * runtime gates n/a). Tests override what they exercise; runnableFixtureApp makes it startable.
+ */
 export function fixtureApp(overrides: Partial<AppEntry> = {}): AppEntry {
   return {
     id: "verify-fixture",
     name: "verify fixture",
-    shell: true,
+    wave: 1,
+    kind: "app",
+    repo: "app",
+    root: "app",
+    scan: { paths: ["app"], exclude: [] },
+    stack: { summary: "verify:apps test fixture", tailwind: "none", packageManager: "bun" },
+    consume: { via: "relative-import", detail: "app/tokens.css" },
+    entryStylesheet: null,
     theme: { rule: "light-dark" },
-    verify: FIXTURE_VERIFY,
+    literalFloor: 0,
+    allowlist: null,
+    shell: true,
+    folderStandard: false,
+    passes: { "1": REQUIRED, "2": NOT_HERE, "3": NOT_HERE },
+    checks: { resolution: REQUIRED, wiring: REQUIRED, literals: REQUIRED, names: REQUIRED, shell: NOT_HERE, structure: NOT_HERE },
+    gates: { lint: REQUIRED, verify: NOT_HERE, snapshot: NOT_HERE, pixelDiff: NOT_HERE, tests: NOT_HERE },
+    run: { mode: "none", reason: "a fixture page the test serves itself" },
+    commands: { cwd: "app" },
+    tests: { safe: [] },
     routes: [{ id: "home", path: "/" }],
+    verify: FIXTURE_VERIFY,
+    exceptions: [],
     ...overrides,
   } as AppEntry;
 }
 
-/** A workspace root under `parent` with the stand-in server (fixtures/verify/serve.ts) serving the good page at app/. */
+/**
+ * A workspace root under `parent` with the stand-in server (fixtures/verify/serve.ts) serving the good
+ * page at app/, wired like a consume.via copy app: byte copies of the package's tokens.css, css/fonts.css
+ * and font files, with the page loading the fonts through the copied fonts.css (decision 20).
+ */
 export function makeFixtureRoot(parent: string): string {
   const root = mkdtempSync(join(parent, "root-"));
   const app = join(root, "app");
   mkdirSync(join(app, "fonts"), { recursive: true });
+  mkdirSync(join(app, "css"));
   cpSync(join(FIXTURES, "serve.ts"), join(app, "serve.ts"));
-  cpSync(join(FIXTURES, "good.html"), join(app, "index.html"));
+  const good = readFileSync(join(FIXTURES, "good.html"), "utf8");
+  const page = good.replace(/^\s*@font-face[^\n]*\n/gm, "").replace('<link rel="stylesheet" href="/tokens.css" />', '<link rel="stylesheet" href="/css/fonts.css" />\n    <link rel="stylesheet" href="/tokens.css" />');
+  if (/@font-face/.test(page) || !page.includes("/css/fonts.css")) throw new Error("makeFixtureRoot: good.html no longer has the inline @font-face lines and tokens link it rewrites");
+  writeFileSync(join(app, "index.html"), page);
   writeFileSync(join(app, "tokens.css"), readFileSync(join(DESIGN_SYSTEM_ROOT, "dist/css/tokens.css")));
+  copyFileSync(join(DESIGN_SYSTEM_ROOT, "css/fonts.css"), join(app, "css/fonts.css"));
   for (const file of FONT_FILES) copyFileSync(join(FONT_DIR!, file), join(app, "fonts", file));
   return root;
 }
@@ -92,11 +127,8 @@ export function runnableFixtureApp(ports: Record<string, number>, path = "/"): A
   return fixtureApp({
     // The fixture's own dark-mode button, reached through registry steps.
     verify: { ...FIXTURE_VERIFY, darkSwitch: { kind: "steps", steps: [{ action: "click", target: ".theme-toggle" }] } },
-    root: "app",
-    commands: { cwd: "app" },
     routes: [{ id: "home", path }],
-    gates: { verify: { required: true } } as AppEntry["gates"],
-    consume: { via: "relative-import", detail: "app/tokens.css" },
+    gates: { ...fixtureApp().gates, verify: REQUIRED },
     run: { mode: "browser", cwd: "app", start: "bun serve.ts", readyPattern: "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)" },
     runProfile: {
       env: { NO_COLOR: "1", FIXTURE_PORT: "{port:ui}" },
@@ -105,7 +137,7 @@ export function runnableFixtureApp(ports: Record<string, number>, path = "/"): A
       fixtures: [],
       flags: [],
       ports,
-      proof: { status: "proven", method: "test fixture" },
+      proof: { status: "proven", method: "test fixture", date: "2026-10-05" },
     },
   });
 }

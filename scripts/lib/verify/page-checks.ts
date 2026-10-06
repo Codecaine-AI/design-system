@@ -5,9 +5,9 @@
  * guarding its requests is the runner's job (scripts/lib/app-runner.ts).
  */
 import { runSteps } from "../capture";
-import { type AppEntry, type PassId, probeActive, probeCoverageProblems, probeRole, type VerifySpec } from "../registry";
+import { type AppEntry, type PassId, probeActive, probeRole, switchRoles, verifySpecProblems, type VerifySpec } from "../registry";
 import { type Assertion, fail, pass, type ResponseLog } from "./assertions";
-import { fontAssertions, type FontSourceJudge, readFonts } from "./fonts";
+import { fontAssertions, fontProbeSelectors, type FontSourceJudge, readFonts } from "./fonts";
 import { checkSidebar } from "./sidebar";
 import { type BuildValues, buildValue, sameComputedValue, type Theme, tokenCssVar } from "./tokens";
 
@@ -143,7 +143,7 @@ export interface PageCheckOptions {
   app: Pick<AppEntry, "id" | "shell" | "theme" | "verify">;
   values: BuildValues;
   responses: ResponseLog;
-  /** Where a fetched font url() came from (font-source.ts): only the package's fonts/ (or a copy of them) passes. */
+  /** Where a fetched font url() came from (font-source.ts): only the package's fonts/ (or a copy of them declared in its fonts.css) passes. */
   fontSource: FontSourceJudge;
   /** --pass; undefined means every check (final acceptance). */
   pass?: PassId;
@@ -151,14 +151,19 @@ export interface PageCheckOptions {
   prepare?: (page: any) => Promise<void>;
 }
 
-/** The verify spec covers every chrome role (page, panel, text, border), each by a probe or a waiver with a reason. */
+/**
+ * The verify spec holds (verifySpecProblems): every chrome role (page, panel, text, border) has, in each
+ * checked theme, a probe on a property the role reads or a waiver with a reason.
+ */
 export function verifySpecAssertion(app: Pick<AppEntry, "theme" | "verify">): Assertion {
   const verify = app.verify!;
   const roles = Object.fromEntries(verify.probes.map((probe) => [`${probe.selector} ${probe.property}`, probeRole(probe)]));
   const detail = { roles, waivedRoles: verify.waivedRoles ?? [] };
   if (verify.probes.length === 0) return fail("verify-spec", "verify.probes is empty: nothing shows the app renders with the tokens", detail);
-  const problems = probeCoverageProblems(verify, app.theme?.rule);
-  return problems.length ? fail("verify-spec", problems.join("; "), detail) : pass("verify-spec", `${verify.probes.length} probe(s) cover page, panel, text and border (or waive them with a reason)`, detail);
+  const problems = verifySpecProblems(verify, app.theme?.rule);
+  return problems.length
+    ? fail("verify-spec", problems.join("; "), detail)
+    : pass("verify-spec", `${verify.probes.length} probe(s) cover page, panel, text and border in each checked theme (or waive them with a reason)`, detail);
 }
 
 const probeKey = (p: { selector: string; property: string; token: string }) => `${p.selector}\u0000${p.property}\u0000${p.token}`;
@@ -178,11 +183,18 @@ export async function checkPage(page: any, opts: PageCheckOptions): Promise<Asse
   const first: Theme = darkFirst ? "dark" : "light";
   const firstReadings = await readProbes(page, verify.probes.filter((probe) => probeActive(probe, first)), opts.values, first);
   out.push(...probeAssertions(firstReadings, first, darkFirst ? "dark (default)" : "light"));
-  out.push(...fontAssertions(await readFonts(page), opts.responses, opts.fontSource));
+  // Nothing before this forces a font load: readFonts reads what the page loaded, then forces only IBM Plex Mono when the route does not render it.
+  out.push(...fontAssertions(await readFonts(page, { textProbes: fontProbeSelectors(verify) }), opts.responses, opts.fontSource));
 
   if (!darkFirst) {
-    // theme.switch judges only probes checked in both themes.
-    const both = new Set(verify.probes.filter((probe) => probeActive(probe, "light") && probeActive(probe, "dark")).map(probeKey));
+    // theme.switch judges each role checked in both themes (waived in neither) by its probes checked in both
+    // themes; probes without a role (fonts) do not count.
+    const roles = switchRoles(verify);
+    const switchProbes = verify.probes.filter((probe) => {
+      const role = probeRole(probe);
+      return role !== null && roles.includes(role) && probeActive(probe, "light") && probeActive(probe, "dark");
+    });
+    const both = new Set(switchProbes.map(probeKey));
     // Probes whose token differs between the themes; the switch may apply asynchronously (a saved setting, a re-render).
     const watch = firstReadings
       .filter((r) => r.found && both.has(probeKey(r)) && r.buildValue !== buildValue(opts.values, r.token, "dark"))
@@ -206,19 +218,34 @@ export async function checkPage(page: any, opts: PageCheckOptions): Promise<Asse
     const darkReadings = await readProbes(page, verify.probes.filter((probe) => probeActive(probe, "dark")), opts.values, "dark");
     const markers = await themeMarkers(page);
     out.push(...probeAssertions(darkReadings, "dark"));
+    const lightByKey = new Map(firstReadings.map((r) => [probeKey(r), r]));
     const darkByKey = new Map(darkReadings.map((r) => [probeKey(r), r]));
-    const pairs = firstReadings.filter((r) => both.has(probeKey(r))).map((light) => ({ light, dark: darkByKey.get(probeKey(light))! }));
-    const shouldChange = pairs.filter(({ light, dark }) => light.found && dark?.found && !sameComputedValue(light.build!, dark.build!));
-    const changed = shouldChange.filter(({ light, dark }) => !sameComputedValue(light.actual!, dark.actual!));
+    // Per role: candidates are its probes found in both readings whose build value differs in dark; the
+    // role passes when the switch changed at least one of them.
+    const perRole = roles.map((role) => {
+      const candidates = switchProbes
+        .filter((probe) => probeRole(probe) === role)
+        .map((probe) => ({ light: lightByKey.get(probeKey(probe)), dark: darkByKey.get(probeKey(probe)) }))
+        .filter(({ light, dark }) => light?.found && dark?.found && !sameComputedValue(light.build!, dark.build!));
+      const changed = candidates.filter(({ light, dark }) => !sameComputedValue(light!.actual!, dark!.actual!)).length;
+      return { role, candidates: candidates.length, changed };
+    });
     const kind = verify.darkSwitch.kind;
+    const detail = { markers, roles: Object.fromEntries(perRole.map(({ role, changed, candidates }) => [role, { changed, candidates }])) };
+    const problems = [
+      ...perRole.filter((r) => r.candidates === 0).map(({ role }) => `no ${role} probe checked in both themes has a token that differs in dark: the switch is unchecked for ${role}`),
+      ...perRole
+        .filter((r) => r.candidates > 0 && r.changed === 0)
+        .map(({ role, candidates }) => `the ${kind} switch changed none of the ${candidates} ${role} probe(s) whose token differs in dark`),
+    ];
     out.push(
-      pairs.length === 0
-        ? fail("theme.switch", "no probe is checked in both themes: nothing shows the dark switch works", { markers })
-        : shouldChange.length === 0
-          ? fail("theme.switch", `none of the ${pairs.length} probe(s) checked in both themes is on the page with a token that differs in dark: the ${kind} switch is unchecked`, { markers })
-          : changed.length > 0
-            ? pass("theme.switch", `${kind} switch changed ${changed.length} of ${shouldChange.length} probe(s)`, { markers })
-            : fail("theme.switch", `the ${kind} switch changed none of the ${shouldChange.length} probe(s) whose token differs in dark`, { markers }),
+      roles.length === 0
+        ? fail("theme.switch", "every role is waived in light or dark: nothing shows the dark switch works", detail)
+        : switchProbes.length === 0
+          ? fail("theme.switch", `no ${roles.join(", ")} probe is checked in both themes: nothing shows the dark switch works`, detail)
+          : problems.length
+            ? fail("theme.switch", problems.join("; "), detail)
+            : pass("theme.switch", `${kind} switch changed ${perRole.map(({ role, changed, candidates }) => `${role} ${changed}/${candidates}`).join(", ")} probe(s)`, detail),
     );
   }
 

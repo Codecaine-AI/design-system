@@ -7,13 +7,15 @@
 import { fileURLToPath } from "node:url";
 import { fixClock, runSteps } from "../capture";
 import { type EgressStats, guardedContext, OWNER_PORTS, refreshStartedPorts, type RunningApp, servedFromRoot, splitBlocked, startApp } from "../app-runner";
-import type { AppEntry, RouteSpec } from "../registry";
+import type { AppEntry, Registry, RouteSpec } from "../registry";
 import { type Assertion, fail, pass, type ResponseLog, trackResponses, warn } from "./assertions";
 
 export interface Session {
   browser: any;
   root: string;
   outDir: string;
+  /** The validated registry the apps come from: startApp takes each app's port block from it. */
+  registry?: Registry;
 }
 
 export interface RuntimeReport {
@@ -146,7 +148,7 @@ export async function inRunningApp(
   // An interrupt stops this app through the runner's installSignalHandlers (stopAllApps), which the CLI installs.
   let running: RunningApp;
   try {
-    running = await startApp(app, { root: session.root, outDir: session.outDir });
+    running = await startApp(app, { root: session.root, outDir: session.outDir, registry: session.registry });
   } catch (error) {
     report.assertions.push(fail("start", `the app did not start: ${(error as Error).message}`));
     return report;

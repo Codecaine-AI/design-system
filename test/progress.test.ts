@@ -7,7 +7,7 @@
  */
 import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, realpathSync, writeFileSync, mkdirSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseLedger } from "../scripts/lib/progress/ledger.ts";
@@ -16,6 +16,7 @@ import { buildProgress, type ProgressModel } from "../scripts/lib/progress/model
 import { renderHtml } from "../scripts/lib/progress/render-html.ts";
 import { renderMarkdown } from "../scripts/lib/progress/render-md.ts";
 import { loadRegistry } from "../scripts/lib/registry.ts";
+import { plantBin } from "./planted-bin.ts";
 import { declaredVars, PKG, readText } from "./support.ts";
 
 const FIXTURES = join(PKG, "test", "fixtures", "progress");
@@ -250,6 +251,45 @@ describe("outputs", () => {
     const missing = spawnSync("bun", ["scripts/progress.ts", ...args.slice(0, 6), "--state", join(out, "nope.md")], { cwd: PKG, encoding: "utf8" });
     expect(missing.status).toBe(2);
     expect(missing.stderr).toContain("nope.md does not exist");
+  });
+
+  test("runs the system git, never one planted in PATH", () => {
+    const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-progress-path-")));
+    try {
+      const planted = plantBin(scratch);
+      const args = ["--root", "/fixture/root", "--out-dir", join(scratch, "out"), "--lint-json", fixture("lint.json"), "--state", fixture("STATE.md"), "--registry", fixture("registry.json")];
+      const run = spawnSync(process.execPath, ["scripts/progress.ts", ...args], { cwd: PKG, encoding: "utf8", env: { ...process.env, PATH: planted.path } });
+      expect([run.status, planted.calls()]).toEqual([0, []]);
+    } finally {
+      rmSync(scratch, { recursive: true, force: true });
+    }
+  });
+
+  test("refuses an --out-dir inside a git checkout and an output file that is a symlink, writing nothing", () => {
+    const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-progress-dest-")));
+    try {
+      const run = (out: string) =>
+        spawnSync("bun", ["scripts/progress.ts", "--root", "/fixture/root", "--out-dir", out, "--lint-json", fixture("lint.json"), "--state", fixture("STATE.md"), "--registry", fixture("registry.json")], { cwd: PKG, encoding: "utf8" });
+
+      // A linked worktree marks its top with a `.git` file, not a directory.
+      const checkout = join(scratch, "checkout");
+      mkdirSync(checkout);
+      writeFileSync(join(checkout, ".git"), "gitdir: /elsewhere/.git/worktrees/checkout\n");
+      const inside = run(join(checkout, "reports"));
+      expect([inside.status, inside.stderr]).toEqual([2, expect.stringContaining(`is inside the git checkout ${checkout}`)]);
+      expect(existsSync(join(checkout, "reports"))).toBe(false);
+
+      const out = join(scratch, "out");
+      mkdirSync(out);
+      const target = join(scratch, "elsewhere.md");
+      writeFileSync(target, "not progress");
+      symlinkSync(target, join(out, "progress.md"));
+      const linked = run(out);
+      expect([linked.status, linked.stderr]).toEqual([2, expect.stringContaining("is a symlink")]);
+      expect(readFileSync(target, "utf8")).toBe("not progress");
+    } finally {
+      rmSync(scratch, { recursive: true, force: true });
+    }
   });
 });
 

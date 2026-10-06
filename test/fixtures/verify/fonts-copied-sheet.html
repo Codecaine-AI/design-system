@@ -1,0 +1,16 @@
+<!doctype html>
+<!-- verify:apps fixture: byte copies of the package's fonts.css and font files next to the page (consume.via copy, a build in the run's temp dir), loaded through an @import in an inline <style>. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>fonts from a copied fonts.css</title>
+    <style>
+      @import url("/copy/design-system/css/fonts.css");
+      body { margin: 0; font-family: Inter, sans-serif; }
+      code { font-family: "IBM Plex Mono", monospace; }
+    </style>
+  </head>
+  <body>
+    <p>Text in Inter, <code>code in IBM Plex Mono</code>.</p>
+  </body>
+</html>

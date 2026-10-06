@@ -86,14 +86,28 @@ describe("registry:check", () => {
     expect(check([entry()])).toEqual([]);
   });
 
-  test("a role is covered by a probe's own role field or by a waiver with a reason", () => {
-    const border = { selector: "hr", property: "color", token: "color.status.neutral.line", role: "border" as const };
-    expect(check([entry({ verify: { probes: [...PROBES.slice(0, 3), border], darkSwitch: { kind: "attribute" } } })])).toEqual([]);
-    const waived = { probes: PROBES.slice(0, 3), waivedRoles: [{ role: "border" as const, reason: "a canvas app with no bordered chrome" }], darkSwitch: { kind: "attribute" as const } };
+  test("a role is covered in each checked theme by a probe active there or by a waiver for that theme with a reason", () => {
+    const attribute = { kind: "attribute" as const };
+    // An explicit role on a property the role does not read holds only with a roleReason.
+    const border = { selector: "hr", property: "color", token: "color.status.neutral.line", role: "border" as const, roleReason: "the hr draws its rule in currentColor" };
+    expect(check([entry({ verify: { probes: [...PROBES.slice(0, 3), border], darkSwitch: attribute } })])).toEqual([]);
+    const waived = { probes: PROBES.slice(0, 3), waivedRoles: [{ role: "border" as const, reason: "a canvas app with no bordered chrome" }], darkSwitch: attribute };
     expect(check([entry({ verify: waived })])).toEqual([]);
-    // A probe limited to one theme still covers its role; the page needs a probe in each checked theme.
+    // A probe limited to light covers its role in light only: dark needs a probe or a waiver for dark.
     const lightOnlyPanel = [PROBES[0]!, { ...PROBES[1]!, themes: ["light" as const] }, ...PROBES.slice(2)];
-    expect(check([entry({ verify: { probes: lightOnlyPanel, darkSwitch: { kind: "attribute" } } })])).toEqual([]);
+    expect(check([entry({ verify: { probes: lightOnlyPanel, darkSwitch: attribute } })])).toContain(
+      'demo: verify.probes has no panel probe checked in dark (add one, or a verify.waivedRoles entry { role, themes: ["dark"], reason })',
+    );
+    const darkWaiver = [{ role: "panel" as const, themes: ["dark" as const], reason: "the panel is board data, drawn light in both themes" }];
+    expect(check([entry({ verify: { probes: lightOnlyPanel, waivedRoles: darkWaiver, darkSwitch: attribute } })])).toEqual([]);
+    // SVG roles: fill paints a page, a panel or text; stroke draws a border.
+    const svg = [
+      { selector: "svg rect.bg", property: "fill", token: "color.surface.page" },
+      { selector: "svg rect.box", property: "fill", token: "color.surface.panel" },
+      { selector: "svg text", property: "fill", token: "color.text.body" },
+      { selector: "svg rect.box", property: "stroke", token: "color.border.default" },
+    ];
+    expect(check([entry({ verify: { probes: svg, darkSwitch: attribute } })])).toEqual([]);
   });
 
   const profile = (over: Partial<AppEntry["runProfile"]>) => ({ ...entry().runProfile, ...over });
@@ -130,6 +144,44 @@ describe("registry:check", () => {
       [entry({ verify: { probes: PROBES.slice(0, 3), waivedRoles: [{ role: "border", reason: " " }], darkSwitch: { kind: "attribute" } } })],
       "verify.probes has no border probe",
     ],
+    [
+      "a role probed only in dark on a light-dark app",
+      [entry({ verify: { probes: [...PROBES.slice(0, 2), { ...PROBES[2]!, themes: ["dark"] }, PROBES[3]!], darkSwitch: { kind: "attribute" } } })],
+      'verify.probes has no text probe checked in light (add one, or a verify.waivedRoles entry { role, themes: ["light"], reason })',
+    ],
+    [
+      "a waiver for a theme a dark-first app is not checked in",
+      [entry({ theme: { rule: "dark-first" }, verify: { probes: PROBES.slice(0, 3), waivedRoles: [{ role: "border", themes: ["light"], reason: "no border in light" }], darkSwitch: { kind: "attribute" } } })],
+      "verify.waivedRoles[0] (border) waives light, a theme the app is not checked in (dark)",
+    ],
+    [
+      "a waiver with an empty themes list",
+      [entry({ verify: { probes: PROBES.slice(0, 3), waivedRoles: [{ role: "border", themes: [], reason: "no border" }], darkSwitch: { kind: "attribute" } } })],
+      "verify.waivedRoles[0] (border) has an empty themes list",
+    ],
+    [
+      "a waiver for a role that is not a probe role",
+      [entry({ verify: { probes: PROBES, waivedRoles: [{ role: "chrome" as never, reason: "no chrome" }], darkSwitch: { kind: "attribute" } } })],
+      'verify.waivedRoles[0] role "chrome" is not one of page, panel, text, border',
+    ],
+    [
+      "a page probe on a property the page role does not read",
+      [entry({ verify: { probes: [{ selector: "body", property: "color", token: "color.surface.page" }, ...PROBES.slice(1)], darkSwitch: { kind: "attribute" } } })],
+      "verify.probes[0] (body color) is a page probe, but a page probe reads background-color or fill",
+    ],
+    [
+      "an explicit border role on color without a roleReason",
+      [entry({ verify: { probes: [...PROBES.slice(0, 3), { selector: "hr", property: "color", token: "color.status.neutral.line", role: "border", roleReason: " " }], darkSwitch: { kind: "attribute" } } })],
+      "verify.probes[3] (hr color) is a border probe, but a border probe reads border-*-color, outline-color or stroke",
+    ],
+    [
+      "a role with a light-only and a dark-only probe but none checked in both themes",
+      [entry({ verify: { probes: [PROBES[0]!, { ...PROBES[1]!, themes: ["light"] }, { ...PROBES[1]!, selector: ".aside", themes: ["dark"] }, ...PROBES.slice(2)], darkSwitch: { kind: "attribute" } } })],
+      "verify.probes has no panel probe checked in both light and dark: theme.switch cannot show the dark switch reaches panel",
+    ],
+    ["a route id that climbs out of the output dir", [entry({ routes: [{ id: "../x", path: "/" }] })], 'demo: route id "../x" does not match'],
+    ["a route id with a separator", [entry({ routes: [{ id: "a/b", path: "/" }] })], 'demo: route id "a/b" does not match'],
+    ["an unsafe verify.route", [entry({ routes: [{ id: "a/b", path: "/" }], verify: { route: "a/b", probes: PROBES, darkSwitch: { kind: "attribute" } } })], 'demo: verify.route "a/b" does not match'],
   ])("reports %s", (_, apps, message) => {
     const problems = check(apps);
     expect(problems.some((p) => p.includes(message))).toBe(true);

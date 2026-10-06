@@ -15,7 +15,8 @@
  *              is measured only against it (the ledger's baseline is the audit's count, another measure).
  *
  * Writes <out-dir>/progress.html (self-contained, tokens.css inlined, light and dark) and
- * <out-dir>/progress.md. --out-dir defaults to $DS_RUN, else <os tmpdir>/ds-rollout.
+ * <out-dir>/progress.md. --out-dir defaults to $DS_RUN, else <os tmpdir>/ds-rollout; it is never the
+ * owner's tree or a dir inside a git checkout, and neither file may be a symlink.
  */
 
 import { spawnSync } from "node:child_process";
@@ -28,7 +29,9 @@ import { buildProgress, type ProgressModel } from "./lib/progress/model.ts";
 import { renderHtml } from "./lib/progress/render-html.ts";
 import { renderMarkdown } from "./lib/progress/render-md.ts";
 import { DESIGN_SYSTEM_ROOT, loadRegistry, REGISTRY_PATH } from "./lib/registry.ts";
-import { safeOutputPath } from "./lib/safe-paths.ts";
+import { toolOutputDir } from "./lib/output-dir.ts";
+import { safeChildPath } from "./lib/safe-paths.ts";
+import { SYSTEM_BIN, SYSTEM_PATH } from "./lib/system-bin.ts";
 
 const USAGE =
   "usage: bun run progress [--root <dir>] [--out-dir <dir>] [--lint-json <file>] [--baseline-lint <file>] [--state <file>] [--registry <file>]";
@@ -75,8 +78,9 @@ export function parseArgs(argv: string[], env: Record<string, string | undefined
 /** Reads every input, writes progress.html and progress.md, and returns the model and the written paths. */
 export function runProgress(opts: ProgressOptions): { model: ProgressModel; html: string; md: string } {
   if (!existsSync(opts.state)) throw new Error(`no ledger: ${opts.state} does not exist (pass --state <file>)`);
-  const outDir = safeOutputPath(opts.outDir, { root: opts.root, label: "--out-dir" });
-  const head = spawnSync("git", ["-C", DESIGN_SYSTEM_ROOT, "rev-parse", "HEAD"], { encoding: "utf8" });
+  const outDir = toolOutputDir(opts.outDir, { root: opts.root, label: "--out-dir" });
+  // The system git by absolute path, with a system-only PATH: never a binary planted in PATH.
+  const head = spawnSync(SYSTEM_BIN.git, ["-C", DESIGN_SYSTEM_ROOT, "rev-parse", "HEAD"], { encoding: "utf8", env: { ...process.env, PATH: SYSTEM_PATH } });
   const build = { root: opts.root, commit: head.status === 0 ? head.stdout.trim() : null, tokensCssSha256: fileSha256(join(DESIGN_SYSTEM_ROOT, "dist/css/tokens.css")) };
   const lintRead = checkLintReport(opts.lintJson ? readLintFile(opts.lintJson) : runLinter(DESIGN_SYSTEM_ROOT, opts.root, { registry: opts.registry }), build);
   // The baseline was taken before the apps moved, so only its root must match.
@@ -93,8 +97,9 @@ export function runProgress(opts: ProgressOptions): { model: ProgressModel; html
   model.notes.push(...lintRead.notes, ...(baselineRead?.notes ?? []));
   const tokensCss = readFileSync(join(DESIGN_SYSTEM_ROOT, "dist", "css", "tokens.css"), "utf8");
   mkdirSync(outDir, { recursive: true });
-  const html = join(outDir, "progress.html");
-  const md = join(outDir, "progress.md");
+  const base = { base: outDir, root: opts.root, label: "--out-dir" };
+  const html = safeChildPath(base, "progress.html");
+  const md = safeChildPath(base, "progress.md");
   writeFileSync(html, renderHtml(model, tokensCss));
   writeFileSync(md, renderMarkdown(model));
   return { model, html, md };

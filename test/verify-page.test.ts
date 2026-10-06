@@ -96,8 +96,8 @@ describe.skipIf(Boolean(browserSkip))("checkPage", () => {
     // Every probe limited to one theme: the page is covered in both themes, but nothing shows the switch works.
     const split = PROBES.slice(0, 4).map((probe, i) => ({ ...probe, themes: [i === 0 ? "dark" : "light"] as Array<"light" | "dark"> }));
     const onlySplit = byId(await check("good", fixtureApp({ verify: { ...FIXTURE_VERIFY, probes: [...split, { ...PROBES[0]!, themes: ["light"] }] } })));
-    expect(onlySplit["verify-spec"]?.status).toBe("pass");
-    expect(onlySplit["theme.switch"]).toMatchObject({ status: "fail", message: "no probe is checked in both themes: nothing shows the dark switch works" });
+    expect(onlySplit["verify-spec"]).toMatchObject({ status: "fail", message: expect.stringContaining("no page probe checked in both light and dark") });
+    expect(onlySplit["theme.switch"]).toMatchObject({ status: "fail", message: "no page, panel, text, border probe is checked in both themes: nothing shows the dark switch works" });
   }, 30_000);
 
   test("a spec without probes, or without a role, fails verify-spec", async () => {

@@ -17,7 +17,7 @@ import { fontDiskPath, fontSourceJudge } from "../scripts/lib/verify/font-source
 import { inRunningApp, isolationAssertions } from "../scripts/lib/verify/run-app.ts";
 import { loadBuildValues } from "../scripts/lib/verify/tokens.ts";
 import { browserSkip, MIRROR, makeFixtureRoot, runnableFixtureApp } from "./verify-support.ts";
-import { assertNoLeaks } from "./leaks.ts";
+import { finishScratch } from "./leaks.ts";
 
 const UI_PORT = 46963;
 const STRAY_PORT = 46969;
@@ -27,9 +27,9 @@ const DEAD_PORT = 46968;
 const LATE_PORT = 46967;
 const values = loadBuildValues(DESIGN_SYSTEM_ROOT);
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-verify-run-")));
-afterAll(() => {
+afterAll(async () => {
   try {
-    assertNoLeaks(scratch); // no app this file started may still listen
+    await finishScratch(scratch); // stop what this file started, clean crashed runs' records, then no listener may be left
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }
@@ -57,7 +57,7 @@ describe.skipIf(Boolean(browserSkip))("inRunningApp", () => {
     await browser?.close();
   });
 
-  // The fixture app serves byte copies of the package's fonts from its own folder (like consume.via copy).
+  // The fixture app serves byte copies of the package's fonts and fonts.css from its own folder (like consume.via copy).
   const verify = (app: AppEntry, root: string) =>
     inRunningApp(app, { browser, root, outDir: join(scratch, "out") }, (page, ctx) =>
       checkPage(page, {
@@ -65,7 +65,13 @@ describe.skipIf(Boolean(browserSkip))("inRunningApp", () => {
         values,
         responses: ctx.responses,
         prepare: ctx.prepare,
-        fontSource: fontSourceJudge({ packageDirs: [], buildFontsDir: join(DESIGN_SYSTEM_ROOT, "fonts"), copyDirs: [root], diskPath: (url) => fontDiskPath(ctx.running, url) }),
+        fontSource: fontSourceJudge({
+          packageDirs: [],
+          buildFontsDir: join(DESIGN_SYSTEM_ROOT, "fonts"),
+          buildFontsCss: join(DESIGN_SYSTEM_ROOT, "css/fonts.css"),
+          copyDirs: [root],
+          diskPath: (url) => fontDiskPath(ctx.running, url),
+        }),
       }),
     );
   const byId = (assertions: Assertion[]) => Object.fromEntries(assertions.map((a) => [a.id, a]));

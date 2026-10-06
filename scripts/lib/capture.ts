@@ -21,6 +21,7 @@
  */
 import type { AppEntry, RouteSpec } from "./registry";
 import { guardedContext, splitBlocked, type RunningApp } from "./app-runner";
+import { safeSegment } from "./safe-paths";
 import type { Box, Theme } from "./snapshot-set";
 
 export const CONTEXT_OPTIONS = {
@@ -160,9 +161,9 @@ export function routeThemes(app: AppEntry, route: RouteSpec): Theme[] {
   return route.themes ?? (app.theme?.rule === "dark-first" ? ["dark"] : ["light", "dark"]);
 }
 
-/** The shot key: `<route>-<theme>`. */
+/** The shot key: `<route>-<theme>`. The route id must be one plain path segment (it names the PNG). */
 export function shotKey(route: RouteSpec, theme: Theme): string {
-  return `${route.id}-${theme}`;
+  return `${safeSegment(route.id, "route id")}-${theme}`;
 }
 
 function defaultTheme(app: AppEntry): Theme {

@@ -2,11 +2,12 @@
  * verify:apps --propagate and --restore, always on a scratch copy of the design-system (never a real
  * checkout): the theme files are journaled before the sentinel goes in, the copy is restored and
  * rebuilt byte-for-byte even when the check throws, a crashed run blocks the next until --restore,
- * the owner's tree is refused, and eligibility follows the ledger.
+ * the owner's tree is refused, nothing is written through a link out of the design-system, a build a
+ * crashed run left behind is stopped before the restore, and eligibility follows the ledger.
  */
 import { afterAll, describe, expect, test } from "bun:test";
-import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { spawn, spawnSync } from "node:child_process";
+import { cpSync, existsSync, linkSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { connect } from "node:net";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
@@ -20,7 +21,9 @@ import {
   hashChanges,
   OWNER_TREE,
   propagateBlocker,
+  Refusal,
   readJournal,
+  restoreFromJournal,
   runPackageScript,
   SENTINEL_COMPUTED,
   SENTINEL_TOKEN,
@@ -29,12 +32,13 @@ import {
   writeJournal,
 } from "../scripts/lib/verify/propagate.ts";
 import { browserSkip, MIRROR, makeFixtureRoot, runnableFixtureApp } from "./verify-support.ts";
-import { assertNoLeaks } from "./leaks.ts";
+import { finishScratch } from "./leaks.ts";
+import { plantBin } from "./planted-bin.ts";
 
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-verify-propagate-")));
-afterAll(() => {
+afterAll(async () => {
   try {
-    assertNoLeaks(scratch); // no app this file started may still listen
+    await finishScratch(scratch); // stop what this file started, clean crashed runs' records, then no listener may be left
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }
@@ -52,20 +56,53 @@ function scratchRoot(root = mkdtempSync(join(scratch, "root-"))) {
   return { root, ds, out, journal: join(out, "propagate-journal") };
 }
 
+/** Every file under `dir`, by path relative to `base`. */
+function contents(dir: string, base = dir, files: Record<string, string> = {}): Record<string, string> {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) contents(full, base, files);
+    else files[relative(base, full)] = readFileSync(full, "utf8");
+  }
+  return files;
+}
+
 /** Theme sources and every build output, by path. */
 function snapshot(ds: string): Record<string, string> {
   const files: Record<string, string> = {};
-  const walk = (dir: string) => {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      const full = join(dir, entry.name);
-      if (entry.isDirectory()) walk(full);
-      else files[relative(ds, full)] = readFileSync(full, "utf8");
-    }
-  };
-  for (const dir of ["tokens/themes", "dist"]) walk(join(ds, dir));
+  for (const dir of ["tokens/themes", "dist"]) contents(join(ds, dir), ds, files);
   files["guide/tokens.md"] = readFileSync(join(ds, "guide/tokens.md"), "utf8");
   return files;
 }
+
+const THEME = `${JSON.stringify({ color: { surface: { page: { $value: "#ffffff" } } } }, null, 2)}\n`;
+
+/**
+ * A minimal design-system (one theme, a built dist/ and guide/tokens.md) whose toy build copies the theme
+ * into dist/light.json and whose check compares the two. No real build, so a test costs milliseconds.
+ */
+function miniDs(build = "cp tokens/themes/light.tokens.json dist/light.json") {
+  const root = mkdtempSync(join(scratch, "mini-"));
+  const ds = join(root, "design-system");
+  for (const dir of ["tokens/themes", "dist", "guide"]) mkdirSync(join(ds, dir), { recursive: true });
+  writeFileSync(join(ds, "tokens/themes/light.tokens.json"), THEME);
+  writeFileSync(join(ds, "dist/light.json"), THEME);
+  writeFileSync(join(ds, "guide/tokens.md"), "tokens\n");
+  writeFileSync(join(ds, "package.json"), JSON.stringify({ scripts: { build, check: "cmp tokens/themes/light.tokens.json dist/light.json" } }));
+  return { ds, journal: join(root, "out/propagate-journal") };
+}
+
+const readOrNull = (path: string) => (existsSync(path) ? readFileSync(path, "utf8") : null);
+
+/** Live (not zombie) processes in a process group. */
+function liveGroupMembers(pgid: number): number[] {
+  return spawnSync("ps", ["-A", "-o", "pid=,pgid=,stat="], { encoding: "utf8" })
+    .stdout.split("\n")
+    .map((line) => line.trim().split(/\s+/))
+    .filter(([, group, stat]) => Number(group) === pgid && stat !== undefined && !stat.startsWith("Z"))
+    .map(([pid]) => Number(pid));
+}
+
+const groupOf = (pid: number) => Number(spawnSync("ps", ["-o", "pgid=", "-p", String(pid)], { encoding: "utf8" }).stdout.trim());
 
 const pageValue = (ds: string, theme: string) => JSON.parse(readFileSync(join(ds, `dist/json/${theme}.json`), "utf8"))[SENTINEL_TOKEN];
 
@@ -348,7 +385,8 @@ describe("safety around a propagate run", () => {
     const { root, ds, out, journal } = scratchRoot();
     writeJournal(ds, journal);
     const registry = join(root, "apps.json");
-    const entry = { ...runnableFixtureApp({ ui: 46975 }), id: "blocked-app", gates: { verify: { required: true }, snapshot: { required: true } } };
+    const fixture = runnableFixtureApp({ ui: 46975 });
+    const entry = { ...fixture, id: "blocked-app", gates: { ...fixture.gates, verify: { required: true }, snapshot: { required: true } } };
     writeFileSync(registry, JSON.stringify({ version: 1, apps: [entry] }));
     const env = { ...process.env, DS_RUN: out };
     const verify = spawnSync(process.execPath, [join(DESIGN_SYSTEM_ROOT, "scripts/verify-apps.ts"), "--root", root, "--out-dir", out, "--registry", registry], { encoding: "utf8", env });
@@ -357,4 +395,177 @@ describe("safety around a propagate run", () => {
     expect([snapshot.status, snapshot.stderr]).toEqual([2, expect.stringMatching(/refusing to capture: an unrestored propagate journal/)]);
     expect(existsSync(join(out, "blocked-app"))).toBe(false);
   }, 30_000);
+});
+
+describe("links out of the design-system", () => {
+  /** Replaces `path` with a symlink to `target`, which first gets a copy of what `path` held. */
+  const linkOut = (path: string, target: string) => {
+    cpSync(path, target, { recursive: true });
+    rmSync(path, { recursive: true });
+    symlinkSync(target, path);
+  };
+
+  // Each row stands in for a scratch design-system that links a file of the owner's tree (here `outside`).
+  test.each([
+    ["a theme file that is a symlink", (ds: string, outside: string) => linkOut(join(ds, "tokens/themes/light.tokens.json"), join(outside, "light.tokens.json")), /tokens\/themes\/light\.tokens\.json in \S+ is a symlink/],
+    ["tokens/themes/ as a symlink", (ds: string, outside: string) => linkOut(join(ds, "tokens/themes"), join(outside, "themes")), /tokens\/themes in \S+ is a symlink/],
+    ["dist/ as a symlink", (ds: string, outside: string) => linkOut(join(ds, "dist"), join(outside, "dist")), /^dist in \S+ is a symlink/],
+    ["a symlink inside dist/", (ds: string, outside: string) => linkOut(join(ds, "dist/light.json"), join(outside, "light.json")), /dist\/light\.json in \S+ is a symlink/],
+    [
+      "a hard link inside dist/ (the build rewrites it in place)",
+      (ds: string, outside: string) => {
+        cpSync(join(ds, "dist/light.json"), join(outside, "light.json"));
+        rmSync(join(ds, "dist/light.json"));
+        linkSync(join(outside, "light.json"), join(ds, "dist/light.json"));
+      },
+      /dist\/light\.json in \S+ is hard-linked/,
+    ],
+    ["guide/tokens.md as a symlink", (ds: string, outside: string) => linkOut(join(ds, "guide/tokens.md"), join(outside, "tokens.md")), /guide\/tokens\.md in \S+ is a symlink/],
+    [
+      "scripts/build.ts as a symlink (it builds the tree above its real path)",
+      (ds: string, outside: string) => {
+        writeFileSync(join(outside, "build.ts"), "// the owner's build\n");
+        mkdirSync(join(ds, "scripts"));
+        symlinkSync(join(outside, "build.ts"), join(ds, "scripts/build.ts"));
+      },
+      /scripts\/build\.ts in \S+ is a symlink/,
+    ],
+  ])("%s: --propagate refuses before journaling, and nothing outside is written", async (_, plant, message) => {
+    const { ds, journal } = miniDs();
+    const outside = mkdtempSync(join(scratch, "outside-"));
+    plant(ds, outside);
+    const before = contents(outside);
+    let outsideDuringCheck: Record<string, string> | undefined;
+    const error = await withSentinel(ds, journal, async () => {
+      outsideDuringCheck = contents(outside);
+    }).then(
+      () => null,
+      (rejection: unknown) => rejection,
+    );
+    expect({ refusal: error instanceof Refusal ? error.message : String(error), outsideDuringCheck, outside: contents(outside), journal: existsSync(journal) }).toEqual({
+      refusal: expect.stringMatching(message),
+      outsideDuringCheck: undefined,
+      outside: before,
+      journal: false,
+    });
+  });
+});
+
+describe("a build a crashed run left behind", () => {
+  test("a journaled build records its own pid, start time and process group (not this process's) while it runs; the record is cleared when it returns", () => {
+    // The toy build saves what the journal holds while it runs, and the identity of its parent (bun run).
+    const { ds, journal } = miniDs(
+      "cp ../out/propagate-journal/build.json identity.json && cp ../out/propagate-journal/manifest.json manifest-during.json && echo $PPID > ppid && LC_ALL=C ps -o lstart= -p $PPID > ppid-started",
+    );
+    writeJournal(ds, journal);
+    const result = runPackageScript(ds, "build", journal);
+    if (!result.ok) throw new Error(result.output);
+    const identity = JSON.parse(readFileSync(join(ds, "identity.json"), "utf8"));
+    const bun = Number(readFileSync(join(ds, "ppid"), "utf8"));
+    const normalize = (text: string) => text.trim().split(/\s+/).join(" ");
+    expect({
+      identity: { ...identity, started: normalize(identity.started) },
+      during: JSON.parse(readFileSync(join(ds, "manifest-during.json"), "utf8")).activeBuild?.script,
+      after: { activeBuild: readJournal(journal)?.activeBuild, identityFile: existsSync(join(journal, "build.json")) },
+    }).toEqual({
+      identity: { pid: bun, pgid: bun, started: normalize(readFileSync(join(ds, "ppid-started"), "utf8")), script: "build" },
+      during: "build",
+      after: { activeBuild: undefined, identityFile: false },
+    });
+    expect(identity.pgid).not.toBe(groupOf(process.pid));
+  });
+
+  test("--restore stops the orphaned build's whole group before it restores the theme files, then rebuilds", async () => {
+    // The first build (the crashed run's) waits; on SIGTERM it saves what the theme file held at that moment.
+    // Later builds copy the theme into dist/.
+    const { ds, journal } = miniDs(
+      "if [ -e slow ]; then rm slow; trap 'cp tokens/themes/light.tokens.json theme-at-stop.json; exit 0' TERM; ps -o pgid= -p $$ > group; : > ready; sleep 30 & wait; else cp tokens/themes/light.tokens.json dist/light.json; fi",
+    );
+    setSentinel(writeJournal(ds, journal));
+    writeFileSync(join(ds, "slow"), "");
+    const propagate = join(import.meta.dir, "../scripts/lib/verify/propagate.ts");
+    // A propagate run that is killed (SIGKILL: no handler runs) while its build runs.
+    const run = Bun.spawn([process.execPath, "-e", `import { runPackageScript } from ${JSON.stringify(propagate)}; runPackageScript(${JSON.stringify(ds)}, "build", ${JSON.stringify(journal)});`], {
+      stdout: "ignore",
+      stderr: "ignore",
+    });
+    try {
+      const deadline = Date.now() + 15_000;
+      while (!existsSync(join(ds, "ready"))) {
+        if (Date.now() > deadline) throw new Error("the build never started");
+        await Bun.sleep(50);
+      }
+      run.kill("SIGKILL");
+      await run.exited;
+      const pgid = Number(readFileSync(join(ds, "group"), "utf8"));
+      const restore = restoreFromJournal(journal);
+      expect({
+        stopped: restore.stoppedBuild && { ...restore.stoppedBuild, pid: restore.stoppedBuild.pid === pgid },
+        themeAtStop: readOrNull(join(ds, "theme-at-stop.json")),
+        group: liveGroupMembers(pgid),
+        restored: [readOrNull(join(ds, "tokens/themes/light.tokens.json")), readOrNull(join(ds, "dist/light.json")), restore.ok],
+      }).toEqual({
+        stopped: { pid: true, script: "build", outcome: expect.stringMatching(/^stopped: SIGTERM/) },
+        themeAtStop: expect.stringContaining("#ff00ff"),
+        group: [],
+        restored: [THEME, THEME, true],
+      });
+    } finally {
+      run.kill("SIGKILL");
+      // On a failure above, the build may still run: kill the group its own script recorded (alive, so the id is still its).
+      const pgid = Number(readOrNull(join(ds, "group")) ?? Number.NaN);
+      if (pgid > 1 && liveGroupMembers(pgid).length) process.kill(-pgid, "SIGKILL");
+    }
+  }, 30_000);
+
+  test("a recorded build whose pid now has another start time is never signalled, and the restore goes ahead", () => {
+    const { ds, journal } = miniDs();
+    setSentinel(writeJournal(ds, journal));
+    const stranger = spawn("sleep", ["30"], { detached: true, stdio: "ignore" });
+    try {
+      const pid = stranger.pid!;
+      const pgid = groupOf(pid);
+      writeFileSync(join(journal, "build.json"), JSON.stringify({ pid, pgid, started: "Thu Jan  1 00:00:00 1970", script: "build" }));
+      writeFileSync(join(journal, "manifest.json"), JSON.stringify({ ...readJournal(journal), activeBuild: { script: "build", identity: "build.json", requestedAt: new Date().toISOString() } }));
+      const restore = restoreFromJournal(journal);
+      expect({
+        outcome: restore.stoppedBuild?.outcome,
+        stranger: liveGroupMembers(pgid),
+        restored: [readOrNull(join(ds, "tokens/themes/light.tokens.json")), restore.ok],
+        activeBuild: readJournal(journal)?.activeBuild,
+      }).toEqual({
+        outcome: expect.stringMatching(/^not signalled: pid \d+ is another process now/),
+        stranger: [pid],
+        restored: [THEME, true],
+        activeBuild: undefined,
+      });
+    } finally {
+      stranger.kill("SIGKILL");
+    }
+  });
+});
+
+describe("what a propagate build runs", () => {
+  test("the build's own shell records its identity with the system ps, rm and mv, never ones planted in PATH", () => {
+    const { ds, journal } = miniDs("cp ../out/propagate-journal/build.json identity.json && cp tokens/themes/light.tokens.json dist/light.json");
+    const planted = plantBin(mkdtempSync(join(scratch, "path-")));
+    writeJournal(ds, journal);
+    const path = process.env.PATH;
+    process.env.PATH = planted.path;
+    try {
+      const result = runPackageScript(ds, "build", journal);
+      expect({ ok: result.ok, recorded: existsSync(join(ds, "identity.json")), planted: planted.calls() }).toEqual({ ok: true, recorded: true, planted: [] });
+    } finally {
+      process.env.PATH = path;
+    }
+  });
+
+  test("a build script changed after journaling never runs: the restore copies the theme files back, then refuses to build", () => {
+    const { ds, journal } = miniDs();
+    setSentinel(writeJournal(ds, journal));
+    // What an app could do while it ran during the propagate check: rewrite the design-system's build.
+    writeFileSync(join(ds, "package.json"), JSON.stringify({ scripts: { build: "touch tampered", check: "touch tampered" } }));
+    expect(() => restoreFromJournal(journal)).toThrow(/package\.json, bunfig\.toml, tsconfig\.json or scripts\/ changed since the propagate journal was written/);
+    expect({ tampered: existsSync(join(ds, "tampered")), theme: readOrNull(join(ds, "tokens/themes/light.tokens.json")) }).toEqual({ tampered: false, theme: THEME });
+  });
 });
