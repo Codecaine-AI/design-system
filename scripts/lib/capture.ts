@@ -13,6 +13,11 @@
  * switches away from the app's default theme (light, or dark on dark-first surfaces); the context's
  * prefers-color-scheme always matches the theme. Without a darkSwitch, prefers-color-scheme is the
  * only switch.
+ *
+ * Time: every capture context gets a fixed clock (FIXED_TIME) before the page loads, so "5 minutes
+ * ago" and today's date render the same in every run. Electron: each shot resets the window (storage
+ * cleared, the route's URL, prefers-color-scheme of the shot's theme, the fixed clock) and reloads it,
+ * so no shot inherits the previous one's theme or state.
  */
 import type { AppEntry, RouteSpec } from "./registry";
 import { guardedContext, splitBlocked, type RunningApp } from "./app-runner";
@@ -58,6 +63,19 @@ export const LAUNCH_OPTIONS = {
     "--disable-threaded-scrolling",
   ],
 } as const;
+
+/** The date every captured and verified page sees (Date.now, new Date()); timers still run. */
+export const FIXED_TIME = "2026-01-15T12:00:00.000Z";
+
+/** Fixes a context's clock at FIXED_TIME. Returns "fixed", or why it could not ("not applied: ..."). */
+export async function fixClock(context: any): Promise<string> {
+  try {
+    await context.clock.setFixedTime(new Date(FIXED_TIME));
+    return "fixed";
+  } catch (error) {
+    return `not applied: ${error instanceof Error ? error.message.split("\n")[0] : String(error)}`;
+  }
+}
 
 export const SCREENSHOT_OPTIONS = {
   type: "png",
@@ -129,6 +147,8 @@ export interface CaptureResult {
   consoleErrors: string[];
   /** Page loads after the first (a Vite reload mid-capture). */
   reloads: number;
+  /** "fixed" when the page saw FIXED_TIME, else why not. */
+  clock: string;
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -470,17 +490,18 @@ export async function captureRoute(browser: any, running: RunningApp, route: Rou
   }
 
   async function captureElectron(): Promise<CaptureResult> {
-    const page = await electronPage(running, route);
+    const before = running.blocked?.().length ?? 0;
+    const { page, url } = await electronPage(running, route);
     await page.setViewportSize(viewport);
+    // A fresh start for every shot: the shot's color scheme, the fixed clock, empty storage (plus the
+    // theme's storage switch), the route's URL, then a reload. The previous shot's theme never leaks in.
+    await page.emulateMedia({ colorScheme: theme });
+    const clock = await fixClock(running.electron!.app.context());
+    await page.evaluate(resetElectronState, { url, storage: plan.init?.storage ?? {} });
+    await page.reload({ waitUntil: "load" });
     await page.evaluate(adoptStyleSheet, DETERMINISM_CSS);
     watch(page);
-    if (plan.init) {
-      await page.evaluate(storageInitScript, plan.init.storage);
-      await page.reload({ waitUntil: "load" });
-      await page.evaluate(adoptStyleSheet, DETERMINISM_CSS);
-    }
     const network = trackNetwork(page);
-    const before = running.blocked?.().length ?? 0;
     const shot = await settleAndShoot(page, network, route, viewport, () => plan.afterLoad(page, network), () => plan.verify(page));
     const { unexpected, expected } = splitBlocked(running, (running.blocked?.() ?? []).slice(before));
     return {
@@ -493,6 +514,7 @@ export async function captureRoute(browser: any, running: RunningApp, route: Rou
       expectedBlocked: expected,
       consoleErrors: [...new Set(consoleErrors)],
       reloads: 0,
+      clock,
     };
   }
 
@@ -509,6 +531,7 @@ export async function captureRoute(browser: any, running: RunningApp, route: Rou
 
   async function captureInContext(): Promise<CaptureResult> {
     if (plan.init) await context.addInitScript(storageInitScript, plan.init.storage);
+    const clock = await fixClock(context);
     const page = await context.newPage();
     watch(page);
     const network = trackNetwork(page);
@@ -530,22 +553,42 @@ export async function captureRoute(browser: any, running: RunningApp, route: Rou
       expectedBlocked: expected,
       consoleErrors: [...new Set(consoleErrors)],
       reloads: Math.max(0, loads - 1),
+      clock,
     };
   }
 }
 
-/** Electron: the window whose title or URL contains route.path; "", "/" or "main" is the first window. */
-async function electronPage(running: RunningApp, route: RouteSpec): Promise<any> {
-  const first = await running.electron!.window();
-  const wanted = route.path;
-  if (!wanted || wanted === "/" || wanted === "main") return first;
-  if (wanted.startsWith("#")) {
-    await first.evaluate((hash: string) => ((globalThis as any).location.hash = hash), wanted);
-    return first;
+/** Page function: empties both storages, applies `storage`, and points the document at `url` (null: stay). */
+function resetElectronState({ url, storage }: { url: string | null; storage: Record<string, string> }) {
+  const win = globalThis as any;
+  try {
+    win.localStorage.clear();
+    win.sessionStorage.clear();
+    for (const [key, value] of Object.entries(storage)) win.localStorage.setItem(key, value);
+  } catch {
+    // opaque-origin documents have no storage
   }
+  if (url && win.location.href !== url) win.history.replaceState(null, "", url);
+}
+
+/** Electron: the first window's URL (without its hash) when the run's first shot began. Every shot of the first window starts there. */
+const electronHome = new WeakMap<RunningApp, string>();
+
+/**
+ * Electron: the window whose title or URL contains route.path, and the URL the shot loads it at.
+ * "", "/" or "main" is the first window at its launch URL; "#x" is the first window at that hash.
+ * Another window keeps its URL (null).
+ */
+async function electronPage(running: RunningApp, route: RouteSpec): Promise<{ page: any; url: string | null }> {
+  const first = await running.electron!.window();
+  if (!electronHome.has(running)) electronHome.set(running, String(first.url()).split("#")[0]!);
+  const home = electronHome.get(running)!;
+  const wanted = route.path;
+  if (!wanted || wanted === "/" || wanted === "main") return { page: first, url: home };
+  if (wanted.startsWith("#")) return { page: first, url: `${home}${wanted}` };
   for (const page of running.electron!.app.windows()) {
     const title = await page.title().catch(() => "");
-    if (title.includes(wanted) || page.url().includes(wanted)) return page;
+    if (title.includes(wanted) || page.url().includes(wanted)) return { page, url: null };
   }
   throw new Error(`${running.app.id}: no electron window matches route ${route.id} (${wanted})`);
 }

@@ -4,18 +4,21 @@
  * The root's design-system gets a sentinel page color (#ff00ff in every theme) and is rebuilt;
  * eligible apps must then paint their page with it. The theme files are journaled first and
  * restored (and the package rebuilt and checked) whatever happens. `--restore` replays the
- * journal after a crash.
+ * journal after a crash. Builds run in their own process group, so a second Ctrl-C in the
+ * terminal cannot kill the restore build. While a journal is unrestored or a build holds the
+ * sentinel, snapshot and verify:apps refuse to run (propagateBlocker).
  */
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve, sep } from "node:path";
+import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { installSignalHandlers } from "../app-runner";
+import { OWNER_TREE } from "../owner";
+import { appState, describePasses, parseLedger, passCells } from "../progress/ledger";
 import type { AppEntry, ConsumeVia, Registry } from "../registry";
-import { passesDone, readLedger } from "./ledger";
 
-/** The owner's workspace. Propagate never rebuilds it. */
-export const OWNER_TREE = "/Users/Ford/workspace";
+/** The owner's workspace (scripts/lib/owner.ts). Propagate never rebuilds it. */
+export { OWNER_TREE };
 export const SENTINEL = "#ff00ff";
 export const SENTINEL_COMPUTED = "rgb(255, 0, 255)";
 export const SENTINEL_TOKEN = "color.surface.page";
@@ -128,9 +131,12 @@ export interface CommandResult {
   output: string;
 }
 
-/** `bun run <script>` in a design-system directory. */
+/**
+ * `bun run <script>` in a design-system directory, in its own process group: a Ctrl-C in the terminal
+ * reaches this process (whose handler restores) but not the build, which always runs to the end.
+ */
 export function runPackageScript(dsDir: string, script: string): CommandResult {
-  const result = spawnSync(process.execPath, ["run", script], { cwd: dsDir, encoding: "utf8", env: process.env });
+  const result = spawnSync(process.execPath, ["run", script], { cwd: dsDir, encoding: "utf8", env: process.env, detached: true } as Parameters<typeof spawnSync>[2] & { encoding: "utf8" });
   return {
     command: `bun run ${script} (in ${dsDir})`,
     ok: result.status === 0,
@@ -211,29 +217,95 @@ export async function withSentinel<T>(dsDir: string, journalDir: string, check: 
 
 export interface Eligibility {
   apps: AppEntry[];
+  /** Every ledger row that is not eligible, with the reason. */
   skipped: Array<{ id: string; reason: string }>;
+  /** Ledger problems the parser reported (missing table, duplicate rows). */
+  problems: string[];
 }
 
 /**
- * Apps the sentinel must reach: those listed, or else every ledger app whose passes are all done
- * (or n/a) that runs (run mode not none) and consumes the package live.
+ * Apps the sentinel must reach: those listed, or else every ledger app that is done (the progress
+ * page's rule: every pass apps.json requires is done; a pass it marks n/a does not count), runs (run
+ * mode not none) and consumes the package live. Every other ledger row is reported with its reason.
  */
 export function eligibleApps(registry: Registry, listed: string[], stateMd: string | null): Eligibility {
   if (listed.length) {
-    return { apps: listed.map((id) => registry.apps.find((a) => a.id === id) ?? fail(`apps.json: no app "${id}"`)), skipped: [] };
+    return { apps: listed.map((id) => registry.apps.find((a) => a.id === id) ?? fail(`apps.json: no app "${id}"`)), skipped: [], problems: [] };
   }
   if (stateMd === null) throw new Refusal("--propagate without app ids reads the app_ledger in $DS_RUN/STATE.md, which is missing; list the apps");
+  const ledger = parseLedger(stateMd);
   const apps: AppEntry[] = [];
   const skipped: Eligibility["skipped"] = [];
-  for (const row of readLedger(stateMd)) {
-    if (!passesDone(row)) continue;
+  for (const row of ledger.rows) {
     const app = registry.apps.find((a) => a.id === row.id);
-    if (!app) skipped.push({ id: row.id, reason: "done in the ledger but not in apps.json" });
+    const cells = passCells(row, app);
+    const state = appState(Object.values(cells));
+    if (state !== "done") skipped.push({ id: row.id, reason: `not done (${state}: ${describePasses(cells)})` });
+    else if (!app) skipped.push({ id: row.id, reason: "done in the ledger but not in apps.json" });
     else if (app.run.mode === "none") skipped.push({ id: app.id, reason: `run mode none: ${app.run.reason ?? "no reason"}` });
     else if (!LIVE_CONSUMERS.includes(app.consume.via)) skipped.push({ id: app.id, reason: `consumes the package via ${app.consume.via}, not live` });
     else apps.push(app);
   }
-  return { apps, skipped };
+  return { apps, skipped, problems: ledger.problems };
+}
+
+// -- safety for the other tools -----------------------------------------------------
+
+/** True when a build's dist/json gives color.surface.page the sentinel in any theme. */
+export function holdsSentinel(dsDir: string): string | null {
+  for (const theme of ["light", "dark"]) {
+    const path = join(dsDir, "dist/json", `${theme}.json`);
+    if (!existsSync(path)) continue;
+    try {
+      const value = (JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>)[SENTINEL_TOKEN];
+      if (String(value).toLowerCase() === SENTINEL) return path;
+    } catch {
+      // an unreadable build is not the sentinel's business
+    }
+  }
+  return null;
+}
+
+/**
+ * Why a tool that reads the build (snapshot, verify:apps) must not run now: an unrestored propagate
+ * journal in one of the out-dirs, or a design-system build whose page color is the sentinel. Null when clear.
+ */
+export function propagateBlocker(opts: { outDirs: Array<string | undefined>; dsDirs: string[] }): string | null {
+  for (const outDir of new Set(opts.outDirs.filter((dir): dir is string => Boolean(dir)).map((dir) => resolve(dir)))) {
+    const journalDir = join(outDir, "propagate-journal");
+    const journal = readJournal(journalDir);
+    if (journal && !journal.restoredAt) {
+      return `an unrestored propagate journal (${journal.createdAt}) is at ${journalDir}: verify:apps --propagate is running or died; run \`bun run verify:apps --restore --root <root>\``;
+    }
+  }
+  for (const dsDir of new Set(opts.dsDirs.map((dir) => resolve(dir)))) {
+    const path = holdsSentinel(dsDir);
+    if (path) return `${path} sets ${SENTINEL_TOKEN} to the propagate sentinel ${SENTINEL}: restore the theme files and rebuild first`;
+  }
+  return null;
+}
+
+/** sha256 of every file under tokens/themes and dist, by design-system-relative path. */
+export function buildHashes(dsDir: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  const walk = (dir: string) => {
+    if (!existsSync(dir)) return;
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (entry.isFile() || (entry.isSymbolicLink() && statSync(full).isFile())) out[relative(dsDir, full)] = sha256(readFileSync(full));
+    }
+  };
+  for (const dir of [THEMES_DIR, "dist"]) walk(join(dsDir, dir));
+  return out;
+}
+
+/** Paths whose content differs between two buildHashes results: changed, added and removed. */
+export function hashChanges(before: Record<string, string>, after: Record<string, string>): string[] {
+  const paths = [...new Set([...Object.keys(before), ...Object.keys(after)])].sort();
+  return paths.flatMap((path) =>
+    before[path] === after[path] ? [] : [`${path} ${before[path] === undefined ? "added" : after[path] === undefined ? "removed" : "changed"}`],
+  );
 }
 
 function fail(message: string): never {

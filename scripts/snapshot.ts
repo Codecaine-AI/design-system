@@ -6,12 +6,17 @@
  *                    [--registry <apps.json>]
  *
  * Writes <out-dir>/<app>/shots/<set>/<route>-<theme>.png and manifest.json: the design-system commits,
- * the app repo HEAD and `git status`, Playwright and Chromium versions, and per shot the frames until
- * stable, capture attempts, mask boxes, blocked requests and console errors.
+ * the app repo HEAD and `git status`, Playwright and Chromium versions, the keys the registry expects
+ * (every route × required theme, whatever --only says), the --only list, and per shot its provenance
+ * (app HEAD + status, design-system HEAD, tokens.css sha256, capture time), the frames until stable,
+ * capture attempts, mask boxes, blocked requests and console errors. A gating dark shot that is
+ * byte-identical to its light shot is a manifest warning.
  *
  * Starts the app with app-runner (temp HOME, sanitized env, its own ports) and stops it at the end.
  * Refuses an existing set without --force. With --only and --force, only those routes are replaced and
- * the manifest is merged. --registry points at another apps.json (proofs on a local entry).
+ * the manifest is merged (shots of two runs then differ in provenance, which snapshot:diff --exact
+ * fails). Refuses to run while a propagate journal is unrestored or a build holds the sentinel color.
+ * --registry points at another apps.json (proofs on a local entry).
  * Exit: 2 on bad arguments or an app that cannot be captured, 1 when a shot failed or never settled.
  */
 import { spawnSync } from "node:child_process";
@@ -23,7 +28,9 @@ import { installSignalHandlers, refreshStartedPorts, startApp, type RunningApp }
 import { CaptureError, captureRoute, LAUNCH_OPTIONS, routeThemes, shotKey, warmUp } from "./lib/capture";
 import { loadPlaywright, playwrightVersion } from "./lib/playwright";
 import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, REGISTRY_PATH, resolvePath, type RouteSpec } from "./lib/registry";
-import { defaultOutDir, readManifest, SET_NAME, setDir, type SetManifest, type ShotEntry, type Theme } from "./lib/snapshot-set";
+import { safeAppId, safeOutputPath, safeSegment } from "./lib/safe-paths";
+import { defaultOutDir, type ExpectedShot, readManifest, SET_NAME, setDir, type SetManifest, type ShotEntry, type ShotProvenance, type Theme } from "./lib/snapshot-set";
+import { propagateBlocker } from "./lib/verify/propagate";
 
 function flag(name: string): string | undefined {
   const index = process.argv.indexOf(name);
@@ -40,7 +47,15 @@ const set = flag("--set");
 if (!appId || !set) fail("usage: bun run snapshot --app <id> --set <name> [--root <dir>] [--only <route>,...] [--out-dir <dir>] [--force]");
 if (!SET_NAME.test(set)) fail(`--set must be a plain name (letters, digits, . _ -): ${set}`);
 const root = resolve(flag("--root") ?? resolve(DESIGN_SYSTEM_ROOT, ".."));
-const outDir = resolve(flag("--out-dir") ?? defaultOutDir());
+let outDir: string;
+try {
+  // Shared destination check: never the owner's tree (unless --root is that tree), ids that stay one segment.
+  outDir = safeOutputPath(flag("--out-dir") ?? defaultOutDir(), { root, label: "--out-dir" });
+  safeAppId(appId);
+  safeSegment(set, "--set");
+} catch (error) {
+  fail(error instanceof Error ? error.message : String(error));
+}
 const registryPath = resolve(flag("--registry") ?? REGISTRY_PATH);
 const only = flag("--only")?.split(",").map((value) => value.trim()).filter(Boolean);
 const force = process.argv.includes("--force");
@@ -48,12 +63,26 @@ const force = process.argv.includes("--force");
 const app = getApp(loadRegistry(registryPath), appId);
 if (app.run?.mode === "none") fail(`${app.id}: run mode none (${app.run.reason ?? "no reason"}): no screenshots`);
 if (app.gates?.snapshot && app.gates.snapshot.required === false) fail(`${app.id}: the snapshot gate is n/a (${app.gates.snapshot.reason})`);
-const routes: RouteSpec[] = (app.routes ?? []).filter((route) => !only || only.includes(route.id));
-if (routes.length === 0) fail(`${app.id}: no routes selected${only ? ` (--only ${only.join(",")})` : ""}`);
 if (only) {
   const unknown = only.filter((id) => !(app.routes ?? []).some((route) => route.id === id));
   if (unknown.length) fail(`${app.id}: unknown route(s) ${unknown.join(", ")}`);
 }
+const routes: RouteSpec[] = (app.routes ?? []).filter((route) => !only || only.includes(route.id));
+if (routes.length === 0) fail(`${app.id}: no routes selected${only ? ` (--only ${only.join(",")})` : ""}`);
+
+const blocker = propagateBlocker({ outDirs: [outDir, process.env.DS_RUN], dsDirs: [join(root, "design-system"), DESIGN_SYSTEM_ROOT] });
+if (blocker) fail(`refusing to capture: ${blocker}`);
+
+// Every shot the registry asks for, whatever --only selects: snapshot:diff --exact checks a set against it.
+const expected: ExpectedShot[] = (app.routes ?? []).flatMap((route) =>
+  routeThemes(app, route).map((theme) => ({
+    key: shotKey(route, theme),
+    route: route.id,
+    theme,
+    gating: route.gating !== false,
+    ...(route.darkDiffers ? { darkDiffers: true } : {}),
+  })),
+);
 
 const dir = setDir(outDir, app.id, set);
 const previous = readManifest(dir);
@@ -71,6 +100,20 @@ function repoState(path: string) {
 }
 function sha256(path: string): string | null {
   return existsSync(path) ? createHash("sha256").update(readFileSync(path)).digest("hex") : null;
+}
+const appRepoPath = resolvePath(root, app.repo);
+const dsInRoot = join(root, "design-system");
+/** The trees a shot was captured from, read right after the shot. */
+function provenanceNow(): ShotProvenance {
+  const status = git(appRepoPath, ["status", "--porcelain"]);
+  return {
+    appHead: git(appRepoPath, ["rev-parse", "HEAD"]),
+    appStatusSha256: createHash("sha256").update(status).digest("hex"),
+    appDirty: status.split("\n").filter(Boolean).length,
+    designSystemHead: git(dsInRoot, ["rev-parse", "HEAD"]),
+    tokensCssSha256: sha256(join(dsInRoot, "dist/css/tokens.css")),
+    capturedAt: new Date().toISOString(),
+  };
 }
 
 let running: RunningApp | undefined;
@@ -127,9 +170,11 @@ try {
             theme,
             gating: route.gating !== false,
             ...(route.reason ? { reason: route.reason } : {}),
+            ...(route.darkDiffers ? { darkDiffers: true } : {}),
             captureAttempts: attempt,
             ...(problems.length ? { retriedAfter: problems } : {}),
             ...meta,
+            provenance: provenanceNow(),
           });
           const flags = [
             result.stable ? "" : "UNSTABLE",
@@ -154,6 +199,7 @@ try {
             route: route.id,
             theme,
             gating: route.gating !== false,
+            ...(route.darkDiffers ? { darkDiffers: true } : {}),
             masks: [],
             error: message,
             retriedAfter: problems,
@@ -185,11 +231,13 @@ try {
   }
 }
 
-const dsInRoot = join(root, "design-system");
 const manifest: SetManifest = {
   app: app.id,
   set,
   root,
+  expectedKeys: expected.map((shot) => shot.key),
+  expected,
+  only: only ?? null,
   startedAt: startedAt.toISOString(),
   finishedAt: new Date().toISOString(),
   designSystem: {
@@ -233,9 +281,24 @@ if (only && previous) {
   const recaptured = new Set(shots.map((shot) => shot.key));
   manifest.shots = [...previous.shots.filter((shot) => !recaptured.has(shot.key)), ...shots];
   manifest.partialRuns = [...((previous.partialRuns as unknown[]) ?? []), { at: manifest.finishedAt, keys: [...recaptured] }];
+  // A full set stays full (its shots now differ in provenance); a partial one covers both runs' routes.
+  manifest.only = previous.only == null ? null : [...new Set([...previous.only, ...only])];
 }
+// Dark identical to light: expected before a migration, a sign that the dark switch did nothing after it.
+const warnings: string[] = [];
+for (const shot of manifest.shots) {
+  if (shot.theme !== "dark" || shot.error || shot.gating === false) continue;
+  const light = manifest.shots.find((other) => other.route === shot.route && other.theme === "light" && !other.error);
+  const [darkPng, lightPng] = [shot, light].map((entry) => (entry ? join(dir, `${entry.key}.png`) : ""));
+  if (!light || !existsSync(darkPng!) || !existsSync(lightPng!)) continue;
+  if (!readFileSync(darkPng!).equals(readFileSync(lightPng!))) continue;
+  shot.sameAsLight = true;
+  warnings.push(`${shot.key} is byte-identical to ${light.key}${shot.darkDiffers ? " (the route sets darkDiffers: snapshot:diff --exact fails it)" : ""}`);
+}
+if (warnings.length) manifest.warnings = warnings;
+for (const warning of warnings) console.log(`  warning: ${warning}`);
 writeFileSync(join(dir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
-const expected = routes.reduce((sum, route) => sum + routeThemes(app, route).length, 0);
+const selectedCount = routes.reduce((sum, route) => sum + routeThemes(app, route).length, 0);
 const good = shots.filter((shot) => !shot.error && shot.stable).length;
-console.log(`\n${good}/${expected} shots captured to ${dir}${failures ? ` (${failures} failed or unstable)` : ""}`);
+console.log(`\n${good}/${selectedCount} shots captured to ${dir}${failures ? ` (${failures} failed or unstable)` : ""}`);
 process.exit(failures || stopError ? 1 : 0);

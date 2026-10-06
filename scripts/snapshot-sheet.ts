@@ -20,6 +20,7 @@ import { encodePng } from "./lib/png";
 import { installSignalHandlers } from "./lib/app-runner";
 import { loadPlaywright } from "./lib/playwright";
 import { DESIGN_SYSTEM_ROOT } from "./lib/registry";
+import { safeAppId, safeOutputPath, safeSegment } from "./lib/safe-paths";
 import { defaultOutDir, diffSets, readManifest, SET_NAME, setDir, type SetDiff, type ShotDiff } from "./lib/snapshot-set";
 
 function flag(name: string): string | undefined {
@@ -34,9 +35,26 @@ if (!app || !a || !b || [a, b].some((set) => !SET_NAME.test(set))) {
   console.error("usage: bun run snapshot:sheet --app <id> --a <set> --b <set> [--only <route|key>,...] [--out-dir <dir>] [--root <dir>]");
   process.exit(2);
 }
-const outDir = resolve(flag("--out-dir") ?? defaultOutDir());
 const root = resolve(flag("--root") ?? resolve(DESIGN_SYSTEM_ROOT, ".."));
+let outDir: string;
+try {
+  // Shared destination check: never the owner's tree (unless --root is that tree); ids stay one path segment.
+  outDir = safeOutputPath(flag("--out-dir") ?? defaultOutDir(), { root, label: "--out-dir" });
+  safeAppId(app);
+  safeSegment(a, "--a");
+  safeSegment(b, "--b");
+} catch (error) {
+  console.error(error instanceof Error ? error.message : String(error));
+  process.exit(2);
+}
 const only = flag("--only")?.split(",").map((value) => value.trim()).filter(Boolean);
+
+const sheetsDir = join(outDir, app, "sheets");
+const name = `${a}-vs-${b}`;
+const assetsDir = join(sheetsDir, name);
+// The old sheet goes first, so a failed run never leaves a stale one behind.
+rmSync(assetsDir, { recursive: true, force: true });
+rmSync(join(sheetsDir, `${name}.html`), { force: true });
 
 let result: SetDiff;
 try {
@@ -45,11 +63,6 @@ try {
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(2);
 }
-
-const sheetsDir = join(outDir, app, "sheets");
-const name = `${a}-vs-${b}`;
-const assetsDir = join(sheetsDir, name);
-rmSync(assetsDir, { recursive: true, force: true });
 mkdirSync(assetsDir, { recursive: true });
 for (const [key, diff] of result.images) writeFileSync(join(assetsDir, `${key}.diff.png`), encodePng(diff.image));
 
@@ -61,6 +74,7 @@ const CSS = `
   header { padding: 16px; background: #fff; border-bottom: 1px solid #94a3b8; }
   header h1 { margin: 0 0 6px; font-size: 18px; }
   header p { margin: 2px 0; color: #334155; }
+  header p.problem { color: #9d174d; font-weight: 600; }
   section { padding: 12px 16px 4px; }
   h2 { margin: 8px 0; font-size: 16px; }
   .row { display: flex; gap: 12px; align-items: flex-start; width: max-content; margin-bottom: 12px; }
@@ -78,16 +92,20 @@ const CSS = `
 const escape = (text: string) => text.replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]!);
 
 function verdict(shot: ShotDiff): { text: string; tone: string } {
-  if (shot.status === "identical")
-    return { text: `diff: identical${shot.maskedPixels ? ` (${shot.maskedPixels.toLocaleString("en-US")} px masked)` : ""}`, tone: "ok" };
   const tone = shot.gating ? "bad" : "soft";
   const gate = shot.gating ? "" : ` (non-gating: ${shot.reason ?? "no reason"})`;
+  const problems = shot.problems.length ? `; ${shot.problems.join("; ")}` : "";
+  if (shot.status === "identical")
+    return {
+      text: `diff: identical${shot.maskedPixels ? ` (${shot.maskedPixels.toLocaleString("en-US")} px masked)` : ""}${problems}${problems ? gate : ""}`,
+      tone: problems ? tone : "ok",
+    };
   if (shot.status === "changed")
     return {
-      text: `diff: ${shot.changedPixels.toLocaleString("en-US")} px changed (${shot.percentChanged}%)${shot.sizeMatch ? "" : ", SIZE MISMATCH"}${gate}`,
+      text: `diff: ${shot.changedPixels.toLocaleString("en-US")} px changed (${shot.percentChanged}%)${shot.sizeMatch ? "" : ", SIZE MISMATCH"}${problems}${gate}`,
       tone,
     };
-  return { text: `diff: ${shot.status}${gate}`, tone };
+  return { text: `diff: ${shot.status}${problems}${gate}`, tone };
 }
 
 /** Image paths relative to the page that shows them (`fromDir`). */
@@ -121,7 +139,8 @@ function page(title: string, sections: string[]): string {
   return `<!doctype html><html><head><meta charset="utf-8"><title>${escape(title)}</title><style>${CSS}</style></head><body>
 <header><h1>${escape(title)}</h1>
 <p>${describeSet(a!)}</p><p>${describeSet(b!)}</p>
-<p>${totals.identical}/${totals.shots} identical, ${totals.changed} changed, ${totals.missing} missing, ${totals.gatingFailures} gating failure(s). Exact RGBA outside masks.</p></header>
+<p>${totals.identical}/${totals.shots} identical, ${totals.changed} changed, ${totals.missing} missing, ${totals.gatingFailures} gating failure(s). Exact RGBA outside masks.</p>
+${result.problems.map((problem) => `<p class="problem">set problem: ${escape(problem)}</p>`).join("")}${result.warnings.map((warning) => `<p>warning: ${escape(warning)}</p>`).join("")}</header>
 ${sections.join("\n")}
 </body></html>`;
 }
