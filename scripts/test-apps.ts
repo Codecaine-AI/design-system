@@ -614,7 +614,7 @@ async function runOne(app: AppEntry, planned: PlannedCommand, opts: TestAppOptio
       ...(parsed.fail !== undefined ? { fail: parsed.fail } : {}),
       ...(parsed.errors !== undefined ? { errors: parsed.errors } : {}),
       ...(parsed.failing.length ? { failing: parsed.failing } : {}),
-      date: new Date().toISOString().slice(0, 10),
+      date: new Date().toLocaleDateString("sv-SE"), // the local YYYY-MM-DD
       method: `bun run test:apps --root ${root} (sandbox-exec, profile env, write check), 1 run`,
     };
     const ok = verdict.ok && writes.unexpected.length === 0 && !timedOut && strays.length === 0;
