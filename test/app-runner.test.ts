@@ -21,7 +21,13 @@ import {
   registryProblems,
   validateLoadedRegistry,
   guardVerdict,
+  deadPorts,
   killRun,
+  ListenerReads,
+  LISTENER_MAX_AGE_MS,
+  portGuard,
+  type GuardInputs,
+  type ListenerRead,
   launchBrowser,
   profileEnv,
   readyUrl,
@@ -220,6 +226,116 @@ describe("guardVerdict", () => {
     ["a data URL", "data:text/plain,hi", "ok"],
   ] as Array<[string, string, ReturnType<typeof guardVerdict>]>)("%s", (_, url, verdict) => {
     expect(guardVerdict(new URL(url), allowed)).toBe(verdict);
+  });
+});
+
+describe("portGuard", () => {
+  // The run's block is 47020-47029; 47022 is its dead kernel port; 47020 and 47021 are its listeners.
+  const block = new Set(Array.from({ length: 10 }, (_, i) => 47020 + i));
+  const url = (port: number, host = "127.0.0.1") => new URL(`http://${host}:${port}/x`);
+  /** A guard on a fake clock whose reads come from `answers`, one per next() call, counted. */
+  function fixture(last: ListenerRead | undefined, answers: Array<ListenerRead | null> = [], extra: Partial<GuardInputs> = {}) {
+    let clock = 10_000;
+    const calls: number[] = [];
+    const reads = {
+      last,
+      next: async (since = -Infinity) => {
+        calls.push(since);
+        if (!answers.length) throw new Error("the guard asked for a read it should not need");
+        return answers.shift()!;
+      },
+    };
+    const guard = portGuard({ allowedLocalPorts: [], listenable: block, dead: new Set([47022]), reads, now: () => clock, ...extra });
+    return { guard, calls, reads, tick: (ms: number) => (clock += ms), at: () => clock };
+  }
+  const read = (started: number, finished: number, ...ports: number[]): ListenerRead => ({ started, finished, ports: new Set(ports) });
+
+  test("a dead port is refused at once, without a read, even when the last read is stale", async () => {
+    const { guard, calls } = fixture(read(0, 1, 47020, 47021));
+    expect(guard.quick(url(47022))).toBe(false);
+    expect(await guard.decide(url(47022))).toBe(false);
+    expect(calls).toEqual([]);
+  });
+
+  test("owner ports, ports outside the block and non-loopback hosts are refused without a read", async () => {
+    const { guard, calls } = fixture(read(9_900, 9_950, 47020, 4820));
+    for (const target of [url(4820), url(47999), url(46939), url(47020, "example.com")]) expect(await guard.decide(target)).toBe(false);
+    expect(calls).toEqual([]);
+  });
+
+  test("the run's own port is allowed from a fresh read, without waiting for another", async () => {
+    const { guard, calls } = fixture(read(9_000, 9_900, 47020, 47021));
+    expect(guard.quick(url(47021))).toBe(true);
+    expect(await guard.decide(url(47021))).toBe(true);
+    expect(await guard.decide(new URL("ws://localhost:47020/hmr"))).toBe(true);
+    expect(calls).toEqual([]);
+  });
+
+  test("a foreign listener in the block (no run process holds the port) is refused, on a read that started after the request", async () => {
+    // The read in flight started before the request and shows no 47025; the next one starts after it.
+    const { guard, calls, at } = fixture(read(9_000, 9_900, 47020), [read(9_950, 10_200, 47020), read(10_300, 10_600, 47020)]);
+    expect(guard.quick(url(47025))).toBeUndefined();
+    expect(await guard.decide(url(47025))).toBe(false);
+    expect(calls).toEqual([-Infinity, at()]);
+  });
+
+  test("a read that started after the request decides alone; a failed read refuses", async () => {
+    const after = fixture(read(9_000, 9_900, 47020), [read(10_000, 10_100, 47020)]);
+    expect(await after.guard.decide(url(47025))).toBe(false);
+    expect(after.calls).toHaveLength(1);
+    const failed = fixture(read(9_000, 9_900, 47020), [null, null]);
+    expect(await failed.guard.decide(url(47025))).toBe(false);
+  });
+
+  test("a port the run opened after its last read (a lazily started API) is allowed once a read shows it", async () => {
+    const { guard } = fixture(read(9_000, 9_900, 47020), [read(9_950, 10_300, 47020, 47025)]);
+    expect(await guard.decide(url(47025))).toBe(true);
+  });
+
+  test("cache expiry: a read that started more than LISTENER_MAX_AGE_MS ago no longer allows its ports; the next read decides", async () => {
+    const { guard, calls, tick } = fixture(read(9_000, 10_000, 47020, 47021), [read(14_100, 14_500, 47020)]);
+    tick(LISTENER_MAX_AGE_MS - 1_000);
+    expect(guard.quick(url(47021))).toBe(true);
+    tick(1);
+    expect(guard.quick(url(47021))).toBeUndefined();
+    // The run gave 47021 up: the next read (started after the request) does not show it.
+    expect(await guard.decide(url(47021))).toBe(false);
+    expect(calls).toHaveLength(1);
+  });
+
+  test("allowedLocalPorts are allowed without a read; an unsandboxed run reads for ports outside the block", async () => {
+    const allowed = fixture(undefined, [], { allowedLocalPorts: [47999] });
+    expect(await allowed.guard.decide(url(47999))).toBe(true);
+    const unsandboxed = fixture(undefined, [read(10_000, 10_100, 47999)], { listenable: null });
+    expect(await unsandboxed.guard.decide(url(47999))).toBe(true);
+    expect(unsandboxed.calls).toHaveLength(1);
+  });
+});
+
+describe("deadPorts", () => {
+  test("named ports whose name starts with dead, and no others", () => {
+    const app = { runProfile: { ports: { api: 47020, ui: 47021, deadKernel: 47022, deadApi: 47023, deadline: 47024, dead: 47025 } } } as unknown as AppEntry;
+    expect([...deadPorts(app)].sort()).toEqual([47022, 47023, 47025]);
+  });
+});
+
+describe("ListenerReads", () => {
+  test("next() resolves on the read that ends after it; next(since) only on one that started at or after since", async () => {
+    const reads = new ListenerReads();
+    const any = reads.next();
+    const later = reads.next(100);
+    reads.record({ started: 50, finished: 80, ports: new Set([47020]) });
+    expect((await any)?.started).toBe(50);
+    reads.fail(150);
+    expect(await later).toBeNull();
+    expect(reads.last?.started).toBe(50);
+  });
+
+  test("an older read finishing late never replaces a newer last read", () => {
+    const reads = new ListenerReads();
+    reads.record({ started: 200, finished: 300, ports: new Set([47020]) });
+    reads.record({ started: 100, finished: 400, ports: new Set() });
+    expect(reads.last?.started).toBe(200);
   });
 });
 
@@ -784,7 +900,8 @@ describe("guardedContext and ports the run gave up", () => {
       const squatter = Bun.serve({ hostname: "127.0.0.1", port: 46906, fetch: () => (hits++, new Response("squatter", { headers: { "access-control-allow-origin": "*" } })) });
       const browser = await launchBrowser(process.env.DS_MIRROR ?? "/Users/Ford/workspace-ds", { running });
       try {
-        await Bun.sleep(700); // past the guard's listener cache
+        // Past the guard's listener age cap: every read that may still show the helper is too old now.
+        await Bun.sleep(LISTENER_MAX_AGE_MS + 200);
         const { context, blocked } = await guardedContext(browser, running);
         const page = await context.newPage();
         await page.goto(`${running.baseUrl}/ping`);

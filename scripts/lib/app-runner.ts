@@ -100,8 +100,15 @@ const ENV_ALLOWLIST = new Set(["PATH", "LANG", "TERM", "TMPDIR"]);
 
 /** How often the egress sampler reads the run's connections. */
 const SAMPLE_INTERVAL_MS = 250;
-/** How long the guard trusts its view of the run's listeners before asking lsof again. */
-const PORT_CACHE_MS = 500;
+/**
+ * How long a read of the run's listeners allows the ports it shows, counted from the moment the read
+ * started (its data is no older than that). The guard always uses the newest read; this is the cap for
+ * when reads are slow. Egress sampling reads every SAMPLE_INTERVAL_MS plus one lsof (about 2.5 s under
+ * load), so the newest completed read is normally younger than this and a request to the run's own port
+ * never waits; past it, the request waits (asynchronously) for the next read. Why 5 s is safe: see
+ * portGuard.
+ */
+export const LISTENER_MAX_AGE_MS = 5_000;
 const MAX_VIOLATIONS = 50;
 
 export interface RunningApp {
@@ -711,8 +718,10 @@ interface Internal {
   known: Map<number, ProcInfo>;
   /** static mode without run.start: the port of the built-in server (in this process) while it serves. */
   staticPort?: number;
-  /** The run's current listeners, as last read. */
-  portCache?: { at: number; ports: Set<number> };
+  /** The reads of the run's current listeners (egress sampling, ownPorts): the guard decides from these. */
+  reads: ListenerReads;
+  /** The ports a run process can listen on: its block under the sandbox; null when the run is unsandboxed. */
+  listenable: ReadonlySet<number> | null;
   /** Every socket egress sampling saw ("pid local->remote"). */
   sockets: Set<string>;
   /** Electron only, while its launch is in flight or after a stop() that raced it: kill it synchronously. */
@@ -851,24 +860,49 @@ function recordListeners(running: RunningApp, ports: number[]) {
  * added (so the guard can never allow it); it is recorded in running.violations instead.
  */
 export function refreshStartedPorts(running: RunningApp): number[] {
-  ownPorts(running, 0);
+  ownPorts(running);
   return running.startedPorts;
 }
 
+/** The run's own ports from what its processes listen on: plus the built-in static server while it serves, owner ports never. */
+function ownSet(internal: Internal, listening: readonly number[]): Set<number> {
+  return new Set([...listening, ...(internal.staticPort ? [internal.staticPort] : [])].filter((port) => !OWNER_PORTS.includes(port)));
+}
+
 /**
- * The local ports that belong to the run right now: what its processes listen on (read with lsof at
- * most `maxAgeMs` ago) plus the built-in static server while it serves. Owner ports never.
+ * The local ports that belong to the run right now, read with a synchronous lsof (one-shot callers: the
+ * ready check, refreshStartedPorts). The request guard never calls this: it waits on ListenerReads.
  */
-function ownPorts(running: RunningApp, maxAgeMs = PORT_CACHE_MS): Set<number> {
+function ownPorts(running: RunningApp): Set<number> {
   const internal = internals.get(running);
   if (!internal) return new Set(running.startedPorts.filter((port) => !OWNER_PORTS.includes(port)));
-  if (internal.portCache && Date.now() - internal.portCache.at <= maxAgeMs) return internal.portCache.ports;
+  const started = performance.now();
   const table = readProcessTable(1);
   const listening = table ? listeningPorts(runProcesses(internal.roots, table, [...internal.known.values()]).map((proc) => proc.pid)) : [];
   recordListeners(running, listening);
-  const ports = new Set([...listening, ...(internal.staticPort ? [internal.staticPort] : [])].filter((port) => !OWNER_PORTS.includes(port)));
-  internal.portCache = { at: Date.now(), ports };
+  const ports = ownSet(internal, listening);
+  internal.reads.record({ started, finished: performance.now(), ports });
   return ports;
+}
+
+/**
+ * One read of the guard's own (the egress sampler is not running: before it starts or after stop()):
+ * the same read as ownPorts, but its lsof runs asynchronously, so it never blocks the event loop.
+ */
+async function readOwnPorts(running: RunningApp, internal: Internal): Promise<void> {
+  const started = performance.now();
+  try {
+    const table = readProcessTable(1);
+    if (!table) return internal.reads.fail(started);
+    const pids = runProcesses(internal.roots, table, [...internal.known.values()]).map((proc) => proc.pid);
+    const result = await lsofConnections(pids);
+    if (!result.ok) return internal.reads.fail(started);
+    const listening = result.conns.filter((conn) => !conn.remote && conn.state === "LISTEN").map((conn) => conn.local.port);
+    recordListeners(running, listening);
+    internal.reads.record({ started, finished: performance.now(), ports: ownSet(internal, listening) });
+  } catch {
+    internal.reads.fail(started);
+  }
 }
 
 /**
@@ -886,21 +920,39 @@ function captureProcesses(internal: Internal, persist: () => void): ProcInfo[] |
 }
 
 /** One egress sample: the run's processes, their identities, their TCP sockets; violations recorded. */
+/**
+ * One egress sample, which is also a read of the run's listeners for the request guard: a completed one is
+ * recorded in internal.reads, a failed one (ps, lsof, or a throw) settles the guard's waiters with "unknown".
+ */
 async function sampleEgress(running: RunningApp, internal: Internal, egress: EgressStats, persist: () => void) {
+  const started = performance.now();
+  try {
+    if (!(await takeEgressSample(running, internal, egress, persist, started))) internal.reads.fail(started);
+  } catch (error) {
+    internal.reads.fail(started);
+    throw error;
+  }
+}
+
+/** sampleEgress's body; false when the sample failed (the run's listeners are then unknown). */
+async function takeEgressSample(running: RunningApp, internal: Internal, egress: EgressStats, persist: () => void, started: number): Promise<boolean> {
   const procs = captureProcesses(internal, persist);
   if (!procs) {
     egress.failures.push("ps failed: the run's processes are unknown");
     addViolation(running, "egress sampling failed, isolation unproven: ps failed, the run's processes are unknown");
-    return;
+    return false;
   }
   const pids = [...new Set(procs.map((proc) => proc.pid))].filter((pid) => pid !== process.pid);
-  if (pids.length === 0) return;
+  if (pids.length === 0) {
+    internal.reads.record({ started, finished: performance.now(), ports: ownSet(internal, []) });
+    return true;
+  }
   const result = await lsofConnections(pids);
   egress.samples++;
   if (!result.ok) {
     egress.failures.push(result.reason);
     addViolation(running, `egress sampling failed, isolation unproven: ${result.reason}`);
-    return;
+    return false;
   }
   for (const conn of result.conns) internal.sockets.add(`${conn.pid} ${conn.raw.split(/\s+/).slice(8).join(" ")}`);
   egress.connections = internal.sockets.size;
@@ -913,12 +965,13 @@ async function sampleEgress(running: RunningApp, internal: Internal, egress: Egr
   for (const conn of exposed) addViolation(running, `a run process listens beyond loopback, reachable from other hosts: ${describeConnection(conn)}`);
   if (exposed.length) void running.stop().catch(() => undefined);
   const current = [...listening, ...(internal.staticPort ? [internal.staticPort] : [])];
-  internal.portCache = { at: Date.now(), ports: new Set(current.filter((port) => !OWNER_PORTS.includes(port))) };
+  internal.reads.record({ started, finished: performance.now(), ports: ownSet(internal, listening) });
   // Outbound: the run's current listeners, its named profile ports (its own block; a dead kernel URL the
   // profile points at on purpose), the profile's allowedLocalPorts. Inbound: any port it listened on.
   const outbound = new Set([...current, ...Object.values(running.ports), ...(running.app.runProfile?.allowedLocalPorts ?? [])]);
   const inbound = new Set([...current, ...running.startedPorts]);
   for (const conn of egressConnections(result.conns, { inbound, outbound })) addViolation(running, describeConnection(conn));
+  return true;
 }
 
 function stamp(): string {
@@ -1074,7 +1127,7 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
   const ctx: PlaceholderContext = { root, tmp, ports };
   const expand = (text: string) => expandPlaceholders(text, ctx);
   const roots: RootProc[] = [];
-  const internal: Internal = { roots, known: new Map(), sockets: new Set() };
+  const internal: Internal = { roots, known: new Map(), sockets: new Set(), reads: new ListenerReads(), listenable: noSandbox ? null : new Set(blockPorts(block)) };
   const knownProcs = () => [...internal.known.values()];
   /** Settles when an Electron launch in flight has resolved or failed (undefined when none is). */
   let launchSettled: Promise<any> | undefined;
@@ -1119,6 +1172,17 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
   };
   let sampling = true;
   let wake: (() => void) | undefined;
+  /** Set when the guard waits for a read: the next sample starts as soon as the current one ends. */
+  let hurry = false;
+  let ownRead: Promise<void> | undefined;
+  // The guard asks for a read: the sampler takes it (no extra lsof), or, while no sampler runs, one
+  // asynchronous read of the guard's own at a time.
+  internal.reads.request = () => {
+    if (sampling) {
+      hurry = true;
+      wake?.();
+    } else ownRead ??= readOwnPorts(running, internal).finally(() => (ownRead = undefined));
+  };
   const sampleOnce = async () => {
     try {
       // Adopt Electron from its launcher's pid file only while it is still our child: a pid read after
@@ -1216,8 +1280,10 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
   // Sampling starts before the first spawn, so nothing a run process does at startup goes unobserved.
   const sampler = (async () => {
     while (sampling) {
+      hurry = false;
       await sampleOnce();
-      if (sampling) await new Promise<void>((done) => ((wake = done), setTimeout(done, SAMPLE_INTERVAL_MS)));
+      if (sampling && !hurry) await new Promise<void>((done) => ((wake = done), setTimeout(done, SAMPLE_INTERVAL_MS)));
+      wake = undefined;
     }
   })();
   /** After every await: a stop() that ran meanwhile (Ctrl-C) aborts the start before it creates more. */
@@ -1288,7 +1354,7 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
       const dirReal = realpathSync(dir);
       server = Bun.serve({ hostname: "127.0.0.1", port, fetch: (request) => serveStatic(dir, dirReal, request, served) });
       internal.staticPort = port;
-      internal.portCache = undefined;
+      internal.reads.last = undefined; // the next decision waits for a read that includes it
       running.serveRoot = dir;
       running.baseUrl = `http://127.0.0.1:${port}`;
       running.startedPorts.push(port);
@@ -1544,9 +1610,140 @@ function isLoopbackHost(host: string): boolean {
 export function guardVerdict(url: URL, allowedPorts: ReadonlySet<number>): "ok" | "owner-port" | "local-port" | "external" {
   if (!["http:", "https:", "ws:", "wss:"].includes(url.protocol)) return "ok";
   if (!isLoopbackHost(url.hostname)) return "external";
-  const port = url.port ? Number(url.port) : url.protocol === "https:" || url.protocol === "wss:" ? 443 : 80;
+  const port = urlPort(url);
   if (OWNER_PORTS.includes(port)) return "owner-port";
   return allowedPorts.has(port) ? "ok" : "local-port";
+}
+
+/** The port a loopback URL addresses (its scheme's default when it names none). */
+function urlPort(url: URL): number {
+  return url.port ? Number(url.port) : url.protocol === "https:" || url.protocol === "wss:" ? 443 : 80;
+}
+
+/**
+ * The profile's dead ports: named ports whose name starts with `dead` (deadKernel, deadApi, ...). The
+ * profile points the app at them on purpose (an env URL or flag) and nothing of the run serves them.
+ */
+export function deadPorts(app: AppEntry): Set<number> {
+  return new Set(Object.entries(app.runProfile?.ports ?? {}).flatMap(([name, port]) => (/^dead(?![a-z])/.test(name) ? [port] : [])));
+}
+
+/** One completed read of the run's listening ports: when it started and finished (performance.now ms), and the ports. */
+export interface ListenerRead {
+  started: number;
+  finished: number;
+  ports: ReadonlySet<number>;
+}
+
+/**
+ * The reads of a run's listeners and the guard's waits on them. Readers (egress sampling, ownPorts,
+ * readOwnPorts) record each completed read and report each failed one; the guard waits on `next` for a
+ * read without ever running lsof itself. Every waiter is a promise: nothing here blocks the event loop.
+ */
+export class ListenerReads {
+  /** The newest completed read. */
+  last?: ListenerRead;
+  /** Asks for a read soon (the sampler skips its pause, or the guard's own async read runs). */
+  request: () => void = () => undefined;
+  private waiters: Array<{ since: number; resolve: (read: ListenerRead | null) => void }> = [];
+
+  /**
+   * The first read that ends after this call and started at or after `since` (default: any start, so
+   * the read in flight counts); null when that read failed. Asks for a read.
+   */
+  next(since = -Infinity): Promise<ListenerRead | null> {
+    const promise = new Promise<ListenerRead | null>((resolve) => this.waiters.push({ since, resolve }));
+    this.request();
+    return promise;
+  }
+
+  record(read: ListenerRead) {
+    if (!this.last || read.started >= this.last.started) this.last = read;
+    this.settle(read.started, read);
+  }
+
+  fail(started: number) {
+    this.settle(started, null);
+  }
+
+  /** Resolves the waiters this read (started at `started`) answers; asks again for the ones it cannot. */
+  private settle(started: number, read: ListenerRead | null) {
+    const waiting = this.waiters;
+    this.waiters = waiting.filter((waiter) => waiter.since > started);
+    for (const waiter of waiting) if (waiter.since <= started) waiter.resolve(read);
+    if (this.waiters.length) this.request();
+  }
+}
+
+/** What the request guard decides from. startApp's runs: guardInputs(running). Tests pass their own. */
+export interface GuardInputs {
+  /** The profile's allowedLocalPorts: always allowed (never an owner port, registry:check). */
+  allowedLocalPorts: readonly number[];
+  /** The ports a run process can listen on (its block under the sandbox); null when any port could be its own. */
+  listenable: ReadonlySet<number> | null;
+  /** The profile's dead ports (deadPorts). */
+  dead: ReadonlySet<number>;
+  reads: Pick<ListenerReads, "last" | "next">;
+  /** performance.now() unless a test sets the clock. */
+  now?: () => number;
+}
+
+/**
+ * The request guard's port decisions. A local port is allowed while a run process listens on it: shown by
+ * the newest read when that read started at most LISTENER_MAX_AGE_MS ago, else by the next read. A port is
+ * refused only on a read that started after the request arrived (or a failed one), except the ports that
+ * cannot be the run's own, which are decided at once and never wait for a read:
+ *   - an owner port and a non-loopback host (guardVerdict);
+ *   - a port outside the run's block while the run is sandboxed (no run process can listen there);
+ *   - a dead port (deadPorts): the app is pointed there on purpose and the run does not serve it. It is
+ *     allowed only while a fresh read shows a run listener on it, like any port.
+ *
+ * Why the age cap is safe: it only ever widens an allow for a port inside the run's own block that a run
+ * process listened on at most LISTENER_MAX_AGE_MS ago. Owner ports are refused whatever a read says (and
+ * no block holds one, registry:check), so the cap gives no way to an owner service (criterion B). Inside
+ * the block, the risk is a stranger binding a port the run gave up within those seconds: other runs are
+ * sandboxed to their own blocks, the system's ephemeral ports start at 49152, and Chromium's own sandbox
+ * (launchBrowser) already lets the page reach the whole block, so the guard's listener check is the second
+ * layer there, not the only one.
+ */
+export function portGuard(inputs: GuardInputs): { quick(url: URL): boolean | undefined; decide(url: URL): Promise<boolean> } {
+  const now = inputs.now ?? (() => performance.now());
+  const allowedBy = (read: ListenerRead | null | undefined) => new Set([...(read?.ports ?? []), ...inputs.allowedLocalPorts]);
+  const ok = (url: URL, read: ListenerRead | null | undefined) => guardVerdict(url, allowedBy(read)) === "ok";
+  /** true or false when decided without waiting; undefined when it needs the next read. */
+  const quick = (url: URL): boolean | undefined => {
+    const last = inputs.reads.last;
+    const verdict = guardVerdict(url, allowedBy(last && now() - last.started <= LISTENER_MAX_AGE_MS ? last : undefined));
+    if (verdict === "ok") return true;
+    if (verdict !== "local-port") return false;
+    const port = urlPort(url);
+    if (inputs.dead.has(port)) return false;
+    if (inputs.listenable && !inputs.listenable.has(port)) return false;
+    return undefined;
+  };
+  const decide = async (url: URL): Promise<boolean> => {
+    const known = quick(url);
+    if (known !== undefined) return known;
+    const arrived = now();
+    // The read in flight (or the next one): a port it shows is allowed (it has just finished).
+    const next = await inputs.reads.next();
+    if (next && ok(url, next)) return true;
+    if (next && next.started >= arrived) return false;
+    // It started before this request: refuse only on a read that started after it (a lazily started API).
+    const after = await inputs.reads.next(arrived);
+    return ok(url, after);
+  };
+  return { quick, decide };
+}
+
+/** The guard's inputs for a run: its reads when startApp started it, else its startedPorts as a fixed read. */
+function guardInputs(running: RunningApp): GuardInputs {
+  const internal = internals.get(running);
+  const allowedLocalPorts = running.app.runProfile?.allowedLocalPorts ?? [];
+  const dead = deadPorts(running.app);
+  if (internal) return { allowedLocalPorts, listenable: internal.listenable, dead, reads: internal.reads };
+  const fixed = (): ListenerRead => ({ started: performance.now(), finished: performance.now(), ports: new Set(running.startedPorts.filter((port) => !OWNER_PORTS.includes(port))) });
+  return { allowedLocalPorts, listenable: null, dead, reads: { get last() { return fixed(); }, next: async () => fixed() } };
 }
 
 /**
@@ -1586,9 +1783,11 @@ const ROUTE_FETCH_TIMEOUT_MS = 60_000;
 
 /**
  * Installs the request guard on a context; returns the list of blocked requests. A local port is allowed
- * while a run process listens on it right now (re-read at most PORT_CACHE_MS ago, and again before a
- * request is blocked) or when the profile lists it in allowedLocalPorts; a port the run once bound but no
- * longer holds is not.
+ * while a run process listens on it right now (a read that started at most LISTENER_MAX_AGE_MS ago, else
+ * the next read; a refusal always rests on a read that started after the request) or when the profile lists it
+ * in allowedLocalPorts; a port the run once bound but no longer holds is not. The guard never runs lsof
+ * itself: it waits, asynchronously, on the egress sampler's reads (portGuard, ListenerReads), and ports
+ * that cannot be the run's (owner ports, ports outside its block, its dead ports) never wait at all.
  *
  * Every http(s) request is routed. Whole files (BUFFERED_TYPES: scripts, styles, images, fonts) follow
  * redirects hop by hop: the guard fetches each hop itself (route.fetch with maxRedirects 0), checks the
@@ -1604,17 +1803,17 @@ export async function installGuard(context: any, running: RunningApp): Promise<(
   // WebSockets bypass context.route: without routeWebSocket a page could reach any local port. Fail closed.
   if (typeof context.routeWebSocket !== "function") throw new Error("the request guard needs Playwright's context.routeWebSocket (Playwright 1.48+) to block WebSockets");
   const blocked: string[] = [];
-  const allowed = (maxAgeMs: number) => new Set([...ownPorts(running, maxAgeMs), ...(running.app.runProfile?.allowedLocalPorts ?? [])]);
-  const decide = (raw: string): boolean => {
+  const guard = portGuard(guardInputs(running));
+  // A port the app opened after it became ready (a lazily started API) counts once a run process holds it.
+  // Every decision that needs a read waits on one asynchronously: other routed requests go on meanwhile.
+  const decide = async (raw: string): Promise<boolean> => {
     let url: URL;
     try {
       url = new URL(raw);
     } catch {
       return true;
     }
-    // A port the app opened after it became ready (a lazily started API) counts once a run process holds it.
-    if (guardVerdict(url, allowed(PORT_CACHE_MS)) === "ok") return true;
-    return guardVerdict(url, allowed(0)) === "ok";
+    return guard.decide(url);
   };
   const redirectViolation = (from: string, to: string) => {
     blocked.push(`REDIRECT ${to}`);
@@ -1628,7 +1827,7 @@ export async function installGuard(context: any, running: RunningApp): Promise<(
       const first = request.url();
       try {
         if (!isHttp(first)) return await route.fallback();
-        if (!decide(first)) {
+        if (!(await decide(first))) {
           blocked.push(`${request.method()} ${first}`);
           return await route.abort("blockedbyclient");
         }
@@ -1643,7 +1842,7 @@ export async function installGuard(context: any, running: RunningApp): Promise<(
           const location = response.headers()["location"];
           if (!REDIRECT_STATUSES.has(response.status()) || !location) return await route.fulfill({ response });
           const next = new URL(location, url).toString();
-          if (!isHttp(next) || !decide(next)) {
+          if (!isHttp(next) || !(await decide(next))) {
             redirectViolation(url, next);
             return await route.abort("blockedbyclient");
           }
@@ -1670,10 +1869,11 @@ export async function installGuard(context: any, running: RunningApp): Promise<(
   // Redirects the browser follows itself (event streams): every hop it takes shows up as a request.
   context.on("request", (request: any) => {
     const from = request.redirectedFrom?.();
-    if (from && isHttp(request.url()) && !decide(request.url())) redirectViolation(from.url(), request.url());
+    if (from && isHttp(request.url())) void decide(request.url()).then((ok) => ok || redirectViolation(from.url(), request.url()));
   });
-  await context.routeWebSocket((url: URL) => guardVerdict(url, allowed(PORT_CACHE_MS)) !== "ok", (ws: any) => {
-    if (decide(ws.url())) {
+  // The matcher must answer synchronously: a socket it cannot allow at once is routed to the handler.
+  await context.routeWebSocket((url: URL) => guard.quick(url) !== true, async (ws: any) => {
+    if (await decide(ws.url())) {
       ws.connectToServer();
       return;
     }
