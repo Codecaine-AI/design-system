@@ -1730,6 +1730,10 @@
           {
             "cmd": "bun --no-env-file test src/__tests__/device-discovery.test.ts",
             "cwd": "codecaine/core/docs-system/packages/docs-mcp"
+          },
+          {
+            "cmd": "bun --no-env-file test src/__tests__/design-system-assets.test.ts",
+            "cwd": "codecaine/core/docs-system/packages/docs-mcp"
           }
         ],
         "unsafe": [
@@ -1762,6 +1766,15 @@
             ],
             "date": "2026-10-05",
             "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
+          },
+          "tests.safe[1]": {
+            "cmd": "bun --no-env-file test src/__tests__/design-system-assets.test.ts",
+            "exit": 0,
+            "pass": 3,
+            "fail": 0,
+            "errors": 0,
+            "date": "2026-10-06",
+            "method": "added by the docs-mcp-home pass-1 worker (decision 30 route test); the file exists from its pass-1 commit on, so earlier trees fail it. Calls the route handler in process: binds no port, fetches nothing, writes nothing"
           }
         }
       },
