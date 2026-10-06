@@ -2,19 +2,21 @@
  * The vendoring contract (`bun run pack`): the tgz an app vendors carries the CSS, the font files and every file
  * package.json exports, the hash it prints is the hash of the tokens.css inside that tgz, and a stale build never packs.
  * The system `tar` is the independent reader: it checks both the tgz and readTgz, which the conformance linter uses.
+ * npm runs with none of the caller's environment, and no destination that resolves into the owner's tree is written.
  */
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { OWNER_TREE } from "../scripts/lib/owner.ts";
 import { readTgz, tokensCssSha256 } from "../scripts/pack.ts";
 import { PKG, readJson, readText } from "./support.ts";
 
-function run(command: string, args: string[], cwd: string) {
+function run(command: string, args: string[], cwd: string, env: Record<string, string> = {}) {
   // COPYFILE_DISABLE: macOS tar would otherwise add ._* AppleDouble entries for extended attributes.
-  const result = spawnSync(command, args, { cwd, encoding: "utf8", env: { ...process.env, COPYFILE_DISABLE: "1" } });
+  const result = spawnSync(command, args, { cwd, encoding: "utf8", env: { ...process.env, COPYFILE_DISABLE: "1", ...env } });
   return { status: result.status, stdout: result.stdout.trim(), stderr: result.stderr.trim() };
 }
 
@@ -22,6 +24,8 @@ function run(command: string, args: string[], cwd: string) {
 function runPack(cwd: string, ...args: string[]) {
   return run(process.execPath, ["scripts/pack.ts", ...args], cwd);
 }
+
+const TGZ_NAME = `codecaine-ai-design-system-${readJson("package.json").version}.tgz`;
 
 function sha256(bytes: Uint8Array): string {
   return createHash("sha256").update(bytes).digest("hex");
@@ -44,10 +48,11 @@ describe("bun scripts/pack.ts --out <dir>", () => {
   let extracted: string;
 
   beforeAll(() => {
-    tmp = mkdtempSync(join(tmpdir(), "design-system-pack-"));
+    // Real path: pack prints the canonical destination it validated and wrote.
+    tmp = realpathSync(mkdtempSync(join(tmpdir(), "design-system-pack-")));
     out = join(tmp, "vendor");
     result = runPack(PKG, "--out", out);
-    tgz = join(out, `codecaine-ai-design-system-${readJson("package.json").version}.tgz`);
+    tgz = join(out, TGZ_NAME);
     extracted = join(tmp, "x");
     mkdirSync(extracted);
     if (existsSync(tgz)) {
@@ -126,6 +131,44 @@ test("a stale build refuses to pack: exit 1, the stale file named, no tgz writte
     expect(result.stderr).toContain("dist/css/tokens.css (out of date)");
     expect(result.stdout).toBe("");
     expect(existsSync(out) ? readdirSync(out) : []).toEqual([]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("npm sees none of the caller's npm config or HOME, and its temp HOME is gone afterwards", () => {
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "design-system-pack-env-")));
+  try {
+    const [home, tmp, out] = ["home", "tmp", "out"].map((name) => join(dir, name));
+    mkdirSync(home);
+    mkdirSync(tmp);
+    // Planted the way the owner's ~/.npmrc and shell would: if npm read any of it, it would write no tgz.
+    writeFileSync(join(home, ".npmrc"), "dry-run=true\n");
+    const planted = { HOME: home, npm_config_userconfig: join(home, ".npmrc"), npm_config_dry_run: "true", TMPDIR: tmp };
+    // bun itself caches transpiled files under $HOME/Library/Caches; off, so HOME shows only what npm wrote.
+    const result = run(process.execPath, ["scripts/pack.ts", "--out", out], PKG, { ...planted, BUN_RUNTIME_TRANSPILER_CACHE_PATH: "0" });
+    expect(result.stderr).toBe("");
+    expect(result.status).toBe(0);
+    expect(readdirSync(out)).toEqual([TGZ_NAME]);
+    expect(readdirSync(home)).toEqual([".npmrc"]); // no npm cache or logs under the caller's HOME
+    expect(readdirSync(tmp).filter((name) => name.startsWith("ds-pack-npm-"))).toEqual([]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("an --out that resolves into the owner's tree through a symlink is refused before anything is created", () => {
+  const dir = mkdtempSync(join(tmpdir(), "design-system-pack-owner-"));
+  try {
+    // Only a link to the owner's tree: the run stats it and must never write there.
+    symlinkSync(OWNER_TREE, join(dir, "owner"));
+    const name = `ds-pack-refused-${process.pid}`;
+    const result = runPack(PKG, "--out", join(dir, "owner", name));
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("pack --out");
+    expect(result.stderr).toContain("resolves into the owner's tree");
+    expect(result.stdout).toBe("");
+    expect(existsSync(join(OWNER_TREE, name))).toBe(false);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

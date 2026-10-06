@@ -19,21 +19,26 @@
  * dependency cache to docs-workbench's node_modules/.vite).
  */
 import { cpSync, existsSync } from "node:fs";
-import { join, resolve, sep } from "node:path";
+import { join, sep } from "node:path";
 
+import { canonicalPath } from "../../../scripts/lib/safe-paths";
 import { ensureTmpDir, parseFixtureArgs, runFixture } from "../lib/fixture-server";
 
 const DOCS_SYSTEM = "codecaine/core/docs-system";
 export const STATE_VARS = ["CODECAINE_DOCS_STATE_DIR", "CODECAINE_DOCS_GLOBAL_THEMES", "CODECAINE_DOCS_CODE_THEMES"] as const;
 export const FORBIDDEN_VARS = ["DOCS_SHARED_API_URL", "DOCS_SHARED_API_TOKEN", "DOCS_SHARED_PROJECT_ID", "DOCS_STATIC", "DOCS_API"] as const;
 
-/** Problems with the environment the serve would inherit; empty when isolated. */
+/** Problems with the environment the serve would inherit; empty when isolated. Compares real paths (symlinks resolved). */
 export function isolationProblems(env: Record<string, string | undefined>, tmp: string): string[] {
   const problems: string[] = [];
+  const root = canonicalPath(tmp);
   for (const name of STATE_VARS) {
     const value = env[name];
     if (!value) problems.push(`${name} is unset (the serve would use the live ~/.local/state/codecaine-docs)`);
-    else if (resolve(value) !== tmp && !resolve(value).startsWith(tmp + sep)) problems.push(`${name}=${value} is outside --tmp ${tmp}`);
+    else {
+      const real = canonicalPath(value);
+      if (real !== root && !real.startsWith(root + sep)) problems.push(`${name}=${value} is outside --tmp ${tmp}`);
+    }
   }
   for (const name of FORBIDDEN_VARS) if (env[name] !== undefined) problems.push(`${name} is set; the serve could reach a shared docs authority`);
   for (const name of Object.keys(env)) if (name.startsWith("DOCS_SHARED_API_") && !FORBIDDEN_VARS.includes(name as never)) problems.push(`${name} is set`);
