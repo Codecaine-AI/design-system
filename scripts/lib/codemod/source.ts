@@ -56,22 +56,11 @@ export function prepareSource(rel: string, src: string, kind: FileKind): SourceF
   return { rel, kind, src, text, inStr, starts, styles };
 }
 
-/** `/* … *\/` inside each region replaced by spaces (newlines kept), so offsets still match. */
+/** CSS comments inside each region blanked the way scan-literals strips a stylesheet (strings and url() kept). */
 function blankCssComments(text: string, regions: Array<[number, number]>): string {
-  if (!regions.length) return text;
-  const out = text.split("");
-  for (const [a, b] of regions) {
-    let i = a;
-    while (i < b - 1) {
-      if (out[i] === "/" && out[i + 1] === "*") {
-        const close = text.indexOf("*/", i + 2);
-        const stop = close === -1 || close + 2 > b ? b : close + 2;
-        for (let k = i; k < stop; k++) if (out[k] !== "\n") out[k] = " ";
-        i = stop;
-      } else i++;
-    }
-  }
-  return out.join("");
+  let out = text;
+  for (const [a, b] of regions) out = out.slice(0, a) + stripCss(out.slice(a, b), false) + out.slice(b);
+  return out;
 }
 
 /** A selector, a brace and a declaration: `.dark .panel { background: #151b23; }`. */

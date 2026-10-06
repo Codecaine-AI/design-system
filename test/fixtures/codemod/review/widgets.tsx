@@ -13,3 +13,10 @@ export const tree = `
   color: #666562;
 }
 `;
+export const shade = (a: number) => ({ background: `rgba(0, 120, 223, ${a})` });
+export const Ring = ({ sel }: { sel: boolean }) => <div style={{ border: sel ? "2px solid white" : "none", color: "white" }} />;
+export const TAG_CATEGORY_COLORS = { red: "bg-red-100 text-red-800" };
+export const Faint = () => <div className="bg-white/1 text-[color:transparent]" />;
+export const Row = () => <div className="border hover:bg-gray-100 bg-[#f2f2f1]" />;
+export const Size = () => <p className="text-[13px]/5" />;
+export const darkTheme = { palette: { primary: { light: "#2a2a2a" } } };

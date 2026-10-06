@@ -31,10 +31,11 @@ export interface TokenData {
   v3: Record<string, Set<string>>;
 }
 
-/** Tailwind 3.4 defaults the preset leaves in place (it sets no aspectRatio, and only extends zIndex). */
+/** Tailwind 3.4 defaults the preset leaves in place (it sets no aspectRatio or opacity, and only extends zIndex). */
 const V3_DEFAULTS: Record<string, string[]> = {
   aspectRatio: ["auto", "square", "video"],
   zIndex: ["0", "10", "20", "30", "40", "50", "auto"],
+  opacity: Array.from({ length: 21 }, (_, i) => String(i * 5)),
 };
 
 /** Theme section -> keys, with `extend` merged in; color sections also take every `colors` key. */

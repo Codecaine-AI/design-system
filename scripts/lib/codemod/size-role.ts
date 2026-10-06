@@ -121,10 +121,13 @@ const SPACING_ROOTS = /^(?:[pm][xytrblse]?|gap(?:-[xy])?|space-[xy]|(?:min-|max-
 const RADIUS_ROOT = /^rounded(?:-(?:[trblse]|tl|tr|br|bl|ss|se|ee|es))?$/;
 const HUE_STEP = /^(.*?)-((?:[a-z]+)-(?:50|[1-9]00|950)|white|black)$/;
 
+/** The alpha an opacity modifier sets: a bare `/N` is always N%; `/[0.07]` and `/[7%]` are read as written. */
 function modAlpha(mod: string | undefined): number {
   if (!mod) return 1;
-  const v = mod.replace(/^\/\[?|\]$/g, "");
-  return v.endsWith("%") ? Number(v.slice(0, -1)) / 100 : Number(v) > 1 ? Number(v) / 100 : Number(v);
+  const bracket = mod.match(/^\/\[(.+)\]$/);
+  if (!bracket) return Number(mod.slice(1)) / 100;
+  const v = bracket[1].trim();
+  return v.endsWith("%") ? Number(v.slice(0, -1)) / 100 : Number(v);
 }
 
 /**
@@ -134,7 +137,7 @@ function modAlpha(mod: string | undefined): number {
 export function parseClass(raw: string): { neg: boolean; root: string; value: string; mod?: string; palette: boolean; important: { lead: boolean; trail: boolean } } | null {
   const important = { lead: raw.startsWith("!"), trail: raw.endsWith("!") };
   const cls = raw.replace(/^!|!$/g, "");
-  const m = cls.match(/^(-?)([a-z][a-z0-9-]*?)-(\[(.+)\]|\((--[\w-]+)\))(\/(?:\d{1,3}|\[[^\]]+\]))?$/);
+  const m = cls.match(/^(-?)([a-z][a-z0-9-]*?)-(\[(.+?)\]|\((--[\w-]+)\))(\/(?:\d{1,3}|\[[^\]]+\]))?$/);
   if (m) return { neg: m[1] === "-", root: m[2], value: (m[4] ?? m[5]).replace(/_/g, " "), mod: m[6], palette: false, important };
   const p = cls.match(/^(.+?)(\/(?:\d{1,3}|\[[^\]]+\]))?$/);
   const hs = p?.[1].match(HUE_STEP);
@@ -197,8 +200,15 @@ function v3Generates(data: TokenData, root: string, utility: string, color: bool
   const r = root.replace(/^-/, "");
   let key = u === r ? "DEFAULT" : u.startsWith(`${r}-`) ? u.slice(r.length + 1) : null;
   if (key === null) return false;
+  if (color) {
+    // v3 takes an opacity modifier only from its opacity scale, or in brackets.
+    const mod = key.match(/\/(\d{1,3}|\[[^\]]+\])$/);
+    if (mod) {
+      if (!mod[1].startsWith("[") && !data.v3.opacity?.has(mod[1])) return false;
+      key = key.slice(0, -mod[0].length);
+    }
+  }
   if (key.startsWith("[")) return true;
-  if (color) key = key.replace(/\/(?:\d{1,3}|\[[^\]]+\])$/, "");
   return v3Sections(r, color).some((s) => data.v3[s]?.has(key!));
 }
 
@@ -214,7 +224,9 @@ function pickClassBody(data: TokenData, cls: string, ctx: Context, opts: ClassOp
       const pick = pickColor(data, color, { ...ctx, property: root }, { appId: opts.appId, file: opts.file });
       if (!pick.path) return { ...pick, root };
       const named = colorUtility(data, root, pick.path);
-      const alpha = pick.keepAlpha !== undefined ? (mod ?? `/${Math.round(pick.keepAlpha * 100)}`) : "";
+      let alpha = pick.keepAlpha !== undefined ? (mod ?? `/${Math.round(pick.keepAlpha * 100)}`) : "";
+      // v3 reads a bare modifier only from its opacity scale (0, 5, …, 100): anything else in brackets.
+      if (opts.tailwind === "v3" && alpha && !alpha.startsWith("/[") && !data.v3.opacity?.has(alpha.slice(1))) alpha = `/[${Math.round(pick.keepAlpha! * 1000) / 1000}]`;
       let why = pick.why;
       if (pick.keepAlpha === undefined && mod) why += `; drops ${mod}`;
       if (opts.tailwind === "v3" && (!named || !v3Generates(data, root, named, true))) {

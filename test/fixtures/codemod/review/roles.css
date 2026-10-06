@@ -53,3 +53,34 @@ html:not([data-theme="dark"]) .note {
 .pad {
   padding: 13px;
 }
+.fallback {
+  background: var(--bg, white); color: white;
+}
+@font-face { font-family: "Inter"; src: url(i.woff2); } body { font-family: "Inter", sans-serif; }
+.btn {
+  background-color: rgb(37 99 235 / var(--tw-bg-opacity));
+}
+.toolbar {
+  border: 1px solid rgba(0, 0, 0, 0);
+}
+.warning {
+  border-color: #d3d1cb;
+}
+.secondary {
+  color: rgba(42, 42, 42, 0.839);
+}
+.chart-card {
+  border: 1px solid #e6e5e3;
+}
+.nav li a {
+  color: #245a81;
+}
+.overlay .dialog {
+  background: #f8f8f7;
+}
+.dark .card, .card {
+  background: #f8f8f7;
+}
+.error-box {
+  background: #9f1d1d;
+}

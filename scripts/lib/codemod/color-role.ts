@@ -45,6 +45,11 @@ const FAINT_TINT = 0.02;
 const NEUTRAL_TOKEN_TINT = 0.01;
 /** Two tints are the same hue within this many degrees. */
 const SAME_HUE_DEG = 45;
+/** ... and of a like strength (as rendered): within this much OKLab chroma, or this ratio. A wash is not a solid. */
+const SAME_CHROMA = 0.03;
+const SAME_CHROMA_RATIO = 0.4;
+/** A literal this transparent paints nothing: no token is proposed. */
+const INVISIBLE_ALPHA = 0.02;
 
 type PropRole = "text" | "background" | "border" | "svgFill" | "svgStroke" | "shadow" | "accent" | null;
 
@@ -162,13 +167,17 @@ function structure(ctx: Context) {
   };
 }
 
-/** Tint of an opaque color: its OKLab chroma and hue measured from the theme's page color. */
+/**
+ * Tint of a color's opaque base: how far it is from gray, and its hue measured from the theme's
+ * page. Gray is either axis: true gray (absolute chroma) or the page's own cast (dark neutrals
+ * share the dark page's blue), so `#444` and the dark surfaces both read as gray.
+ */
 function tintOf(c: Rgba, page: Rgba): { c: number; h: number } {
   const p = rgbToOklab(page);
   const q = rgbToOklab({ ...c, a: 1 });
   const a = q.a - p.a;
   const b = q.b - p.b;
-  return { c: Math.hypot(a, b), h: (Math.atan2(b, a) * 180) / Math.PI };
+  return { c: Math.min(Math.hypot(a, b), Math.hypot(q.a, q.b)), h: (Math.atan2(b, a) * 180) / Math.PI };
 }
 
 const hueGap = (x: number, y: number) => {
@@ -212,16 +221,24 @@ function decideFamily(data: TokenData, ctx: Context, role: PropRole, ringShadow:
   if (role === "background" && /\bselection\b/.test(h)) narrow(["color.selection"], "selection");
 
   const chart = /\b(chart|charts|series|legend|legends|axis|axes|tick|ticks|gridline|gridlines|plot|sparkline|donut|pie)\b/.test(h);
-  if (chart) {
-    // Labels, values and legends use text tokens; axes border.strong; gridlines border.subtle; marks the series.
-    if (role !== "text") {
-      if (/\b(axis|axes|tick|ticks)\b/.test(h) && role !== "background") narrow(["color.border.strong"], "chart axis");
-      else if (/\b(gridline|gridlines)\b/.test(h)) narrow(["color.border.subtle"], "chart gridline");
-      else narrow([...byPrefix(data, "color.chart.series"), ...byPrefix(data, "color.chart.diverging")], "chart series");
+  if (chart && role !== "text") {
+    // Labels, values and legends use text tokens; axes border.strong; gridlines border.subtle; marks
+    // (fills, strokes, swatches) the series. The chart's own chrome (a card border) is not a mark.
+    const polarity = /\b(diverging|polarity|midpoint|baseline|zero|gain|gains|loss|losses|inflow|outflow|positive|negative|delta)\b/.test(h);
+    if (/\b(axis|axes|tick|ticks|domain)\b/.test(h) && role !== "background") narrow(["color.border.strong"], "chart axis");
+    else if (/\b(gridline|gridlines|grid)\b/.test(h)) narrow(["color.border.subtle"], "chart gridline");
+    else if (role !== "border" || /\b(series|legend|legends|swatch)\b/.test(h)) {
+      const diverging = byPrefix(data, "color.chart.diverging").filter((p) => polarity || !p.endsWith(".midpoint"));
+      narrow([...byPrefix(data, "color.chart.series"), ...diverging], "chart series");
     }
   }
 
-  const tone = toneStatus(data, ctx, literal, ctx.theme);
+  // A category map (`TAG_CATEGORY_COLORS = { red: … }`) is categorical: its hues are not statuses.
+  const categorical = !chart && /\b(category|categories|categorical)\b/.test(h);
+  if (categorical) {
+    narrow(byPrefix(data, ...HUES.map((x) => `color.${x}`), "color.category").filter((p) => !p.endsWith(".on-solid")), "categorical (hue tokens)");
+  }
+  const tone = categorical ? null : toneStatus(data, ctx, literal, ctx.theme);
   for (const [re, kind] of STATUS) {
     if (!re.test(h) && tone !== kind) continue;
     const st = `color.status.${kind}`;
@@ -245,13 +262,11 @@ function decideFamily(data: TokenData, ctx: Context, role: PropRole, ringShadow:
     if (role === "text") narrow(["color.code.chip.ink", "color.code.header-fg", "color.code.gutter-fg"], "code text");
   }
   if (role === "text" && s.link) narrow(["color.link"], "link");
-  // A scrim stays translucent: no fallback to an opaque surface.
-  if (role === "background" && /\b(backdrop|scrim|overlay)\b/.test(h)) narrow(["color.backdrop"], "backdrop", { terminal: true });
+  // A scrim stays translucent: no fallback to an opaque surface. An opaque fill under `.overlay`
+  // (`.overlay .dialog`) is a surface, not the scrim.
+  if (role === "background" && /\b(backdrop|scrim|overlay)\b/.test(h) && literal.a < 0.99) narrow(["color.backdrop"], "backdrop", { terminal: true });
   else {
     if (/\bglass\b/.test(h) && (role === "background" || role === "border")) narrow(role === "background" ? ["color.glass.bg"] : ["color.glass.border", "color.glass.zone-border"], "glass");
-    if (!chart && /\b(category|categories|categorical)\b/.test(h)) {
-      narrow(byPrefix(data, ...HUES.map((x) => `color.${x}`), "color.category").filter((p) => !p.endsWith(".on-solid")), "categorical (hue tokens)");
-    }
     if (role === "background") {
       if (/(?:^|\s)hover\b|:hover\b/.test(h) || ctx.variants.includes("hover")) narrow(["color.fill.hover"], "hover fill");
       if (/\b(active|selected|current|checked|pressed)\b|aria (?:selected|current|pressed)|data state (?:active|on|checked|open)/.test(h)) narrow(["color.fill.active", "color.fill.accent"], "selected fill");
@@ -290,12 +305,17 @@ function nearestIn(data: TokenData, literal: Rgba, theme: Theme, paths: string[]
  * HUE_TO_GRAY_MAX_DE (as rendered).
  */
 function compatible(literal: Rgba, token: Rgba, page: Rgba, de: number): boolean {
+  if (!Number.isFinite(de)) return false;
   const lt = tintOf(literal, page);
   const tt = tintOf(token, page);
   const grayToken = tt.c <= NEUTRAL_TOKEN_TINT;
   if (lt.c <= NEUTRAL_TINT) return grayToken;
   if (grayToken) return lt.c <= FAINT_TINT || de <= HUE_TO_GRAY_MAX_DE;
-  return hueGap(lt.h, tt.h) <= SAME_HUE_DEG;
+  if (hueGap(lt.h, tt.h) > SAME_HUE_DEG) return false;
+  // Same hue, but a wash never becomes a solid (or back): chroma as rendered stays within reach.
+  const lc = chroma(composite(literal, page));
+  const tc = chroma(composite(token, page));
+  return Math.abs(lc - tc) <= SAME_CHROMA || Math.min(lc, tc) / Math.max(lc, tc) >= SAME_CHROMA_RATIO;
 }
 
 type Verdict = { ok: true; path: string; de: number; keepAlpha?: number; note: string } | { ok: false; reason: string };
@@ -318,6 +338,9 @@ function evaluate(data: TokenData, literal: Rgba, theme: Theme, family: Family, 
     return { ok: true, path: best.path, de: best.de, note: `${big}${alpha}` };
   }
   if (literal.a < 0.99) {
+    // A translucent token drawn the same way (text.secondary, selection, backdrop) beats a kept alpha.
+    const same = nearestIn(data, literal, theme, paths.filter((p) => Math.abs(data.colors.get(p)![theme].a - literal.a) <= 0.02));
+    if (same && same.de <= BASE_MATCH_DE) return { ok: true, path: same.path, de: same.de, note: "" };
     let base: { path: string; de: number } | null = null;
     for (const path of paths) {
       const token = data.colors.get(path)![theme];
@@ -348,7 +371,7 @@ function evaluate(data: TokenData, literal: Rgba, theme: Theme, family: Family, 
   const alpha = Math.abs(literal.a - token.a) > 0.02 ? `; alpha ${round2(literal.a)} becomes ${round2(token.a)}` : "";
   let max = family.strict ? ROLE_MAX_DE : NARROW_MAX_DE;
   if (family.strict && chroma(composite(literal, page)) > chroma(page) + 0.04) max = SATURATED_MAX_DE;
-  if (best.de > max) return { ok: false, reason: `${family.label}: ${best.path} ΔE ${round(best.de)}` };
+  if (!(best.de <= max)) return { ok: false, reason: `${family.label}: ${best.path} ΔE ${round(best.de)}` };
   return { ok: true, path: best.path, de: best.de, note: alpha };
 }
 
@@ -383,6 +406,7 @@ function nearestPool(data: TokenData, where: Allow, role: PropRole): string[] {
 const isHue = (p: string) => HUES.some((x) => p.startsWith(`color.${x}.`));
 
 export function pickColor(data: TokenData, literal: Rgba, ctx: Context, opts: Allow & { ringShadow?: boolean }): ColorPick {
+  if (literal.a <= INVISIBLE_ALPHA) return { path: null, method: null, deltaE: null, why: `transparent (alpha ${round2(literal.a)}): keep \`transparent\`, or drop the declaration` };
   const theme = ctx.theme;
   const page = data.page[theme];
   let role = propRoleOf(ctx.property);

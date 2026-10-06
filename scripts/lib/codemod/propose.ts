@@ -11,7 +11,7 @@ import { pickColor } from "./color-role.ts";
 import { readContext, type Context } from "./context.ts";
 import { locate, type Span } from "./locate.ts";
 import { pickClass, pickFamily, pickFontSize, pickRadius, pickSpacing, type Pick } from "./size-role.ts";
-import { kindOf, lineRange, prepareSource, type SourceFile } from "./source.ts";
+import { cssRegionAt, kindOf, lineRange, prepareSource, type SourceFile } from "./source.ts";
 import { lineSha, type Row } from "./table.ts";
 import { cssVarRef, type Theme, type TokenData } from "./tokens.ts";
 
@@ -33,7 +33,9 @@ export interface ProposeOptions {
  * `ns.cssVar` for a namespace import, or null when the file does not import it.
  */
 export function cssVarBinding(src: string): string | null {
-  for (const m of src.matchAll(/\bimport\s+(?!type\b)([^;]*?)\s*from\s*["']@codecaine-ai\/design-system["']/g)) {
+  // The clause never crosses another `from`: without semicolons, `import * as React from "react"`
+  // must not run on into the next import.
+  for (const m of src.matchAll(/\bimport\s+(?!type\b)((?:(?!\bfrom\b)[^;])*?)\s*\bfrom\s*["']@codecaine-ai\/design-system["']/g)) {
     const clause = m[1];
     const ns = clause.match(/\*\s*as\s+([A-Za-z_$][\w$]*)/);
     if (ns) return `${ns[1]}.cssVar`;
@@ -81,6 +83,37 @@ function pickFor(data: TokenData, f: SourceFile, hit: Hit, span: Span | null, ct
   return { path: null, method: null, deltaE: null, why: `category ${hit.category}` };
 }
 
+/**
+ * Why a JS literal outside any string value cannot take a token, or null: a call (`d3.rgb(255, 0, 0)`),
+ * an object key (`{ "#ffffff": "White" }`), a literal type (`tone: "#fff" | "#000"`, an interface
+ * member). CSS regions inside JS are values.
+ */
+function jsNonValue(f: SourceFile, span: Span): string | null {
+  if (f.kind !== "js" || cssRegionAt(f, span.start) || span.slot === "class" || span.slot === "canvas") return null;
+  const t = f.text;
+  if (span.slot === "text" && f.inStr && f.inStr[span.start] === 0) return "a JS expression, not a CSS string: edit by hand";
+  if (span.slot !== "wholeString" && span.slot !== "number") return null;
+  let a = span.start - 1;
+  while (a >= 0 && /\s/.test(t[a])) a--;
+  let b = span.end;
+  while (b < t.length && /\s/.test(t[b])) b++;
+  if ((t[a] === "{" || t[a] === ",") && t[b] === ":") return "an object key, not a value: edit by hand";
+  if ((t[a] === "|" && t[a - 1] !== "|") || (t[b] === "|" && t[b + 1] !== "|")) return "a literal type, not a value: edit by hand";
+  // An interface or type literal member (`interface P { tone: "#fff" }`).
+  let depth = 0;
+  for (let k = span.start - 1; k >= 0; k--) {
+    if (f.inStr && f.inStr[k] === 1) continue;
+    if (t[k] === "}") depth++;
+    else if (t[k] === "{" && depth-- === 0) {
+      let p = k - 1;
+      while (p >= 0 && !";{}".includes(t[p])) p--;
+      if (/\b(?:interface\s+[\w$]+|type\s+[\w$]+(?:<[^>]*>)?\s*=)[^{]*$/.test(t.slice(p + 1, k))) return "a type member, not a value: edit by hand";
+      break;
+    }
+  }
+  return null;
+}
+
 /** The text that replaces the literal in its slot, or null with the reason. `cssVarFn` is the file's binding for cssVar. */
 function replacementFor(f: SourceFile, span: Span | null, pick: Pick, ctx: Context, cssVarFn: string | null): { text: string | null; why?: string } {
   if (!span) return { text: null, why: "not found on the line as written (channel triplet, numeric tuple, or a value split across lines): edit by hand" };
@@ -88,6 +121,8 @@ function replacementFor(f: SourceFile, span: Span | null, pick: Pick, ctx: Conte
   if (!pick.path) return { text: null };
   if (ctx.data) return { text: null, why: "sits in a data object (id/type keys), not a style: check before changing" };
   if (span.slot === "canvas") return { text: null, why: "canvas 2D does not resolve var(): read the token with getComputedStyle, or keep it" };
+  const nonValue = jsNonValue(f, span);
+  if (nonValue) return { text: null, why: nonValue };
   const single = !pick.path.includes(",");
   const value = pick.css ?? cssVarRef(pick.path);
   switch (span.slot) {

@@ -139,9 +139,16 @@ export function splitTopLevel(s: string): string[] {
 
 /**
  * Parses hex, rgb()/rgba(), hsl()/hsla(), oklch(), oklab(), named colors, `transparent` and
- * `color-mix(in srgb, ...)`. Returns null for anything else (var(), currentColor, lab(), ...).
+ * `color-mix(in srgb, ...)`. Returns null for anything else (var(), currentColor, lab(), ...), and
+ * when any channel or the alpha is not a number (`rgb(37 99 235 / var(--tw-bg-opacity))`).
  */
 export function parseColor(input: string): Rgba | null {
+  const c = parseColorChannels(input);
+  // A channel or alpha written as var(), ${…} or calc() is decided at runtime: not a literal color.
+  return c && [c.r, c.g, c.b, c.a].every(Number.isFinite) ? c : null;
+}
+
+function parseColorChannels(input: string): Rgba | null {
   const s = input.trim().toLowerCase();
   if (s.startsWith("#")) return parseHex(s);
   if (s === "transparent") return { r: 0, g: 0, b: 0, a: 0 };

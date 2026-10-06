@@ -187,10 +187,10 @@ describe("propose: roles only structure gives", () => {
     expect(at(css(), "roles.css", 6, "#0a7ae0")).toMatchObject({ proposed: "color.focus-ring", method: "role" }); // .field:focus-visible outline
     expect(at(css(), "roles.css", 3, "#e6e5e3")).toMatchObject({ proposed: "color.border.default", why: "border" }); // 0 0 0 1px ring shadow on .card
     expect(at(tsx(), "widgets.tsx", 3, "#e0e0e0").proposed).toBe("color.border.default"); // <input onFocus> is not a focus selector
-    // --ring is named for the focus ring, but #aeb8c6 is ΔE 25.8 from it: the border family takes it.
+    // --ring is named for the focus ring, but #aeb8c6 is a blue-gray wash, far from the accent: the border family takes it.
     const ring = row("theme.css", 6, "#aeb8c6");
     expect(ring.proposed).toBe("color.border.guide");
-    expect(ring.why).toContain("focus ring: color.focus-ring ΔE 25.8");
+    expect(ring.why).toMatch(/^border \(focus ring: /);
     expect(row("theme.css", 45, "rgb(174 184 198 / 35%)").proposed).toBe("color.border.default");
   });
 
@@ -211,6 +211,12 @@ describe("propose: guards in every family", () => {
     expect(at(rows, "roles.css", 18, "#f2f2f1").proposed).toBe("color.fill.hover"); // .remove-btn:hover (danger, then hover)
     expect(at(rows, "roles.css", 21, "#f8f8f7").proposed).toBe("color.surface.panel"); // .ok-row (success)
     expect(at(rows, "roles.css", 27, "#dcd8d1").proposed).not.toBe("color.fill.accent"); // warm gray, not the blue wash
+  });
+
+  test("a narrowed family caps at ΔE 10: a dark red in an error box is not the danger solid", () => {
+    const r = at(reviewRows("roles.css"), "roles.css", 85, "#9f1d1d");
+    expect(r.proposed).toBeNull();
+    expect(r.why).toContain("danger status fill: color.status.danger.solid ΔE 15.2");
   });
 
   test("a translucent literal on an area keeps its alpha or stays unmapped", () => {
@@ -281,19 +287,95 @@ describe("propose: JSX attributes and cssVar", () => {
   test("an attribute value takes cssVar in braces, through the import's local name, and the result compiles", () => {
     const root = mkdtempSync(join(tmpdir(), "codemod-jsx-"));
     cpSync(join(FIXTURES, "review"), join(root, "review"), { recursive: true });
-    const list = propose(loadTokens(), { root, paths: ["review/attrs.tsx", "review/plain-attrs.tsx"], exclude: [] }, {
+    const list = propose(loadTokens(), { root, paths: ["review/attrs.tsx", "review/plain-attrs.tsx", "review/no-semi.tsx"], exclude: [] }, {
       appId: "fixture", defaultTheme: "light", categories: new Set(DEFAULT_CATEGORIES),
     }).rows.map((r) => ({ ...r, approve: r.replacement === null ? "" : "yes" }));
     expect(at(list, "attrs.tsx", 6, '"#e6e5e3"').replacement).toBe('{dsVar("color.border.default")}');
     expect(at(list, "attrs.tsx", 9, '"#ebebe9"').replacement).toBe('dsVar("color.fill.chip")');
     expect(at(list, "plain-attrs.tsx", 2, '"#e6e5e3"').replacement).toBe('"var(--ds-color-border-default)"');
+    // Imports without semicolons: the binding is cssVar, not React.cssVar. A style assigned in a
+    // handler is JS inside the attribute's braces: no extra braces.
+    expect(at(list, "no-semi.tsx", 5, '"#ebebe9"').replacement).toBe('cssVar("color.fill.chip")');
+    expect(at(list, "no-semi.tsx", 6, '"#ebebe9"').replacement).toBe('cssVar("color.fill.chip")');
     const result = applyTable(tableOf(root, list), realpathSync(root));
     expect(result.skipped).toEqual([]);
-    for (const file of ["attrs.tsx", "plain-attrs.tsx"]) {
+    for (const file of ["attrs.tsx", "plain-attrs.tsx", "no-semi.tsx"]) {
       const out = join(root, "out", file);
       const build = spawnSync(process.execPath, ["build", join(root, "review", file), "--outfile", out, "--packages", "external"], { encoding: "utf8" });
       expect({ file, status: build.status, stderr: build.stderr }).toEqual({ file, status: 0, stderr: "" });
     }
+  });
+});
+
+describe("propose: second review round", () => {
+  const roles = () => reviewRows("roles.css");
+  const widgets = () => reviewRows("widgets.tsx");
+
+  test("a color whose channel or alpha is decided at runtime is not a literal", () => {
+    expect(at(roles(), "roles.css", 61, "rgb(37 99 235 / var(--tw-bg-opacity))")).toMatchObject({ proposed: null, replacement: null });
+    expect(at(widgets(), "widgets.tsx", 16, "`rgba(0, 120, 223, ${a})`")).toMatchObject({ proposed: null, replacement: null });
+  });
+
+  test("a transparent literal gets no token, whatever the role", () => {
+    expect(at(roles(), "roles.css", 64, "rgba(0, 0, 0, 0)").proposed).toBeNull(); // a border
+    const faint = widgets().filter((r) => r.line === 19).map((r) => [r.literal, r.proposed]);
+    expect(faint).toEqual([["bg-white/1", null], ["text-[color:transparent]", null]]); // /1 is 1%, not opaque
+  });
+
+  test("in dark, a gray reads as gray, not as a tint of the page's blue", () => {
+    const dark = reviewRows("dark-first", { theme: "dark" });
+    expect(at(dark, "dark-first/sheet.css", 9, "#444444").proposed).not.toMatch(/status/); // .pending
+    expect(at(dark, "dark-first/notice.tsx", 2, "bg-neutral-800").proposed).toBe("color.fill.chip"); // under an amber tone
+  });
+
+  test("a wash never becomes a solid, an exact translucent token wins, chart chrome is not a series", () => {
+    expect(at(roles(), "roles.css", 67, "#d3d1cb").proposed).toBe("color.border.strong"); // .warning: not status.warning.line
+    expect(at(roles(), "roles.css", 70, "rgba(42, 42, 42, 0.839)")).toMatchObject({ proposed: "color.text.secondary", replacement: "var(--ds-color-text-secondary)" });
+    expect(at(roles(), "roles.css", 73, "#e6e5e3").proposed).toBe("color.border.default"); // .chart-card border
+  });
+
+  test("a category map is categorical, not a status", () => {
+    expect(at(widgets(), "widgets.tsx", 18, "bg-red-100").proposed).toBe("color.red.soft");
+  });
+
+  test("the subject element, an opaque fill under an overlay, and a selector list that disagrees", () => {
+    expect(at(roles(), "roles.css", 76, "#245a81").proposed).toBe("color.link"); // .nav li a: the a, not the li
+    expect(at(roles(), "roles.css", 79, "#f8f8f7").proposed).toBe("color.surface.panel"); // .overlay .dialog
+    expect(at(roles(), "roles.css", 82, "#f8f8f7").context.theme).toBe("light"); // .dark .card, .card
+  });
+
+  test("theme: a .light class anywhere, and a shade key named light inside a dark theme", () => {
+    expect(at(reviewRows("dark-first", { theme: "dark" }), "dark-first/sheet.css", 12, "#2a2a2a")).toMatchObject({ proposed: "color.text.body", context: { theme: "light" } });
+    expect(at(widgets(), "widgets.tsx", 22, '"#2a2a2a"').context.theme).toBe("dark");
+  });
+
+  test("hints: later classes in the class string are classes, not attribute names", () => {
+    expect(at(widgets(), "widgets.tsx", 20, "bg-[#f2f2f1]").proposed).not.toBe("color.fill.hover");
+  });
+
+  test("the occurrence: a var() fallback, a font face and a ternary's longer string are not where scan-literals counted", () => {
+    expect(at(roles(), "roles.css", 57, "white").column).toBe(readFileSync(join(FIXTURES, "review/roles.css"), "utf8").split("\n")[56].indexOf("color: white") + 8);
+    expect(at(roles(), "roles.css", 59, '"Inter", sans-serif').column).toBeGreaterThan(50); // body, not @font-face
+    const ring = at(widgets(), "widgets.tsx", 17, '"white"');
+    expect(ring.context.property).toBe("color");
+  });
+
+  test("an opacity modifier folds only into a color: text-[13px]/5 keeps its line height", () => {
+    expect(at(widgets(), "widgets.tsx", 21, "text-[13px]").replacement).toBe("text-ui-sm");
+  });
+
+  test("Tailwind v3: an alpha off the opacity scale goes in brackets", () => {
+    const rows = reviewRows("v3.tsx", { tailwind: "v3" });
+    expect(at(rows, "v3.tsx", 3, "bg-[#0078df12]").replacement).toBe("bg-accent/[0.071]");
+    expect(at(rows, "v3.tsx", 3, "bg-[rgba(253,253,253,.72)]").replacement).toBe("bg-page/[0.72]");
+  });
+
+  test("JS that is not a CSS value gets no replacement: a call, an object key, a literal type", () => {
+    const rows = reviewRows("js-values.ts");
+    expect(at(rows, "js-values.ts", 3, "rgb(253, 253, 253)")).toMatchObject({ replacement: null });
+    expect(at(rows, "js-values.ts", 4, '"#ffffff"').why).toContain("an object key");
+    expect(at(rows, "js-values.ts", 5, '"#e6e5e3"').why).toContain("a literal type");
+    expect(rows.filter((r) => r.replacement !== null)).toEqual([]);
   });
 });
 
