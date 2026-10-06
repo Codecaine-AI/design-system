@@ -2357,7 +2357,7 @@
       "theme": {
         "rule": "light-dark"
       },
-      "literalFloor": 2,
+      "literalFloor": 6,
       "allowlist": "apps/allowlists/viewer-shell.json",
       "shell": false,
       "folderStandard": false,

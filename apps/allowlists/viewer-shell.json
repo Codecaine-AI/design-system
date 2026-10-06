@@ -5,6 +5,12 @@
       "match": "^#(f{6}|808080)$",
       "category": "hex",
       "reason": "SVG filter constants of the grain overlay (flood/lighting colors used as filter math, not paint) (2 hits)"
+    },
+    {
+      "file": "codecaine/core/agent-kernel/packages/viewer-shell/src/style/style-system.css",
+      "match": "^rgb\\((255 255 255|0 0 0) / var\\(--style-bevel-[a-z-]+-alpha\\)\\)$",
+      "category": "rgb",
+      "reason": "CSS bevel light and shade constants (white highlight, black shade), alpha-scaled by the style engine (bevel off by default, alpha 0): effect math like the grain filter constants; no token has the role (4 hits)"
     }
   ],
   "twClasses": []
