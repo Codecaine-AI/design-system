@@ -8,12 +8,14 @@
  */
 import { beforeAll, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { cpSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { applyTable } from "../scripts/lib/codemod/apply.ts";
+import { tokenAllowed } from "../scripts/lib/codemod/color-role.ts";
+import { applyRoot, tableDir } from "../scripts/lib/codemod/paths.ts";
 import { DEFAULT_CATEGORIES, propose } from "../scripts/lib/codemod/propose.ts";
-import { summarize, type Row, type Table } from "../scripts/lib/codemod/table.ts";
+import { lineSha, summarize, type Row, type Table } from "../scripts/lib/codemod/table.ts";
 import { loadTokens } from "../scripts/lib/codemod/tokens.ts";
 import { PKG } from "./support.ts";
 
@@ -21,7 +23,7 @@ const FIXTURES = join(PKG, "test/fixtures/codemod");
 const SRC = "app/src";
 
 function proposeIn(root: string): Row[] {
-  return propose(loadTokens(), { root, paths: [SRC], exclude: [] }, { appId: "fixture", defaultTheme: "light", categories: new Set(DEFAULT_CATEGORIES) });
+  return propose(loadTokens(), { root, paths: [SRC], exclude: [] }, { appId: "fixture", defaultTheme: "light", categories: new Set(DEFAULT_CATEGORIES) }).rows;
 }
 
 let rows: Row[];
@@ -59,7 +61,6 @@ describe("propose: role first", () => {
     // [file, line, literal, proposed token, replacement]
     ["theme.css", 3, "#f5f3ef", "color.surface.page", "var(--ds-color-surface-page)"], // --background: a definition becomes an alias
     ["theme.css", 4, "#62666d", "color.text.muted", "var(--ds-color-text-muted)"], // --muted-foreground
-    ["theme.css", 6, "#aeb8c6", "color.focus-ring", "var(--ds-color-focus-ring)"], // --ring
     ["theme.css", 7, "#e03e3e", "color.status.danger.solid", "var(--ds-color-status-danger-solid)"], // --destructive
     ["theme.css", 12, "#f6f4f0", "color.fill.hover", "var(--ds-color-fill-hover)"], // :hover
     ["theme.css", 16, "#f9f9f9", "color.surface.sidebar", "var(--ds-color-surface-sidebar)"], // .sidebar
@@ -70,7 +71,6 @@ describe("propose: role first", () => {
     ["theme.css", 34, "999px", "radius.pill", "var(--ds-radius-pill)"],
     ["theme.css", 39, "6px", "radius.base", "var(--ds-radius-base)"],
     ["theme.css", 41, "#f8f8f7", "color.surface.panel", "var(--ds-color-surface-panel)"], // var(--card-bg, #f8f8f7): fallback in a .card
-    ["theme.css", 45, "rgb(174 184 198 / 35%)", "color.focus-ring", "var(--ds-color-focus-ring)"], // 0 0 0 2px ring under :focus-visible
     ["theme.css", 49, "13px", "font.size.code", "var(--ds-font-size-code)"], // 13px in pre code, not ui-sm
     ["widgets.tsx", 7, "13", "font.size.ui-sm", '"var(--ds-font-size-ui-sm)"'], // style={{ fontSize: 13 }}
     ["widgets.tsx", 7, '"10px"', "radius.base", '"var(--ds-radius-base)"'],
@@ -122,7 +122,7 @@ describe("propose: nearest color", () => {
   test("a far color with no role is unmapped and names the closest token with its ΔE", () => {
     const r = row("widgets.tsx", 13, '"#8c2ef2"');
     expect(r.proposed).toBeNull();
-    expect(r.why).toMatch(/closest token overall: color\.violet\.\w+ \(ΔE \d+(\.\d)?\)/);
+    expect(r.why).toMatch(/closest compatible token: color\.violet\.\w+ \(ΔE \d+(\.\d)?\)/);
   });
 
   test("the theme comes from a dark selector or the dark: variant, and ΔE is measured in it", () => {
@@ -166,6 +166,229 @@ describe("propose: Tailwind classes", () => {
   });
 });
 
+/** Rows for the review fixtures (test/fixtures/codemod/review): light default, or dark-first, or a v3 app. */
+function reviewRows(path: string, opts: { theme?: "light" | "dark"; tailwind?: "v3" | "v4" } = {}): Row[] {
+  return propose(loadTokens(), { root: FIXTURES, paths: [`review/${path}`], exclude: [] }, {
+    appId: "fixture", defaultTheme: opts.theme ?? "light", categories: new Set(DEFAULT_CATEGORIES), tailwind: opts.tailwind,
+  }).rows;
+}
+
+function at(list: Row[], file: string, line: number, literal: string): Row {
+  const found = list.find((r) => r.file === `review/${file}` && r.line === line && r.literal === literal);
+  if (!found) throw new Error(`no row for ${file}:${line} ${literal}`);
+  return found;
+}
+
+describe("propose: roles only structure gives", () => {
+  const css = () => reviewRows("roles.css");
+  const tsx = () => reviewRows("widgets.tsx");
+
+  test("a focus ring needs a :focus selector, a focus: variant or a name, and stays within the ΔE cap", () => {
+    expect(at(css(), "roles.css", 6, "#0a7ae0")).toMatchObject({ proposed: "color.focus-ring", method: "role" }); // .field:focus-visible outline
+    expect(at(css(), "roles.css", 3, "#e6e5e3")).toMatchObject({ proposed: "color.border.default", why: "border" }); // 0 0 0 1px ring shadow on .card
+    expect(at(tsx(), "widgets.tsx", 3, "#e0e0e0").proposed).toBe("color.border.default"); // <input onFocus> is not a focus selector
+    // --ring is named for the focus ring, but #aeb8c6 is a blue-gray wash, far from the accent: the border family takes it.
+    const ring = row("theme.css", 6, "#aeb8c6");
+    expect(ring.proposed).toBe("color.border.guide");
+    expect(ring.why).toMatch(/^border \(focus ring: /);
+    expect(row("theme.css", 45, "rgb(174 184 198 / 35%)").proposed).toBe("color.border.default");
+  });
+
+  test("placeholder and link need ::placeholder or an a element, not a word", () => {
+    expect(at(css(), "roles.css", 9, "#9b9a97").proposed).toBe("color.text.faint"); // .field::placeholder
+    expect(at(tsx(), "widgets.tsx", 3, '"#9b9a97"').proposed).not.toBe("color.text.faint"); // <input placeholder="Search">
+    const loose = at(css(), "roles.css", 12, "#245a81"); // .more-link: a class word, no a element
+    expect(loose.proposed).toBeNull();
+    expect(loose.why).toContain("closest compatible token: color.link");
+    expect(row("theme.css", 24, "#245a81").proposed).toBe("color.link"); // a.doc-link
+  });
+});
+
+describe("propose: guards in every family", () => {
+  test("a neutral literal leaves a status or accent family for the next one in the chain", () => {
+    const rows = reviewRows("roles.css");
+    expect(at(rows, "roles.css", 15, "#666562").proposed).toBe("color.text.muted"); // .hint (info)
+    expect(at(rows, "roles.css", 18, "#f2f2f1").proposed).toBe("color.fill.hover"); // .remove-btn:hover (danger, then hover)
+    expect(at(rows, "roles.css", 21, "#f8f8f7").proposed).toBe("color.surface.panel"); // .ok-row (success)
+    expect(at(rows, "roles.css", 27, "#dcd8d1").proposed).not.toBe("color.fill.accent"); // warm gray, not the blue wash
+  });
+
+  test("a narrowed family caps at ΔE 10: a dark red in an error box is not the danger solid", () => {
+    const r = at(reviewRows("roles.css"), "roles.css", 85, "#9f1d1d");
+    expect(r.proposed).toBeNull();
+    expect(r.why).toContain("danger status fill: color.status.danger.solid ΔE 15.2");
+  });
+
+  test("a translucent literal on an area keeps its alpha or stays unmapped", () => {
+    const rows = reviewRows("roles.css");
+    expect(at(rows, "roles.css", 24, "rgb(159 29 29 / 8%)")).toMatchObject({ proposed: null, replacement: null }); // 8% danger tint on hover
+    expect(at(reviewRows("widgets.tsx"), "widgets.tsx", 6, "bg-white/15")).toMatchObject({ replacement: "bg-page/15" });
+  });
+
+  test("a Tailwind tone (bg, text and border in one status hue) proposes that status, in the literal's hue", () => {
+    expect(at(reviewRows("widgets.tsx"), "widgets.tsx", 7, "bg-amber-50")).toMatchObject({ proposed: "color.status.warning.soft", replacement: "bg-warning-soft" });
+  });
+});
+
+describe("propose: charts", () => {
+  test("marks take the chart series, labels the text family, axes border.strong", () => {
+    const rows = reviewRows("roles.css");
+    expect(at(rows, "roles.css", 30, "#088bd9").proposed).toBe("color.chart.series.1");
+    expect(at(rows, "roles.css", 33, "#dd6d07").proposed).toBe("color.chart.series.2");
+    expect(at(rows, "roles.css", 36, "#666562").proposed).toBe("color.text.muted"); // .legend-label
+    expect(at(rows, "roles.css", 39, "#d0cfcc").proposed).toBe("color.border.strong"); // .chart-axis
+  });
+});
+
+describe("propose: theme and hints", () => {
+  test("a dark mark inside :not() means light, any data-*=\"dark\" means dark, and a light region wins in a dark-first app", () => {
+    const rows = reviewRows("roles.css");
+    expect(at(rows, "roles.css", 42, "#37352f")).toMatchObject({ context: { theme: "light" } });
+    expect(at(rows, "roles.css", 42, "#37352f").proposed).not.toBe("color.text.on-solid");
+    expect(at(rows, "roles.css", 45, "#151b23").context.theme).toBe("dark");
+    const dark = reviewRows("dark-first", { theme: "dark" });
+    expect(at(dark, "dark-first/sheet.css", 3, "#f8f8f7")).toMatchObject({ proposed: "color.surface.panel", deltaE: 0, context: { theme: "light" } });
+    expect(at(dark, "dark-first/sheet.css", 6, "#151b23")).toMatchObject({ proposed: "color.surface.panel", deltaE: 0, context: { theme: "dark" } });
+  });
+
+  test("hints never come from comments in CSS templates or from attribute values", () => {
+    const rows = reviewRows("widgets.tsx");
+    expect(at(rows, "widgets.tsx", 13, "#666562").proposed).toBe("color.text.muted"); // under "/* a row ... */": not a link
+    expect(at(rows, "widgets.tsx", 5, '"#f2f2f1"').proposed).not.toMatch(/status/); // title="Delete"
+    expect(at(reviewRows("roles.css"), "roles.css", 48, "#f8f8f7").proposed).toBe("color.surface.panel"); // --input-bg is a background
+  });
+});
+
+describe("propose: the occurrence on the line", () => {
+  test("a color inside a Tailwind class, a selector or another key is never the row's literal", () => {
+    const rows = reviewRows("widgets.tsx");
+    const style = at(rows, "widgets.tsx", 8, '"#e6e5e3"'); // the style's hex, not the one in border-[#e6e5e3]
+    expect(style.column).toBe(readFileSync(join(FIXTURES, "review/widgets.tsx"), "utf8").split("\n")[7].indexOf('"#e6e5e3"') + 1);
+    expect(at(rows, "widgets.tsx", 9, '"black"').column).toBe(46); // color: "black", not label: "black"
+    expect(at(reviewRows("roles.css"), "roles.css", 51, "white").column).toBe(15); // background: white, not .swatch.white
+  });
+});
+
+describe("propose: Tailwind v3 apps", () => {
+  test("only utilities the v3 preset generates; the rest stay unmapped with the reason", () => {
+    const rows = reviewRows("v3.tsx", { tailwind: "v3" });
+    const by = (literal: string) => at(rows, "v3.tsx", 2, literal);
+    expect(by("min-h-[116px]")).toMatchObject({ replacement: null });
+    expect(by("min-h-[116px]").why).toContain("Tailwind v3: the preset has no min-h-29");
+    expect(by("w-[320px]").replacement).toBe("w-80");
+    expect(by("aspect-[16/10]").replacement).toBeNull();
+    expect(by("aspect-[16/9]").replacement).toBe("aspect-video");
+    expect(by("bg-[#f8f8f7]").replacement).toBe("bg-panel");
+    expect(reviewRows("v3.tsx", { tailwind: "v4" }).find((r) => r.literal === "min-h-[116px]")!.replacement).toBe("min-h-29");
+  });
+});
+
+describe("propose: JSX attributes and cssVar", () => {
+  test("an attribute value takes cssVar in braces, through the import's local name, and the result compiles", () => {
+    const root = mkdtempSync(join(tmpdir(), "codemod-jsx-"));
+    cpSync(join(FIXTURES, "review"), join(root, "review"), { recursive: true });
+    const list = propose(loadTokens(), { root, paths: ["review/attrs.tsx", "review/plain-attrs.tsx", "review/no-semi.tsx"], exclude: [] }, {
+      appId: "fixture", defaultTheme: "light", categories: new Set(DEFAULT_CATEGORIES),
+    }).rows.map((r) => ({ ...r, approve: r.replacement === null ? "" : "yes" }));
+    expect(at(list, "attrs.tsx", 6, '"#e6e5e3"').replacement).toBe('{dsVar("color.border.default")}');
+    expect(at(list, "attrs.tsx", 9, '"#ebebe9"').replacement).toBe('dsVar("color.fill.chip")');
+    expect(at(list, "plain-attrs.tsx", 2, '"#e6e5e3"').replacement).toBe('"var(--ds-color-border-default)"');
+    // Imports without semicolons: the binding is cssVar, not React.cssVar. A style assigned in a
+    // handler is JS inside the attribute's braces: no extra braces.
+    expect(at(list, "no-semi.tsx", 5, '"#ebebe9"').replacement).toBe('cssVar("color.fill.chip")');
+    expect(at(list, "no-semi.tsx", 6, '"#ebebe9"').replacement).toBe('cssVar("color.fill.chip")');
+    const result = applyTable(tableOf(root, list), realpathSync(root));
+    expect(result.skipped).toEqual([]);
+    for (const file of ["attrs.tsx", "plain-attrs.tsx", "no-semi.tsx"]) {
+      const out = join(root, "out", file);
+      const build = spawnSync(process.execPath, ["build", join(root, "review", file), "--outfile", out, "--packages", "external"], { encoding: "utf8" });
+      expect({ file, status: build.status, stderr: build.stderr }).toEqual({ file, status: 0, stderr: "" });
+    }
+  });
+});
+
+describe("propose: second review round", () => {
+  const roles = () => reviewRows("roles.css");
+  const widgets = () => reviewRows("widgets.tsx");
+
+  test("a color whose channel or alpha is decided at runtime is not a literal", () => {
+    expect(at(roles(), "roles.css", 61, "rgb(37 99 235 / var(--tw-bg-opacity))")).toMatchObject({ proposed: null, replacement: null });
+    expect(at(widgets(), "widgets.tsx", 16, "`rgba(0, 120, 223, ${a})`")).toMatchObject({ proposed: null, replacement: null });
+  });
+
+  test("a transparent literal gets no token, whatever the role", () => {
+    expect(at(roles(), "roles.css", 64, "rgba(0, 0, 0, 0)").proposed).toBeNull(); // a border
+    const faint = widgets().filter((r) => r.line === 19).map((r) => [r.literal, r.proposed]);
+    expect(faint).toEqual([["bg-white/1", null], ["text-[color:transparent]", null]]); // /1 is 1%, not opaque
+  });
+
+  test("in dark, a gray reads as gray, not as a tint of the page's blue", () => {
+    const dark = reviewRows("dark-first", { theme: "dark" });
+    expect(at(dark, "dark-first/sheet.css", 9, "#444444").proposed).not.toMatch(/status/); // .pending
+    expect(at(dark, "dark-first/notice.tsx", 2, "bg-neutral-800").proposed).toBe("color.fill.chip"); // under an amber tone
+  });
+
+  test("a wash never becomes a solid, an exact translucent token wins, chart chrome is not a series", () => {
+    expect(at(roles(), "roles.css", 67, "#d3d1cb").proposed).toBe("color.border.strong"); // .warning: not status.warning.line
+    expect(at(roles(), "roles.css", 70, "rgba(42, 42, 42, 0.839)")).toMatchObject({ proposed: "color.text.secondary", replacement: "var(--ds-color-text-secondary)" });
+    expect(at(roles(), "roles.css", 73, "#e6e5e3").proposed).toBe("color.border.default"); // .chart-card border
+  });
+
+  test("a category map is categorical, not a status", () => {
+    expect(at(widgets(), "widgets.tsx", 18, "bg-red-100").proposed).toBe("color.red.soft");
+  });
+
+  test("the subject element, an opaque fill under an overlay, and a selector list that disagrees", () => {
+    expect(at(roles(), "roles.css", 76, "#245a81").proposed).toBe("color.link"); // .nav li a: the a, not the li
+    expect(at(roles(), "roles.css", 79, "#f8f8f7").proposed).toBe("color.surface.panel"); // .overlay .dialog
+    expect(at(roles(), "roles.css", 82, "#f8f8f7").context.theme).toBe("light"); // .dark .card, .card
+  });
+
+  test("theme: a .light class anywhere, and a shade key named light inside a dark theme", () => {
+    expect(at(reviewRows("dark-first", { theme: "dark" }), "dark-first/sheet.css", 12, "#2a2a2a")).toMatchObject({ proposed: "color.text.body", context: { theme: "light" } });
+    expect(at(widgets(), "widgets.tsx", 22, '"#2a2a2a"').context.theme).toBe("dark");
+  });
+
+  test("hints: later classes in the class string are classes, not attribute names", () => {
+    expect(at(widgets(), "widgets.tsx", 20, "bg-[#f2f2f1]").proposed).not.toBe("color.fill.hover");
+  });
+
+  test("the occurrence: a var() fallback, a font face and a ternary's longer string are not where scan-literals counted", () => {
+    expect(at(roles(), "roles.css", 57, "white").column).toBe(readFileSync(join(FIXTURES, "review/roles.css"), "utf8").split("\n")[56].indexOf("color: white") + 8);
+    expect(at(roles(), "roles.css", 59, '"Inter", sans-serif').column).toBeGreaterThan(50); // body, not @font-face
+    const ring = at(widgets(), "widgets.tsx", 17, '"white"');
+    expect(ring.context.property).toBe("color");
+  });
+
+  test("an opacity modifier folds only into a color: text-[13px]/5 keeps its line height", () => {
+    expect(at(widgets(), "widgets.tsx", 21, "text-[13px]").replacement).toBe("text-ui-sm");
+  });
+
+  test("Tailwind v3: an alpha off the opacity scale goes in brackets", () => {
+    const rows = reviewRows("v3.tsx", { tailwind: "v3" });
+    expect(at(rows, "v3.tsx", 3, "bg-[#0078df12]").replacement).toBe("bg-accent/[0.071]");
+    expect(at(rows, "v3.tsx", 3, "bg-[rgba(253,253,253,.72)]").replacement).toBe("bg-page/[0.72]");
+  });
+
+  test("JS that is not a CSS value gets no replacement: a call, an object key, a literal type", () => {
+    const rows = reviewRows("js-values.ts");
+    expect(at(rows, "js-values.ts", 3, "rgb(253, 253, 253)")).toMatchObject({ replacement: null });
+    expect(at(rows, "js-values.ts", 4, '"#ffffff"').why).toContain("an object key");
+    expect(at(rows, "js-values.ts", 5, '"#e6e5e3"').why).toContain("a literal type");
+    expect(rows.filter((r) => r.replacement !== null)).toEqual([]);
+  });
+});
+
+describe("token guards", () => {
+  test("Notion compat tokens stay in the docs-system repo", () => {
+    const pool = ["color.notion.bg.yellow", "color.notion.text.navigation", "color.surface.panel"];
+    const keep = (appId: string, file: string) => pool.filter((p) => tokenAllowed(p, { appId, file }));
+    expect(keep("docs-viewer", "codecaine/core/docs-system/packages/docs-viewer/src/a.css")).toEqual(pool);
+    expect(keep("docs-mcp-home", "codecaine/core/docs-mcp-home/src/a.css")).toEqual(["color.surface.panel"]);
+    expect(keep("docs-publish", "codecaine/core/docs-publish/src/a.css")).toEqual(["color.surface.panel"]);
+  });
+});
+
 describe("apply", () => {
   function approved(list: Row[], pick: (r: Row) => boolean): Row[] {
     return list.map((r) => ({ ...r, approve: pick(r) ? "yes" : "" }));
@@ -205,15 +428,84 @@ describe("apply", () => {
     ]);
   });
 
-  test("a row whose line moved still applies when the literal is unique on it, and an edited replacement wins", () => {
+  test("an edited replacement wins; a row whose line changed at all is stale, never searched for", () => {
     const root = tempRoot();
-    const list = approved(proposeIn(root), (r) => r.literal === "#f9f9f9");
+    const list = approved(proposeIn(root), (r) => r.literal === "#f9f9f9" || r.literal === "#f8f8f7");
     list.find((r) => r.literal === "#f9f9f9")!.replacement = "var(--ds-color-surface-panel)";
     const theme = join(root, SRC, "theme.css");
-    writeFileSync(theme, readFileSync(theme, "utf8").replace("  background: #f9f9f9;", "    background:   #f9f9f9;"));
+    // Line 41 keeps its literal at a new column: the old codemod found it "once anywhere on the line".
+    writeFileSync(theme, readFileSync(theme, "utf8").replace("  background: var(--card-bg, #f8f8f7);", "    background:   var(--card-bg, #f8f8f7);"));
     const result = applyTable(tableOf(root, list), root);
-    expect(result.skipped).toEqual([]);
-    expect(readFileSync(theme, "utf8")).toContain("    background:   var(--ds-color-surface-panel);");
+    expect(result.applied.map((r) => r.literal)).toEqual(["#f9f9f9"]);
+    expect(result.skipped.map((s) => [s.row.literal, s.reason])).toEqual([["#f8f8f7", "stale: line 41 changed since propose"]]);
+    const text = readFileSync(theme, "utf8");
+    expect(text.split("\n")[15]).toBe("  background: var(--ds-color-surface-panel);");
+    expect(text).toContain("    background:   var(--card-bg, #f8f8f7);");
+  });
+
+  test("lines shifted down by an edit above: the row is stale, and the line that moved into its place is untouched", () => {
+    const root = tempRoot();
+    const file = join(root, SRC, "shift.css");
+    writeFileSync(file, ".btn {\n  color: #f9f9f9;\n}\n.card {\n  background: #f9f9f9;\n}\n");
+    const list = approved(proposeIn(root), (r) => r.file.endsWith("shift.css") && r.line === 5);
+    expect(list.filter((r) => r.approve === "yes").map((r) => r.literal)).toEqual(["#f9f9f9"]);
+    // Three lines above push `.btn`'s color onto line 5.
+    const shifted = `/* a */\n/* b */\n/* c */\n${readFileSync(file, "utf8")}`;
+    writeFileSync(file, shifted);
+    const result = applyTable(tableOf(root, list), root);
+    expect(result.applied).toEqual([]);
+    expect(result.skipped.map((s) => s.reason)).toEqual(["stale: line 5 changed since propose"]);
+    expect(readFileSync(file, "utf8")).toBe(shifted);
+  });
+
+  test("a literal at its column that runs on into a longer token is not replaced", () => {
+    const root = tempRoot();
+    const file = join(root, SRC, "long.css");
+    writeFileSync(file, ".chip { color: #fff000; }\n.size { --n: 135px; }\n");
+    const lines = readFileSync(file, "utf8").split("\n");
+    const hand = (id: number, line: number, literal: string, category: string, replacement: string): Row => ({
+      id, file: `${SRC}/long.css`, line, column: lines[line - 1].indexOf(literal) + 1, lineSha: lineSha(lines[line - 1]), category, kind: null,
+      literal, context: { property: null, selector: null, component: null, theme: "light" }, proposed: "x", replacement, method: "role", deltaE: 0, why: "", approve: "yes",
+    });
+    const result = applyTable(tableOf(root, [hand(1, 1, "#fff", "hex", "var(--ds-color-text-on-solid)"), hand(2, 2, "13", "pxFontSize", "var(--ds-font-size-ui-sm)")]), root);
+    expect(result.applied).toEqual([]);
+    expect(result.skipped.map((s) => s.reason)).toEqual([
+      'stale: "#fff" at column 16 is part of a longer token',
+      'stale: "13" at column 14 is part of a longer token',
+    ]);
+    expect(readFileSync(file, "utf8")).toBe(".chip { color: #fff000; }\n.size { --n: 135px; }\n");
+  });
+
+  test("a row without a line hash (a table from before hashes) is stale", () => {
+    const root = tempRoot();
+    const list = approved(proposeIn(root), (r) => r.literal === "#f9f9f9").map((r) => ({ ...r, lineSha: null }));
+    const result = applyTable(tableOf(root, list), root);
+    expect(result.applied).toEqual([]);
+    expect(result.skipped[0].reason).toContain("no line hash");
+  });
+
+  test("rows naming files outside the root, by path or through a link, are refused and the files untouched", () => {
+    const root = realpathSync(tempRoot());
+    const outside = realpathSync(mkdtempSync(join(tmpdir(), "codemod-outside-")));
+    const victim = join(outside, "x.css");
+    writeFileSync(victim, ".x {\n  background: #f9f9f9;\n}\n");
+    symlinkSync(outside, join(root, "app", "linked"));
+    const base = approved(proposeIn(root), (r) => r.literal === "#f9f9f9").find((r) => r.literal === "#f9f9f9")!;
+    const at = (id: number, file: string): Row => ({ ...base, id, file, line: 2, column: 15, lineSha: lineSha("  background: #f9f9f9;") });
+    const result = applyTable(tableOf(root, [at(1, victim), at(2, `../${basename(outside)}/x.css`), at(3, "app/linked/x.css")]), root);
+    expect(result.applied).toEqual([]);
+    expect(result.skipped.map((s) => s.reason.split(":")[0])).toEqual(["refused", "refused", "refused"]);
+    expect(readFileSync(victim, "utf8")).toBe(".x {\n  background: #f9f9f9;\n}\n");
+  });
+
+  test("a root in the owner's tree applies only when --root names the owner's tree itself", () => {
+    const owner = realpathSync(mkdtempSync(join(tmpdir(), "codemod-owner-")));
+    mkdirSync(join(owner, "app"));
+    expect(() => applyRoot(owner, false, owner)).toThrow("pass --root");
+    expect(() => applyRoot(join(owner, "app"), true, owner)).toThrow("inside the owner's tree");
+    expect(applyRoot(owner, true, owner)).toBe(owner);
+    const mirror = realpathSync(mkdtempSync(join(tmpdir(), "codemod-mirror-")));
+    expect(applyRoot(mirror, false, owner)).toBe(mirror);
   });
 });
 
@@ -239,6 +531,32 @@ describe("CLI", () => {
     expect(run.stdout).toContain("applied 1 rows in 1 files");
     expect(run.stdout).toMatch(/skipped #\d+ app\/src\/widgets\.tsx:16 "#ffffff": no replacement/);
     expect(readFileSync(join(root, SRC, "theme.css"), "utf8")).toContain("background: var(--ds-color-surface-sidebar);");
+  });
+
+  test("propose counts the soft hits it leaves out, in the summary and the table", () => {
+    const out = mkdtempSync(join(tmpdir(), "codemod-out-"));
+    const run = cli("--app", "fixture", "--root", FIXTURES, "--out-dir", out, "propose", "--paths", "review/roles.css");
+    expect(run.status).toBe(0);
+    expect(run.stdout).toContain("left out (soft categories; --all adds them): 1 pxSpacing");
+    const md = readFileSync(join(out, "fixture/codemod/mapping-1.md"), "utf8");
+    expect(md).toContain("Not in this table (soft categories; `propose --all` adds them): 1 pxSpacing.");
+    expect((JSON.parse(readFileSync(join(out, "fixture/codemod/mapping-1.json"), "utf8")) as Table).dropped).toEqual({ pxSpacing: 1 });
+  });
+
+  test("propose refuses an app id that climbs out of --out-dir, and an --out-dir inside a git checkout", () => {
+    const base = mkdtempSync(join(tmpdir(), "codemod-out-"));
+    const out = join(base, "out");
+    const climb = cli("--app", "../escape", "--root", FIXTURES, "--out-dir", out, "propose", "--paths", "review/roles.css");
+    expect(climb.status).toBe(2);
+    expect(existsSync(join(base, "escape"))).toBe(false);
+    const repo = join(base, "repo");
+    mkdirSync(join(repo, ".git"), { recursive: true });
+    const inRepo = cli("--app", "fixture", "--root", FIXTURES, "--out-dir", join(repo, "reports"), "propose", "--paths", "review/roles.css");
+    expect(inRepo.status).toBe(2);
+    expect(inRepo.stderr).toContain("inside the git checkout");
+    expect(existsSync(join(repo, "reports"))).toBe(false);
+    const owner = mkdtempSync(join(tmpdir(), "codemod-owner-"));
+    expect(() => tableDir(join(owner, "rollout"), "fixture", owner)).toThrow("owner's tree");
   });
 
   test("an app missing from the registry needs --paths", () => {

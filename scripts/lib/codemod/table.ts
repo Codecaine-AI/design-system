@@ -4,6 +4,7 @@
  */
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { join } from "node:path";
 import type { Theme } from "./tokens.ts";
 
@@ -14,6 +15,8 @@ export interface Row {
   line: number;
   /** 1-based column of the literal; null when the literal was not found as written. */
   column: number | null;
+  /** sha256 (first 16 hex digits) of the whole source line at propose time; `apply` skips the row when the line differs. */
+  lineSha: string | null;
   /** scan-literals category (hex, rgb, twArbitrary, pxFontSize ...). */
   category: string;
   /** Color literals: definition (--x: #fff), fallback (var(--x, #fff)) or inline. */
@@ -41,9 +44,27 @@ export interface Table {
   createdAt: string;
   designSystem: { root: string; commit: string | null };
   scan: { paths: string[]; exclude: string[]; ext?: string; categories: string[] };
+  /** Tailwind version the class replacements target (the registry's stack.tailwind). */
+  tailwind?: "v4" | "v3" | "none";
+  /** Hits left out because their category is not in `scan.categories` (`--all` includes them), per category. */
+  dropped?: Record<string, number>;
   /** role + nearest + unmapped = rows; handEdit counts mapped rows without a replacement (canvas, data objects, triplets). */
   summary: { rows: number; role: number; nearest: number; unmapped: number; handEdit: number };
   rows: Row[];
+}
+
+/** What a row stores to recognise its line: sha256 of the line text, first 16 hex digits. */
+export function lineSha(text: string): string {
+  return createHash("sha256").update(text).digest("hex").slice(0, 16);
+}
+
+/** `12 pxSpacing, 3 twArbitraryVar`, largest first, or "" when nothing was dropped. */
+export function droppedText(dropped: Record<string, number> | undefined): string {
+  return Object.entries(dropped ?? {})
+    .filter(([, n]) => n > 0)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([c, n]) => `${n} ${c}`)
+    .join(", ");
 }
 
 export function summarize(rows: Row[]): Table["summary"] {
@@ -78,6 +99,8 @@ export function toMarkdown(t: Table, jsonPath: string): string {
   out.push("");
   out.push(`- Root: \`${t.root}\`. Scan: ${t.scan.paths.map((p) => `\`${p}\``).join(", ")}${t.scan.exclude.length ? `, excluding ${t.scan.exclude.map((p) => `\`${p}\``).join(", ")}` : ""}.`);
   out.push(`- ${s.rows} rows: ${s.role} by role, ${s.nearest} by nearest color, ${s.unmapped} unmapped, ${s.handEdit} mapped but need a hand edit.`);
+  const dropped = droppedText(t.dropped);
+  if (dropped) out.push(`- Not in this table (soft categories; \`propose --all\` adds them): ${dropped}.`);
   out.push(`- To apply: set \`"approve": "yes"\` on rows in \`${jsonPath}\` (edit \`replacement\` to change a proposal), then run \`bun run codemod:literals --app ${t.app} --root ${t.root} apply --table ${jsonPath}\`.`);
   out.push("- ΔE is OKLab × 100 between the literal and the token, both drawn over the page surface; about 2 is the smallest visible step.");
   out.push("");
