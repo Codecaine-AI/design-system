@@ -79,6 +79,7 @@ import { appScope, changedCheckouts, checkoutStates } from "./checkouts";
 import { describeConnection, egressConnections, isExposedListener, lsofConnections } from "./egress";
 import { markAppsStarted, pinRepos } from "./git";
 import { OWNER_PORTS } from "./owner";
+import { designSystemUrlPath, DS_URL_PREFIX, findPackageDir } from "./lint/workspace";
 import { headlessShellPath, loadPlaywright, noteAppStarted, pinElectron, pinPlaywright, playwrightAnchor, playwrightDirs } from "./playwright";
 import { portProblems, PROFILE_PORTS } from "../registry-check";
 import { DESIGN_SYSTEM_ROOT, resolvePath, validateRegistry, type AppEntry, type Registry } from "./registry";
@@ -1413,10 +1414,32 @@ function serveStatic(dir: string, dirReal: string, request: Request, served: Set
 // -- served files ---------------------------------------------------------------
 
 /**
- * Maps a served URL or path to a disk path, or null for a virtual module (/@vite/client, /@id/...).
- * A URL under the run's base path (baseUrl /app) maps relative to it.
+ * The file a `/@codecaine-ai/design-system/<package path>` path names in the design-system package the
+ * app resolves (decision 30: the host serves that prefix from it; lint:apps maps it the same way), or
+ * null: no package; a `?` or `#` (only a decoded %3F/%23 gets here, and the server reads it as part of
+ * the path), a `%` left after decoding (double encoding), a backslash or NUL; a `.` or `..` segment; a
+ * directory; or a file whose real path leaves the package. A file that does not exist maps lexically.
  */
-function toDiskPath(entry: string, serveRoot: string, basePath: string): string | null {
+function designSystemFile(path: string, packageDir: () => string | null): string | null {
+  if (/[?#%\\\0]/.test(path.slice(DS_URL_PREFIX.length))) return null;
+  const rest = designSystemUrlPath(path);
+  if (rest === null || rest.split("/").some((segment) => segment === "." || segment === "..")) return null;
+  const dir = packageDir();
+  if (!dir) return null;
+  const file = join(dir, rest);
+  if (!isInside(file, dir)) return null;
+  if (!existsSync(file)) return file;
+  const real = realpathSync(file);
+  return isInside(real, dir) && statSync(real).isFile() ? file : null;
+}
+
+/**
+ * Maps a served URL or path to a disk path, or null for a virtual module (/@vite/client, /@id/...).
+ * A URL under the run's base path (baseUrl /app) maps relative to it. `/@codecaine-ai/design-system/...`
+ * maps to the file at that path under the serve root when there is one (the file the server sends), else
+ * into `packageDir()`, the real path of the design-system package the app resolves (decision 30).
+ */
+function toDiskPath(entry: string, serveRoot: string, basePath: string, packageDir: () => string | null): string | null {
   let path = entry;
   let fromUrl = false;
   if (/^https?:\/\//.test(entry)) {
@@ -1427,6 +1450,11 @@ function toDiskPath(entry: string, serveRoot: string, basePath: string): string 
     path = entry.split(/[?#]/)[0]!;
   }
   if (path.startsWith("/@fs/")) return path.slice("/@fs".length);
+  if (path.startsWith(DS_URL_PREFIX)) {
+    // A file the app's server has at that path (a static site's copy) is what it sends; only without one, the package.
+    const served = join(serveRoot, path);
+    return isInside(served, serveRoot) && existsSync(served) && statSync(served).isFile() ? served : designSystemFile(path, packageDir);
+  }
   if (path.startsWith("/@") || path.startsWith("/__")) return null;
   if (!fromUrl && isAbsolute(path)) {
     // An absolute disk path, unless it reads as a URL path under the serve root (/src/main.tsx).
@@ -1450,17 +1478,35 @@ function basePathOf(running: RunningApp): string {
 }
 
 /**
- * The disk path a served module/file URL (Vite `/@fs/...`, `/src/...`, a static file) or path maps to,
- * the same mapping servedFromRoot checks; null for a virtual module. Not resolved through symlinks.
+ * Real path of the design-system package the app resolves from its root (lint/run.ts designSystemOf,
+ * verify's package assertion), or null; looked up once, on first use.
  */
-export function servedDiskPath(running: RunningApp, entry: string): string | null {
-  return toDiskPath(entry, serveRootOf(running), basePathOf(running));
+function packageDirOf(running: RunningApp): () => string | null {
+  let dir: string | null | undefined;
+  return () => {
+    if (dir === undefined) {
+      const found = findPackageDir("@codecaine-ai/design-system", resolvePath(running.root, running.app.root));
+      dir = found && existsSync(found) ? realpathSync(found) : null;
+    }
+    return dir;
+  };
 }
 
 /**
- * Checks that served module/file URLs (Vite `/@fs/...`, `/src/...`, static files) or absolute disk paths
- * resolve inside `running.root` (or the run's own temp dir, where fixture servers build). Symlinks are
- * resolved, so a linked package outside the root is reported in `outside`. A path that maps to no file
+ * The disk path a served module/file URL (Vite `/@fs/...`, `/src/...`, a static file, the decision-30
+ * `/@codecaine-ai/design-system/...` prefix) or path maps to, the same mapping servedFromRoot checks;
+ * null for a virtual module. Not resolved through symlinks (that prefix maps into the package's real path).
+ */
+export function servedDiskPath(running: RunningApp, entry: string): string | null {
+  return toDiskPath(entry, serveRootOf(running), basePathOf(running), packageDirOf(running));
+}
+
+/**
+ * Checks that served module/file URLs (Vite `/@fs/...`, `/src/...`, static files, the decision-30
+ * `/@codecaine-ai/design-system/<package path>` prefix) or absolute disk paths resolve inside
+ * `running.root` (or the run's own temp dir, where fixture servers build). Symlinks are resolved, so a
+ * linked package outside the root is reported in `outside`; a prefix file is checked through the real
+ * path of the package the app resolves, so a package link that leaves the root is reported there too. A path that maps to no file
  * is reported in `unresolved` (pass only module and file URLs: scripts, styles, fonts, images, not page
  * routes). ok means both lists are empty.
  */
@@ -1469,10 +1515,11 @@ export function servedFromRoot(running: RunningApp, filePaths: string[]): { ok: 
   const tmpReal = existsSync(running.tmp ?? "") ? realpathSync(running.tmp) : undefined;
   const serveRoot = serveRootOf(running);
   const basePath = basePathOf(running);
+  const packageDir = packageDirOf(running);
   const outside: string[] = [];
   const unresolved: string[] = [];
   for (const entry of filePaths) {
-    const disk = toDiskPath(entry, serveRoot, basePath);
+    const disk = toDiskPath(entry, serveRoot, basePath, packageDir);
     if (disk === null) continue;
     if (!existsSync(disk)) {
       unresolved.push(entry === disk ? disk : `${entry} -> ${disk}`);
