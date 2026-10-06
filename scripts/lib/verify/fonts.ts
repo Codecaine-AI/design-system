@@ -254,6 +254,11 @@ export function fontAssertions(readings: FontReading[], responses: ResponseLog, 
     const winner = rules[rules.length - 1]!;
     detail.rule = winner;
     if (winner.urls.length === 0) return fail(id, `the regular face's @font-face lists only local() sources: a local font, not the package's web font`, detail);
+    // A local() source listed before the url(): the browser renders an installed font when there is one,
+    // and a preload can still fetch the url(). The fetch then proves nothing about what renders.
+    if (winner.local && winner.src.indexOf("local(") < winner.src.indexOf("url(")) {
+      return fail(id, `the regular face's @font-face lists a local() source before its url(): an installed font wins over the package's web font`, detail);
+    }
     const got = winner.urls.filter((url) => fetched(url, responses));
     detail.fetched = got;
     if (got.length === 0) {

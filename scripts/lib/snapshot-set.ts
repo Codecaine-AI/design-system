@@ -451,6 +451,16 @@ function isOwnerPortRequest(entry: string): boolean {
   }
 }
 
+/**
+ * Requests the guard blocked as unexpected (a port the run did not start, a host off the machine),
+ * anywhere in the manifest: decision 22 treats every listener the run did not start as an owner service.
+ * Expected blocks (the profile's own unbound named ports) are not among them.
+ */
+function unexpectedRequests(manifest: SetManifest): string[] {
+  const lists = [manifest.blockedRequests, ...runsOf(manifest).map((run) => run.blockedRequests), ...manifest.shots.map((shot) => shot.blocked)];
+  return [...new Set(lists.flatMap(strings))];
+}
+
 /** Every blocked request the manifest records, anywhere, that went to an owner port. */
 function ownerPortRequests(manifest: SetManifest): string[] {
   const lists = [
@@ -509,8 +519,11 @@ function sideProblems(side: Side, keys: string[], diffOnly: string[] | null, jud
   if (manifest.only?.length && !diffOnly)
     problems.push(`${tag} is a partial set (captured with --only ${manifest.only.join(",")}); compare it with a matching --only`);
   problems.push(...registryRecordProblems(tag, manifest, judge, warnings), ...runProblems(tag, manifest));
+  const list = (items: string[]) => `${items.slice(0, 5).join(", ")}${items.length > 5 ? ` (+${items.length - 5})` : ""}`;
   const owner = ownerPortRequests(manifest);
-  if (owner.length) problems.push(`${tag} made request(s) to owner ports: ${owner.slice(0, 5).join(", ")}${owner.length > 5 ? ` (+${owner.length - 5})` : ""}`);
+  if (owner.length) problems.push(`${tag} made request(s) to owner ports: ${list(owner)}`);
+  const blocked = unexpectedRequests(manifest).filter((entry) => !owner.includes(entry));
+  if (blocked.length) problems.push(`${tag} made request(s) the guard blocked (a port the run did not start, or off the machine): ${list(blocked)}`);
   const provenances = new Map<string, string[]>();
   const unproven: string[] = [];
   const noContent: string[] = [];
@@ -657,8 +670,9 @@ export function diffSets(outDir: string, app: AppEntry, a: string, b: string, on
   }
 
   // Dark identical to light: expected before a migration (A), a failure after it (B) where the registry route says dark differs.
+  // The light shot comes from the registry, whatever --only selected.
   for (const shot of shots.filter((s) => s.theme === "dark")) {
-    const lightKey = keys.find((key) => key !== shot.key && routeOf(key).route === shot.route && routeOf(key).theme === "light");
+    const lightKey = [...expected.values()].find((other) => other.route.id === shot.route && other.theme === "light")?.key;
     if (!lightKey) continue;
     const darkDiffers = Boolean(expected.get(shot.key)?.route.darkDiffers);
     for (const side of [A, B]) {
@@ -672,6 +686,8 @@ export function diffSets(outDir: string, app: AppEntry, a: string, b: string, on
   for (const shot of shots) warnings.push(...shot.warnings.map((w) => `${shot.key}: ${w}`));
 
   const failures = shots.filter((shot) => shot.gating && (shot.status !== "identical" || shot.problems.length > 0));
+  // A gate that compared only non-gating shots (an --only of non-gating routes) proves nothing.
+  if (shots.length > 0 && !shots.some((shot) => shot.gating)) problems.push(`no gating shot compared (${diffOnly ? `--only ${diffOnly.join(",")} selects` : `${app.id} has`} only non-gating routes)`);
   return {
     app: app.id,
     a,

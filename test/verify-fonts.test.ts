@@ -35,10 +35,10 @@ const judge: FontSourceJudge = (url, sheet) =>
   url.includes("/@fs/pkg/") || (url.includes("/assets/") && sheet === PKG_CSS) ? { ok: true, how: "the package's" } : { ok: false, how: "not the package's", path: url };
 
 const face = (weight: string, status = "loaded"): FaceStatus => ({ weight, style: "normal", status });
-const rule = (weight: string, urls: string[], opts: { local?: boolean; sheet?: string | null } = {}) => ({
+const rule = (weight: string, urls: string[], opts: { local?: boolean; sheet?: string | null; src?: string } = {}) => ({
   weight,
   style: "normal",
-  src: "",
+  src: opts.src ?? "",
   urls,
   local: opts.local ?? false,
   sheet: opts.sheet ?? null,
@@ -82,6 +82,15 @@ describe("fontAssertions", () => {
     // A text probe's font-family computes to Mono: rendered, even with every face unloaded.
     const probed = reading(rules, [face("400", "unloaded")], { family: "IBM Plex Mono", probedBy: ["pre.code"], after: [face("400")] });
     expect(verdict(probed, ok([PKG_400]))).toEqual(["fail", expect.stringMatching(/IBM Plex Mono renders on this route \(font-family of pre\.code\)/)]);
+  });
+
+  test("a local() source listed before the package url() fails even when the url() was fetched (a preload)", () => {
+    const src = (first: string, second: string) => `${first}, ${second}`;
+    const local = 'local("Inter")';
+    const url = `url("${PKG_400}") format("woff2")`;
+    const r = (text: string) => reading([rule("400", [PKG_400], { local: true, src: text })], [face("400")]);
+    expect(verdict(r(src(local, url)), ok([PKG_400]))).toEqual(["fail", expect.stringMatching(/lists a local\(\) source before its url\(\): an installed font wins/)]);
+    expect(verdict(r(src(url, local)), ok([PKG_400]))[0]).toBe("pass");
   });
 
   test("a local() regular face does not pass because a 700 face was fetched", () => {

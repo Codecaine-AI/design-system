@@ -200,8 +200,12 @@ test.each<[string, Shot[], number, Record<string, Partial<RouteSpec>>]>([
 
 test("the registry route decides gating: non-gating passes a change; a manifest's gating: false never does", () => {
   const nonGating = { routes: { clock: { gating: false, reason: "live clock" } } };
-  expect(runDiff([{ key: "clock-light", png: png([[20, 15]]) }], nonGating).exitCode).toBe(0);
-  expect(runDiff([{ key: "clock-light", png: png(), stable: false }], nonGating).exitCode).toBe(0);
+  const home = { key: "home-light", png: png() };
+  expect(runDiff([home, { key: "clock-light", png: png([[20, 15]]) }], nonGating).exitCode).toBe(0);
+  expect(runDiff([home, { key: "clock-light", png: png(), stable: false }], nonGating).exitCode).toBe(0);
+  // Only non-gating shots compared (an --only of the clock route): nothing was gated, so --exact fails.
+  const onlyClock = runDiff([home, { key: "clock-light", png: png() }], { ...nonGating, args: ["--only", "clock"] });
+  expect([onlyClock.exitCode, onlyClock.report.problems]).toEqual([1, ["no gating shot compared (--only clock selects only non-gating routes)"]]);
   // Set B's manifest marks the shot non-gating; apps.json gates the route.
   const result = runDiff([{ key: "home-light", png: png([[20, 15]]), gating: false }]);
   expect([result.exitCode, result.report.shots[0]]).toEqual([1, expect.objectContaining({ status: "changed", gating: true })]);
@@ -317,6 +321,9 @@ test("a dark shot identical to light fails in B when the registry route sets dar
   const strict = runDiff(same, { routes: { home: { darkDiffers: true } } });
   expect(strict.exitCode).toBe(1);
   expect(strict.report.shots.find((s: any) => s.key === "home-dark").problems).toEqual(["B (b): home-dark is byte-identical to home-light, but the route sets darkDiffers"]);
+  // --only the dark shot still compares it with its light shot (the registry names it).
+  const onlyDark = runDiff(same, { routes: { home: { darkDiffers: true } }, args: ["--only", "home-dark"] });
+  expect([onlyDark.exitCode, onlyDark.report.shots.map((s: any) => [s.key, s.problems])]).toEqual([1, [["home-dark", ["B (b): home-dark is byte-identical to home-light, but the route sets darkDiffers"]]]]);
   const loose = runDiff(same);
   expect(loose.exitCode).toBe(0);
   expect(loose.report.warnings).toEqual(["home-dark: A (a): home-dark is byte-identical to home-light", "home-dark: B (b): home-dark is byte-identical to home-light"]);
@@ -333,6 +340,12 @@ test.each<[string, Shot[], DiffOptions, string]>([
   ["an unsandboxed run", shot(), runWith({ unsandboxed: true }), "had no OS sandbox"],
   ["a shot's request to an owner port", shot({ blocked: ["GET http://127.0.0.1:4820/api"] }), {}, "B (b) made request(s) to owner ports: GET http://127.0.0.1:4820/api"],
   ["a run's expected-blocked request to an owner port", shot(), runWith({ expectedBlocked: ["WS ws://localhost:4840/kernel"] }), "made request(s) to owner ports: WS ws://localhost:4840/kernel"],
+  [
+    "a request the guard blocked to a port the run did not start (decision 22)",
+    shot(),
+    runWith({ blockedRequests: ["GET http://127.0.0.1:46999/api"] }),
+    "B (b) made request(s) the guard blocked (a port the run did not start, or off the machine): GET http://127.0.0.1:46999/api",
+  ],
   ["a manifest with no run (an older snapshot)", shot(), { setB: { manifest: { runs: undefined } } }, "B (b) records no capture run (an older snapshot); capture again"],
   ["a manifest with no registry (an older snapshot)", shot(), { setB: { manifest: { registry: undefined } } }, "B (b) records no registry (an older snapshot); capture again"],
   [
