@@ -149,14 +149,60 @@ function colorOfClass(value: string, palette: boolean, mod?: string): Rgba | nul
   return { ...c, a: c.a * modAlpha(mod) };
 }
 
-export function pickClass(data: TokenData, cls: string, ctx: Context, opts: { appId: string }): Pick & { root?: string } {
-  const pick = pickClassBody(data, cls, ctx, opts);
+export interface ClassOptions {
+  appId: string;
+  /** Root-relative path of the file (token guards). */
+  file?: string;
+  /** The app's Tailwind (registry stack.tailwind): v3 apps get only utilities their preset generates. */
+  tailwind?: "v4" | "v3" | "none";
+}
+
+export function pickClass(data: TokenData, cls: string, ctx: Context, opts: ClassOptions): Pick & { root?: string } {
+  let pick = pickClassBody(data, cls, ctx, opts);
+  if (opts.tailwind === "v3" && pick.utility && pick.root && !v3Generates(data, pick.root, pick.utility, false) && !v3Generates(data, pick.root, pick.utility, true)) {
+    pick = { ...none(`Tailwind v3: the preset has no ${pick.utility} (${pick.why}); pick a preset step or keep it with an allowlist entry`), root: pick.root };
+  }
   const parsed = parseClass(cls);
   if (pick.utility && parsed) pick.utility = `${parsed.important.lead ? "!" : ""}${pick.utility}${parsed.important.trail ? "!" : ""}`;
   return pick;
 }
 
-function pickClassBody(data: TokenData, cls: string, ctx: Context, opts: { appId: string }): Pick & { root?: string } {
+/** Theme sections a Tailwind v3 utility root reads (Tailwind 3.4 core plugins), for color and for other values. */
+function v3Sections(root: string, color: boolean): string[] {
+  const r = root.replace(/^-/, "");
+  if (color) {
+    if (r === "bg") return ["colors", "backgroundColor"];
+    if (r === "text") return ["colors", "textColor"];
+    if (/^border(?:-[xytrblse])?$/.test(r) || r === "divide") return ["colors", "borderColor"];
+    if (r === "ring") return ["colors", "ringColor"];
+    if (r === "ring-offset") return ["colors", "ringOffsetColor"];
+    if (r === "from" || r === "via" || r === "to") return ["colors", "gradientColorStops"];
+    return ["colors"];
+  }
+  if (r === "text") return ["fontSize"];
+  if (RADIUS_ROOT.test(r)) return ["borderRadius"];
+  if (r === "font") return ["fontFamily", "fontWeight"];
+  if (r === "leading") return ["lineHeight"];
+  if (r === "tracking") return ["letterSpacing"];
+  if (r === "z") return ["zIndex"];
+  if (r === "ease") return ["transitionTimingFunction"];
+  if (r === "aspect") return ["aspectRatio"];
+  if (SPACING_ROOTS.test(r)) return ["spacing"];
+  return [];
+}
+
+/** Whether Tailwind 3.4 with the design-system preset generates `utility` (`min-h-29`, `aspect-16/10`: no). */
+function v3Generates(data: TokenData, root: string, utility: string, color: boolean): boolean {
+  const u = utility.replace(/^!|!$/g, "").replace(/^-/, "");
+  const r = root.replace(/^-/, "");
+  let key = u === r ? "DEFAULT" : u.startsWith(`${r}-`) ? u.slice(r.length + 1) : null;
+  if (key === null) return false;
+  if (key.startsWith("[")) return true;
+  if (color) key = key.replace(/\/(?:\d{1,3}|\[[^\]]+\])$/, "");
+  return v3Sections(r, color).some((s) => data.v3[s]?.has(key!));
+}
+
+function pickClassBody(data: TokenData, cls: string, ctx: Context, opts: ClassOptions): Pick & { root?: string } {
   const parsed = parseClass(cls);
   if (!parsed) return none(`class ${cls}: not parsed`);
   const { root, value, mod, palette, neg } = parsed;
@@ -165,12 +211,18 @@ function pickClassBody(data: TokenData, cls: string, ctx: Context, opts: { appId
   if (COLOR_ROOTS.test(root)) {
     const color = colorOfClass(value, palette, mod);
     if (color) {
-      const pick = pickColor(data, color, { ...ctx, property: root }, { appId: opts.appId });
+      const pick = pickColor(data, color, { ...ctx, property: root }, { appId: opts.appId, file: opts.file });
       if (!pick.path) return { ...pick, root };
-      let utility = colorUtility(data, root, pick.path) ?? `${root}-(${cssVarName(pick.path)})`;
+      const named = colorUtility(data, root, pick.path);
+      const alpha = pick.keepAlpha !== undefined ? (mod ?? `/${Math.round(pick.keepAlpha * 100)}`) : "";
       let why = pick.why;
-      if (pick.keepAlpha !== undefined) utility += mod ?? `/${Math.round(pick.keepAlpha * 100)}`;
-      else if (mod) why += `; drops ${mod}`;
+      if (pick.keepAlpha === undefined && mod) why += `; drops ${mod}`;
+      if (opts.tailwind === "v3" && (!named || !v3Generates(data, root, named, true))) {
+        // v3 takes an arbitrary value; it cannot put an opacity modifier on var(), so the mix is written out.
+        const value = alpha ? `color-mix(in_srgb,${cssVarRef(pick.path)}_${Math.round(pick.keepAlpha! * 1000) / 10}%,transparent)` : cssVarRef(pick.path);
+        return { ...pick, why, utility: `${root}-[${value}]`, root };
+      }
+      const utility = (named ?? `${root}-(${cssVarName(pick.path)})`) + alpha;
       return { ...pick, why, utility, root };
     }
   }
@@ -204,6 +256,10 @@ function pickClassBody(data: TokenData, cls: string, ctx: Context, opts: { appId
     return { path: "space.1", method: "role", deltaE: null, why: `${px}px on the spacing scale (${step} × space.1)`, utility: `${neg ? "-" : ""}${root}-${step}`, root };
   }
   if (root === "aspect" && /^\d+\s*\/\s*\d+$/.test(value)) {
+    const [w, h] = value.split("/").map((x) => Number(x.trim()));
+    const named = w === h ? "aspect-square" : w * 9 === h * 16 ? "aspect-video" : null;
+    if (named) return { path: null, method: "role", deltaE: null, why: `ratio ${value}: ${named}`, utility: named, root };
+    if (opts.tailwind === "v3") return { ...none(`ratio ${value}: Tailwind v3 has only aspect-square and aspect-video; keep the arbitrary value`), root };
     return { path: null, method: "role", deltaE: null, why: "ratio: Tailwind v4 takes it without brackets", utility: `aspect-${value.replace(/\s+/g, "")}`, root };
   }
   if (root === "z") {

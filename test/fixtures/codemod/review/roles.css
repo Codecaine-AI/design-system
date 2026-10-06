@@ -1,0 +1,55 @@
+/* Codemod review fixture: roles only structure gives, guards in every family, charts, theme marks. */
+.card {
+  box-shadow: 0 0 0 1px #e6e5e3;
+}
+.field:focus-visible {
+  outline: 2px solid #0a7ae0;
+}
+.field::placeholder {
+  color: #9b9a97;
+}
+.more-link {
+  color: #245a81;
+}
+.hint {
+  color: #666562;
+}
+.remove-btn:hover {
+  background: #f2f2f1;
+}
+.ok-row {
+  background: #f8f8f7;
+}
+.danger-action:hover {
+  background: rgb(159 29 29 / 8%);
+}
+.preview {
+  background-image: linear-gradient(#dcd8d1 1px, transparent 1px);
+}
+.chart .series-1 {
+  fill: #088bd9;
+}
+.chart .series-2 {
+  stroke: #dd6d07;
+}
+.legend-label {
+  color: #666562;
+}
+.chart-axis {
+  stroke: #d0cfcc;
+}
+html:not([data-theme="dark"]) .note {
+  color: #37352f;
+}
+[data-code-panels="dark"] .viewer {
+  background: #151b23;
+}
+:root {
+  --input-bg: #f8f8f7;
+}
+.swatch.white {
+  background: white;
+}
+.pad {
+  padding: 13px;
+}

@@ -22,11 +22,49 @@ export interface Context {
   definition: string | null;
   /** The literal sits in a data object (an object with id/type keys), not a style. */
   data: boolean;
-  /** Every word that can hint a role: selector chain, role words of classes, tag attributes, keys, names. */
+  /** Every word that can hint a role: selector chain, role words of classes, tag attribute names, keys, names. Never comments, attribute values or prose. */
   hints: string;
+  /** The literal sits in CSS (a stylesheet, a <style> body, a CSS template): `selector` is a real selector chain. */
+  inCss: boolean;
+  /** JSX/HTML attribute the literal is the whole value of (`fill` in `fill="#fff"`), or null. */
+  attribute: string | null;
 }
 
-const DARK = /data-theme\s*=\s*["']?dark|data-mode\s*=\s*["']?dark|(?:^|[\s.,(:])\.?dark(?:-mode|-theme)?(?![\w-])|\.theme-dark|prefers-color-scheme\s*:\s*dark|(?:^|[^\w])dark\s*[:=]\s*[{(]|\bdark(?:theme|palette|colors?)\b|\bnight\b/i;
+/** Selector or key text that puts a region in dark: `[data-theme="dark"]`, any `data-*="dark"`, `.dark`, the media query, a `dark:` JS key. */
+const DARK_MARKS = /data-[\w-]+\s*[~|^$*]?=\s*["']?dark(?![\w-])|(?:^|[\s.,(:>+~])\.?dark(?:-mode|-theme)?(?![\w-])|\.theme-dark(?![\w-])|prefers-color-scheme\s*:\s*dark|(?:^|[^\w])dark\s*[:=]\s*[{(]|\bdark(?:theme|palette|colors?)\b|\bnight\b/gi;
+/** ... and back to light: `[data-theme="light"]`, any `data-*="light"`, `.light`, `.theme-light`, the media query. */
+const LIGHT_MARKS = /data-[\w-]+\s*[~|^$*]?=\s*["']?light(?![\w-])|(?:^|[\s,(:>+~])\.light(?:-mode|-theme)?(?![\w-])|\.theme-light(?![\w-])|prefers-color-scheme\s*:\s*light/gi;
+
+function marksIn(text: string, at: number | null): Array<{ at: number; theme: Theme }> {
+  const out: Array<{ at: number; theme: Theme }> = [];
+  for (const m of text.matchAll(DARK_MARKS)) out.push({ at: at ?? m.index!, theme: "dark" });
+  for (const m of text.matchAll(LIGHT_MARKS)) out.push({ at: at ?? m.index!, theme: "light" });
+  return out;
+}
+
+/**
+ * The theme a selector chain (outermost first) puts its declarations in, or null when it names
+ * none. The innermost mark wins, so `[data-theme="light"]` inside a dark-first app is light, and a
+ * mark inside `:not(…)` counts for the other theme: `html:not([data-theme="dark"]) .note` is light.
+ */
+export function themeOf(chain: string): Theme | null {
+  let text = chain;
+  const marks: Array<{ at: number; theme: Theme }> = [];
+  for (let i = text.search(/:not\(/i); i !== -1; i = text.search(/:not\(/i)) {
+    let depth = 0;
+    let k = i + 4;
+    for (; k < text.length; k++) {
+      if (text[k] === "(") depth++;
+      else if (text[k] === ")" && --depth === 0) break;
+    }
+    const inner = text.slice(i + 5, k);
+    for (const m of marksIn(inner, i)) marks.push({ at: m.at, theme: m.theme === "dark" ? "light" : "dark" });
+    text = text.slice(0, i) + " ".repeat(Math.min(k + 1, text.length) - i) + text.slice(k + 1);
+  }
+  marks.push(...marksIn(text, null));
+  if (!marks.length) return null;
+  return marks.sort((a, b) => a.at - b.at)[marks.length - 1].theme;
+}
 const ELEMENTS = /(?:^|[\s>+~,(])(button|input|textarea|select|option|a|code|pre|kbd|samp|svg|path|rect|circle|text|table|th|td|tr|nav|aside|header|footer|dialog|body|html|label|li|ul|summary|details|mark)(?![\w-])/;
 const STYLE_WORDS = new Set(["style", "styles", "sx", "css", "theme", "themes", "palette", "color", "colors", "token", "tokens", "vars", "chrome", "skin"]);
 const DATA_KEYS = /(?:^|[\s,{])(?:id|type|parentId|geometry)\s*:/;
@@ -56,12 +94,47 @@ export function classHints(classes: string): string {
   return out.join(" ");
 }
 
-/** A JSX/HTML tag's text with its class string reduced to role words. */
-function tagHints(text: string): string {
-  return text
-    .replace(/\b(?:className|class)\s*=\s*(?:\{\s*)?(["'`])([^"'`]*)(?:\1|$)/g, (_m, _q, cls: string) => ` ${classHints(cls)} `)
-    .replace(/\s+/g, " ")
-    .slice(-300);
+/** Attributes whose value is a state or variant keyword, not prose: their value is a hint too. */
+const ENUM_ATTRS = /^(?:variant|tone|intent|severity|status|data-(?:state|status|variant|tone|active|selected))$/;
+
+/**
+ * Role words of a JSX/HTML tag: the tag name, the role words of its class string, and attribute
+ * names (`aria-selected`). Attribute values (`title="Delete"`) and text are prose, not roles; only
+ * state and variant attributes keep a one-word value (`variant="destructive"`).
+ */
+function tagHints(name: string, text: string): string {
+  const out: string[] = [name];
+  const attrs = text.slice(1 + name.length);
+  const ATTR = /([A-Za-z_:@][-\w:.]*)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|`([^`]*)`|\{|[^\s>]+))?/g;
+  let m: RegExpExecArray | null;
+  let depth = 0;
+  for (let i = 0; i < attrs.length; i++) {
+    const ch = attrs[i];
+    if (ch === "{") {
+      depth++;
+      continue;
+    }
+    if (ch === "}") {
+      depth = Math.max(0, depth - 1);
+      continue;
+    }
+    if (depth > 0 || !/[A-Za-z_:@]/.test(ch) || (i > 0 && /[-\w:.]/.test(attrs[i - 1]))) continue;
+    ATTR.lastIndex = i;
+    m = ATTR.exec(attrs);
+    if (!m || m.index !== i) continue;
+    const attr = m[1];
+    const value = m[2] ?? m[3] ?? m[4];
+    if (/^(?:className|class)$/.test(attr)) {
+      const cls = value ?? attrs.slice(i).match(/^[\w-]+\s*=\s*\{\s*(["'`])([^"'`]*)/)?.[2] ?? "";
+      out.push(classHints(cls));
+    } else {
+      out.push(attr);
+      if (value !== undefined && ENUM_ATTRS.test(attr) && /^[a-z][\w-]*$/i.test(value.trim())) out.push(value.trim());
+    }
+    if (m[0].endsWith("{")) depth++;
+    i = m.index + m[0].length - 1;
+  }
+  return out.join(" ").replace(/\s+/g, " ").slice(-300);
 }
 
 /** Text from the innermost enclosing `;`, `{` or `}` up to `index` (one CSS declaration). */
@@ -148,8 +221,9 @@ export function readContext(f: SourceFile, span: Span, opts: { defaultTheme: The
   let component: string | null = null;
   let definition: string | null = null;
   const variants: string[] = [];
+  let attribute: string | null = null;
   const hintParts: string[] = [];
-  /** Text that may name a dark region: CSS selector chains, JS keys, a Tailwind `dark:` variant. */
+  /** Text that may name a theme region: CSS selector chains, JS keys, a Tailwind `dark:` variant. */
   const darkParts: string[] = [];
 
   if (span.slot === "class") {
@@ -186,7 +260,8 @@ export function readContext(f: SourceFile, span: Span, opts: { defaultTheme: The
     const tag = enclosingTag(f, span.start);
     if (tag) {
       component = tag.name;
-      hintParts.push(tagHints(tag.text));
+      hintParts.push(tagHints(tag.name, tag.text));
+      if (span.slot !== "class") attribute = tag.text.match(/(?:^|\s)([A-Za-z_:@][-\w:.]*)\s*=\s*$/)?.[1] ?? null;
     }
     // Enclosing object keys and variable names (`palette / dark / bg`); raw code around them is noise.
     const keys = (f.kind === "js" ? enclosingPreludes(f, span.start) : [])
@@ -196,14 +271,21 @@ export function readContext(f: SourceFile, span: Span, opts: { defaultTheme: The
       .reverse();
     if (span.slot !== "class") selector = keys.length ? keys.join(" / ") : null;
     hintParts.push(...keys);
-    const darkKey = [...keys, property ?? ""].some((k) => nameWords(k).some((w) => w === "dark" || w === "night"));
-    if (span.slot !== "class" && darkKey) darkParts.push(".dark");
+    if (span.slot !== "class") {
+      // Keys outermost first, then the property: the innermost theme key wins.
+      for (const k of [...keys, property ?? ""]) {
+        const w = nameWords(k);
+        if (w.some((x) => x === "dark" || x === "night")) darkParts.push(".dark");
+        else if (k === "light" || (w[0] === "light" && w.length === 2 && /^(?:theme|mode|palette|colors?|scheme)$/.test(w[1]))) darkParts.push(".light");
+      }
+    }
   }
 
   const hints = [...hintParts, property ?? "", definition ?? ""].join(" ");
   const data = isDataObject(f, span, property);
-  const dark = DARK.test(darkParts.join(" ")) || /(?:^|[/._-])dark(?:[/._-]|$)/i.test(f.rel);
-  return { property, selector, component, theme: dark ? "dark" : opts.defaultTheme, variants, definition, data, hints };
+  const marked = themeOf(darkParts.join(" "));
+  const theme = marked ?? (/(?:^|[/._-])dark(?:[/._-]|$)/i.test(f.rel) ? "dark" : opts.defaultTheme);
+  return { property, selector, component, theme, variants, definition, data, hints, inCss: css, attribute };
 }
 
 /** A JS object that reads as data: its own keys include id/type/geometry and nothing around it says style. */

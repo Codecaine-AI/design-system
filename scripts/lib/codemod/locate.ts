@@ -30,6 +30,8 @@ const COLOR_FN =
 /** Canvas 2D assignments and gradient stops: `ctx.fillStyle = "`, `ctx.font = "`, `addColorStop(0, "`. */
 const CANVAS = /(?:\.(?:fillStyle|strokeStyle|shadowColor|font)\s*=|addColorStop\([^,]*,)\s*["'`]?[^"'`]*$/;
 
+const COLOR_CATEGORY = new Set(["hex", "rgb", "hsl", "oklch", "otherColorFn", "namedColor"]);
+
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
 
 function normalizeHex(h: string): string {
@@ -137,18 +139,50 @@ function firstFamily(value: string): string {
   return first.toLowerCase().replace(/\s+/g, " ");
 }
 
-/** Every candidate span for a hit on its line, in source order. */
-function candidates(f: SourceFile, hit: Hit): Span[] {
+/** Color properties whose values scan-literals reads named colors from (its PROP_KIND color list). */
+const COLOR_PROPS =
+  /^(?:color|background(?:-color)?|backgroundColor|border(?:-(?:top|right|bottom|left|block|inline))?(?:-color)?|border(?:Top|Right|Bottom|Left|Block|Inline)?(?:Color)?|outline(?:-color)?|outlineColor|fill|stroke|caret-color|caretColor|accent-color|accentColor|text-decoration-color|textDecorationColor|stop-color|stopColor|box-shadow|boxShadow|text-shadow|textShadow|column-rule-color|shadowColor|flood-color|floodColor|-unity-background-image-tint-color|-unity-text-outline-color)$/;
+/** Color attributes scan-literals reads named colors from. */
+const COLOR_ATTR_RE = /(?<![\w$.-])(fill|stroke|stop-color|stopColor|bgcolor)\s*=\s*(?:"([^"]*)"|'([^']*)'|\{\s*(["'`])([^"'`]*)\4\s*\})/g;
+
+/**
+ * Character ranges scan-literals never reads colors from on this line: the Tailwind arbitrary
+ * classes it reported (it blanks every one before matching colors, so `bg-[#fff]` is a class hit,
+ * not a hex hit).
+ */
+function tailwindMasks(f: SourceFile, lineHits: readonly Hit[]): Array<[number, number]> {
+  const out: Array<[number, number]> = [];
+  const seen = new Set<string>();
+  for (const h of lineHits) {
+    if (h.category !== "twArbitrary" && h.category !== "twArbitraryVar") continue;
+    if (seen.has(h.value)) continue;
+    seen.add(h.value);
+    for (const s of candidates(f, h, [])) out.push([s.start, s.end]);
+  }
+  return out;
+}
+
+const masked = (masks: Array<[number, number]>, a: number, b: number) => masks.some(([x, y]) => a < y && b > x);
+
+/** Every candidate span for a hit on its line, in source order. `lineHits` are all hits on the line. */
+function candidates(f: SourceFile, hit: Hit, lineHits: readonly Hit[]): Span[] {
   const [ls, le] = lineRange(f, hit.line);
   const lineText = f.text.slice(ls, le);
   const spans: Span[] = [];
   const add = (start: number, end: number) => spans.push({ start, end, slot: "text" });
+  const cssFile = f.kind === "css" || f.kind === "scss";
+  const masks = COLOR_CATEGORY.has(hit.category) ? tailwindMasks(f, lineHits) : [];
   switch (hit.category) {
     case "hex":
       for (const m of lineText.matchAll(HEX)) {
         const i = ls + m.index!;
+        const j = i + m[0].length;
         if (f.inStr && !f.inStr[i + 1]) continue;
-        if (normalizeHex(m[0]) === hit.value) add(i, i + m[0].length);
+        if (masked(masks, i, j)) continue;
+        // The places scan-literals skips: an ID selector in CSS, a link target or url() elsewhere.
+        if (cssFile && isSelector(f.text, j)) continue;
+        if (!cssFile && (/(?:href|to|id|for|xlink:href)\s*=\s*\{?\s*["'`]$/.test(f.text.slice(Math.max(0, i - 24), i)) || /url\(\s*['"]?$/.test(f.text.slice(Math.max(0, i - 24), i)))) continue;
+        if (normalizeHex(m[0]) === hit.value) add(i, j);
       }
       break;
     case "rgb":
@@ -156,14 +190,40 @@ function candidates(f: SourceFile, hit: Hit): Span[] {
     case "oklch":
     case "otherColorFn":
       for (const m of lineText.matchAll(COLOR_FN)) {
-        if (m[0].replace(/\s+/g, " ").toLowerCase() === hit.value) add(ls + m.index!, ls + m.index! + m[0].length);
+        const i = ls + m.index!;
+        if (masked(masks, i, i + m[0].length)) continue;
+        if (m[0].replace(/\s+/g, " ").toLowerCase() === hit.value) add(i, i + m[0].length);
       }
       break;
-    case "namedColor":
-      for (const m of lineText.matchAll(new RegExp(`(?<![\\w-])${esc(hit.value)}(?![\\w-])`, "gi"))) {
-        add(ls + m.index!, ls + m.index! + m[0].length);
+    case "namedColor": {
+      // Only where scan-literals reads named colors: color declaration values and color
+      // attributes. Never a selector (`.swatch.white`), a class, or another key's value (`label: "black"`).
+      const word = new RegExp(`(?<![\\w-])${esc(hit.value)}(?![\\w-])`, "gi");
+      const inValue = (a: number, b: number, quotedOnly: boolean) => {
+        const value = f.text.slice(a, b);
+        for (const m of value.matchAll(word)) {
+          const i = a + m.index!;
+          if (masked(masks, i, i + m[0].length)) continue;
+          if (quotedOnly && !(f.inStr && f.inStr[i] === 1)) continue;
+          if (/url\([^)]*$/i.test(value.slice(0, m.index!))) continue;
+          add(i, i + m[0].length);
+        }
+      };
+      for (const d of declsOnLine(f, hit.line)) {
+        if (!COLOR_PROPS.test(d.name) || d.vkind === "attr" || d.vkind === "attrBrace" || d.vkind === "canvas") continue;
+        inValue(d.start, d.end, d.vkind === "expr");
       }
+      if (f.kind === "js" || f.kind === "html") {
+        for (const m of lineText.matchAll(COLOR_ATTR_RE)) {
+          const value = m[2] ?? m[3] ?? m[5] ?? "";
+          const offset = m[0].lastIndexOf(value);
+          const a = ls + m.index! + offset;
+          if (value.trim().toLowerCase() === hit.value) inValue(a, a + value.length, false);
+        }
+      }
+      spans.sort((a, b) => a.start - b.start);
       break;
+    }
     case "twArbitrary":
     case "twArbitraryVar":
     case "twPalette": {
@@ -225,12 +285,13 @@ function matchDecl(f: SourceFile, hit: Hit, d: Decl): Span | null {
 
 /**
  * The span of the `occurrence`-th match of a hit on its line (hits with the same line, category
- * and value are numbered in source order), with the slot refined: a whole JS string, canvas 2D, or
+ * and value are numbered in source order; `lineHits` are every hit on the line, so colors inside
+ * reported Tailwind classes are skipped the way scan-literals skips them), with the slot refined: a whole JS string, canvas 2D, or
  * a Tailwind opacity modifier folded into the class. Null when the literal is not on the line
  * (a value split across lines, a channel triplet, a numeric palette tuple).
  */
-export function locate(f: SourceFile, hit: Hit, occurrence: number): Span | null {
-  const span = candidates(f, hit)[occurrence];
+export function locate(f: SourceFile, hit: Hit, occurrence: number, lineHits: readonly Hit[] = []): Span | null {
+  const span = candidates(f, hit, lineHits)[occurrence];
   if (!span) return null;
   if (span.slot === "class") {
     // bg-[#fff]/50: the modifier belongs to the literal (scan-literals leaves it out of arbitrary values).

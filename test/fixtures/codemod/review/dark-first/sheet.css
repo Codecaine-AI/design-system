@@ -1,0 +1,7 @@
+/* Codemod review fixture, proposed with a dark default theme: a light region and a dark one. */
+[data-theme="light"] .sheet {
+  background: #f8f8f7;
+}
+.sheet {
+  background: #151b23;
+}

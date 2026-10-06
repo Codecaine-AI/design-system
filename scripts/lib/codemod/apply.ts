@@ -1,12 +1,13 @@
 /**
  * Applies the approved rows of a mapping table. A row changes the source only when its `approve`
- * is "yes", it has a replacement, and its line still holds the literal (at the recorded column, or
- * exactly once on the line). Everything else is reported, never guessed.
+ * is "yes", it has a replacement, its file sits inside the root, its line is byte-for-byte the line
+ * propose read (by hash), and the literal stands at the recorded column as a whole token.
+ * Everything else is reported, never guessed: a row whose line changed is stale, not searched for.
  */
 
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
-import type { Row, Table } from "./table.ts";
+import { readFileSync, writeFileSync } from "node:fs";
+import { targetIn } from "./paths.ts";
+import { lineSha, type Row, type Table } from "./table.ts";
 
 export interface ApplyResult {
   applied: Row[];
@@ -20,7 +21,11 @@ export interface ApplyResult {
 
 export const isApproved = (r: Row) => String(r.approve ?? "").trim().toLowerCase() === "yes";
 
-export function applyTable(table: Table, root: string, opts: { dryRun?: boolean } = {}): ApplyResult {
+/**
+ * `rootReal` must already be vetted (see `applyRoot` in paths.ts): every row's file is resolved
+ * inside it, symlinks included, and a row pointing elsewhere is skipped.
+ */
+export function applyTable(table: Table, rootReal: string, opts: { dryRun?: boolean } = {}): ApplyResult {
   const result: ApplyResult = { applied: [], skipped: [], unapproved: 0, files: [] };
   const byFile = new Map<string, Row[]>();
   for (const row of table.rows) {
@@ -38,22 +43,17 @@ export function applyTable(table: Table, root: string, opts: { dryRun?: boolean 
   }
 
   for (const [file, rows] of byFile) {
-    const abs = resolve(root, file);
-    if (!existsSync(abs)) {
-      for (const row of rows) result.skipped.push({ row, reason: `file not found under ${root}` });
+    const target = targetIn(rootReal, file);
+    if ("refused" in target) {
+      for (const row of rows) result.skipped.push({ row, reason: `refused: ${target.refused}` });
       continue;
     }
-    const lines = readFileSync(abs, "utf8").split("\n");
+    const lines = readFileSync(target.path, "utf8").split("\n");
     const edits = new Map<number, Array<{ row: Row; pos: number }>>();
     for (const row of rows) {
-      const text = lines[row.line - 1];
-      if (text === undefined) {
-        result.skipped.push({ row, reason: `stale: line ${row.line} no longer exists` });
-        continue;
-      }
-      const pos = findLiteral(text, row);
+      const pos = findLiteral(lines, row);
       if (typeof pos === "string") {
-        result.skipped.push({ row, reason: `stale: ${pos}` });
+        result.skipped.push({ row, reason: pos });
         continue;
       }
       const list = edits.get(row.line) ?? [];
@@ -82,7 +82,7 @@ export function applyTable(table: Table, root: string, opts: { dryRun?: boolean 
     }
     if (changed) {
       result.files.push(file);
-      if (!opts.dryRun) writeFileSync(abs, lines.join("\n"));
+      if (!opts.dryRun) writeFileSync(target.path, lines.join("\n"));
     }
   }
   result.applied.sort((a, b) => a.id - b.id);
@@ -90,11 +90,34 @@ export function applyTable(table: Table, root: string, opts: { dryRun?: boolean 
   return result;
 }
 
-/** The literal's offset on the line, or why it cannot be trusted. */
-function findLiteral(text: string, row: Row): number | string {
-  if (row.column && text.slice(row.column - 1, row.column - 1 + row.literal.length) === row.literal) return row.column - 1;
-  const first = text.indexOf(row.literal);
-  if (first === -1) return `line ${row.line} no longer holds ${JSON.stringify(row.literal)}`;
-  if (text.indexOf(row.literal, first + 1) !== -1) return `line ${row.line} moved and holds ${JSON.stringify(row.literal)} more than once`;
-  return first;
+const COLOR_CATEGORIES = new Set(["hex", "rgb", "hsl", "oklch", "otherColorFn", "namedColor"]);
+const CLASS_CATEGORIES = new Set(["twArbitrary", "twArbitraryVar", "twPalette"]);
+
+/**
+ * The literal's offset on its line, or why the row is stale. The line must hash to what propose
+ * read, the literal must stand at the recorded column, and the characters around it must end the
+ * token: `#fff` is not the start of `#fff000`, `13` is not the start of `135`.
+ */
+function findLiteral(lines: string[], row: Row): number | string {
+  if (!row.lineSha) return "stale: the row has no line hash (a table from an older codemod): run propose again";
+  if (!row.column) return "stale: the row has no column";
+  const text = lines[row.line - 1];
+  if (text === undefined) return `stale: line ${row.line} no longer exists`;
+  if (lineSha(text) !== row.lineSha) return `stale: line ${row.line} changed since propose`;
+  const pos = row.column - 1;
+  if (text.slice(pos, pos + row.literal.length) !== row.literal) return `stale: line ${row.line} has no ${JSON.stringify(row.literal)} at column ${row.column}`;
+  const before = text[pos - 1] ?? "";
+  const after = text[pos + row.literal.length] ?? "";
+  if (!boundaryOk(row, before, after)) return `stale: ${JSON.stringify(row.literal)} at column ${row.column} is part of a longer token`;
+  return pos;
+}
+
+function boundaryOk(row: Row, before: string, after: string): boolean {
+  const lit = row.literal;
+  // A quoted string or a {…} attribute carries its own delimiters.
+  if (/^["'`{]/.test(lit)) return true;
+  if (CLASS_CATEGORIES.has(row.category)) return !/[\w\-/[\].$#@]/.test(before) && !/[\w\-/[]/.test(after);
+  if (COLOR_CATEGORIES.has(row.category)) return !/[\w$#-]/.test(before) && !/[\w-]/.test(after);
+  // Sizes, radii, spacing, families: no digit, dot or name character runs on.
+  return !/[\w.$#-]/.test(before) && !/[\w.%-]/.test(after);
 }

@@ -1,10 +1,12 @@
 /**
  * The design-system data the codemod proposes from: theme colors (both themes, parsed), base
- * values (font sizes, families, radii, spacing) and the Tailwind v4 utility names, all read from
- * the built `dist/` of the design-system checkout the script runs from.
+ * values (font sizes, families, radii, spacing), the Tailwind v4 utility names and the Tailwind v3
+ * preset's theme keys, all read from the built `dist/` of the design-system checkout the script
+ * runs from.
  */
 
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { join } from "node:path";
 import { DESIGN_SYSTEM_ROOT } from "../registry.ts";
 import { parseColor, type Rgba } from "./color.ts";
@@ -25,6 +27,29 @@ export interface TokenData {
   page: Record<Theme, Rgba>;
   /** Tailwind v4 theme keys from dist/tailwind/theme.css: `--background-color-page` -> token path. */
   tailwind: Map<string, string>;
+  /** Tailwind v3: the keys each theme section has under the preset (dist/tailwind/preset-v3.cjs) and Tailwind 3.4's defaults it keeps. */
+  v3: Record<string, Set<string>>;
+}
+
+/** Tailwind 3.4 defaults the preset leaves in place (it sets no aspectRatio, and only extends zIndex). */
+const V3_DEFAULTS: Record<string, string[]> = {
+  aspectRatio: ["auto", "square", "video"],
+  zIndex: ["0", "10", "20", "30", "40", "50", "auto"],
+};
+
+/** Theme section -> keys, with `extend` merged in; color sections also take every `colors` key. */
+function loadV3(dsRoot: string): Record<string, Set<string>> {
+  const preset = createRequire(import.meta.url)(join(dsRoot, "dist/tailwind/preset-v3.cjs")) as { theme: Record<string, unknown> & { extend?: Record<string, unknown> } };
+  const out: Record<string, Set<string>> = {};
+  const add = (section: string, obj: unknown) => {
+    if (!obj || typeof obj !== "object") return;
+    const set = (out[section] ??= new Set());
+    for (const k of Object.keys(obj)) set.add(k);
+  };
+  for (const [section, obj] of Object.entries(preset.theme)) if (section !== "extend") add(section, obj);
+  for (const [section, obj] of Object.entries(preset.theme.extend ?? {})) add(section, obj);
+  for (const [section, keys] of Object.entries(V3_DEFAULTS)) for (const k of keys) (out[section] ??= new Set()).add(k);
+  return out;
 }
 
 /** CSS custom property of a token: `color.surface.page` -> `--ds-color-surface-page`. */
@@ -57,7 +82,7 @@ export function loadTokens(dsRoot: string = DESIGN_SYSTEM_ROOT): TokenData {
     if (path) tailwind.set(m[1], path);
   }
   const pageOf = (t: Theme) => colors.get("color.surface.page")![t];
-  return { colors, base, page: { light: pageOf("light"), dark: pageOf("dark") }, tailwind };
+  return { colors, base, page: { light: pageOf("light"), dark: pageOf("dark") }, tailwind, v3: loadV3(dsRoot) };
 }
 
 /** Utility prefixes that color something, and the theme namespace each one also reads. */
