@@ -11,7 +11,7 @@
  */
 
 import { chroma, composite, deltaE, rgbToOklab, toHex, type Rgba } from "./color.ts";
-import { selectorBranches, type Context, type Surface } from "./context.ts";
+import { branches, rootPrelude, selectorBranches, themeOf, type Context, type Surface } from "./context.ts";
 import type { Theme, TokenData } from "./tokens.ts";
 import { HOST_CONTRACT, type HostAlias, type HostRead } from "../host-contract.ts";
 
@@ -518,45 +518,56 @@ export interface Reader {
 /** The shadcn names of the published host contract (scripts/lib/host-contract.ts): `--muted` -> its alias. */
 const CONTRACT = new Map(
   HOST_CONTRACT.flatMap(({ aliases }) => aliases)
-    .filter((a): a is HostAlias & { reads: HostRead } => a.reads !== undefined)
+    .filter((a): a is HostAlias & { reads: HostRead[] } => a.reads !== undefined)
     .map((a) => [`--${a.name}`, a]),
 );
-/** States a reader paints in only on interaction: a token that rests on the surface does not fit them. */
-const INTERACTION = new Set(["hover", "active", "pressed", "focus"]);
+
+/** A definition at the document root or in a theme block (`:root`, `.dark`, `[data-theme="dark"]`, `@theme`), not a component's scoped variable. */
+function themeScope(ctx: Context): boolean {
+  if (!ctx.inCss || !ctx.chain.length) return false;
+  return ctx.chain.every((prelude) => /^\s*@/.test(prelude) || branches(prelude).every((b) => rootPrelude(b) || themeOf(b) !== null));
+}
+
+const article = (word: string) => (/^[aeiou]/i.test(word) ? "an" : "a");
 
 /**
- * An app's own definition of a shadcn host-contract name (`--muted: #eceae6`) takes the token the
- * published contract maps it to, before any ΔE pick: hosts that load host-contract.css get that
- * value, so the app's copy should match it. The reason says when the app's own readers use the
- * name otherwise than the contract's readers do (`--primary` read as a border, `--muted` read
- * only on :hover), so the reviewer checks the row instead of trusting the role.
+ * An app's own root or theme definition of a shadcn host-contract name (`:root { --muted: #eceae6 }`)
+ * takes the token the published contract maps it to, before any ΔE pick: hosts that load
+ * host-contract.css get that value, so the app's copy should match it. The reason says when the app's
+ * readers use the name otherwise than the contract's readers do (`--primary` read as accent-color),
+ * or only in an interaction state (`--muted` read only on :hover), so the reviewer checks the row
+ * instead of trusting the role. A scoped redefinition (`.toast { --background: … }`) is left to the
+ * role and ΔE rules.
  */
 function contractPick(data: TokenData, literal: Rgba, ctx: Context, consumers?: ConsumerIndex): ColorPick | null {
   const name = ctx.definition;
   const alias = name ? CONTRACT.get(name) : undefined;
   const token = alias ? data.colors.get(alias.token) : undefined;
-  if (!name || !alias || !token) return null;
+  if (!name || !alias || !token || !themeScope(ctx)) return null;
   const theme = ctx.theme;
   const de = round(deltaE(literal, token[theme], data.page[theme]));
   const notes: string[] = [];
   if (literal.a < 0.99) notes.push(`the literal's alpha ${round2(literal.a)} is dropped: the contract color is opaque`);
   if (consumers) {
     const read = consumers.rolesOf(name);
+    const known = [...read].filter((r) => r !== "other").sort();
     const at = consumers.where?.(name);
     const label = (r: string) => (at?.get(r) ? `${r} (${at.get(r)})` : r);
+    const expected = alias.reads.join(", ");
     if (read.size === 0) notes.push(`${name} is read nowhere in the scanned files`);
-    else if (read.size > 1 || !read.has(alias.reads)) {
-      notes.push(`usage differs: the app reads ${name} as ${[...read].sort().map(label).join(" and ")}; the contract's readers use it as ${alias.reads}`);
+    else if (!known.length) notes.push(`its readers give no color role in the scanned files (${label("other")}), so its usage is not checked`);
+    else if (known.some((r) => !alias.reads.includes(r as HostRead))) {
+      notes.push(`usage differs: the app reads ${name} as ${known.map(label).join(" and ")}; the contract's readers use it as ${expected}`);
     } else {
-      const own = (consumers.readers?.(name) ?? []).filter((r) => r.role === alias.reads);
+      const own = (consumers.readers?.(name) ?? []).filter((r) => alias.reads.includes(r.role as HostRead));
       // The focus ring paints on focus: that state is its own.
-      const ownState = (s: string) => INTERACTION.has(s) && !(s === "focus" && alias.token === "color.focus-ring");
-      const inState = own.map((r) => r.states.filter(ownState));
+      const inState = own.map((r) => r.states.filter((s) => !(s === "focus" && alias.token === "color.focus-ring")));
       if (own.length && inState.every((s) => s.length)) {
         const which = [...new Set(inState.flat())].sort().join(" or ");
+        const roles = [...new Set(own.map((r) => r.role))].sort().join(" and ");
         const more = own.length > 1 ? ` and ${own.length - 1} more` : "";
-        const hover = which.includes("hover") && alias.reads === "background" && data.colors.has("color.fill.hover") ? "; color.fill.hover is the hover fill" : "";
-        notes.push(`usage differs: the app reads ${name} only as a ${which} ${alias.reads} (${own[0].at}${more}); the contract's ${alias.token} is a resting ${alias.reads}${hover}`);
+        const hover = which === "hover" && roles === "background" && data.colors.has("color.fill.hover") ? "; color.fill.hover is the hover fill" : "";
+        notes.push(`usage differs: the app reads ${name} only as ${article(which)} ${which} ${roles} (${own[0].at}${more}); the contract's ${alias.token} is a resting ${roles}${hover}`);
       }
     }
   }

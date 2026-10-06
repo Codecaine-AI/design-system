@@ -1243,3 +1243,38 @@ describe("propose: sequence-studio pilot (its index.css at d5d70a4)", () => {
     expect(on(list, 22)).toMatchObject({ proposed: "font.family.sans", replacement: null });
   });
 });
+
+describe("propose: review of the pilot fixes", () => {
+  const rowAt = (list: Row[], file: string, line: number) => {
+    const found = list.filter((r) => r.file === `review/pilot/${file}` && r.line === line);
+    if (!found.length) throw new Error(`no row on ${file}:${line}`);
+    return found;
+  };
+
+  test("stock shadcn on Tailwind v4 reads the names as the contract's readers do: only a hover-only reader is flagged", () => {
+    const list = reviewRows("pilot/v4");
+    for (const line of [3, 4, 5]) expect(rowAt(list, "v4/theme.css", line)[0].why).not.toContain("usage differs");
+    // hover:bg-accent and group-hover/row:bg-accent: the accent is read only on hover.
+    expect(rowAt(list, "v4/theme.css", 6)[0].why).toContain("usage differs: the app reads --accent only as a hover background");
+  });
+
+  test("readers a Tailwind v3 config hides give no role: the row says its usage is not checked, not that it differs", () => {
+    const [accent] = rowAt(reviewRows("pilot/v3"), "v3/globals.css", 2);
+    expect(accent.proposed).toBe("color.accent");
+    expect(accent.why).toContain("so its usage is not checked");
+    expect(accent.why).not.toContain("usage differs");
+  });
+
+  test("a scoped redefinition is not seeded, a selected state is not an interaction, and a row edits its own declaration", () => {
+    const list = reviewRows("pilot/scoped.css");
+    expect(rowAt(list, "scoped.css", 2)[0].why).not.toStartWith("host contract"); // .toast { --background: #323232 }
+    expect(rowAt(list, "scoped.css", 1)[0].why).not.toContain("usage differs"); // .tab.active and [aria-pressed] read --muted
+    // `.a { --offset: 4px; border-radius: 4px; }`: the counted radius is the declaration's, not --offset's.
+    expect(rowAt(list, "scoped.css", 4).map((r) => r.column)).toEqual([".a { --offset: 4px; border-radius: 4px; }".lastIndexOf("4px") + 1]);
+    expect(rowAt(list, "scoped.css", 5).map((r) => r.column)).toEqual([".ds-shell { --ds-layout-gap: 6px; border-radius: 6px; }".lastIndexOf("6px") + 1]);
+    // `:root { --offset: 4px; --radius: 4px; }`: the counted definition is --radius.
+    expect(rowAt(list, "scoped.css", 6).map((r) => r.column)).toEqual([":root { --offset: 4px; --radius: 4px; }".lastIndexOf("4px") + 1]);
+    // A stack that goes on past its line is a hand edit: replacing this line's part would leave the rest.
+    expect(pick(rowAt(list, "scoped.css", 8)[0])).toEqual({ proposed: "font.family.sans", replacement: null });
+  });
+});

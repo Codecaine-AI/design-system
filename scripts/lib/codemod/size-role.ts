@@ -56,6 +56,7 @@ export function pickFontSize(data: TokenData, value: string, ctx: Context): Pick
 
 export function pickRadius(value: string): Pick {
   if (value.includes("/")) return none("elliptical radius: no token");
+  if (/calc\(/i.test(value)) return none(`radius ${value}: a length added in calc(); use the one radius token (radius.base) or radius.pill by hand`);
   const parts = value.trim().split(/\s+/);
   const mapped: string[] = [];
   const paths = new Set<string>();

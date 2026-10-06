@@ -262,6 +262,8 @@ function candidates(f: SourceFile, hit: Hit, lineHits: readonly Hit[]): Span[] {
       const group = hit.category === "radius" ? "radius" : hit.category === "fontFamily" ? "fontFamily" : hit.category === "pxSpacing" ? "spacing" : "fontSize";
       for (const d of declsOnLine(f, hit.line)) {
         if (!DECL_NAMES[group].test(d.name)) continue;
+        // A definition hit is in its own custom property; any other hit never is (`--offset: 4px; border-radius: 4px`).
+        if (hit.definition ? d.name !== hit.definition : d.name.startsWith("--")) continue;
         const span = matchDecl(f, hit, d);
         if (span) spans.push(span);
       }
@@ -280,6 +282,8 @@ function matchDecl(f: SourceFile, hit: Hit, d: Decl): Span | null {
     return written === hit.value ? { start: d.start, end: d.end, slot } : null;
   }
   if (hit.category === "fontFamily") {
+    // A stack that goes on past the line (`font-family: "Inter",\n  sans-serif;`): replacing this line's part would leave the rest.
+    if (/,\s*$/.test(value)) return null;
     if (isShorthand) {
       const m = value.match(/(?:^|\s)\d*\.?\d+(?:px|rem|em|pt|%)(?:\s*\/\s*[\w.%-]+)?\s+(.+)$/);
       if (!m || firstFamily(m[1]) !== hit.value) return null;

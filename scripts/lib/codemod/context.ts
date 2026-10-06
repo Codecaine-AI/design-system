@@ -500,7 +500,8 @@ function ownDeclarations(f: SourceFile, open: number, js: boolean): Array<{ prop
 }
 
 /** A prelude every branch of which is the document root (`:root`, `html`, `body`, `:host`). */
-function rootPrelude(prelude: string): boolean {
+/** Every branch of the prelude is the document root (`:root`, `html`, `body`, `:host`). */
+export function rootPrelude(prelude: string): boolean {
   return branches(prelude).every((b) => /^\s*(?::root|html|body|:host)(?![\w-])/i.test(b));
 }
 

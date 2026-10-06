@@ -54,25 +54,35 @@ export interface Consumers extends ConsumerIndex {
   readers(name: string): Reader[];
 }
 
-/** Tailwind variants that paint only in an interaction state. */
-const VARIANT_STATES: Record<string, string> = {
-  hover: "hover", "group-hover": "hover", "peer-hover": "hover",
-  active: "active", "group-active": "active",
-  focus: "focus", "focus-visible": "focus", "focus-within": "focus", "group-focus": "focus",
-};
+/** A Tailwind variant that paints only in an interaction state: `hover`, `group-hover/row`, `peer-focus-visible`, `active`. */
+const VARIANT_STATE = /^(?:group-|peer-)?(hover|focus|focus-visible|focus-within|active)(?:\/[\w-]+)?$/;
+/** The same states as pseudo-classes in a selector (`:hover:not(:disabled)` is a hover). */
+const PSEUDO_STATES: Array<[string, RegExp]> = [
+  ["hover", /:hover(?![\w-])/],
+  ["focus", /:focus(?:-visible|-within)?(?![\w-])/],
+  ["active", /:active(?![\w-])/],
+];
 
 /** The variants in front of a class token: `hover:dark:bg-x` -> ["hover", "dark"]. */
 const variantsOf = (token: string): string[] => token.split(":").slice(0, -1).map((v) => v.replace(/^!/, ""));
 
-/** The states a reader paints in: its class variants, or its rule's selector (`.btn:hover`), keys and classes. */
+/**
+ * The interaction states a reader paints in: hover, focus, active, from its class variants or its
+ * rule's selector chain (a prelude says a state when every branch of its list has it). Selected or
+ * pressed classes and attributes are resting states, not interaction. JS readers say none.
+ */
 function useStates(use: Extract<Use, { role: string }>): string[] {
-  if (use.variants) return [...new Set(use.variants.map((v) => VARIANT_STATES[v]).filter(Boolean))];
+  if (use.variants) return [...new Set(use.variants.map((v) => VARIANT_STATE.exec(v)?.[1]?.replace(/-.*/, "")).filter((x): x is string => !!x))];
   if (!use.f || use.index === undefined) return [];
-  const ctx = readContext(use.f, { start: use.index, end: use.index, slot: "text" }, { defaultTheme: "light" });
-  const states = ctx.states.filter((x) => !x.startsWith("group:"));
-  // A focus selector is a state too (`:focus-visible`), though no role family reads it as one.
-  if (ctx.chain.some((prelude) => selectorBranches(prelude).every((b) => /:focus(?:-visible|-within)?(?![\w-])/.test(b)))) states.push("focus");
-  return states;
+  const { chain, inCss } = readContext(use.f, { start: use.index, end: use.index, slot: "text" }, { defaultTheme: "light" });
+  if (!inCss) return [];
+  const out = new Set<string>();
+  for (const prelude of chain) {
+    if (/^\s*@/.test(prelude)) continue;
+    const list = selectorBranches(prelude);
+    for (const [state, re] of PSEUDO_STATES) if (list.length && list.every((b) => re.test(b))) out.add(state);
+  }
+  return [...out];
 }
 
 export function buildConsumers(files: SourceFile[]): Consumers {

@@ -114,6 +114,8 @@ export interface Hit {
   def: boolean;
   /** Color literal used as a var() fallback: var(--x, #fff). */
   fallback: boolean;
+  /** For a font stack or length in a custom-property definition: the property (`--radius`). */
+  definition?: string;
 }
 
 export type FileKind = "css" | "scss" | "js" | "html" | "json";
@@ -725,18 +727,39 @@ function isCssSelector(text: string, end: number): boolean {
 }
 
 /**
- * Reads a declaration value. `multiline` (font-family) reads a value that starts on the next line
- * or runs over several (`font-family:\n  Inter,\n  sans-serif;`); every other value ends at the line.
+ * Where a CSS value starting at `i` ends: at a `stops` character, at the end of a JS string (`inStr`),
+ * or at a newline, unless `multiline` and the value so far is a list that goes on (ends with a comma).
+ */
+function valueEnd(text: string, i: number, stops: string, multiline: boolean, inStr: Uint8Array | null): number {
+  let k = i;
+  let last = "";
+  for (; k < text.length; k++) {
+    const ch = text[k];
+    if (stops.includes(ch) || (inStr && inStr[k] === 0)) break;
+    if (ch === "\n" && !(multiline && last === ",")) break;
+    if (!/\s/.test(ch)) last = ch;
+  }
+  return k;
+}
+
+/**
+ * Reads a declaration value. `multiline` (font-family) reads a value that starts on the next line or
+ * runs over several (`font-family:\n  Inter,\n  sans-serif;`): a newline ends it unless the value is
+ * still empty or ends with a comma, so an unterminated value (indented Sass) still ends at its line.
  */
 function readValue(text: string, start: number, kind: FileKind, inStr: Uint8Array | null, multiline = false): { value: string; vkind: ValueKind } {
   let i = start;
-  const space = multiline ? /\s/ : /[ \t]/;
-  while (i < text.length && space.test(text[i])) i++;
+  while (i < text.length && (text[i] === " " || text[i] === "\t")) i++;
   const cssInJs = kind === "js" && inStr !== null && inStr[start - 1] === 1;
-  const stops = multiline ? ";{}" : ";{}\n";
-  if (kind === "css" || kind === "scss" || cssInJs) {
-    let k = i;
-    while (k < text.length && !stops.includes(text[k]) && !(cssInJs && inStr![k] === 0)) k++;
+  const cssLike = kind === "css" || kind === "scss" || cssInJs;
+  if (multiline && (text[i] === "\n" || text[i] === "\r")) {
+    let j = i;
+    while (j < text.length && /\s/.test(text[j])) j++;
+    // In JS only a string value on the next line is a value; an expression there is not a literal.
+    if (cssLike || kind === "html" || "'\"`".includes(text[j] ?? "")) i = j;
+  }
+  if (cssLike) {
+    const k = valueEnd(text, i, ";{}", multiline, cssInJs ? inStr : null);
     return { value: text.slice(i, k).trim(), vkind: "css" };
   }
   const q = text[i];
@@ -746,8 +769,7 @@ function readValue(text: string, start: number, kind: FileKind, inStr: Uint8Arra
     return { value: text.slice(i + 1, Math.min(k, text.length)).replace(/\\(["'`])/g, "$1"), vkind: "quoted" };
   }
   if (kind === "html") {
-    let k = i;
-    while (k < text.length && !(stops + '"<>').includes(text[k])) k++;
+    const k = valueEnd(text, i, ';{}"<>', multiline, null);
     const value = text.slice(i, k).trim();
     // A script expression in a template binding (`ok ? 0 : 4`), not a CSS value.
     if (/\?|===|!==|&&|\|\||=>/.test(value)) return { value: "", vkind: "expr" };
@@ -804,11 +826,12 @@ function classifyProp(kind: PropKind, raw: string, vkind: ValueKind): Array<[Cat
   const tokenBacked = /var\(|theme\(|\$\{/.test(value);
   switch (kind) {
     case "fontSize": {
-      if (tokenBacked) {
-        // calc(var(--base) + 2px): the length is a literal even though the value starts from a token.
+      if (/calc\(/i.test(noVars)) {
+        // calc(var(--base) + 2px), calc(14px + 0.3vw): each length counts as it would on its own.
         for (const len of calcLengths(noVars)) out.push(len.endsWith("px") ? ["pxFontSize", len] : ["otherFontSize", len]);
         break;
       }
+      if (tokenBacked) break;
       const px = value.match(/^(-?\d*\.?\d+)px$/);
       if (px && Number(px[1]) === 0) break;
       if (px) out.push(["pxFontSize", `${px[1]}px`]);
@@ -889,9 +912,13 @@ const GENERIC_FAMILIES = new Set([
 const FAMILY_ITEM = /^(?:"[^"\n]+"|'[^'\n]+'|-?[A-Za-z_][\w-]*(?:\s+[A-Za-z_][\w-]*)*)$/;
 /** Names that hold a font stack: --font-sans, --font-family-mono, --mono, --ff-body, --typeface. */
 const FAMILY_NAME = /(?:^--|-)(?:font|fonts|ff|family|typeface|mono|sans|serif)(?:-|$)/i;
-/** ... unless they name another font property: --font-size-sm, --font-weight-bold, --font-display. */
-const NOT_FAMILY_NAME = /size|weight|style|variant|stretch|feature|setting|display|smooth|synthesis|kerning|optical|height|leading|tracking|spacing|scale/i;
-const RADIUS_NAME = /radius|rounded/i;
+/** ... unless they name another font property: --font-size-sm, --font-weight-bold, --font-feature-settings. */
+const NOT_FAMILY_NAME = /size|weight|style|variant|stretch|feature|setting|smooth|synthesis|kerning|optical|height|leading|tracking|spacing|scale/i;
+/** Keywords no font is called: CSS-wide values and @font-face font-display values (`--font-display: swap`). */
+const NOT_A_FAMILY = /^(?:inherit|initial|unset|revert|revert-layer|none|normal|auto|block|swap|fallback|optional)$/i;
+/** Whole name segments: --radius, --radius-lg, --card-corner-radius, --rounded (not --shadow-blur-radius). */
+const RADIUS_NAME = /(?:^--|-)(?:radius|rounded|corner)(?:-|$)/i;
+const NOT_RADIUS_NAME = /shadow|blur|spread|glow/i;
 /** --font-size-sm, --fs-body, --text-sm (Tailwind v4 theme), --blog-heading-size, --label-text-size. */
 const FONT_SIZE_NAME =
   /font-?size|(?:^--|-)fs(?:-|$)|^--text-(?:2xs|xs|sm|base|md|lg|xl|[2-9]xl)$|(?:^--|-)(?:text|font|type|title|subtitle|heading|subheading|body|label|caption|h[1-6])-size(?:-|$)/i;
@@ -899,6 +926,7 @@ const FONT_SIZE_NAME =
 const SPACING_NAME = /(?:^--|-)(?:space|spacing|spacer|gap|gutter|pad|padding|margin)(?:-|$)/i;
 /** A shell-scoped `--ds-layout-*` override is allowed (guide/layout.md, decision 32); the names check owns its scope. */
 const ALLOWED_DEFINITION = /^--ds-layout-/;
+const COUNTED_READS = new Set<PropKind>(["fontFamily", "radius", "fontSize", "spacing"]);
 
 /** A comma list of font family names, or null: `"SFMono-Regular", ui-monospace, Menlo`. */
 function familyList(value: string): string[] | null {
@@ -907,62 +935,73 @@ function familyList(value: string): string[] | null {
   return items.every((x) => FAMILY_ITEM.test(x)) ? items : null;
 }
 
+/** The kind a custom property's name gives it, or null. A Tailwind sub-property (`--text-sm--line-height`) names none. */
+function kindFromName(name: string): PropKind | null {
+  if (/^--.+--/.test(name)) return null;
+  if (RADIUS_NAME.test(name) && !NOT_RADIUS_NAME.test(name)) return "radius";
+  if (FONT_SIZE_NAME.test(name)) return "fontSize";
+  if (FAMILY_NAME.test(name) && !NOT_FAMILY_NAME.test(name)) return "fontFamily";
+  if (SPACING_NAME.test(name)) return "spacing";
+  return null;
+}
+
 /**
  * The hits a custom-property definition holds: a font stack (fontFamily) or a length (radius,
  * font size, spacing). How the file reads the property decides first (`border-radius:
- * var(--radius)`), then its name; a list of families with a generic family or a quoted name is a
- * font stack whatever its name.
+ * var(--radius)`; read only as a color or a shadow, it holds none of these), then its name; a list
+ * of families with a generic family (`monospace`, `system-ui`) is a font stack whatever its name.
  */
 function classifyDefinition(name: string, raw: string, readAs: PropKind | null): Array<[Category, string]> {
   if (ALLOWED_DEFINITION.test(name)) return [];
   const value = raw.replace(/\s*!important\s*$/i, "").trim();
+  if (!value || /^[-+]?(?:\d*\.)?0+(?:\.0+)?(?:[a-z%]+)?$/i.test(value)) return [];
+  if (readAs && readAs !== "font" && !COUNTED_READS.has(readAs)) return [];
+  const kind = readAs && COUNTED_READS.has(readAs) ? readAs : kindFromName(name);
   const families = familyList(value);
-  const familyNamed = FAMILY_NAME.test(name) && !NOT_FAMILY_NAME.test(name);
-  const kind: PropKind | null =
-    readAs === "fontFamily" || readAs === "radius" || readAs === "fontSize" || readAs === "spacing"
-      ? readAs
-      : RADIUS_NAME.test(name)
-        ? "radius"
-        : FONT_SIZE_NAME.test(name)
-          ? "fontSize"
-          : familyNamed
-            ? "fontFamily"
-            : SPACING_NAME.test(name)
-              ? "spacing"
-              : null;
   if (kind === "fontFamily" || (kind === null && families)) {
-    if (!families) return [];
-    const named = families.some((x) => GENERIC_FAMILIES.has(x.toLowerCase()) || /^["']/.test(x));
-    // One bare word is a family only where the name or a reader says so, and only when it looks
-    // like a font name (Inter, monospace), not a keyword such as `inherit` or `bold`.
-    const ok = families.length > 1 ? named : kind === "fontFamily" && (named || /^[A-Z]/.test(families[0]));
-    if (!ok || /^(?:inherit|initial|unset|revert|none)$/i.test(families[0])) return [];
-    return [["fontFamily", firstFamily(value)]];
+    if (!families || NOT_A_FAMILY.test(families[0])) return [];
+    const generic = families.some((x) => GENERIC_FAMILIES.has(x.toLowerCase()));
+    // Without a name or reader that says font, only a stack with a generic family is one. One bare
+    // word is a family only where the name or a reader says so, and only when it looks like a font
+    // name (Inter, "Fraunces", monospace), not a keyword.
+    const ok = kind === null ? generic : families.length > 1 || generic || /^["'A-Z]/.test(families[0]);
+    return ok ? [["fontFamily", firstFamily(value)]] : [];
   }
   if (kind === "radius" || kind === "fontSize" || kind === "spacing") return classifyProp(kind, value, "css");
   return [];
 }
 
-/** Custom-property definitions with their values: CSS and <style> text, CSS strings and quoted keys in JS. */
+/**
+ * Custom-property definitions with their values: CSS and <style> text, style="" attributes, CSS
+ * strings and quoted keys in JS. A value ends at `;`, `{` or `}`, at a newline unless it is a list
+ * that goes on (`--mono:\n  Menlo,\n  monospace;`), at the end of its JS string, and in a style=""
+ * attribute at its quote. A `--x:` inside a selector (`[style*="--x: 1"] {`) or a Tailwind arbitrary
+ * property (`[--radius:8px]`) is not a definition here.
+ */
 function customPropDefs(text: string, kind: FileKind, inStr: Uint8Array | null): Array<{ name: string; value: string; index: number }> {
   const out: Array<{ name: string; value: string; index: number }> = [];
   if (kind === "json") return out;
-  for (const m of text.matchAll(/(?<![\w-])(--[\w-]+)\s*:(?!:)\s*([^;{}]*)/g)) {
+  for (const m of text.matchAll(/(?<![\w-])(--[\w-]+)[ \t]*:(?!:)/g)) {
+    const at = m.index!;
     // In JS only inside a string or template (CSS text), never code.
-    if (inStr && !inStr[m.index!]) continue;
-    let value = m[2];
+    if (inStr && !inStr[at]) continue;
+    let p = at - 1;
+    while (p >= 0 && (text[p] === " " || text[p] === "\t")) p--;
+    if (text[p] === "[") continue;
+    let i = at + m[0].length;
+    if ((kind === "css" || kind === "scss") && isCssSelector(text, i)) continue;
+    while (i < text.length && (text[i] === " " || text[i] === "\t")) i++;
+    if (text[i] === "\n" || text[i] === "\r") while (i < text.length && /\s/.test(text[i])) i++;
+    let stops = ";{}";
     if (kind === "html") {
-      // A style="" attribute ends at its quote, markup at < or >: keep a quoted family only when its quotes pair up.
-      value = value.split(/[<>\n]/)[0];
-      if ((value.match(/"/g) ?? []).length % 2) value = value.slice(0, value.indexOf('"'));
+      // Inside a tag: a style="" attribute, which ends at its quote; else a <style> body, which ends at `<`.
+      const open = text.lastIndexOf("<", at);
+      const inTag = open > text.lastIndexOf(">", at);
+      const quote = inTag ? text.slice(open, at).match(/\bstyle\s*=\s*(["'])[^"']*$/)?.[1] : undefined;
+      stops += inTag ? `<>${quote ?? "\"'"}` : "<";
     }
-    if (inStr) {
-      const at = m.index! + m[0].length - m[2].length;
-      let k = 0;
-      while (k < value.length && inStr[at + k]) k++;
-      value = value.slice(0, k);
-    }
-    out.push({ name: m[1], value: value.trim(), index: m.index! });
+    const value = text.slice(i, valueEnd(text, i, stops, true, inStr)).trim();
+    out.push({ name: m[1], value, index: at });
   }
   if (kind === "js") {
     // A style object key: { "--radius": "8px" }.
@@ -986,13 +1025,14 @@ export function scanText(src: string, kind: FileKind, keepComments = false): Hit
   const starts = lineStarts(src);
   const fallbacks = varFallbackMask(text);
   const hits: Hit[] = [];
-  const add = (category: Category, value: string, index: number, def = false) =>
+  const add = (category: Category, value: string, index: number, def = false, definition?: string) =>
     hits.push({
       category,
       value,
       line: lineOf(starts, index),
       def,
       fallback: !def && COLOR_CATEGORIES.has(category) && fallbacks[index] === 1,
+      ...(definition ? { definition } : {}),
     });
 
   // 1. Tailwind classes. Arbitrary values are masked afterwards so bg-[#fff]
@@ -1032,20 +1072,20 @@ export function scanText(src: string, kind: FileKind, keepComments = false): Hit
     const end = m.index! + m[0].length;
     // In CSS-like files, `color:` inside a selector (a:hover) is not a declaration.
     if ((kind === "css" || kind === "scss") && isCssSelector(declText, end)) continue;
-    const { value, vkind } = readValue(declText, end, kind, inStr, pkind === "fontFamily");
+    // A value over several lines only for font-family (in markup, the CSS name only: `fontFamily:` there is script).
+    const multiline = pkind === "fontFamily" && (kind !== "html" || name === "font-family");
+    const { value, vkind } = readValue(declText, end, kind, inStr, multiline);
     for (const [category, v] of classifyProp(pkind, value, vkind)) add(category, v, m.index!);
-    if (pkind !== "color") {
-      for (const r of value.matchAll(/var\(\s*(--[\w-]+)/g)) {
-        const was = readAs.get(r[1]);
-        readAs.set(r[1], was === undefined || was === pkind ? pkind : null);
-      }
+    for (const r of value.matchAll(/var\(\s*(--[\w-]+)/g)) {
+      const was = readAs.get(r[1]);
+      readAs.set(r[1], was === undefined || was === pkind ? pkind : null);
     }
   }
 
   // 2b. Custom-property definitions of a font stack or a length: `--mono: "SFMono-Regular", monospace`,
   //     `--radius: 8px`. They count like the declaration that reads them.
   for (const d of customPropDefs(text, kind, inStr)) {
-    for (const [category, v] of classifyDefinition(d.name, d.value, readAs.get(d.name) ?? null)) add(category, v, d.index, true);
+    for (const [category, v] of classifyDefinition(d.name, d.value, readAs.get(d.name) ?? null)) add(category, v, d.index, true, d.name);
   }
 
   // 3. JSX / HTML / SVG attributes and canvas fonts.

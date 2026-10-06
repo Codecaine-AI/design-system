@@ -106,3 +106,33 @@ test("shell-scoped --ds-layout-* overrides are not literals (decision 32), in a 
 test("a definition in a style attribute ends at the attribute's quote", () => {
   expect(hitsOf('<div style="--radius: 8px">x</div>\n<p class="a">y</p>', "html")).toEqual(["1 radius def 8px"]);
 });
+
+test("a font-family value goes on past its line only while it is a list (ends with a comma): indented Sass ends at the line", () => {
+  const sass = [".a", "  font-family: Georgia", "  border-radius: var(--radius)", ".b", "  font-family: Menlo, monospace"].join("\n");
+  expect(hitsOf(sass, "css")).toEqual(["2 fontFamily georgia", "5 fontFamily menlo"]);
+  // In markup only the CSS property name reads over lines: `fontFamily:` in a Vue script is code.
+  expect(hitsOf('<script>\nconst s = { fontFamily:\n  props.font }\n</script>\n<style>\n.a {\n  font-family:\n    "Inter", sans-serif;\n}\n</style>', "html")).toEqual(["7 fontFamily inter"]);
+});
+
+test("definitions end at their style attribute, a Tailwind arbitrary property or a selector is none, and a <style> stack runs over lines", () => {
+  const html = ['<div style="--radius: 4px"></div>', '<div style="--radius: 10px"></div>', '<p style="--gap: 8px">x</p>', '<i class="p-4 [--radius:8px] mt-2"></i>'].join("\n");
+  expect(hitsOf(html, "html")).toEqual(["1 radius def 4px", "2 radius def 10px", "3 pxSpacing def 8px"]);
+  expect(hitsOf('[style*="--radius: 8px"] { color: inherit; }')).toEqual([]);
+  expect(hitsOf('<template><b /></template>\n<style>\n:root {\n  --font-sans:\n    "Inter",\n    sans-serif;\n}\n</style>', "html")).toEqual(["4 fontFamily def inter"]);
+});
+
+test("a definition read only as a color or a shadow, a Tailwind sub-property, a zero and a font-display value are not counted", () => {
+  const src = [
+    ":root {",
+    "  --buttons-shadow-blur-radius: 5px;",
+    "  --glow-radius: 6px;",
+    '  --font-sans--font-feature-settings: "cv11", "ss01";',
+    "  --text-sm--line-height: 1.25rem;",
+    "  --card-corner-radius: 0.0rem;",
+    "  --font-display: swap;",
+    "  --font-heading: Fraunces;",
+    "}",
+    ".a { box-shadow: 0 0 var(--buttons-shadow-blur-radius) black; font-size: calc(14px + 0.3vw); }",
+  ].join("\n");
+  expect(hitsOf(src).filter((h) => !h.includes("namedColor"))).toEqual(["8 fontFamily def fraunces", "10 pxFontSize 14px"]);
+});
