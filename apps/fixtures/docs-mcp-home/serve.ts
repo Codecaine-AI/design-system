@@ -11,12 +11,32 @@
  * starts nothing: it returns the completed fixture scan. The page is written to
  * <tmp>/docs-mcp-home-site/index.html (run.staticDir) and served from there.
  *
+ * Fonts: the site also carries the design-system package docs-mcp resolves (its fonts.css with fonts/, and
+ * tokens.css, in the package layout under /@codecaine-ai/design-system/; ../lib/design-system-package.ts).
+ * When the page links no fonts.css of its own (home.ts today inlines all its CSS), the fixture links the
+ * package's fonts.css first in <head>, where the docs service will serve it once pass 1 wires the page.
+ * That only declares the faces: the font check still fails until the page's own CSS uses
+ * var(--ds-font-family-sans), so it judges the real page, never the fixture.
+ *
  * Reads only the root's repo content; writes only under --tmp.
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { extname, join } from "node:path";
 
+import { copyPackageFiles, resolvedPackage } from "../lib/design-system-package";
 import { ensureTmpDir, parseFixtureArgs, runFixture, siteFile } from "../lib/fixture-server";
+
+/** Where the site carries the design-system package's files. */
+export const PACKAGE_PREFIX = "@codecaine-ai/design-system";
+
+const TYPES: Record<string, string> = { ".html": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8", ".woff2": "font/woff2" };
+
+/** The page with the package's fonts.css linked first in <head>, unless it already links a fonts.css. */
+export function withPackageFonts(html: string, href = `/${PACKAGE_PREFIX}/css/fonts.css`): string {
+  if (/<link\b[^>]*href="[^"]*fonts\.css"/i.test(html)) return html;
+  const link = `<link rel="stylesheet" href="${href}" />`;
+  return /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, (head) => `${head}\n${link}`) : `${link}\n${html}`;
+}
 
 const DOCS_MCP = "codecaine/core/docs-system/packages/docs-mcp";
 
@@ -40,7 +60,8 @@ async function main() {
   const version = (JSON.parse(readFileSync(join(pkg, "package.json"), "utf8")) as { version: string }).version;
   const json = (body: unknown) => Response.json(body, { headers: { "cache-control": "no-store" } });
   const site = ensureTmpDir(args.tmp, join(args.tmp, "docs-mcp-home-site"));
-  writeFileSync(join(site, "index.html"), directoryHtml(PROJECTS, version));
+  copyPackageFiles(resolvedPackage(pkg), site, PACKAGE_PREFIX, args.tmp);
+  writeFileSync(join(site, "index.html"), withPackageFonts(directoryHtml(PROJECTS, version)));
 
   const server = Bun.serve({
     hostname: "127.0.0.1",
@@ -53,7 +74,7 @@ async function main() {
       if (request.method !== "GET") return new Response("read-only", { status: 405 });
       const file = siteFile(site, pathname);
       if (!file) return new Response("not found", { status: 404 });
-      return new Response(readFileSync(file), { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
+      return new Response(readFileSync(file), { headers: { "content-type": TYPES[extname(file)] ?? "application/octet-stream", "cache-control": "no-store" } });
     },
   });
   console.log(`docs-mcp-home fixture: ${PROJECTS.length} synthetic projects, docs-mcp ${version}`);

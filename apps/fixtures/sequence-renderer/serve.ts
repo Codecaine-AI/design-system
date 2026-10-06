@@ -6,15 +6,18 @@
  *
  * Renders the engine's own example programs (loginFlow, combinedFragments, minimal) with
  * `renderSequenceSvgString` into one HTML page each, inline, the way a host embeds them, and
- * serves them from <tmp>/site. The page is the host: it loads the root's design-system
- * tokens.css (and fonts.css once it exists), text-measure's fonts, and any CSS file the
- * sequence package exports, then sets data-theme from `?theme=light|dark`.
+ * serves them from <tmp>/site. The page is the host: it loads the design-system package the sequence
+ * package resolves (fonts.css with its fonts/, then tokens.css, copied with the package layout; see
+ * ../lib/design-system-package.ts), then any CSS file the sequence package exports, and sets data-theme
+ * from `?theme=light|dark`. No font comes from text-measure (decision 20): its files are byte-identical
+ * to the package's, so the renderer's measured layout matches what the browser draws.
  *
  * Reads only the root's repo content; writes only under --tmp (see ../lib/fixture-server.ts).
  */
-import { copyFileSync, cpSync, existsSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 
+import { copyPackageFiles, resolvedPackage } from "../lib/design-system-package";
 import { ensureTmpDir, parseFixtureArgs, runFixture, serveSite } from "../lib/fixture-server";
 
 export const SAMPLES = [
@@ -64,31 +67,8 @@ async function main() {
   if (!existsSync(join(pkgDir, "package.json"))) throw new Error(`no sequence package at ${pkgDir}`);
   const site = ensureTmpDir(args.tmp, join(args.tmp, "sequence-renderer-site"));
 
-  const stylesheets: string[] = [];
-  // Fonts first: design-system fonts.css when the package ships it, and text-measure's bundled faces
-  // (the renderer measures with them).
-  const ds = join(args.root, "design-system");
-  for (const candidate of ["dist/css/fonts.css", "css/fonts.css"]) {
-    const from = join(ds, candidate);
-    if (!existsSync(from)) continue;
-    const fontsDir = join(dirname(from), "fonts");
-    ensureTmpDir(args.tmp, join(site, "design-system"));
-    copyFileSync(from, join(site, "design-system", "fonts.css"));
-    if (existsSync(fontsDir)) cpSync(fontsDir, join(site, "design-system", "fonts"), { recursive: true });
-    stylesheets.push("design-system/fonts.css");
-    break;
-  }
-  const textMeasure = dirname(Bun.resolveSync("@codecaine-ai/text-measure/fonts.css", pkgDir));
-  ensureTmpDir(args.tmp, join(site, "text-measure"));
-  copyFileSync(join(textMeasure, "fonts.css"), join(site, "text-measure", "fonts.css"));
-  cpSync(join(textMeasure, "fonts"), join(site, "text-measure", "fonts"), { recursive: true });
-  stylesheets.push("text-measure/fonts.css");
-  const tokens = join(ds, "dist/css/tokens.css");
-  if (existsSync(tokens)) {
-    ensureTmpDir(args.tmp, join(site, "design-system"));
-    copyFileSync(tokens, join(site, "design-system", "tokens.css"));
-    stylesheets.push("design-system/tokens.css");
-  }
+  // The host's stylesheets in the contract's order: the package's fonts.css, then tokens.css.
+  const stylesheets: string[] = copyPackageFiles(resolvedPackage(pkgDir), site, "design-system", args.tmp);
   // Any stylesheet the sequence package exports (a --seq-* alias or dark set, once it ships one).
   const pkg = JSON.parse(readFileSync(join(pkgDir, "package.json"), "utf8")) as { exports?: Record<string, unknown> };
   for (const target of Object.values(pkg.exports ?? {})) {
