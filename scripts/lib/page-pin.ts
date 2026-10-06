@@ -40,6 +40,8 @@ export interface PinInputs {
   allowed(port: number): boolean;
   /** Records a request or tunnel the pin refused; `violation` when a process the run did not start was involved. */
   refused(entry: string, violation?: string): void;
+  /** Called for every request or tunnel the pin forwards (after the peer was verified). */
+  forwarded?: (entry: string) => void;
   /** How long a run process may take to accept a connection. */
   acceptTimeoutMs?: number;
 }
@@ -211,10 +213,33 @@ function handle(inputs: PinInputs, client: Socket) {
       return;
     }
     client.off("data", onData);
-    client.pause();
     void forward(inputs, client, head.lines, head.rest);
   };
   client.on("data", onData);
+}
+
+/**
+ * While the pin verifies the upstream, the client keeps being read: what it sends is kept for later, and if
+ * it ends or closes (its context closed, the request was aborted) nothing is sent upstream at all.
+ */
+function holdClient(client: Socket) {
+  const kept: Buffer[] = [];
+  let gone = client.destroyed;
+  const onData = (chunk: Buffer) => void kept.push(chunk);
+  const onGone = () => void (gone = true);
+  client.on("data", onData);
+  client.once("end", onGone);
+  client.once("close", onGone);
+  return {
+    gone: () => gone || client.destroyed,
+    /** Stops keeping; returns what was kept. The caller pipes from here on. */
+    release: () => {
+      client.off("data", onData);
+      client.off("end", onGone);
+      client.off("close", onGone);
+      return Buffer.concat(kept);
+    },
+  };
 }
 
 async function forward(inputs: PinInputs, client: Socket, lines: string[], rest: Buffer) {
@@ -229,8 +254,10 @@ async function forward(inputs: PinInputs, client: Socket, lines: string[], rest:
   if (!tunnel && url.protocol !== "http:") return reply(client, 400, "only http");
   const port = Number(url.port || 80);
   const entry = `${tunnel ? "CONNECT" : method} ${tunnel ? target : url.href}`;
+  const held = holdClient(client);
   const opened = await openPinned(inputs, url.hostname, port);
   if (!("socket" in opened)) {
+    held.release();
     inputs.refused(`PIN ${entry} (${opened.reason})`, opened.violation);
     // A tunnel gets the refusal as a status (Chromium: ERR_TUNNEL_CONNECTION_FAILED); a plain request a reset,
     // so the page sees a network error, as from the guard, never a response.
@@ -238,11 +265,18 @@ async function forward(inputs: PinInputs, client: Socket, lines: string[], rest:
     return reset(client);
   }
   const upstream = opened.socket;
+  if (held.gone()) {
+    held.release();
+    return reset(upstream);
+  }
+  client.pause();
+  const later = Buffer.concat([rest, held.release()]);
+  inputs.forwarded?.(entry);
   upstream.on("error", () => client.destroy());
   client.on("close", () => upstream.destroy());
   if (tunnel) {
     client.write("HTTP/1.1 200 Connection Established\r\n\r\n");
-    if (rest.length) upstream.write(rest);
+    if (later.length) upstream.write(later);
     upstream.pipe(client);
     client.pipe(upstream);
     upstream.resume();
@@ -251,7 +285,7 @@ async function forward(inputs: PinInputs, client: Socket, lines: string[], rest:
   }
   const upgrade = lines.some((line) => /^upgrade:/i.test(line));
   const headers = lines.slice(1).filter((line) => !HOP_BY_HOP.test(line) || (upgrade && /^connection:/i.test(line)));
-  upstream.write(Buffer.concat([Buffer.from(`${method} ${url.pathname}${url.search} ${lines[0]!.split(" ")[2] ?? "HTTP/1.1"}\r\n${[...headers, ...(upgrade ? [] : ["connection: close"])].join("\r\n")}\r\n\r\n`, "latin1"), rest]));
+  upstream.write(Buffer.concat([Buffer.from(`${method} ${url.pathname}${url.search} ${lines[0]!.split(" ")[2] ?? "HTTP/1.1"}\r\n${[...headers, ...(upgrade ? [] : ["connection: close"])].join("\r\n")}\r\n\r\n`, "latin1"), later]));
   pipeResponse(upstream, client);
   client.pipe(upstream);
   client.resume();

@@ -2006,6 +2006,13 @@ function pagePin(running: RunningApp): Promise<PagePin> | null {
     refresh: () => internal.refresh?.(),
     allowed: (port) =>
       !OWNER_PORTS.includes(port) && (internal.listenable === null || internal.listenable.has(port) || (running.app.runProfile?.allowedLocalPorts ?? []).includes(port)),
+    forwarded: (entry) => {
+      // Requests that may change the run's state are worth a line in the run log.
+      if (!/^(GET|HEAD|CONNECT) /.test(entry))
+        try {
+          appendFileSync(running.logPath, `# page pin forwarded ${entry}\n`);
+        } catch {}
+    },
     refused: (entry, violation) => {
       internal.pinBlocked.push(entry);
       try {
