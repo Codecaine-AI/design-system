@@ -51,7 +51,9 @@ These builds cannot see a folder outside the repo. The app commits a packed copy
    tokens.css sha256: <hex>
    ```
 
-   It never overwrites a tgz of the same name. If `vendor/` already holds the same bytes, it leaves the file and prints a third line, `unchanged: the same bytes were already at this path`. If it holds different bytes, it exits 1 and writes nothing: bump the version first (below).
+   It never overwrites a tgz of the same name. If `vendor/` already holds the same content (the same files with the same bytes once extracted; another npm or zlib version may compress them differently), it leaves the file and prints a third line, `unchanged: a tgz with the same files and bytes was already at this path`. If it holds different content, it exits 1 and writes nothing: bump the version first (below).
+
+   Run it from the design-system checkout in the same workspace as the app. A checkout outside `/Users/Ford/workspace` (the rollout mirror) refuses every destination inside it. Its scratch folders go to the system temp folder, never to the owner's workspace or `~/Library`, whatever `TMPDIR` says.
 
 2. In the app's `package.json`, under `dependencies`: `"@codecaine-ai/design-system": "file:vendor/codecaine-ai-design-system-0.2.0.tgz"`. A Dockerfile that runs `npm ci --omit=dev` skips `devDependencies`.
 3. Run `npm install` (or `bun install`) in the app. The lockfile records the tgz path and its `integrity` hash.
@@ -68,7 +70,7 @@ These builds cannot see a folder outside the repo. The app commits a packed copy
 
 ### Repack after a token change
 
-Never repack under the same file name: `bun run pack` refuses to overwrite a same-name tgz with different bytes. The lockfile pins the old bytes by `integrity`. Measured with npm 10.9 and bun 1.4, offline, after a repack that kept the name:
+Never repack under the same file name: `bun run pack` refuses to overwrite a same-name tgz with different content. The lockfile pins the old bytes by `integrity`. Measured with npm 10.9 and bun 1.4, offline, after a repack that kept the name:
 
 | Install | npm | bun |
 | --- | --- | --- |
