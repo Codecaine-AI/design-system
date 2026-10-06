@@ -1215,9 +1215,12 @@ describe("propose: sequence-studio pilot (its index.css at d5d70a4)", () => {
       13: "color.border.default", // --border: ΔE alone picked color.border.strong
       15: "color.focus-ring", // --ring
     });
-    for (const line of [4, 5, 7, 13]) {
+    for (const line of [4, 5, 13]) {
       expect(on(list, line)).toMatchObject({ method: "role", replacement: expect.stringMatching(/^var\(--ds-color-/), why: expect.stringMatching(/^host contract: --/) });
     }
+    // Flagged rows name the token but give no ready replacement: --primary (read as accent-color too),
+    // --muted (hover only), --input (focus only), --ring (ΔE 25.8, far from the contract's focus ring).
+    for (const line of [7, 10, 14, 15]) expect(on(list, line)).toMatchObject({ method: "role", replacement: null, why: expect.stringContaining("no ready replacement") });
   });
 
   test("the reason flags an app whose own readers use the name otherwise than the contract's readers do", () => {
@@ -1241,6 +1244,22 @@ describe("propose: sequence-studio pilot (its index.css at d5d70a4)", () => {
     expect(pick(on(list, 17))).toEqual({ proposed: "font.family.mono", replacement: "var(--ds-font-family-mono)" }); // --mono
     // The multi-line root font-family is counted; its value starts on the next line, so it is a hand edit.
     expect(on(list, 22)).toMatchObject({ proposed: "font.family.sans", replacement: null });
+  });
+});
+
+describe("propose: the host contract keeps the codemod's ΔE guard", () => {
+  test("canvas studio's pale --accent wash and its --accent-foreground: far from the contract, flagged, no ready replacement", () => {
+    const list = reviewRows("pilot/canvas-accent.css");
+    const at = (line: number) => list.find((r) => r.file === "review/pilot/canvas-accent.css" && r.line === line)!;
+    // --accent: #e8eef8 is a wash the count badge reads at rest; the contract's accent is a solid (ΔE 40.7).
+    expect(at(4)).toMatchObject({ proposed: "color.accent", replacement: null, deltaE: 40.7 });
+    expect(at(4).why).toContain("visible change (ΔE 40.7): the app's color is far from the contract's; check the role");
+    // --accent-foreground: #111111 is ink; the contract's on-solid is white in light (ΔE 82.2), and the app also fills with it.
+    expect(at(5)).toMatchObject({ proposed: "color.text.on-solid", replacement: null });
+    expect(at(5).why).toContain("visible change (ΔE 82.2)");
+    expect(at(5).why).toContain("usage differs: the app reads --accent-foreground as background");
+    // Close and read as the contract reads it: a ready replacement.
+    expect(at(6)).toMatchObject({ proposed: "color.surface.page", replacement: "var(--ds-color-surface-page)" });
   });
 });
 

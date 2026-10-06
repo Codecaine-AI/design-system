@@ -21,6 +21,8 @@ export interface Pick {
   utility?: string | null;
   /** Color picks: the literal's alpha, kept on the token. */
   keepAlpha?: number;
+  /** Names a token but offers no ready replacement: approving the row is a deliberate hand edit. */
+  handEdit?: true;
 }
 
 const none = (why: string): Pick => ({ path: null, method: null, deltaE: null, why });

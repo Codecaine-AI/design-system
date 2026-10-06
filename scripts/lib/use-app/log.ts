@@ -113,3 +113,30 @@ export function judge(visits: Visit[], isolation: Isolation, errors: Array<strin
   ];
   return { totals, problems, ok: problems.length === 0 };
 }
+
+/** A checkout's state as git reports it: HEAD and `git status --porcelain` lines (null when git could not read it). */
+export interface RepoState {
+  dir: string;
+  head: string | null;
+  status: string[] | null;
+}
+
+/**
+ * Why the run changed the app's checkout, or null: HEAD moved, or `git status` gained or lost a line
+ * between before the start and after stop(). use:app only views; any change fails the run. A checkout git
+ * could not read before and after is not compared.
+ */
+export function checkoutChange(before: RepoState, after: RepoState): string | null {
+  if (before.status === null || after.status === null) {
+    return before.status === after.status ? null : `git could not read ${before.dir} ${before.status === null ? "before the run" : "after the run"}`;
+  }
+  const gained = after.status.filter((line) => !before.status!.includes(line));
+  const lost = before.status.filter((line) => !after.status!.includes(line));
+  const parts = [
+    ...(before.head !== after.head ? [`HEAD ${before.head ?? "none"} -> ${after.head ?? "none"}`] : []),
+    ...gained.slice(0, 5).map((line) => `now ${JSON.stringify(line)}`),
+    ...lost.slice(0, 5).map((line) => `no longer ${JSON.stringify(line)}`),
+  ];
+  const more = gained.length + lost.length > 10 ? `, and ${gained.length + lost.length - 10} more` : "";
+  return parts.length ? `the app's checkout changed during the run (${before.dir}): ${parts.join(", ")}${more}` : null;
+}

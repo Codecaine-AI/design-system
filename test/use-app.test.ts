@@ -30,28 +30,45 @@ afterAll(async () => {
   }
 });
 
-const el = (over: Partial<ElementInfo> = {}): ElementInfo => ({ name: "button", submit: false, inForm: false, labels: [], visible: true, enabled: true, ...over });
+const el = (over: Partial<ElementInfo> = {}): ElementInfo => ({ name: "button", submit: false, inForm: false, names: [], texts: [], visible: true, enabled: true, ...over });
 
 test("the step safety filter refuses submit, form and write-named targets, and passes plain view steps", () => {
   const cases: Array<[string, Step, ElementInfo | null, RegExp | null]> = [
     ["a submit button", { action: "click", target: "button.go" }, el({ submit: true, inForm: true }), /submit control/],
     ["a plain button inside a form", { action: "click", target: ".row button" }, el({ inForm: true }), /inside a <form>/],
-    ["a control titled Delete", { action: "click", target: ".icon" }, el({ labels: ["Delete draft"] }), /names a write/],
-    ["a control whose text says Saved", { action: "click", target: ".status" }, el({ labels: ["Saved changes"] }), /names a write/],
+    ["a control titled Delete", { action: "click", target: ".icon" }, el({ names: ["Delete draft"] }), /names a write/],
+    ["a control whose text says Saved", { action: "click", target: ".status" }, el({ texts: ["Saved changes"] }), /names a write/],
     ["a selector naming send", { action: "click", target: 'button:has-text("Send")' }, null, /selector .* names a write/],
     ["Enter on a focused field in a form", { action: "press", value: "Enter" }, el({ inForm: true }), /inside a <form>/],
-    ["Control+Enter on a sync button", { action: "press", target: ".btn", value: "Control+Enter" }, el({ labels: ["Sync now"] }), /names a write/],
-    ["a view toggle", { action: "click", target: ".rail-section-toggle" }, el({ labels: ["Collapse surface"] }), null],
-    ["the registry's example card", { action: "click", target: 'button[title="Open a new draft seeded from Login flow"]' }, el({ labels: ["Open a new draft seeded from Login flow", "Login flow Example"] }), null],
+    ["Enter on a sync button", { action: "press", target: ".btn", value: "Enter" }, el({ texts: ["Sync now"] }), /names a write/],
+    ["a view toggle", { action: "click", target: ".rail-section-toggle" }, el({ texts: ["Collapse surface"] }), null],
+    ["the registry's example card", { action: "click", target: 'button[title="Open a new draft seeded from Login flow"]' }, el({ names: ["Open a new draft seeded from Login flow"], texts: ["Login flow Example"] }), null],
     ["Escape in a form (not an activation key)", { action: "press", value: "Escape" }, el({ inForm: true }), null],
-    ["a hover on a Delete button (hovers never activate)", { action: "hover", target: ".delete" }, el({ labels: ["Delete"] }), null],
-    ["a word that only contains a write word", { action: "click", target: ".async-panel" }, el({ labels: ["Unsaved preview"] }), null],
+    ["a hover on a Delete button (hovers never activate)", { action: "hover", target: ".delete" }, el({ names: ["Delete"] }), null],
+    ["a word that only contains a write word", { action: "click", target: ".async-panel" }, el({ texts: ["Unsaved preview"] }), null],
+    // agent-skills-manager's `reader` route: a skill row whose status badge says "In sync" is data, not the control's label.
+    ["a list row whose badge says In sync", { action: "click", target: ".skill-row >> nth=0" }, el({ name: 'button.skill-row "▧alpha"', texts: ["▧alpha Formats release notes from a changelog. example In sync Active"] }), null],
+    ["a long text that starts with the write", { action: "click", target: ".row-action" }, el({ texts: ["▧ Delete skill and its deployment history"] }), /names a write/],
+    ["a long aria-label that names a write anywhere", { action: "click", target: ".row" }, el({ names: ["Open alpha, then sync it to every agent folder"] }), /names a write/],
   ];
   for (const [name, step, target, expected] of cases) {
     const reason = stepRefusal(step, target);
     if (expected) expect([name, reason]).toEqual([name, expect.stringMatching(expected)]);
     else expect([name, reason]).toEqual([name, null]);
   }
+});
+
+test("key presses: only view keys (Shift allowed) and a plain Enter or Space on a checked target", () => {
+  const press = (value: string, target?: string): Step => ({ action: "press", value, ...(target ? { target } : {}) });
+  const safe = el({ texts: ["Next"] });
+  for (const key of ["Tab", "Shift+Tab", "Escape", "ArrowDown", "ArrowLeft", "PageDown", "PageUp", "Home", "End", "Enter", " "]) {
+    expect([key, stepRefusal(press(key), safe)]).toEqual([key, null]);
+  }
+  for (const key of ["Meta+s", "Control+s", "Delete", "Backspace", "Meta+z", "Control+Enter", "Shift+Enter", "Control+ArrowUp", "a", "Control++"]) {
+    expect([key, stepRefusal(press(key), safe)]).toEqual([key, expect.stringMatching(/is not a view key/)]);
+  }
+  // A press with a target and a key value checks the key the same way.
+  expect(stepRefusal(press("Delete", ".row"), safe)).toMatch(/"Delete" is not a view key/);
 });
 
 test("hovers go to visible, enabled controls outside forms, in document order, at most the cap", () => {
@@ -167,6 +184,21 @@ describe("refusals", () => {
   });
 });
 
+test("a run that changes the app's checkout fails, with what changed; HEAD and status are logged before and after", () => {
+  const root = tree();
+  expect(Bun.spawnSync(["git", "init", "-q", join(root, "app")]).exitCode).toBe(0);
+  const out = join(scratch, "write-out");
+  // The start command writes into the app's own checkout (the sandbox allows that), then fails to start.
+  const app = snapshotApp({ run: { mode: "browser", cwd: "app", start: "echo written > written.txt; exit 3", readyPattern: "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)" }, runProfile: { ...snapshotApp().runProfile, ports: { ui: 46926 } } });
+  const result = cli(["--app", "demo", "--root", root, "--registry", registryFile([app]), "--out-dir", out]);
+  expect(result.exitCode).toBe(1);
+  const { log } = readLog(out, "demo");
+  expect(existsSync(join(root, "app/written.txt"))).toBe(true);
+  expect(log.appRepo.status).not.toContain("?? written.txt");
+  expect(log.appRepo.after.status).toContain("?? written.txt");
+  expect(log.problems).toContainEqual(expect.stringMatching(/^the app's checkout changed during the run \(.*\/app\): now "\?\? written\.txt"$/));
+}, 60_000);
+
 test("an app that does not start: the log is still written, named by the run's ISO time, and the run exits 1", () => {
   const root = tree();
   const out = join(scratch, "nostart-out");
@@ -182,6 +214,7 @@ test("an app that does not start: the log is still written, named by the run's I
 
 const HOME = `<!doctype html><html><head><title>home</title></head><body>
 <a class="skip" href="#main" style="position: fixed; top: 8px; transform: translateY(-200%)">Skip to content</a>
+<p class="status">Last sync: 2 minutes ago</p>
 <div class="ds-shell" data-sidebar="expanded">
   <button class="ds-sidebar-toggle" type="button">Toggle sidebar</button>
   <button class="reveal" type="button" onclick="this.insertAdjacentHTML('afterend', '<div class=&quot;revealed&quot;>revealed</div>')">Reveal</button>
@@ -199,6 +232,11 @@ const HOME = `<!doctype html><html><head><title>home</title></head><body>
   });
 </script></body></html>`;
 
+/** agent-skills-manager's skill list: a row button whose status badge says "In sync" (data, not the row's label). */
+const ROWS = `<!doctype html><html><head><title>rows</title></head><body>
+<button class="skill-row" type="button" onclick="document.body.insertAdjacentHTML('beforeend', '<div class=&quot;reader&quot;>reader</div>')"><span><span class="skill-name"><span class="skill-icon">▧</span>alpha</span><span class="skill-description">Formats release notes from a changelog.</span></span><span class="source">example</span><span class="badge green">In sync</span><span class="state on">Active</span></button>
+</body></html>`;
+
 /** A page with a console error, a missing image, a submit button in a form and a control named like a write. */
 const TRAP = `<!doctype html><html><head><title>trap</title></head><body>
 <img src="/missing.png" alt="" />
@@ -210,13 +248,15 @@ const TRAP = `<!doctype html><html><head><title>trap</title></head><body>
 test.skipIf(Boolean(browserSkip))(
   "uses each route in each theme: refuses a submit and a write-named click, records errors, toggles the sidebar back, hovers what is safe",
   () => {
-    const root = tree({ "index.html": HOME, "trap.html": TRAP });
+    const root = tree({ "index.html": HOME, "trap.html": TRAP, "rows.html": ROWS });
     const out = join(scratch, "use-out");
     const app = snapshotApp({
       routes: [
-        { id: "home", path: "/", steps: [{ action: "click", target: ".reveal" }], waitFor: ".revealed" },
+        // Enter with nothing focused lands on the body: the page's text ("Last sync") is no label to refuse it on.
+        { id: "home", path: "/", steps: [{ action: "press", value: "Enter" }, { action: "click", target: ".reveal" }], waitFor: ".revealed" },
         { id: "form", path: "/trap.html", themes: ["light"], steps: [{ action: "click", target: "form .go-it" }] },
         { id: "wipe", path: "/trap.html", themes: ["light"], steps: [{ action: "hover", target: ".wipe" }, { action: "click", target: ".wipe" }] },
+        { id: "reader", path: "/rows.html", themes: ["light"], steps: [{ action: "click", target: ".skill-row >> nth=0" }], waitFor: ".reader" },
       ],
       verify: { probes: [], waivedRoles: waived, darkSwitch: { kind: "attribute" }, sidebar: { storageKey: "demo.sidebar" } },
       runProfile: { ...snapshotApp().runProfile, ports: { ui: 46926 } },
@@ -225,7 +265,12 @@ test.skipIf(Boolean(browserSkip))(
     const { log, dir } = readLog(out, "demo");
     expect([result.exitCode, log.ok]).toEqual([1, false]);
     const visit = (route: string, theme: string) => log.visits.find((v: Visit) => v.route === route && v.theme === theme) as Visit;
-    expect(log.visits.map((v: Visit) => `${v.route}-${v.theme}`)).toEqual(["home-light", "home-dark", "form-light", "wipe-light"]);
+    expect(log.visits.map((v: Visit) => `${v.route}-${v.theme}`)).toEqual(["home-light", "home-dark", "form-light", "wipe-light", "reader-light"]);
+    // The row's "In sync" badge is data: the click runs and opens the reader.
+    expect(visit("reader", "light").actions.filter((a) => a.kind === "step").map((a) => [a.target, a.ok, a.refused])).toEqual([
+      ["click .skill-row >> nth=0", true, undefined],
+      ["waitFor .reader", true, undefined],
+    ]);
 
     for (const theme of ["light", "dark"]) {
       const home = visit("home", theme);
@@ -253,7 +298,7 @@ test.skipIf(Boolean(browserSkip))(
       // Refused means never clicked: neither the form's submit nor the wipe button's fetch happened.
       expect(trap.failedRequests.filter((request) => /submitted|wiped/.test(request))).toEqual([]);
     }
-    expect(log.totals).toMatchObject({ visits: 4, refused: 2, failedActions: 0, blocked: 0, violations: 0 });
+    expect(log.totals).toMatchObject({ visits: 5, refused: 2, failedActions: 0, blocked: 0, violations: 0 });
     expect(log.isolation.ok).toBe(true);
   },
   120_000,

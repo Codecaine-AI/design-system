@@ -160,6 +160,7 @@ function replacementFor(f: SourceFile, span: Span | null, pick: Pick, ctx: Conte
   };
   const refused = placed();
   if (!pick.path || refused) return { text: null, why: refused };
+  if (pick.handEdit) return { text: null, why: "no ready replacement: the row is flagged, so applying it is a hand edit" };
   // A nearest pick is a guess; in JS it is proposed only where the slot names a CSS property.
   if (f.kind === "js" && pick.method === "nearest" && !cssRegionAt(f, span.start) && !(slot?.ok && slot.property)) {
     return { text: null, why: "a nearest-color pick in JS with no CSS property in its slot: edit by hand" };

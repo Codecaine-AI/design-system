@@ -20,10 +20,13 @@
  * isolation (violations, unproven profile, no sandbox). --out-dir defaults to $DS_RUN, else
  * <tmpdir>/ds-rollout; it is never the owner's tree or a git checkout, and no write goes through a symlink.
  *
+ * The app's checkout (HEAD and `git status`) is read before the start and again after stop(); a change
+ * fails the run.
+ *
  * Exit: 0 when the app was used cleanly, and for run mode none (nothing to run); 1 on a console error, a
- * failed request, an unexpected blocked request, an isolation problem, a failed or refused step, or an
- * app that did not start; 2 on bad arguments, an unknown app, an invalid registry, an unsafe --out-dir,
- * or an Electron app without DS_ALLOW_ELECTRON=1.
+ * failed request, an unexpected blocked request, an isolation problem, a failed or refused step, a change
+ * to the app's checkout, or an app that did not start; 2 on bad arguments, an unknown app, an invalid
+ * registry, an unsafe --out-dir, or an Electron app without DS_ALLOW_ELECTRON=1.
  */
 import { existsSync, mkdirSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -43,7 +46,7 @@ import { GitPinError, pinFor, pinnedGit, pinRepos } from "./lib/git";
 import { toolOutputDir } from "./lib/output-dir";
 import { type AppEntry, DESIGN_SYSTEM_ROOT, getApp, loadRegistry, REGISTRY_PATH, type Registry, resolvePath } from "./lib/registry";
 import { safeAppId, safeChildPath, UnsafePathError } from "./lib/safe-paths";
-import { type Isolation, judge, stampOf, type Visit, visitPlan } from "./lib/use-app/log";
+import { checkoutChange, type Isolation, judge, type RepoState, stampOf, type Visit, visitPlan } from "./lib/use-app/log";
 import { visitRoute } from "./lib/use-app/visit";
 import { propagateBlocker } from "./lib/verify/propagate";
 
@@ -88,7 +91,7 @@ function git(dir: string, ...args: string[]): string | null {
   return result.status === 0 ? result.stdout.trimEnd() : null;
 }
 
-const repoState = (dir: string) => {
+const repoState = (dir: string): RepoState => {
   const status = git(dir, "status", "--porcelain");
   return { dir, head: git(dir, "rev-parse", "HEAD"), status: status === null ? null : status.split("\n").filter(Boolean) };
 };
@@ -149,9 +152,12 @@ async function useApp(app: AppEntry, registry: Registry, args: Args): Promise<nu
     removeCleanup();
   }
 
-  // stop() takes the last egress sample: the violations are complete only now.
+  // stop() takes the last egress sample: the violations are complete only now. The app's checkout is
+  // read again too: a run that only views leaves it as it was.
   const isolation: Isolation = { violations: [...(running?.violations ?? [])], unproven: Boolean(running?.unproven), unsandboxed: Boolean(running?.unsandboxed) };
-  const { totals, problems, ok } = judge(visits, isolation, [startError, stopError]);
+  const repoAfter = repoState(appRepo);
+  const writeError = checkoutChange(meta.appRepo, repoAfter) ?? undefined;
+  const { totals, problems, ok } = judge(visits, isolation, [startError, stopError, writeError]);
   const log = {
     app: app.id,
     name: app.name,
@@ -159,6 +165,7 @@ async function useApp(app: AppEntry, registry: Registry, args: Args): Promise<nu
     root,
     mode: app.run.mode,
     ...meta,
+    appRepo: { ...meta.appRepo, after: { head: repoAfter.head, status: repoAfter.status } },
     chromium,
     baseUrl: running?.baseUrl,
     ports: running?.ports,

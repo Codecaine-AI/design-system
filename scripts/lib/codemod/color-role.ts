@@ -20,6 +20,8 @@ export interface ColorPick {
   method: "role" | "nearest" | null;
   deltaE: number | null;
   why: string;
+  /** The row names a token but gets no ready replacement: approving it is a deliberate hand edit (a flagged host-contract row). */
+  handEdit?: true;
   /** The literal's alpha, kept on the token: color-mix(in srgb, var(--ds-x) N%, transparent), or a Tailwind /N modifier. */
   keepAlpha?: number;
 }
@@ -542,8 +544,9 @@ const article = (word: string) => (/^[aeiou]/i.test(word) ? "an" : "a");
  * takes the token the published contract maps it to, before any ΔE pick: hosts that load
  * host-contract.css get that value, so the app's copy should match it. The reason says when the app's
  * readers use the name otherwise than the contract's readers do (`--primary` read as accent-color),
- * or only in an interaction state (`--muted` read only on :hover), so the reviewer checks the row
- * instead of trusting the role. A scoped redefinition (`.toast { --background: … }`) is left to the
+ * or only in an interaction state (`--muted` read only on :hover), or when the token is far from the
+ * app's color (ΔE over ROLE_MAX_DE): such a row names the token but gets no ready replacement, so the
+ * reviewer checks it instead of trusting the role. A scoped redefinition (`.toast { --background: … }`) is left to the
  * role and ΔE rules.
  */
 function contractPick(data: TokenData, literal: Rgba, ctx: Context, consumers?: ConsumerIndex): ColorPick | null {
@@ -583,8 +586,14 @@ function contractPick(data: TokenData, literal: Rgba, ctx: Context, consumers?: 
       }
     }
   }
+  // The codemod's own guard: a pick this far from the literal means the role is probably misread.
+  const far = de > ROLE_MAX_DE;
+  if (far) notes.push(`visible change (ΔE ${de}): the app's color is far from the contract's; check the role`);
   const why = `host contract: ${name} is ${alias.token} (host-contract.css), ΔE ${de} in ${theme}`;
-  return { path: alias.token, method: "role", deltaE: de, why: notes.length ? `${why}; ${notes.join("; ")}` : why };
+  // A flagged row (far, or read otherwise than the contract's readers do) names the token but offers no
+  // ready replacement, so approving it on its role alone cannot repaint a wash as a solid.
+  const flagged = far || notes.some((note) => note.startsWith("usage differs"));
+  return { path: alias.token, method: "role", deltaE: de, why: notes.length ? `${why}; ${notes.join("; ")}` : why, ...(flagged ? { handEdit: true as const } : {}) };
 }
 
 const isHue = (p: string) => HUES.some((x) => p.startsWith(`color.${x}.`));
