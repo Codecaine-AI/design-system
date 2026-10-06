@@ -228,6 +228,8 @@ function pickClassBody(data: TokenData, cls: string, ctx: Context, opts: ClassOp
   if (!parsed) return none(`class ${cls}: not parsed`);
   const { root, value, mod, palette, neg } = parsed;
   if (value.startsWith("--") || /^var\(/.test(value)) return { ...none("wraps an app variable: map that variable's definition instead"), root };
+  // A leading `-` negates the value; only spacing utilities have a negative form (`-top-1`), so a token would drop the sign.
+  if (neg && !SPACING_ROOTS.test(root)) return { ...none(`-${root}-[${value}]: a leading - negates the value, and ${root} has no negative token utility; keep it or edit by hand`), root };
 
   if (COLOR_ROOTS.test(root)) {
     const color = colorOfClass(value, palette, mod);

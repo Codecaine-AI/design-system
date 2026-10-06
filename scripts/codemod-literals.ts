@@ -70,6 +70,8 @@
  *   Class hints read a template-literal class value's static chunks only, never its `${…}`
  *   condition, so a state held only in a condition (`${on ? "bg-[#…]" : …}`) is not seen;
  *   `text-current`, `bg-transparent`, `border-inherit` and `drop-shadow-*` name no role or state.
+ * - A leading `-` on a class whose root has no negative utility (`-z-[40]`, `-tracking-[0.09em]`)
+ *   gets no replacement; spacing roots keep it (`-top-[4px]` -> `-top-1`).
  * - apply refuses every row of a file whose text changed since propose (whole-file hash): re-run
  *   propose after any edit, including an earlier apply of part of the same table.
  * - By design (decision 21a), `--root` naming the owner's tree itself is allowed for the owner's

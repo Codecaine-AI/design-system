@@ -919,6 +919,22 @@ describe("propose: round-3 closing review (R3-B3)", () => {
       expect({ line, proposed: r.proposed, selected: r.why.includes("selected") }).toEqual({ line, proposed: expect.not.stringMatching(/active/), selected: false });
     }
   });
+
+  test("P2-5: a leading - on a root outside the spacing scale is refused; spacing roots keep it", () => {
+    const rows = closing(["negative.tsx"]);
+    const by = (literal: string) => atClosing(rows, "negative.tsx", 2, literal);
+    for (const literal of ["-z-[40]", "-tracking-[0.09em]"]) {
+      expect({ literal, ...pick(by(literal)), why: by(literal).why }).toEqual({ literal, proposed: null, replacement: null, why: expect.stringContaining("leading -") });
+    }
+    expect(rows.map((r) => [r.literal, r.replacement])).toEqual([
+      ["-z-[40]", null],
+      ["z-[40]", "z-overlay"],
+      ["-tracking-[0.09em]", null],
+      ["tracking-[-0.02em]", "tracking-title"],
+      ["-top-[4px]", "-top-1"],
+      ["-mt-[8px]", "-mt-2"],
+    ]);
+  });
 });
 
 function pick(r: Row) {
