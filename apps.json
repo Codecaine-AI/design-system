@@ -3761,7 +3761,7 @@
           "path": "/",
           "waitFor": ".skill-row >> nth=0",
           "masks": [
-            ".topbar"
+            ".checked-time"
           ]
         },
         {
@@ -3775,7 +3775,7 @@
           ],
           "waitFor": ".skill-row >> nth=0",
           "masks": [
-            ".topbar"
+            ".checked-time"
           ]
         },
         {
@@ -3790,7 +3790,7 @@
           "waitFor": "main",
           "masks": [
             "div.agent-item",
-            ".topbar"
+            ".checked-time"
           ]
         },
         {
@@ -3804,7 +3804,7 @@
           ],
           "waitFor": "main",
           "masks": [
-            ".topbar"
+            ".checked-time"
           ]
         },
         {
@@ -3818,7 +3818,7 @@
           ],
           "waitFor": "#close-detail",
           "masks": [
-            ".topbar"
+            ".checked-time"
           ]
         }
       ],
@@ -3904,8 +3904,8 @@
           "reason": "bun run test:apps --root /Users/Ford/workspace-ds --commands typecheck,build twice, under the round-3 sandbox (rollout-r3-a d24a159: writes only in the app's own checkouts, checkouts.ts appScope, and the run tmp; a suite connects only to its block and 49152-65535 on loopback, minus the listeners at start and the owner's ports; a named command gets no port; no .env reads) with the write check over the app's own checkouts (git status pinned to their git dirs, find -newer/-cnewer, .git entries): tests.safe[0]: run 1 exit 0, 10 pass, 0 fail in 5.4 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0, 10 pass, 0 fail in 5.3 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.typecheck: not set in apps.json (skipped); commands.build: not set in apps.json (skipped). Every result matches tests.baselines (tests.safe[0]: recorded by R2-C, cmd added in R3-C from the commands those runs executed, which equal the current ones). Reports in rollout/tooling/r3-c-runs/final-1 and final-2"
         },
         {
-          "what": "snapshot masks: div.agent-item on route agents, .topbar on every route",
-          "reason": "each agent row prints its skills path, which holds the run temp HOME, and the row text width follows the random suffix, so the whole row (div.agent-item; not the footnote p.agent-item) is masked. The topbar prints the server inventory time (#checked, Python time.time(), not the browser clock) in an inline span whose width follows the text, so the full-width 61px .topbar is the stable box to mask. pixelDiff is not a required gate for this app, so the masks only affect repeat-capture stability and the sheets; pass 2 replaces the topbar and must update this mask. Found by the pass-1 worker (2026-10-06)"
+          "what": "snapshot masks: div.agent-item on route agents, .checked-time on every route",
+          "reason": "each agent row prints its skills path, which holds the run temp HOME, and the row text width follows the random suffix, so the whole row (div.agent-item; not the footnote p.agent-item) is masked. The topbar prints the server inventory time (Python time.time(), not the browser clock) in a fixed 128px box (.checked-time, pass 2; hidden at 1050px and below), so the mask covers only that box and the rest of the topbar is checked. pixelDiff is not a required gate for this app, so the masks only affect repeat-capture stability and the sheets. Masks set by the pass-1 and pass-2 workers (2026-10-06)"
         }
       ]
     },
