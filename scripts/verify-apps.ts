@@ -21,14 +21,13 @@
  * --out-dir in the owner's tree or in a git checkout, an invalid registry (registry:check's rules), or
  * a result or journal path through a symlink.
  */
-import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
+import { GitPinError, pinFor, pinnedGit, pinRepos } from "./lib/git";
 import { type AppEntry, DESIGN_SYSTEM_ROOT, getApp, loadRegistry, type PassId, REGISTRY_PATH, type Registry, resolvePath } from "./lib/registry";
 import { toolOutputDir } from "./lib/output-dir";
 import { safeAppId, safeChildPath, UnsafePathError } from "./lib/safe-paths";
-import { SYSTEM_BIN, SYSTEM_PATH } from "./lib/system-bin";
 import { type Assertion, fail, na, pass } from "./lib/verify/assertions";
 import { checkPage, sentinelAssertions } from "./lib/verify/page-checks";
 import {
@@ -117,10 +116,22 @@ interface AppResult {
   clock?: string;
 }
 
+/**
+ * git through git.ts: the system git pinned to the repository as recorded before any app started
+ * (pinAppRepos), hook-free, no fsmonitor, no system or global config. Null when git fails or `dir` is in
+ * no checkout; a pin that changed throws (GitPinChanged), and the run stops.
+ */
 function git(dir: string, ...args: string[]): string | null {
-  // The system git by absolute path, with a system-only PATH: never a binary planted in PATH.
-  const result = spawnSync(SYSTEM_BIN.git, ["--no-optional-locks", "-C", dir, ...args], { encoding: "utf8", env: { ...process.env, PATH: SYSTEM_PATH } });
+  const pin = pinFor(dir, { optional: true });
+  if (!pin) return null;
+  const result = pinnedGit(pin, args);
   return result.status === 0 ? result.stdout.trim() : null;
+}
+
+/** Pins every repository this run reads (git.ts) before the first app starts: the design-system checkouts and each app's. */
+function pinAppRepos(root: string, apps: AppEntry[]) {
+  const dirs = apps.flatMap((app) => [app.repo, app.root, ...(app.scan?.paths ?? [])].filter((path): path is string => typeof path === "string").map((path) => resolvePath(root, path)));
+  pinRepos([DESIGN_SYSTEM_ROOT, join(root, "design-system"), ...dirs.filter((dir) => existsSync(dir))]);
 }
 
 function designSystemMeta(values: BuildValues): AppResult["designSystem"] {
@@ -195,18 +206,18 @@ function printSummary(results: Array<{ result: AppResult; path: string }>) {
 
 // -- browser ------------------------------------------------------------------------
 
-async function openBrowser(root: string, apps: AppEntry[]): Promise<{ browser?: any; version?: string; error?: string }> {
-  if (!apps.some((app) => app.run.mode === "browser" || app.run.mode === "static")) return {};
+/**
+ * Playwright, loaded and its package hashed before the first app starts (playwright.ts pinPlaywright).
+ * Each app gets its own Chromium, sandboxed to that run's ports (run-app.ts inRunningApp, launchBrowser).
+ */
+async function preparePlaywright(root: string, apps: AppEntry[]): Promise<{ ready: boolean; version?: string; error?: string }> {
+  if (!apps.some((app) => app.run.mode === "browser" || app.run.mode === "static")) return { ready: false };
   try {
-    const { playwrightVersion } = await import("./lib/playwright");
-    const { installSignalHandlers, launchBrowser } = await import("./lib/app-runner");
-    // A sanitized env over a temp HOME; LAUNCH_OPTIONS keeps Playwright's own signal handlers off, and
-    // the runner's handler closes the browser.
-    const browser = await launchBrowser(root);
-    installSignalHandlers(() => browser.close());
-    return { browser, version: playwrightVersion(root) };
+    const { pinPlaywright, playwrightVersion } = await import("./lib/playwright");
+    pinPlaywright(root);
+    return { ready: true, version: playwrightVersion(root) };
   } catch (error) {
-    return { error: `Playwright did not start: ${(error as Error).message.split("\n")[0]}` };
+    return { ready: false, error: `Playwright did not load: ${(error as Error).message.split("\n")[0]}` };
   }
 }
 
@@ -245,10 +256,12 @@ async function verifyMode(args: Args, registry: Registry): Promise<number> {
   }
   for (const app of apps) resultDir(args, app.id);
   const runtimeApps = apps.filter((app) => app.gates.verify.required && app.run.mode !== "none");
-  const { browser, version, error } = await openBrowser(root, runtimeApps);
-  const session: Session = { browser, root, outDir: args.outDir, registry };
+  // Before the first app starts: every repository git reads, and Playwright.
+  pinAppRepos(root, runtimeApps);
+  const { ready: browser, version, error } = await preparePlaywright(root, runtimeApps);
+  const session: Session = { root, outDir: args.outDir, registry };
   const results: Array<{ result: AppResult; path: string }> = [];
-  try {
+  {
     for (const app of apps) {
       const result = newResult(app, args, root, meta);
       result.playwright = version;
@@ -290,8 +303,6 @@ async function verifyMode(args: Args, registry: Registry): Promise<number> {
       }
       results.push({ result, path: writeResult(args, result) });
     }
-  } finally {
-    await browser?.close().catch(() => undefined);
   }
   printSummary(results);
   return results.every(({ result }) => result.ok) ? 0 : 1;
@@ -310,10 +321,12 @@ async function propagateMode(args: Args, registry: Registry): Promise<number> {
     return 1;
   }
   for (const app of eligibility.apps) resultDir(args, app.id);
+  // Before the first app starts: every repository git reads, and Playwright.
+  pinAppRepos(root, eligibility.apps);
   const values = loadBuildValues(DESIGN_SYSTEM_ROOT);
   const meta = designSystemMeta(values);
-  const { browser, version, error } = await openBrowser(root, eligibility.apps);
-  const session: Session = { browser, root, outDir: args.outDir, registry };
+  const { ready: browser, version, error } = await preparePlaywright(root, eligibility.apps);
+  const session: Session = { root, outDir: args.outDir, registry };
   // Content, not git status: a file already modified before the run must come back byte-for-byte too.
   const hashesBefore = buildHashes(dsDir);
   const pending: AppResult[] = [];
@@ -338,8 +351,6 @@ async function propagateMode(args: Args, registry: Registry): Promise<number> {
     // withSentinel restored (or says how to restore) before it threw.
     console.error(`verify:apps: --propagate failed: ${(error as Error).message}`);
     return 1;
-  } finally {
-    await browser?.close().catch(() => undefined);
   }
   const changes = hashChanges(hashesBefore, buildHashes(dsDir));
   const restoreAssertions: Assertion[] = [
@@ -410,6 +421,11 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
     if (error instanceof UnsafePathError) {
       console.error(`verify:apps: ${error.message}`);
       return 2;
+    }
+    if (error instanceof GitPinError) {
+      // A repository's `.git` entry changed while apps ran, or one was never pinned: git must not run there.
+      console.error(`verify:apps: ${error.message}`);
+      return 1;
     }
     throw error;
   }

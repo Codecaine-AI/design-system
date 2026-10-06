@@ -32,7 +32,7 @@ import { resolve } from "node:path";
 import { validateLoadedRegistry } from "./lib/app-runner";
 import { toolOutputDir } from "./lib/output-dir";
 import { decodePng, encodePng } from "./lib/png";
-import { treeState } from "./lib/provenance";
+import { changedGitEntries, treeState } from "./lib/provenance";
 import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, REGISTRY_PATH, type AppEntry } from "./lib/registry";
 import { safeAppId, safeSegment } from "./lib/safe-paths";
 import { defaultOutDir, diffPath, diffSets, readManifest, SET_NAME, setPath, sha256Hex, sideBySide } from "./lib/snapshot-set";
@@ -77,9 +77,16 @@ const diffDir = orFail(() => out());
 rmSync(diffDir, { recursive: true, force: true });
 
 // The tree being gated: --root, else the root B was captured from, else the folder that holds this checkout.
-const bRoot = orFail(() => readManifest(setPath(outDir, app, b))?.root);
+const bManifest = orFail(() => readManifest(setPath(outDir, app, b)));
+const bRoot = bManifest?.root;
 const root = resolve(flag("--root") ?? (typeof bRoot === "string" ? bRoot : resolve(DESIGN_SYSTEM_ROOT, "..")));
-const tree = { root, state: treeState(root, entry) };
+// git reads the tree through pins (git.ts): never a repository whose `.git` entry changed since B's capture.
+const changedRepos = changedGitEntries(bManifest?.git);
+if (changedRepos.length) {
+  console.error(`snapshot:diff: ${changedRepos.join("; ")}`);
+  process.exit(2);
+}
+const tree = { root, state: orFail(() => treeState(root, entry)) };
 const result = orFail(() => diffSets(outDir, entry, a, b, only, registry, tree));
 
 orFail(() => {

@@ -7,7 +7,9 @@
  * page that turns dark through data-theme, localStorage, ?theme=dark, a #dark button, or (with
  * ?follow=system) prefers-color-scheme. GET /csp is a page under `style-src 'self'` with a 2 s transition.
  * GET /ws-probe opens WebSockets to this server's /ws (which greets) and to the stray port, and records
- * which ones opened and greeted.
+ * which ones opened and greeted. GET /hop?to=<url>&status=<3xx> redirects; GET /redirect-probe?foreign=<port>
+ * is a page whose image, fetches and a two-hop chain are redirected to that port, plus one redirect that
+ * stays on this server, and records what each fetch got.
  */
 const port = Number(process.env.FIXTURE_PORT);
 const helperPort = Number(process.env.FIXTURE_HELPER_PORT);
@@ -63,6 +65,18 @@ const wsProbe = `<!doctype html><html><body><script>
     .then(([own, stray]) => ({ own, stray }));
 </script></body></html>`;
 
+const redirectProbe = (foreign: string) => `<!doctype html><html><body>
+<img id="img" src="/hop?status=302&to=${encodeURIComponent(`http://127.0.0.1:${foreign}/img-secret`)}">
+<script>
+  const hop = (to, status) => "/hop?status=" + status + "&to=" + encodeURIComponent(to);
+  const get = (url) => fetch(url).then((r) => r.text(), () => "failed");
+  window.redirectResults = Promise.all([
+    get(hop("http://127.0.0.1:${foreign}/fetch-secret", 307)),
+    get(hop(hop("http://127.0.0.1:${foreign}/chain-secret", 307), 302)),
+    get(hop("/ping", 302)),
+  ]).then(([foreign, chain, own]) => ({ foreign, chain, own }));
+</script></body></html>`;
+
 Bun.serve({
   hostname: "127.0.0.1",
   port,
@@ -72,6 +86,11 @@ Bun.serve({
     if (pathname === "/ws" && server.upgrade(request)) return undefined;
     if (pathname === "/ws-probe") return new Response(wsProbe, { headers: { "content-type": "text/html" } });
     if (pathname === "/ping") return new Response("pong");
+    if (pathname === "/hop") {
+      const params = new URL(request.url).searchParams;
+      return new Response(null, { status: Number(params.get("status") ?? 302), headers: { location: params.get("to") ?? "/" } });
+    }
+    if (pathname === "/redirect-probe") return new Response(redirectProbe(new URL(request.url).searchParams.get("foreign") ?? "0"), { headers: { "content-type": "text/html" } });
     // A page under a strict CSP (like a server that sends `style-src 'self'`) with a slow transition.
     if (pathname === "/csp")
       return new Response(`<!doctype html><link rel="stylesheet" href="/slow.css"><div id="box">box</div>`, {

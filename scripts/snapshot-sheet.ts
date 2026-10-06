@@ -25,7 +25,7 @@ import { pathToFileURL } from "node:url";
 import { encodePng } from "./lib/png";
 import { installSignalHandlers, launchBrowser, validateLoadedRegistry } from "./lib/app-runner";
 import { toolOutputDir } from "./lib/output-dir";
-import { treeState } from "./lib/provenance";
+import { changedGitEntries, treeState } from "./lib/provenance";
 import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, REGISTRY_PATH, type AppEntry } from "./lib/registry";
 import { safeAppId, safeSegment } from "./lib/safe-paths";
 import { defaultOutDir, diffSets, readManifest, SET_NAME, setPath, sha256Hex, sheetPath, type SetDiff, type ShotDiff } from "./lib/snapshot-set";
@@ -76,8 +76,15 @@ rmSync(assetsDir, { recursive: true, force: true });
 rmSync(htmlPath, { force: true });
 
 // B is checked against the tree at --root (default: the root B was captured from), as snapshot:diff does.
-const bRoot = orFail(() => readManifest(setPath(outDir, app, b))?.root);
+const bManifest = orFail(() => readManifest(setPath(outDir, app, b)));
+const bRoot = bManifest?.root;
 const treeRoot = flag("--root") ? root : typeof bRoot === "string" ? resolve(bRoot) : root;
+// git reads the tree through pins (git.ts): never a repository whose `.git` entry changed since B's capture.
+const changedRepos = changedGitEntries(bManifest?.git);
+if (changedRepos.length) {
+  console.error(`snapshot:sheet: ${changedRepos.join("; ")}`);
+  process.exit(2);
+}
 const result: SetDiff = orFail(() => diffSets(outDir, entry, a, b, only, registry, { root: treeRoot, state: treeState(treeRoot, entry) }));
 orFail(() => {
   mkdirSync(assetsDir, { recursive: true });
@@ -176,8 +183,9 @@ if (!result.registry.canonical) console.log(`  warn  judged against ${result.reg
 
 let renderError: string | undefined;
 try {
-  // The report page, not an app: the plain headless flags, under the sanitized env and a temp HOME.
-  const browser = await launchBrowser(root, { args: [], ignoreDefaultArgs: undefined });
+  // The report page, not an app: the plain headless flags, under the sanitized env and a temp HOME, in
+  // the browser sandbox with no port at all and only the out dir (the sheet and its PNGs) readable.
+  const browser = await launchBrowser(root, { launch: { args: [], ignoreDefaultArgs: undefined }, readable: [outDir] });
   installSignalHandlers(() => browser.close());
   try {
     const context = await browser.newContext({ deviceScaleFactor: 1, viewport: { width: 1280, height: 720 } });

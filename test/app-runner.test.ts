@@ -423,14 +423,15 @@ describe("startApp", () => {
   });
 
   test("records a server-side connection to a loopback port the run does not own as a violation", async () => {
-    // 46909 is in the run's block (46900-46909), so the sandbox lets the connection through; the run neither
-    // listens there nor names it, so only the egress sampling can flag it.
+    // 46909 is in the run's block (46900-46909), so the sandbox lets the connection through. A listener there
+    // before the start refuses the run (next test); one that appears while it runs (another service started
+    // meanwhile) is reachable, and the run neither listens there nor names it, so the egress sampling flags it.
+    const app = fixtureApp({ ui: 46903, helper: 46904 }, {}, { start: "(sleep 3; /usr/bin/nc -d 127.0.0.1 46909) & bun serve.ts" });
+    const running = await start(app, makeRoot());
     const foreign = Bun.serve({ hostname: "127.0.0.1", port: 46909, fetch: () => new Response("foreign"), idleTimeout: 30 });
     try {
-      const app = fixtureApp({ ui: 46903, helper: 46904 }, {}, { start: "(sleep 1; /usr/bin/nc -d 127.0.0.1 46909) & bun serve.ts" });
-      const running = await start(app, makeRoot());
       expect(running.violations ?? []).toEqual([]);
-      const deadline = Date.now() + 8_000;
+      const deadline = Date.now() + 10_000;
       while (!(running.violations ?? []).some((v) => v.includes("->127.0.0.1:46909")) && Date.now() < deadline) await Bun.sleep(100);
       await running.stop();
       expect(running.violations).toEqual([expect.stringMatching(/^egress: nc\(\d+\) TCP 127\.0\.0\.1:\d+->127\.0\.0\.1:46909/)]);
@@ -439,6 +440,22 @@ describe("startApp", () => {
     } finally {
       foreign.stop(true);
     }
+  });
+
+  test("refuses to start while any port of its block or allowedLocalPorts has a listener, named or not", async () => {
+    // Codex R3 P0 1: only the named ports were checked; the sandbox then let the run reach an unnamed block
+    // port held by a service the run did not start.
+    const root = makeRoot();
+    const foreign = Bun.serve({ hostname: "127.0.0.1", port: 46907, fetch: () => new Response("someone else"), idleTimeout: 30 });
+    try {
+      await expect(start(fixtureApp({ ui: 46903, helper: 46904 }), root)).rejects.toThrow(/port\(s\) the run may reach are in use: 46907 \(pid \d+\)/);
+      const allowed = fixtureApp({ ui: 46903, helper: 46904 });
+      allowed.runProfile.allowedLocalPorts = [46907];
+      await expect(start(allowed, root)).rejects.toThrow(/in use: 46907/);
+    } finally {
+      foreign.stop(true);
+    }
+    expect(await portOpen(46903)).toBe(false);
   });
 });
 
@@ -527,7 +544,7 @@ describe("guardedContext WebSockets", () => {
         fetch: (request, server) => (server.upgrade(request) ? undefined : new Response("stray")),
       });
       const running = await start(fixtureApp({ ui: 46916, helper: 46917 }), makeRoot());
-      const browser = await launchBrowser(process.env.DS_MIRROR ?? "/Users/Ford/workspace-ds");
+      const browser = await launchBrowser(process.env.DS_MIRROR ?? "/Users/Ford/workspace-ds", { running });
       try {
         const { context, blocked } = await guardedContext(browser, running);
         const page = await context.newPage();
@@ -550,6 +567,56 @@ describe("guardedContext WebSockets", () => {
   });
 });
 
+describe("guardedContext redirects (hop by hop) and the browser sandbox", () => {
+  test.skipIf(Boolean(noPlaywright))(
+    "a 302/307 from the run's own port to a foreign port never reaches it: the guard re-checks every hop, Chromium's sandbox has only the run's ports",
+    async () => {
+      // Opus R3 P0-3: the guard saw only the first request of a redirect chain, and Chromium ran outside the
+      // OS sandbox, so a redirect from the run's port delivered requests to any loopback listener.
+      const FOREIGN = 46929;
+      const hits: string[] = [];
+      const foreign = Bun.serve({ hostname: "127.0.0.1", port: FOREIGN, fetch: (request) => (hits.push(new URL(request.url).pathname), new Response("secret", { headers: { "access-control-allow-origin": "*" } })) });
+      const running = await start(fixtureApp({ ui: 46913, helper: 46914 }), makeRoot());
+      const browser = await launchBrowser(process.env.DS_MIRROR ?? "/Users/Ford/workspace-ds", { running });
+      try {
+        const { context, blocked } = await guardedContext(browser, running);
+        const page = await context.newPage();
+        await page.goto(`${running.baseUrl}/redirect-probe?foreign=${FOREIGN}`, { waitUntil: "load" });
+        const results = await page.evaluate(() => (globalThis as any).redirectResults);
+        expect(results).toEqual({ foreign: "failed", chain: "failed", own: "pong" });
+        const nav = await page.goto(`${running.baseUrl}/hop?status=302&to=${encodeURIComponent(`http://127.0.0.1:${FOREIGN}/nav-secret`)}`).then(
+          () => "loaded",
+          () => "failed",
+        );
+        expect(nav).toBe("failed");
+        // The run's own processes may not reach it either (the run sandbox), so nothing did.
+        expect(hits).toEqual([]);
+        expect(blocked().sort()).toEqual(
+          [`REDIRECT http://127.0.0.1:${FOREIGN}/chain-secret`, `REDIRECT http://127.0.0.1:${FOREIGN}/fetch-secret`, `REDIRECT http://127.0.0.1:${FOREIGN}/img-secret`, `REDIRECT http://127.0.0.1:${FOREIGN}/nav-secret`].sort(),
+        );
+        expect(running.violations ?? []).toEqual(expect.arrayContaining([expect.stringContaining(`a redirect chain left the run's ports: ${running.baseUrl}/hop?status=307`)]));
+        // A page without the guard, straight in the sandboxed browser, cannot reach the foreign port either.
+        const bare = await browser.newContext();
+        try {
+          const barePage = await bare.newPage();
+          const direct = await barePage.goto(`http://127.0.0.1:${FOREIGN}/direct-secret`).then(
+            () => "loaded",
+            (error: unknown) => String(error).split("\n")[0],
+          );
+          expect(direct).toContain("ERR_ACCESS_DENIED");
+        } finally {
+          await bare.close();
+        }
+        expect(hits).toEqual([]);
+      } finally {
+        await browser.close();
+        foreign.stop(true);
+      }
+    },
+    60_000,
+  );
+});
+
 describe("guardedContext and ports the run gave up", () => {
   test.skipIf(Boolean(noPlaywright))(
     "blocks a port the run once held after another process takes it over",
@@ -561,7 +628,7 @@ describe("guardedContext and ports the run gave up", () => {
       while (await portOpen(46906)) await Bun.sleep(50);
       let hits = 0;
       const squatter = Bun.serve({ hostname: "127.0.0.1", port: 46906, fetch: () => (hits++, new Response("squatter", { headers: { "access-control-allow-origin": "*" } })) });
-      const browser = await launchBrowser(process.env.DS_MIRROR ?? "/Users/Ford/workspace-ds");
+      const browser = await launchBrowser(process.env.DS_MIRROR ?? "/Users/Ford/workspace-ds", { running });
       try {
         await Bun.sleep(700); // past the guard's listener cache
         const { context, blocked } = await guardedContext(browser, running);
@@ -865,27 +932,54 @@ describe("registry-prove", () => {
 });
 
 describe("launchBrowser", () => {
-  test("starts the browser with the sanitized env and a temp HOME it removes afterwards", async () => {
-    // A stand-in browser executable that records the environment it got, then fails the launch.
-    const dump = join(scratch, "browser-env.txt");
-    const fake = join(scratch, "fake-browser");
-    writeFileSync(fake, `#!/bin/sh\nenv > '${dump}'\nexit 1\n`, { mode: 0o755 });
+  test("starts Chromium inside the OS sandbox (the run's ports only, writes only its own dirs) with the sanitized env and a temp HOME it removes afterwards", async () => {
+    // A stand-in headless shell (found through PLAYWRIGHT_BROWSERS_PATH) that reports its environment, its
+    // arguments, whether it may write outside its own dirs and reach a port the run does not hold, then fails.
+    const root = process.env.DS_MIRROR ?? "/Users/Ford/workspace-ds";
+    const revision = JSON.parse(readFileSync(join(dirname(createRequire(join(dirname(createRequire(playwrightAnchor(root)).resolve("playwright/package.json")), "package.json")).resolve("playwright-core/package.json")), "browsers.json"), "utf8")).browsers.find(
+      (browser: { name: string }) => browser.name === "chromium-headless-shell",
+    ).revision;
+    const cache = join(scratch, "browsers");
+    const shellDir = join(cache, `chromium_headless_shell-${revision}`, `chrome-headless-shell-${process.arch === "arm64" ? "mac-arm64" : "mac-x64"}`);
+    mkdirSync(shellDir, { recursive: true });
+    const outside = join(scratch, "written-by-browser");
+    writeFileSync(
+      join(shellDir, "chrome-headless-shell"),
+      [
+        "#!/bin/sh",
+        "env | sed 's/^/ENV:/' >&2",
+        `( echo x > '${outside}' ) 2>/dev/null && echo WRITE:allowed >&2 || echo WRITE:denied >&2`,
+        `/usr/bin/nc -z -G 2 127.0.0.1 46939 && echo NET:allowed >&2 || echo NET:denied >&2`,
+        'for a in "$@"; do echo "ARG:$a" >&2; done',
+        "exit 1",
+        "",
+      ].join("\n"),
+      { mode: 0o755 },
+    );
+    const stray = Bun.serve({ hostname: "127.0.0.1", port: 46939, fetch: () => new Response("stray") });
     process.env.GITHUB_TOKEN = "ghp_planted";
+    process.env.PLAYWRIGHT_BROWSERS_PATH = cache;
+    let message = "";
     try {
-      await expect(launchBrowser(process.env.DS_MIRROR ?? "/Users/Ford/workspace-ds", { executablePath: fake, timeout: 10_000 })).rejects.toThrow();
+      await launchBrowser(root, { launch: { timeout: 10_000 } }).then(
+        (browser) => browser.close(),
+        (error) => (message = String(error)),
+      );
     } finally {
       delete process.env.GITHUB_TOKEN;
+      delete process.env.PLAYWRIGHT_BROWSERS_PATH;
+      stray.stop(true);
     }
-    const env = Object.fromEntries(
-      readFileSync(dump, "utf8")
-        .trim()
-        .split("\n")
-        .map((line) => [line.slice(0, line.indexOf("=")), line.slice(line.indexOf("=") + 1)]),
-    );
-    expect(env.GITHUB_TOKEN).toBeUndefined();
+    const lines = message.split("\n").map((line) => line.replace(/^.*\[err\] /, ""));
+    const env = Object.fromEntries(lines.filter((line) => line.startsWith("ENV:")).map((line) => [line.slice(4, line.indexOf("=")), line.slice(line.indexOf("=") + 1)]));
     expect(env.HOME).toStartWith(join(realpathSync(tmpdir()), "ds-browser-"));
-    expect(env.XDG_CONFIG_HOME).toStartWith(env.HOME);
-    expect(existsSync(env.HOME)).toBe(false);
+    expect(env.GITHUB_TOKEN).toBeUndefined();
+    expect(env.XDG_CONFIG_HOME).toStartWith(env.HOME!);
+    expect(lines).toContain("WRITE:denied");
+    expect(lines).toContain("NET:denied");
+    expect(lines).toContain("ARG:--no-sandbox");
+    expect(existsSync(outside)).toBe(false);
+    expect(existsSync(env.HOME!)).toBe(false);
   }, 30_000);
 });
 

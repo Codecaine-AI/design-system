@@ -21,17 +21,27 @@
  * per origin. Writes <out-dir>/tooling/registry/proofs/<app>.json and .log.
  * The result is evidence for the registry worker; apps.json records it in runProfile.proof.
  *
- * The registry is validated on load (validateLoadedRegistry). SIGINT/SIGTERM/SIGHUP close the browser,
- * stop the app and exit 130/143/129; on start, run records a crashed earlier proof left in
- * <out-dir>/tooling/registry/runs/runs/ are cleaned up (cleanupRuns).
+ * Every repository the proven apps sit in is pinned (git.ts) before the first app starts; a proof whose
+ * app checkouts' `.git` entries changed while it ran is not proven. Chromium runs inside the OS sandbox
+ * with the run's ports only (launchBrowser), and the guard follows redirects hop by hop.
+ *
+ * The registry is validated on load (validateLoadedRegistry). --out-dir is never the owner's tree or a git
+ * checkout (toolOutputDir); proofs and logs are written through safeChildPath, each to a new temp file
+ * (exclusive create) that is then renamed into place. The runs' own logs and records go to
+ * <out-dir>/tooling/registry/runs, which no run process can write (the run sandbox writes only the app's
+ * checkouts). SIGINT/SIGTERM/SIGHUP close the browser, stop the app and exit 130/143/129; on start, run
+ * records a crashed earlier proof left in <out-dir>/tooling/registry/runs/runs/ are cleaned up (cleanupRuns).
  */
-import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { constants, copyFileSync, mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { cleanupRuns, guardedContext, installSignalHandlers, launchBrowser, startApp, validateLoadedRegistry, type RunningApp } from "./lib/app-runner";
-import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, type AppEntry, type Registry, type RouteSpec } from "./lib/registry";
-import { safeOutputPath } from "./lib/safe-paths";
+import { appScope, gitEntries } from "./lib/checkouts";
+import { pinRepos } from "./lib/git";
+import { toolOutputDir } from "./lib/output-dir";
+import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, resolvePath, type AppEntry, type Registry, type RouteSpec } from "./lib/registry";
+import { safeChildPath } from "./lib/safe-paths";
 
 /** The connection classifier lives in scripts/lib/egress.ts (the runner samples with it). */
 export { foreignConnections, parseLsof, type Connection } from "./lib/egress";
@@ -40,7 +50,7 @@ export { foreignConnections, parseLsof, type Connection } from "./lib/egress";
 export function summarizeBlocked(lines: string[]): Record<string, number> {
   const out: Record<string, number> = {};
   for (const line of lines) {
-    const m = line.match(/(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS|WS)\s+(\S+)/);
+    const m = line.match(/(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS|WS|REDIRECT)\s+(\S+)/);
     let key = "?";
     try {
       if (m) key = new URL(m[1]!).origin;
@@ -86,6 +96,8 @@ export interface ProofResult {
   probeCheck?: "selectors only";
   stoppedClean: boolean;
   stopError?: string;
+  /** `.git` entries of the app's checkouts that changed while it ran (the proof then fails). */
+  gitChanged?: string[];
   proven: boolean;
 }
 
@@ -94,12 +106,43 @@ export function proofRunsDir(outDir: string): string {
   return join(outDir, "tooling", "registry", "runs");
 }
 
+/** <out-dir>/tooling/registry/proofs[/<file>], no symlink on the way (safeChildPath). */
+export function proofPath(outDir: string, root: string, ...file: string[]): string {
+  return safeChildPath({ base: outDir, root, label: "proof" }, "tooling", "registry", "proofs", ...file);
+}
+
+/**
+ * Writes `<dir()>/<name>` through a new temp file next to it (`write` creates it exclusively), then renames
+ * it into place: a symlink planted at the destination is replaced, never followed. `dir` is re-validated
+ * (safeChildPath) at each step.
+ */
+export function writeNew(dir: () => string, name: string, write: (tmp: string) => void): string {
+  const tmp = dir() + `/.${name}.${process.pid}.${Date.now()}.tmp`;
+  try {
+    write(tmp);
+    const dest = `${dir()}/${name}`;
+    renameSync(tmp, dest);
+    return dest;
+  } finally {
+    rmSync(tmp, { force: true });
+  }
+}
+
 /** The open browser, so the signal handlers can close it. */
 let openBrowser: any;
 
 async function prove(app: AppEntry, opts: { root: string; outDir: string; registry: Registry }): Promise<ProofResult> {
-  const proofDir = join(opts.outDir, "tooling", "registry", "proofs");
-  mkdirSync(proofDir, { recursive: true });
+  const proofDir = () => proofPath(opts.outDir, opts.root);
+  mkdirSync(proofDir(), { recursive: true });
+  // The app's checkouts' `.git` entries now (before it starts), compared after it stopped.
+  const checkouts = (() => {
+    try {
+      return { checkouts: appScope(opts.root, app).checkouts };
+    } catch {
+      return { checkouts: [] };
+    }
+  })();
+  const gitBefore = gitEntries(checkouts);
   const result: ProofResult = {
     app: app.id,
     date: new Date().toISOString(),
@@ -119,7 +162,8 @@ async function prove(app: AppEntry, opts: { root: string; outDir: string; regist
     running = await startApp(app, { root: opts.root, outDir: proofRunsDir(opts.outDir), allowUnproven: true, registry: opts.registry });
     result.baseUrl = running.baseUrl;
     result.env = Object.keys(running.env).sort();
-    const browser = (openBrowser = await launchBrowser(opts.root));
+    // Chromium in the OS sandbox with this run's ports only (decision 29).
+    const browser = (openBrowser = await launchBrowser(opts.root, { running }));
     try {
       for (const route of app.routes) {
         const themes = route.themes ?? (app.theme.rule === "dark-first" ? ["dark"] : ["light", "dark"]);
@@ -146,18 +190,22 @@ async function prove(app: AppEntry, opts: { root: string; outDir: string; regist
       result.egress = running.egress && { samples: running.egress.samples, failures: [...running.egress.failures] };
       result.connectionsSeen = running.egress?.connections ?? 0;
       try {
-        copyFileSync(running.logPath, join(proofDir, `${app.id}.log`));
+        writeNew(proofDir, `${app.id}.log`, (tmp) => copyFileSync(running!.logPath, tmp, constants.COPYFILE_EXCL));
       } catch {}
     }
   }
+  // Every app checkout's `.git` entry must be what it was before the app started.
+  const gitAfter = gitEntries(checkouts);
+  const gitChanged = [...gitBefore].filter(([entry, state]) => gitAfter.get(entry) !== state).map(([entry]) => entry);
+  if (gitChanged.length) result.gitChanged = gitChanged;
   if (running && (!result.egress || result.egress.samples === 0)) result.inconclusive = "egress sampling took no sample";
   else if (result.egress?.failures.length) result.inconclusive = `egress sampling failed: ${result.egress.failures[0]}`;
   // Blocked requests are recorded, not fatal: every route still rendered, so rendering needed none of them.
   result.proven =
-    result.routes.length > 0 && result.routes.every((r) => r.ok) && result.foreign.length === 0 && result.stoppedClean && !result.inconclusive;
+    result.routes.length > 0 && result.routes.every((r) => r.ok) && result.foreign.length === 0 && result.stoppedClean && !result.inconclusive && !result.gitChanged;
   result.blockedTargets = summarizeBlocked(result.blockedRequests);
   if (result.routes.some((r) => r.probes?.length)) result.probeCheck = "selectors only";
-  writeFileSync(join(proofDir, `${app.id}.json`), JSON.stringify(result, null, 2) + "\n");
+  writeNew(proofDir, `${app.id}.json`, (tmp) => writeFileSync(tmp, JSON.stringify(result, null, 2) + "\n", { flag: "wx" }));
   return result;
 }
 
@@ -263,13 +311,30 @@ if (import.meta.main) {
     return v;
   };
   const root = resolve(flag("--root") ?? resolve(DESIGN_SYSTEM_ROOT, ".."));
-  const outDir = safeOutputPath(flag("--out-dir") ?? process.env.DS_RUN ?? join(tmpdir(), "ds-rollout"), { root, label: "--out-dir" });
-  const registry = validateLoadedRegistry(loadRegistry());
+  let outDir: string;
+  let registry: Registry;
+  let apps: AppEntry[];
+  try {
+    // Never the owner's tree, never a git checkout (where a commit or `git clean` could pick proofs up).
+    outDir = toolOutputDir(flag("--out-dir") ?? process.env.DS_RUN ?? join(tmpdir(), "ds-rollout"), { root, label: "--out-dir" });
+    registry = validateLoadedRegistry(loadRegistry());
+    apps = argv.map((id) => getApp(registry, id));
+  } catch (error) {
+    console.error(`registry-prove: ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(2);
+  }
   installSignalHandlers(() => openBrowser?.close());
   for (const line of await cleanupRuns(proofRunsDir(outDir))) console.error(`registry-prove: cleanup: ${line}`);
+  // Every repository the proofs touch, pinned before the first app starts (git.ts).
+  pinRepos([
+    DESIGN_SYSTEM_ROOT,
+    join(root, "design-system"),
+    ...apps.flatMap((app) => [app.repo, app.root, ...(app.scan?.paths ?? [])].filter((path): path is string => typeof path === "string").map((path) => resolvePath(root, path))),
+  ]);
   let failed = false;
-  for (const id of argv) {
-    const r = await prove(getApp(registry, id), { root, outDir, registry });
+  for (const app of apps) {
+    const id = app.id;
+    const r = await prove(app, { root, outDir, registry });
     failed ||= !r.proven;
     console.log(
       `${id}: ${r.proven ? "PROVEN" : r.inconclusive ? "INCONCLUSIVE" : "NOT PROVEN"} url=${r.baseUrl ?? "-"} ports=${r.startedPorts.join(",")} connections=${r.connectionsSeen} samples=${r.egress?.samples ?? 0}`,
@@ -281,6 +346,7 @@ if (import.meta.main) {
     for (const [origin, n] of Object.entries(r.blockedTargets ?? {})) console.log(`  blocked ${n}x ${origin}`);
     for (const f of r.foreign) console.log(`  foreign ${f}`);
     if (!r.stoppedClean) console.log(`  NOT STOPPED CLEAN: ${r.stopError ?? ""}`);
+    if (r.gitChanged) console.log(`  .git entries changed while it ran: ${r.gitChanged.join(", ")}`);
     console.log(`  proof: ${join(outDir, "tooling/registry/proofs", `${id}.json`)}`);
   }
   process.exit(failed ? 1 : 0);

@@ -28,7 +28,6 @@
  * tree or a git checkout, and no write under it goes through a symlink.
  * Exit: 2 on bad arguments or an app that cannot be captured, 1 when a shot failed or never settled.
  */
-import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -55,7 +54,7 @@ import {
   type Theme,
   writeManifest,
 } from "./lib/snapshot-set";
-import { SYSTEM_BIN, SYSTEM_PATH } from "./lib/system-bin";
+import { GitPinError, pinFor, pinnedGit, pinRepos } from "./lib/git";
 import { treeState } from "./lib/provenance";
 import { propagateBlocker } from "./lib/verify/propagate";
 
@@ -152,11 +151,22 @@ orFail(() =>
   ),
 );
 
-/** The system git by absolute path, with a system-only PATH: never a binary planted in PATH. */
-const GIT_ENV = { ...process.env, PATH: SYSTEM_PATH };
+/**
+ * git through git.ts: the system git, pinned to the repositories recorded below before the app starts,
+ * hook-free, no fsmonitor, no system or global config. A repository whose `.git` entry changed since then
+ * is refused (GitPinChanged): its output never reaches the manifest, and the capture fails.
+ */
 function git(repo: string, args: string[]): string {
-  const result = spawnSync(SYSTEM_BIN.git, ["-C", repo, ...args], { encoding: "utf8", env: GIT_ENV });
-  return result.status === 0 ? result.stdout.trimEnd() : `ERROR: ${result.stderr.trim()}`;
+  try {
+    const pin = pinFor(repo, { optional: true });
+    if (!pin) return "ERROR: not a git checkout";
+    const result = pinnedGit(pin, args);
+    return result.status === 0 ? result.stdout.trimEnd() : `ERROR: ${(result.error?.message ?? result.stderr).trim()}`;
+  } catch (error) {
+    if (!(error instanceof GitPinError)) throw error;
+    pinChanged ??= error.message;
+    return `ERROR: ${error.message}`;
+  }
 }
 function repoState(path: string) {
   return { path, head: git(path, ["rev-parse", "HEAD"]), status: git(path, ["status", "--porcelain"]).split("\n").filter(Boolean) };
@@ -165,12 +175,22 @@ function sha256(path: string): string | null {
   return existsSync(path) ? createHash("sha256").update(readFileSync(path)).digest("hex") : null;
 }
 const dsInRoot = join(root, "design-system");
+// Every repository this capture reads, pinned before the app starts (startApp pins the app's checkouts too).
+const gitPins = orFail(() => pinRepos([resolvePath(root, app.repo), resolvePath(root, app.root), dsInRoot, DESIGN_SYSTEM_ROOT]));
 /** Problems reading the trees for provenance (a git failure): manifest warnings, never a crash. */
 const provenanceWarnings = new Set<string>();
+/** Set when a pinned repository's `.git` entry changed during the capture: the set fails. */
+let pinChanged: string | undefined;
 
 /** The trees a shot was captured from, read right after the shot (scripts/lib/provenance.ts). */
 function provenanceNow(): ShotProvenance {
-  return { ...treeState(root, app, provenanceWarnings), capturedAt: new Date().toISOString() };
+  try {
+    return { ...treeState(root, app, provenanceWarnings), capturedAt: new Date().toISOString() };
+  } catch (error) {
+    if (!(error instanceof GitPinError)) throw error;
+    pinChanged ??= error.message;
+    throw error;
+  }
 }
 
 let running: RunningApp | undefined;
@@ -197,8 +217,8 @@ try {
   running = await startApp(app, { root, outDir, registry });
   console.log(`[${app.id}] ready${running.baseUrl ? ` at ${running.baseUrl}` : ""}; listening on ${running.startedPorts.join(", ")}`);
   if (!running.electron) {
-    // A sanitized env over a temp HOME, never the tool's own.
-    browser = await launchBrowser(root);
+    // Sandboxed to the run's ports (decision 29); a sanitized env over a temp HOME, never the tool's own.
+    browser = await launchBrowser(root, { running });
     chromiumVersion = browser.version();
     console.log(`[${app.id}] warming up: ${[...new Set(routes.map((route) => route.path || "/"))].join(" ")}`);
     warmUpBlocked = await warmUp(browser, running, routes);
@@ -339,6 +359,9 @@ const manifest: SetManifest = {
     tooling: { path: DESIGN_SYSTEM_ROOT, head: git(DESIGN_SYSTEM_ROOT, ["rev-parse", "HEAD"]), registry: registryPath },
   },
   appRepo: repoState(resolvePath(root, app.repo)),
+  // The repositories git read, as pinned before the app started; snapshot:diff refuses a B set whose
+  // repositories' `.git` entries changed since (git.ts).
+  git: gitPins.map(({ workTree, gitDir, commonDir, entry }) => ({ workTree, gitDir, commonDir, entry })),
   environment: {
     playwright: (() => {
       try {
@@ -369,6 +392,15 @@ if (only && previous) {
 }
 // Dark identical to light: expected before a migration, a sign that the dark switch did nothing after it.
 const warnings: string[] = [...provenanceWarnings];
+if (pinChanged) {
+  // A repository's `.git` entry changed while the app ran: nothing git said about it can be trusted, so the
+  // set stays incomplete (snapshot:diff --exact rejects it, and an --only merge into it is refused).
+  warnings.push(`git: ${pinChanged}`);
+  manifest.incomplete = true;
+  manifest.invalid = `git: ${pinChanged}`;
+  console.error(`[${app.id}] ${pinChanged}`);
+  failures += 1;
+}
 for (const shot of manifest.shots) {
   if (shot.theme !== "dark" || shot.error || shot.gating === false) continue;
   const light = manifest.shots.find((other) => other.route === shot.route && other.theme === "light" && !other.error);

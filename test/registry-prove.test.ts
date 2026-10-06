@@ -4,8 +4,11 @@
  * while it talks to the owner's docs service.
  */
 import { describe, expect, test } from "bun:test";
+import { lstatSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
-import { foreignConnections, parseLsof } from "../scripts/registry-prove.ts";
+import { foreignConnections, parseLsof, proofPath, writeNew } from "../scripts/registry-prove.ts";
 
 // Real `lsof -nP -a -p <pids> -i` output shape (macOS), for a run that started :47020 and :47021.
 const LSOF = `COMMAND   PID USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
@@ -36,5 +39,42 @@ describe("foreignConnections", () => {
       "[::1]:49703->[::1]:4840 (ESTABLISHED)",
       "192.168.1.20:5353->224.0.0.251:5353",
     ]);
+  });
+});
+
+describe("proof outputs (Opus R3 P2-4)", () => {
+  const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-prove-out-")));
+
+  test("a symlinked proofs dir is refused; a symlink at the proof file is replaced, never written through", () => {
+    try {
+      const out = join(scratch, "out");
+      const elsewhere = join(scratch, "elsewhere");
+      mkdirSync(join(out, "tooling", "registry"), { recursive: true });
+      mkdirSync(elsewhere);
+      symlinkSync(elsewhere, join(out, "tooling", "registry", "proofs"));
+      expect(() => proofPath(out, scratch)).toThrow(/symlink/);
+      rmSync(join(out, "tooling", "registry", "proofs"));
+      mkdirSync(proofPath(out, scratch), { recursive: true });
+      const target = join(elsewhere, "owner-file.json");
+      writeFileSync(target, "owner");
+      symlinkSync(target, join(proofPath(out, scratch), "app.json"));
+      writeNew(() => proofPath(out, scratch), "app.json", (tmp) => writeFileSync(tmp, "{}\n", { flag: "wx" }));
+      expect(readFileSync(target, "utf8")).toBe("owner");
+      expect(lstatSync(join(proofPath(out, scratch), "app.json")).isSymbolicLink()).toBe(false);
+      expect(readFileSync(join(proofPath(out, scratch), "app.json"), "utf8")).toBe("{}\n");
+    } finally {
+      rmSync(scratch, { recursive: true, force: true });
+    }
+  });
+
+  test("--out-dir inside a git checkout is refused before anything starts (exit 2)", () => {
+    const checkout = realpathSync(mkdtempSync(join(tmpdir(), "ds-prove-checkout-")));
+    try {
+      Bun.spawnSync(["/usr/bin/git", "init", "-q", checkout]);
+      const run = Bun.spawnSync([process.execPath, join(import.meta.dir, "../scripts/registry-prove.ts"), "--root", checkout, "--out-dir", join(checkout, "out"), "no-such-app"], { stdout: "pipe", stderr: "pipe" });
+      expect([run.exitCode, run.stderr.toString()]).toEqual([2, expect.stringContaining("inside the git checkout")]);
+    } finally {
+      rmSync(checkout, { recursive: true, force: true });
+    }
   });
 });
