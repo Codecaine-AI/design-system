@@ -914,7 +914,7 @@
       "run": {
         "mode": "browser",
         "cwd": "codecaine/core/canvas/packages/studio",
-        "start": "mkdir -p {tmp}/canvases && cp -R ../../canvases/. {tmp}/canvases/ && exec bun x --no-env-file --bun vite {flags}",
+        "start": "mkdir -p {tmp}/canvases && cp -R ../../canvases/. {tmp}/canvases/ && i=10 && for f in {tmp}/canvases/*.canvas.json; do touch -t 2026010100$i \"$f\"; i=$((i+1)); done && exec bun x --no-env-file --bun vite {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
       },
       "commands": {
@@ -965,7 +965,9 @@
         {
           "id": "boards",
           "path": "/",
-          "waitFor": "h2:text-is(\"Canvas files\")"
+          "waitFor": "h2:text-is(\"Canvas files\")",
+          "gating": false,
+          "reason": "the boards page fetches the owner port localhost:4803 (decision 8), which the guard blocks, and snapshot-set fails any set that records an owner-port request; gating sets are captured with --only (every route but boards) and boards is captured in its own set for the sheets (decision 48)"
         },
         {
           "id": "gallery",
@@ -1077,7 +1079,7 @@
       "exceptions": [
         {
           "what": "boards come from a temp copy of the repo's canvases/",
-          "reason": "CANVAS_DIR points the file API at {tmp}/canvases (copied at start), so the Style rail and any autosave write only the copy; the evals page reads packages/eval-suite/runs read-only"
+          "reason": "CANVAS_DIR points the file API at {tmp}/canvases (copied at start), so the Style rail and any autosave write only the copy; the evals page reads packages/eval-suite/runs read-only; the copies get fixed, distinct mtimes (touch -t, in file-name order), because the list endpoint sorts by mtime (packages/studio/server/canvas-file-api.ts:415,421) and cp -R gave mtimes 1-3 ms apart, so the board order changed between runs (found by the pass-1 worker, 2026-10-06)"
         },
         {
           "what": "the boards list page fetches http://localhost:4803/api/canvases",
