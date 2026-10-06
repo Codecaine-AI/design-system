@@ -310,7 +310,7 @@ export function resolveExport(pkgDir: string, subpath: string): string | null {
 
 const JS_EXTS = [".ts", ".tsx", ".js", ".jsx", ".mjs", ".mts", ".cjs", ".cts"];
 
-function withExtensions(base: string): string | null {
+export function withExtensions(base: string): string | null {
   if (isFile(base)) return base;
   for (const e of JS_EXTS) if (isFile(base + e)) return base + e;
   if (isDir(base)) for (const e of JS_EXTS) if (isFile(join(base, "index" + e))) return join(base, "index" + e);

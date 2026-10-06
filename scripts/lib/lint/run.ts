@@ -15,6 +15,7 @@ import type { AppEntry, CheckId, Registry } from "../registry";
 import { resolvePath } from "../registry";
 import type { DesignSystemBuild } from "./design-system";
 import { buildLoadGraph, type LoadGraph } from "./loads";
+import { buildModuleGraph, clearModuleCaches, type ModuleGraph } from "./modules";
 import { checkLiterals, hardTotal } from "./literals";
 import { checkNames } from "./names";
 import { checkResolution } from "./resolution";
@@ -73,6 +74,14 @@ export function makeContext(app: AppEntry, opts: { root: string; registryDir: st
   const sources = lazy<SourceFile[]>(() => collectSources(setup(), rel));
   const loads = lazy<LoadGraph>(() => buildLoadGraph(app.entryStylesheet ? resolvePath(root, app.entryStylesheet) : null, { serveRoot: serveRootOf(app, root) }));
   const literalScan = lazy<LiteralScan>(() => runLiteralScan(setup()));
+  const modules = lazy<ModuleGraph>(() =>
+    buildModuleGraph({
+      entry: app.entryStylesheet ? resolvePath(root, app.entryStylesheet) : null,
+      serveRoot: serveRootOf(app, root),
+      appRoot: resolvePath(root, app.root),
+      root,
+    }),
+  );
   return {
     app,
     root,
@@ -82,6 +91,7 @@ export function makeContext(app: AppEntry, opts: { root: string; registryDir: st
     rel,
     sources,
     loads,
+    modules,
     literalScan,
   };
 }
@@ -118,6 +128,7 @@ export function lintApp(app: AppEntry, opts: Omit<LintOptions, "registry" | "app
 
 export function lintApps(opts: LintOptions): LintReport {
   clearCaches();
+  clearModuleCaches();
   const ids = opts.apps.length ? opts.apps : opts.registry.apps.map((a) => a.id);
   const apps = ids.map((id) => {
     const app = opts.registry.apps.find((a) => a.id === id);

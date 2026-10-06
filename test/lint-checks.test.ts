@@ -327,8 +327,27 @@ describe("shell", () => {
   // but it renders the complete .ds-shell markup.
   test("a template copy that no app file imports fails", () => {
     expect(check("templated-unused", "shell").violations).toEqual([
-      at("apps/templated-unused/src/_components/AppShell", 0, "AppShell copy is not imported by any other app file"),
+      at("apps/templated-unused/src/_components/AppShell", 0, "AppShell copy is not imported by any file reachable from the entry (apps/templated-unused/src/main.tsx)"),
     ]);
+  });
+
+  test("only rendered markup counts: a class list in a constant, markup beside the shell, a file nothing imports", () => {
+    // App.tsx renders .ds-shell; its parts sit in a data attribute (PARTS), in other/Panels.tsx (rendered by
+    // main.tsx, outside the shell's subtree) and in legacy/Old.tsx (complete, but nothing imports it).
+    expectExactly(
+      check("shell-dead", "shell").violations,
+      ["ds-sidebar", "ds-sidebar-toggle", "ds-workspace", "ds-topbar", "ds-main"].map((c) =>
+        at("apps/shell-dead/src/App.tsx", 4, `the .ds-shell markup has no .${c} in its file or the modules it imports`),
+      ),
+    );
+  });
+
+  test("markup split across a component subtree passes, through a lazy import, an @/ alias and cn() class lists", () => {
+    expect(check("shell-split", "shell")).toMatchObject({ status: "pass", violations: [] });
+  });
+
+  test("a Next.js app router page counts as rendered: the router reaches it without an import", () => {
+    expect(check("shell-next", "shell")).toMatchObject({ status: "pass", violations: [] });
   });
 
   test("a hand-written AppShell folder that renders the complete .ds-shell markup passes", () => {

@@ -9,6 +9,7 @@
 import type { AppEntry, CheckId } from "../registry";
 import type { DesignSystemBuild } from "./design-system";
 import type { LoadGraph } from "./loads";
+import type { ModuleGraph } from "./modules";
 import type { LiteralScan, SourceFile } from "./workspace";
 
 export type PassNumber = 1 | 2 | 3;
@@ -68,6 +69,8 @@ export interface AppContext {
   sources(): SourceFile[];
   /** Stylesheet loads reached from the entry stylesheet. */
   loads(): LoadGraph;
+  /** Local modules the app's entry reaches through imports (what it can render). */
+  modules(): ModuleGraph;
   /** scan-literals over the scan spec, with hits. */
   literalScan(): LiteralScan;
 }

@@ -172,6 +172,10 @@ export const APPS: AppEntry[] = [
   }),
   appEntry({ id: "tw3-unused", root: "apps/tw3-unused", stack: { summary: "Tailwind v3 (fixture)", tailwind: "v3", packageManager: "bun" } }),
   appEntry({ id: "tw3-bound", root: "apps/tw3-bound", stack: { summary: "Tailwind v3 (fixture)", tailwind: "v3", packageManager: "bun" } }),
+  // Shell: markup that is never rendered, split across a component subtree, or reached only by the Next.js router.
+  appEntry({ id: "shell-dead", root: "apps/shell-dead" }),
+  appEntry({ id: "shell-split", root: "apps/shell-split" }),
+  appEntry({ id: "shell-next", root: "apps/shell-next", scan: { paths: ["apps/shell-next/app"], exclude: [] }, entryStylesheet: "apps/shell-next/app/layout.tsx" }),
   // Resolution: libraries with their own copy of the package.
   appEntry({ id: "with-libs", root: "apps/with-libs" }),
   appEntry({ id: "vendored-with-lib", root: "apps/vendored-with-lib", consume: { via: "vendor-tgz", detail: "file:vendor/design-system.tgz" } }),
@@ -217,8 +221,13 @@ function copyAppShell(appDir: string, rendered = true) {
     recursive: true,
     filter: (src) => !/\.(test|spec)\.[jt]sx?$/.test(src),
   });
-  // The app renders its copy, as the template's App.tsx does.
-  if (rendered) write(join(appDir, "src/App.tsx"), 'import { AppShell } from "./_components/AppShell";\n\nexport function App() {\n  return <AppShell appName="Fixture" sections={[]} title="Home">home</AppShell>;\n}\n');
+  // The app renders its copy, as the template's App.tsx does; without it, main.tsx renders something else.
+  if (rendered) {
+    write(join(appDir, "src/App.tsx"), 'import { AppShell } from "./_components/AppShell";\n\nexport function App() {\n  return <AppShell appName="Fixture" sections={[]} title="Home">home</AppShell>;\n}\n');
+    write(join(appDir, "src/main.tsx"), 'import { createRoot } from "react-dom/client";\nimport { App } from "./App";\n\ncreateRoot(document.getElementById("root")!).render(<App />);\n');
+  } else {
+    write(join(appDir, "src/main.tsx"), 'import { createRoot } from "react-dom/client";\n\ncreateRoot(document.getElementById("root")!).render(<main>no shell</main>);\n');
+  }
 }
 
 function vendoredApp(appDir: string, tmp: string, tgzTokens: string) {
