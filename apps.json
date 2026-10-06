@@ -1528,12 +1528,17 @@
         {
           "id": "traces",
           "path": "/traces",
-          "waitFor": "aside.w-56"
+          "waitFor": "p:text-is(\"The agent service is not running.\")"
         },
         {
           "id": "config",
           "path": "/config",
-          "waitFor": "aside.w-56"
+          "waitFor": "p:text-is(\"The agent service is not running.\")"
+        },
+        {
+          "id": "traces-style",
+          "path": "/traces?style=open",
+          "waitFor": "p:text-is(\"The agent service is not running.\")"
         }
       ],
       "runProfile": {
@@ -1590,9 +1595,19 @@
             "token": "color.text.body"
           },
           {
-            "selector": "aside.w-56",
-            "property": "border-right-color",
+            "selector": "header.ds-topbar",
+            "property": "border-bottom-color",
             "token": "color.border.default"
+          },
+          {
+            "selector": "aside.ds-sidebar",
+            "property": "background-color",
+            "token": "color.surface.sidebar"
+          },
+          {
+            "selector": "header.ds-topbar h1",
+            "property": "color",
+            "token": "color.text.ink"
           }
         ],
         "darkSwitch": {
@@ -1604,12 +1619,6 @@
           "toggle": ".ds-sidebar-toggle",
           "storageKey": "canvas-agent.sidebar"
         },
-        "waivedRoles": [
-          {
-            "role": "panel",
-            "reason": "pass 1 keeps the existing look: the w-56 aside paints no surface of its own (transparent over the page) and no other viewer chrome paints a panel role; pass 2's shell adds the sidebar surface and a panel probe (decision 72 batch, 2026-10-06)"
-          }
-        ],
         "lightSwitch": {
           "kind": "storage",
           "key": "canvasAgentViewerStyle.v2",
