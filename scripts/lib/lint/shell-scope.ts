@@ -5,7 +5,10 @@
  *   selector) that carries the `ds-shell` class: `.docs-app.ds-shell { … }`,
  *   `.ds-shell[data-sidebar="collapsed"] { … }`, a nested `&.wide { … }` inside such a rule. At-rules
  *   (`@media`, `@supports`, `@layer`, `@container`) are transparent. `:root`, `.ds-shell .x` and a
- *   selector list with one such selector are not shell-scoped. Read in CSS, SCSS and Less files, HTML
+ *   selector list with one such selector are not shell-scoped. `:is()` and `:where()` are lists too:
+ *   `:is(.ds-shell, .x)` is not shell-scoped, `:where(.ds-shell, .app.ds-shell)` is. A pseudo-element
+ *   (`.ds-shell::before`, `.ds-shell:after`) is another box, and `.ds-shell` in an attribute value
+ *   (`[data-x=".ds-shell"]`) or in `:not()`/`:has()` says nothing. Read in CSS, SCSS and Less files, HTML
  *   `<style>` blocks and CSS held in one JS string (a template literal's interpolations are opaque).
  * - On the shell element: an HTML `style="…"` attribute or a JSX `style={{ … }}` object on a tag whose
  *   class carries `ds-shell`, or a Tailwind arbitrary property (`[--ds-layout-x:…]`) in a class string
@@ -49,31 +52,70 @@ function splitTop(text: string, sep: (c: string) => boolean): string[] {
   return out;
 }
 
-/** Removes the arguments of `:not(…)` and `:has(…)`: a class there does not describe the subject. */
-function withoutNegations(compound: string): string {
-  let out = compound;
-  for (let guard = 0; guard < 16; guard++) {
-    const m = /:(?:not|has)\(/i.exec(out);
-    if (!m) break;
-    let depth = 0;
-    let j = m.index + m[0].length - 1;
-    for (; j < out.length; j++) {
-      if (out[j] === "(") depth++;
-      else if (out[j] === ")" && --depth === 0) break;
+/** Branch lists: the element matches one of the branches. */
+const BRANCH_LIST = /^(?:is|where|matches|-webkit-any|-moz-any)$/i;
+/** Pseudo-elements, also in their legacy one-colon spelling: another box than the element. */
+const PSEUDO_ELEMENT = /::|:(?:before|after|first-line|first-letter)(?![\w-])/i;
+
+/**
+ * A compound selector split into its own text and its functional pseudo-classes: the top level with
+ * every `[…]` and `(…)` group blanked (a class in an attribute value or a group says nothing there),
+ * and each `:name(…)` with its argument.
+ */
+function compoundParts(compound: string): { top: string; groups: Array<{ name: string; arg: string }> } {
+  let top = "";
+  const groups: Array<{ name: string; arg: string }> = [];
+  for (let i = 0; i < compound.length; i++) {
+    const c = compound[i];
+    if (c !== "[" && c !== "(") {
+      top += c;
+      continue;
     }
-    out = out.slice(0, m.index) + out.slice(j + 1);
+    // Skip to the matching bracket, outside quotes.
+    const close = c === "[" ? "]" : ")";
+    let depth = 0;
+    let quote = "";
+    let j = i;
+    for (; j < compound.length; j++) {
+      const d = compound[j];
+      if (quote) {
+        if (d === "\\") j++;
+        else if (d === quote) quote = "";
+        continue;
+      }
+      if (d === '"' || d === "'") quote = d;
+      else if (d === c) depth++;
+      else if (d === close && --depth === 0) break;
+    }
+    if (c === "(") {
+      const name = /:([\w-]+)$/.exec(top)?.[1];
+      if (name) groups.push({ name, arg: compound.slice(i + 1, j) });
+    }
+    top += c === "[" ? "[]" : "()";
+    i = j;
   }
-  return out;
+  return { top, groups };
 }
 
-/** True when every selector of the list has a subject that carries `ds-shell` (`&` stands for a parent that does, when `parentShell`). */
+/**
+ * True when every element the compound matches is the shell: `ds-shell` in its own classes, `&` for a
+ * shell parent, or a branch list (`:is()`, `:where()`) whose every branch is the shell. A pseudo-element
+ * (`.ds-shell::before`) is not the shell; `:not()`, `:has()` and other groups say nothing.
+ */
+function compoundIsShell(compound: string, parentShell: boolean): boolean {
+  const { top, groups } = compoundParts(compound);
+  if (PSEUDO_ELEMENT.test(top)) return false;
+  if (SHELL_SELECTOR.test(top) || (parentShell && top.includes("&"))) return true;
+  return groups.some((g) => BRANCH_LIST.test(g.name) && selectorListIsShell(g.arg, parentShell));
+}
+
+/** True when every selector of the list has a subject that is the shell (`&` stands for a parent that is, when `parentShell`). */
 export function selectorListIsShell(list: string, parentShell: boolean): boolean {
   const selectors = splitTop(list, (c) => c === ",").map((s) => s.trim());
   if (!selectors.length || selectors.some((s) => !s)) return false;
   return selectors.every((sel) => {
     const compounds = splitTop(sel, (c) => /[\s>+~]/.test(c)).filter((c) => c.trim());
-    const subject = withoutNegations(compounds[compounds.length - 1] ?? "");
-    return SHELL_SELECTOR.test(subject) || (parentShell && subject.includes("&"));
+    return compoundIsShell(compounds[compounds.length - 1] ?? "", parentShell);
   });
 }
 

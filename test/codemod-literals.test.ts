@@ -880,6 +880,63 @@ describe("propose: round-3 second review of the role choices", () => {
   });
 });
 
+/** Rows for the round-3 closing fixtures (test/fixtures/codemod/review/r3/closing), from the closing review's probes. */
+function closing(paths: string[], opts: { theme?: "light" | "dark" } = {}): Row[] {
+  return r3Rows(paths.map((p) => `closing/${p}`), opts);
+}
+
+function atClosing(list: Row[], file: string, line: number, literal: string): Row {
+  const found = list.find((r) => r.file === `review/r3/closing/${file}` && r.line === line && r.literal === literal);
+  if (!found) throw new Error(`no row for ${file}:${line} ${literal}; rows on that line: ${list.filter((r) => r.line === line).map((r) => r.literal).join(", ")}`);
+  return found;
+}
+
+describe("propose: round-3 closing review (R3-B3)", () => {
+  test("P1-7: a template-literal class value gives hints from its static chunks only; current, inherit, transparent and drop-shadow are no state", () => {
+    const rows = closing(["states.tsx"]);
+    const state = (line: number, literal: string) => {
+      const r = atClosing(rows, "states.tsx", line, literal);
+      return { line, literal, state: /selected|hover|outline/.test(r.why) ? r.why : null };
+    };
+    // The condition (`selectedType ? …`, `isSelected ? …`) is not a class: no state from it.
+    for (const [line, literal] of [[4, "bg-[#ebebe9]"], [4, "bg-[#f7f7f5]"], [10, "bg-[#ebebe9]"], [17, '"#ebebe9"']] as const) {
+      expect(state(line, literal)).toEqual({ line, literal, state: null });
+    }
+    // The unselected tab keeps its own color: a panel, not the selected fill.
+    expect(pick(atClosing(rows, "states.tsx", 4, "bg-[#f7f7f5]"))).toEqual({ proposed: "color.surface.panel", replacement: "bg-panel" });
+    // text-current, drop-shadow-md, border-current and bg-transparent are no state words.
+    for (const [line, literal] of [[7, "bg-[#ebebe9]"], [8, "border-[#d3d1cb]"], [20, "border-[#d3d1cb]"]] as const) {
+      expect(state(line, literal)).toEqual({ line, literal, state: null });
+    }
+    // A state word in a static chunk after the interpolation still holds.
+    expect(atClosing(rows, "states.tsx", 19, '"#ebebe9"').why).toBe("selected fill");
+  });
+
+  test("P1-7: mainmenu 637 and 647, the unselected asset chip, is not the selected fill", () => {
+    const rows = closing(["mainmenu.tsx"], { theme: "dark" });
+    for (const line of [8, 21]) {
+      const r = atClosing(rows, "mainmenu.tsx", line, "bg-[#1d1d1d]");
+      expect({ line, proposed: r.proposed, selected: r.why.includes("selected") }).toEqual({ line, proposed: expect.not.stringMatching(/active/), selected: false });
+    }
+  });
+
+  test("P2-5: a leading - on a root outside the spacing scale is refused; spacing roots keep it", () => {
+    const rows = closing(["negative.tsx"]);
+    const by = (literal: string) => atClosing(rows, "negative.tsx", 2, literal);
+    for (const literal of ["-z-[40]", "-tracking-[0.09em]"]) {
+      expect({ literal, ...pick(by(literal)), why: by(literal).why }).toEqual({ literal, proposed: null, replacement: null, why: expect.stringContaining("leading -") });
+    }
+    expect(rows.map((r) => [r.literal, r.replacement])).toEqual([
+      ["-z-[40]", null],
+      ["z-[40]", "z-overlay"],
+      ["-tracking-[0.09em]", null],
+      ["tracking-[-0.02em]", "tracking-title"],
+      ["-top-[4px]", "-top-1"],
+      ["-mt-[8px]", "-mt-2"],
+    ]);
+  });
+});
+
 function pick(r: Row) {
   return { proposed: r.proposed, replacement: r.replacement };
 }

@@ -21,8 +21,10 @@
  * - wiring: unused HTML strings in a server-rendered entry still count as its page (decision 21c).
  *   An inlined stylesheet counts only when the entry module itself reads the file (readFileSync,
  *   Bun.file(…).text(), a `?raw` import) into a module-level binding or right inside the <style>
- *   block; text returned by a function, held in an object or read in another module is not
- *   followed, nor is a path built from run-time values (process.cwd(), environment variables).
+ *   block, and writes it whole there (`${tokens}`, or an operand of a `+` chain; an async read
+ *   awaited where it is read); text returned by a function, held in an object, transformed
+ *   (`tokens.slice(…)`, a ternary) or read in another module is not followed, nor is a path built
+ *   from run-time values (process.cwd(), environment variables), nor `${await p}` on a promise.
  * - Tailwind v3 config: writes are read in source order, not run order; `let` reassignments,
  *   getters and `Object.assign({}, a, b)` as the export are not followed; `exports.presets =`
  *   after `module.exports =` counts although Node drops it; a spread inside `theme` that is not
@@ -38,7 +40,8 @@
  *   Token-path strings outside the token API count only as near misses (edit distance 2, or one segment off with three or more
  *   segments): `"color.surface.page.x"` or a two-segment key far from every path passes. A
  *   `--ds-layout-*` override counts as on the shell only in a rule whose selector subjects carry
- *   `.ds-shell` (CSS, HTML <style>, one JS string), on a tag whose class holds `ds-shell` (its
+ *   `.ds-shell` (every `:is()`/`:where()` branch too; not a pseudo-element or an attribute value)
+ *   (CSS, HTML <style>, one JS string), on a tag whose class holds `ds-shell` (its
  *   style, a Tailwind arbitrary property), or through `setProperty` on a receiver the file binds
  *   to the shell (documentElement, a querySelector/closest of .ds-shell, a ref on the ds-shell
  *   tag); an element passed in as a parameter or found another way fails. A non-optional TS type key

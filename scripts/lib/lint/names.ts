@@ -79,7 +79,7 @@ interface Declaration {
   /** Offset of the name. */
   index: number;
   name: string;
-  /** A CSS property, a `setProperty` call (`at`: offset of `setProperty`), or a style-object key. */
+  /** A CSS property, a `setProperty` call (`at`: offset of `setProperty`), or a style-object key (`at`: its quote, or the `[` of a computed key). */
   via: "css" | "set" | "key";
   at: number;
 }
@@ -99,7 +99,8 @@ function declarations(text: string, inStr: Uint8Array | null): Declaration[] {
   }
   for (const m of text.matchAll(DECL_COMPUTED)) {
     const quote = m.index! + m[0].indexOf(m[1]);
-    if (real(quote)) out.push({ index: quote + 1, name: m[2], via: "key", at: quote });
+    // `at` is the key's `[`: the style object's `{` is the first opener before it, not the bracket.
+    if (real(quote)) out.push({ index: quote + 1, name: m[2], via: "key", at: m.index! });
   }
   return out;
 }

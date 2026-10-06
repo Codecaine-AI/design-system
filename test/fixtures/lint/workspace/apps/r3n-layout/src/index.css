@@ -23,3 +23,18 @@
 .ds-shell { & .inner { --ds-layout-lane-wide: 1px; } }
 /* On the shell, but no such token. */
 .ds-shell { --ds-layout-nope: 1px; }
+
+/* Round-3 close (R3-B3): every :is()/:where() branch must be the shell; a pseudo-element or an attribute value is not. */
+:is(.ds-shell, .ordinary) { --ds-layout-sidebar-width: 1px; }
+:is(.ds-shell, :root) { --ds-layout-lane-text: 1ch; }
+.ds-shell::before { --ds-layout-lane-code: 1ch; }
+.ds-shell:after { --ds-layout-lane-code: 1ch; }
+:where(.ds-shell)::after, .ds-shell { --ds-layout-lane-wide: 1px; }
+[data-x=".ds-shell"] { --ds-layout-inspector-width: 1px; }
+.x:where(.ds-shell .y) { --ds-layout-lane-text: 1ch; }
+.ds-shell { &::before { --ds-layout-lane-wide: 1px; } }
+/* These pass: every branch is the shell, in @layer and @media too. */
+:where(.ds-shell, .app.ds-shell) { --ds-layout-lane-text: 60ch; }
+@layer app { .app:is(.ds-shell) { --ds-layout-lane-text: 60ch; } }
+@media (min-width: 900px) { .ds-shell[data-x=".y"]:is(:hover, .wide) { --ds-layout-lane-text: 60ch; } }
+.ds-shell { :is(&.wide, &[data-sidebar="collapsed"]) { --ds-layout-lane-wide: 1200px; } }

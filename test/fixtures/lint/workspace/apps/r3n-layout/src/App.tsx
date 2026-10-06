@@ -24,3 +24,12 @@ export function App() {
 
 export const css = `.docs-app.ds-shell { --ds-layout-sidebar-width: ${288}px; }`;
 export const bad = `:root { --ds-layout-sidebar-width: 1px; }`;
+
+// Computed keys (round-3 close, R3-B3): on the shell tag a layout key passes (gamecube's idiom); a color key, or another tag, fails.
+const vars = (n: number) => ({ "--app-grid-columns": String(n) });
+export const Computed = () => (
+  <main className="app-shell ds-shell" style={{ ...vars(2), ["--ds-layout-sidebar-width" as string]: "288px" } as React.CSSProperties}>
+    <div className="ds-shell" style={{ ["--ds-color-accent" as string]: "red" }} />
+    <div className="panel" style={{ ["--ds-layout-lane-text"]: "60ch" }} />
+  </main>
+);
