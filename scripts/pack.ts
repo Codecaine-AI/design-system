@@ -325,7 +325,7 @@ function place(staged: string, out: string): PackResult {
     copyFileSync(staged, tgz, constants.COPYFILE_EXCL);
     return { ...result, unchanged: false };
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+    if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw new PackError(`design-system: could not write ${tgz}: ${(error as Error).message}`);
   }
   if (lstatSync(tgz).isFile() && readFileSync(tgz).equals(readFileSync(staged))) return { ...result, unchanged: true };
   throw new PackError(
