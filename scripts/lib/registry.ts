@@ -71,6 +71,11 @@ export interface RouteSpec {
    * aria-checked) to that state, the way Playwright's setChecked does: a no-op when it is already there.
    */
   steps?: Array<{ action: StepAction; target?: string; value?: string | number }>;
+  /**
+   * Why this route's light visits skip verify.lightSteps: a page without the theme control (a playground
+   * that draws both themes itself). Set only with verify.lightSteps.
+   */
+  skipLightSteps?: string;
   /** CSS selectors whose boxes are masked in diffs. */
   masks?: string[];
   /** false = captured but never fails a pixel gate. Requires a reason. */
@@ -287,10 +292,13 @@ export function lightStepsProblems(steps: unknown, rule: ThemeRule | undefined, 
   return problems;
 }
 
-/** The light steps the tools run: the entry's verify.lightSteps, or undefined (none, empty, or a dark-first entry). */
-export function lightSteps(app: { theme?: { rule?: ThemeRule }; verify?: { lightSteps?: unknown } }): NonNullable<RouteSpec["steps"]> | undefined {
+/**
+ * The light steps the tools run on a route: the entry's verify.lightSteps, or undefined (none, empty, a
+ * dark-first entry, or a route with skipLightSteps).
+ */
+export function lightSteps(app: { theme?: { rule?: ThemeRule }; verify?: { lightSteps?: unknown } }, route?: Pick<RouteSpec, "skipLightSteps">): NonNullable<RouteSpec["steps"]> | undefined {
   const steps = app.verify?.lightSteps;
-  if (app.theme?.rule === "dark-first" || !Array.isArray(steps) || steps.length === 0) return undefined;
+  if (app.theme?.rule === "dark-first" || !Array.isArray(steps) || steps.length === 0 || route?.skipLightSteps !== undefined) return undefined;
   return steps as NonNullable<RouteSpec["steps"]>;
 }
 
@@ -612,6 +620,11 @@ export function validateRegistry(registry: Registry): string[] {
       for (const problem of lightStepsProblems(app.verify.lightSteps, app.theme?.rule, app.verify.lightSwitch)) problems.push(`${app.id}: ${problem}`);
     if (app.verify?.expectedFailures !== undefined) for (const problem of expectedFailuresProblems(app.verify.expectedFailures)) problems.push(`${app.id}: ${problem}`);
     for (const r of app.routes ?? []) if (r.steps !== undefined) for (const problem of stepsProblems(r.steps, `routes.${r.id}.steps`)) problems.push(`${app.id}: ${problem}`);
+    for (const r of app.routes ?? []) {
+      if (r.skipLightSteps === undefined) continue;
+      if (typeof r.skipLightSteps !== "string" || !r.skipLightSteps.trim()) problems.push(`${app.id}: route ${r.id} skipLightSteps must be the reason, a non-empty string`);
+      if (app.verify?.lightSteps === undefined) problems.push(`${app.id}: route ${r.id} sets skipLightSteps, but the entry has no verify.lightSteps`);
+    }
     if (app.verify?.darkSwitch?.kind === "steps") for (const problem of stepsProblems(app.verify.darkSwitch.steps, "verify.darkSwitch.steps")) problems.push(`${app.id}: ${problem}`);
     if (!runnable) {
       for (const g of ["verify", "snapshot"] as const)

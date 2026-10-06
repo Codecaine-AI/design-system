@@ -8,7 +8,8 @@
  *
  * In capture's order: load the route, wait for waitFor (when the route has no steps), switch the theme
  * the way the registry's verify.darkSwitch says (light on an entry with a storage verify.lightSwitch: the
- * value is written before the page loads, see capture themePlan), run the route's steps, wait for
+ * value is written before the page loads, see capture themePlan; light on an entry with verify.lightSteps:
+ * those steps, unless the route sets skipLightSteps), run the route's steps, wait for
  * waitFor, screenshot.
  * Shell apps (verify.sidebar) then get the sidebar toggle clicked, a screenshot, and the toggle clicked
  * again. Last, up to MAX_HOVERS visible, enabled buttons and links outside any form are hovered. Every
@@ -153,7 +154,7 @@ function splitVisitBlocked(running: RunningApp, entries: string[]): { blocked: s
 /** Visits one route in one theme. Never throws: every failure is a recorded action. */
 export async function visitRoute(target: VisitTarget, route: RouteSpec, theme: Theme): Promise<Visit> {
   const app = target.running.app;
-  const plan = themePlan(app, theme);
+  const plan = themePlan(app, theme, route);
   const visit: Visit = { route: route.id, theme, url: "", themeMethod: plan.method, actions: [], screenshots: [], consoleErrors: [], failedRequests: [], blocked: [], expectedBlocked: [] };
   // Only an entry that names expected failures gets the list (every other log stays as it was).
   const expectedFailures = app.verify?.expectedFailures;
@@ -227,7 +228,7 @@ export async function visitRoute(target: VisitTarget, route: RouteSpec, theme: T
 
     // The theme, the way capture switches it: darkSwitch clicks and steps, and lightSteps, go through the safety rules.
     const origin = theme === "light" ? "lightSteps " : "darkSwitch ";
-    for (const s of switchSteps(app, theme)) if (!(await step(s, origin))) return await stop();
+    for (const s of switchSteps(app, theme, route)) if (!(await step(s, origin))) return await stop();
     if (plan.method === "attribute" && !(await act("step", "darkSwitch attribute data-theme=dark", () => plan.afterLoad(page, undefined as never)))) return await stop();
 
     for (const s of steps) if (!(await step(s, ""))) return await stop();

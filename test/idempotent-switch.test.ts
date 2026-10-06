@@ -16,7 +16,8 @@ import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { LAUNCH_OPTIONS, runSteps, type Step, switchSteps, themePlan } from "../scripts/lib/capture.ts";
+import { startApp } from "../scripts/lib/app-runner.ts";
+import { captureRoute, LAUNCH_OPTIONS, runSteps, type Step, switchSteps, themePlan } from "../scripts/lib/capture.ts";
 import { loadPlaywright } from "../scripts/lib/playwright.ts";
 import { decodePng } from "../scripts/lib/png.ts";
 import { type AppEntry, DESIGN_SYSTEM_ROOT, expectedFailure, type ExpectedFailure, validateRegistry, type VerifySpec } from "../scripts/lib/registry.ts";
@@ -281,4 +282,58 @@ test.skipIf(Boolean(browserSkip))(
     expect([exitCode, log.ok]).toEqual([0, true]);
   },
   180_000,
+);
+
+test("skipLightSteps: a route without the theme control skips lightSteps, with a reason, only beside lightSteps", () => {
+  const playground = { id: "playground", path: "/playground.html", themes: ["light" as const], skipLightSteps: "draws both themes itself; no Style rail" };
+  const app = entry({ darkSwitch: checkDark, lightSteps: uncheckLight }, { routes: [{ id: "home", path: "/" }, playground] });
+  expect(problemsOf(app)).toEqual([]);
+  expect(switchSteps(app, "light", app.routes[0])).toEqual(uncheckLight);
+  expect(switchSteps(app, "light", playground)).toEqual([]);
+  expect(themePlan(app, "light", playground).method).toBe("default");
+  expect(problemsOf(entry({}, { routes: [playground] })).join("\n")).toMatch(/route playground sets skipLightSteps, but the entry has no verify\.lightSteps/);
+  expect(problemsOf(entry({ lightSteps: uncheckLight }, { routes: [{ ...playground, skipLightSteps: " " }] })).join("\n")).toMatch(/skipLightSteps must be the reason/);
+});
+
+/**
+ * Snapshot capture runs every route in one app run too (route by route, light then dark): the same failure
+ * and the same fix, through captureRoute. Each case is its own app run, so the server starts with no theme.
+ */
+async function captureSequence(port: number, verify: Partial<VerifySpec>) {
+  const root = tree();
+  const app = entry(verify, { runProfile: { ...snapshotApp().runProfile, ports: { ui: port } } });
+  const running = await startApp(app, { root, outDir: join(scratch, `capture-${port}`), timeoutMs: 20_000 });
+  const browser = await loadPlaywright(MIRROR).chromium.launch(LAUNCH_OPTIONS);
+  const seen: string[] = [];
+  try {
+    for (const [id, theme] of [["one", "light"], ["one", "dark"], ["two", "light"], ["two", "dark"]] as const) {
+      try {
+        const result = await captureRoute(browser, running, { id, path: "/", waitFor: "p.ready", viewport: { width: 320, height: 200 } }, theme);
+        const pixel = decodePng(result.png).data[0];
+        seen.push(`${id}-${theme}: ${result.themeMethod} ${pixel === 0 ? "dark" : pixel === 255 ? "light" : `pixel ${pixel}`}`);
+      } catch (error) {
+        seen.push(`${id}-${theme}: failed: ${(error as Error).message.split("\n")[0]}`);
+      }
+    }
+  } finally {
+    await browser.close();
+    await running.stop();
+  }
+  return seen;
+}
+
+test.skipIf(Boolean(browserSkip))(
+  "capture: a click darkSwitch leaks the saved dark into the next light shot; check/uncheck with lightSteps capture every shot in its theme",
+  async () => {
+    const before = await captureSequence(46953, {});
+    expect(before.slice(0, 3)).toEqual(["one-light: default light", "one-dark: steps dark", "two-light: default dark"]);
+    expect(before[3]).toBe("two-dark: failed: waitFor: Timeout 30000ms exceeded."); // the darkSwitch wait for dark: the click toggled the saved dark back to light
+    expect(await captureSequence(46954, { darkSwitch: checkDark, lightSteps: uncheckLight })).toEqual([
+      "one-light: steps light",
+      "one-dark: steps dark",
+      "two-light: steps light",
+      "two-dark: steps dark",
+    ]);
+  },
+  240_000,
 );

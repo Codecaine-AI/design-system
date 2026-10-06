@@ -226,7 +226,7 @@ async function loadRoute(browser: any, running: RunningApp, route: RouteSpec, th
       await page.reload({ waitUntil: "load" });
     }
     // An app whose theme outlives a visit: its lightSteps, before the route's steps, in every light load.
-    for (const step of (theme === "light" ? lightSteps(app) : undefined) ?? []) await runStep(page, step);
+    for (const step of (theme === "light" ? lightSteps(app, route) : undefined) ?? []) await runStep(page, step);
     for (const step of route.steps ?? []) await runStep(page, step);
     if (route.waitFor) await (await one(page, route.waitFor)).waitFor({ state: "visible", timeout: 30_000 });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});

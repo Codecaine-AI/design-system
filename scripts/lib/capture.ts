@@ -446,11 +446,11 @@ interface ThemePlan {
  * How to put the app in `theme`. Only the non-default theme is switched; the default is left as the app
  * boots, except light on an entry with a lightSwitch (lightSeed), which every light shot writes.
  */
-export function themePlan(app: AppEntry, theme: Theme): ThemePlan {
+export function themePlan(app: AppEntry, theme: Theme, route?: Pick<RouteSpec, "skipLightSteps">): ThemePlan {
   const none: ThemePlan = { method: "default", url: (url) => url, afterLoad: async () => undefined, verify: async () => undefined };
   const light = theme === "light" ? lightSeed(app) : undefined;
   if (light) return { ...none, method: "storage", init: { storage: { [light.key]: light.value } } };
-  const toLight = theme === "light" ? lightSteps(app) : undefined;
+  const toLight = theme === "light" ? lightSteps(app, route) : undefined;
   if (toLight) {
     return {
       ...none,
@@ -509,10 +509,10 @@ export function themePlan(app: AppEntry, theme: Theme): ThemePlan {
  * safety rules: verify.lightSteps for light (themePlan method "steps"), a click or steps darkSwitch for
  * dark; empty for every other plan.
  */
-export function switchSteps(app: AppEntry, theme: Theme): Step[] {
-  const plan = themePlan(app, theme);
+export function switchSteps(app: AppEntry, theme: Theme, route?: Pick<RouteSpec, "skipLightSteps">): Step[] {
+  const plan = themePlan(app, theme, route);
   if (plan.method !== "click" && plan.method !== "steps") return [];
-  if (theme === "light") return lightSteps(app) ?? [];
+  if (theme === "light") return lightSteps(app, route) ?? [];
   const sw = app.verify?.darkSwitch;
   return sw?.kind === "click" ? [{ action: "click", target: sw.selector }] : sw?.kind === "steps" ? sw.steps : [];
 }
@@ -529,7 +529,7 @@ function storageInitScript(entries: Record<string, string>) {
 export async function captureRoute(browser: any, running: RunningApp, route: RouteSpec, theme: Theme): Promise<CaptureResult> {
   const started = Date.now();
   const viewport = route.viewport ?? DEFAULT_VIEWPORT;
-  const plan = themePlan(running.app, theme);
+  const plan = themePlan(running.app, theme, route);
   const consoleErrors: string[] = [];
   const watch = (page: any) => {
     page.on("console", (message: any) => {

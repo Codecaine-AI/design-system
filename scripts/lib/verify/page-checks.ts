@@ -140,7 +140,8 @@ export async function themeMarkers(page: any): Promise<Record<string, string | n
 // -- one page, every check ----------------------------------------------------------
 
 export interface PageCheckOptions {
-  app: Pick<AppEntry, "id" | "shell" | "theme" | "verify">;
+  /** `routes` (optional) names the verify route, whose skipLightSteps verify honours. */
+  app: Pick<AppEntry, "id" | "shell" | "theme" | "verify"> & { routes?: AppEntry["routes"] };
   values: BuildValues;
   responses: ResponseLog;
   /** Where a fetched font url() came from (font-source.ts): only the package's fonts/ (or a copy of them declared in its fonts.css) passes. */
@@ -190,7 +191,8 @@ export async function checkPage(page: any, opts: PageCheckOptions): Promise<Asse
     await settle(page);
   }
   // An app whose theme outlives a visit: its lightSteps, after the route was prepared, before the light reads.
-  const toLight = darkFirst ? undefined : lightSteps(opts.app);
+  const verifyRoute = verify.route ? opts.app.routes?.find((route) => route.id === verify.route) : opts.app.routes?.[0];
+  const toLight = darkFirst ? undefined : lightSteps(opts.app, verifyRoute);
   if (toLight) {
     await runSteps(page, toLight);
     await settle(page);
