@@ -5,6 +5,7 @@
  *
  * - JS/TS: the string characters of
  *   - `className=` / `class=` attribute values: a string, or every string in the `{…}` expression;
+ *   - `className:` / `class:` property values (`createElement("div", { className: … })`);
  *   - the arguments of clsx, cn, classNames, cx, twMerge, twJoin, cva and tv calls;
  *   - `classList.add/toggle/replace(…)`, `setAttribute("class", …)` and `.className = …`;
  *   - `class="…"` / `className="…"` written inside a string or template literal (markup built as text).
@@ -46,10 +47,6 @@ export class ClassContexts {
       else return true;
     }
     return false;
-  }
-
-  get spans(): Span[] {
-    return this.starts.map((s, i) => [s, this.ends[i]]);
   }
 }
 
@@ -105,6 +102,7 @@ const CLASS_CALL = /(?<![\w$.])(?:clsx|cn|classNames|classnames|cx|twMerge|twJoi
 const CLASS_LIST_CALL = /\.\s*classList\s*\.\s*(?:add|toggle|replace)\s*\(/g;
 const SET_CLASS_ATTR = /\.\s*setAttribute\s*\(\s*(["'])class\1\s*,/g;
 const CLASS_NAME_ASSIGN = /\.\s*className\s*(?:\+=|=(?!=))/g;
+const CLASS_KEY = /(?<![\w$.:-])(?:className|class|(["'])class(?:Name)?\1)\s*:(?!:)\s*/g;
 const MARKUP_CLASS_ATTR = /(?<![\w$.:-])(?:className|class)\s*=\s*(\\?["'])/g;
 
 /** Class-context spans of a JS/TS source. */
@@ -134,7 +132,7 @@ export function jsClassSpans(src: string, lexed: { text: string; inStr: Uint8Arr
       if (end !== -1) stringRuns(inStr, re === SET_CLASS_ATTR ? m.index! + m[0].length : open, end, spans);
     }
   }
-  for (const m of text.matchAll(CLASS_NAME_ASSIGN)) {
+  for (const re of [CLASS_NAME_ASSIGN, CLASS_KEY]) for (const m of text.matchAll(re)) {
     if (!code(m.index!)) continue;
     const from = m.index! + m[0].length;
     stringRuns(inStr, from, expressionEnd(text, inStr, from), spans);

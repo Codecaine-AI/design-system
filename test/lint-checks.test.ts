@@ -250,7 +250,7 @@ describe("literals", () => {
     const tw = check("scale-classes", "literals")
       .violations.filter((v) => v.message.startsWith("Tailwind default-scale class "))
       .map((v) => `${v.file.replace("apps/scale-classes/src/", "")}:${v.line} ${v.message.split(" ")[3]}`);
-    // Not flagged: rounded, the MODE constant, title="shadow", the WORDS array and el.title.
+    // Not flagged: rounded, the MODE constant, title="shadow", the WORDS array, el.title and the title property.
     expect(tw.sort()).toEqual([
       "_components/Panel/index.tsx:10 blur",
       "_components/Panel/index.tsx:10 inset-shadow",
@@ -265,6 +265,7 @@ describe("literals", () => {
       "dom.ts:5 backdrop-blur",
       "dom.ts:6 blur",
       "dom.ts:6 leading-3",
+      "dom.ts:9 drop-shadow",
     ]);
   });
 

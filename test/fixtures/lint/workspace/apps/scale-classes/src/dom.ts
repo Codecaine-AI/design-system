@@ -6,3 +6,4 @@ export function mount(el: HTMLElement) {
   el.innerHTML = `<div class="blur ${WORDS.length ? "leading-3" : ""}">x</div>`;
   el.title = "blur";
 }
+export const buttonProps = { className: "drop-shadow", title: "blur" };
