@@ -6,10 +6,10 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { readTgz, tokensCssSha256 } from "../scripts/pack.ts";
+import { basename, join } from "node:path";
+import { readTgz, tgzProblems, tokensCssSha256 } from "../scripts/pack.ts";
 import { PKG, readJson, readText } from "./support.ts";
 
 function run(command: string, args: string[], cwd: string) {
@@ -79,8 +79,17 @@ describe("bun scripts/pack.ts --out <dir>", () => {
     expect(fonts.filter((font) => !listed.includes(font))).toEqual([]);
   });
 
-  test("the tgz carries nothing from test/, scripts/, verification/ or node_modules/", () => {
-    expect(listed.filter((name) => /^package\/(test|scripts|verification)\/|(^|\/)node_modules\//.test(name))).toEqual([]);
+  test("the tgz carries nothing from test/, scripts/, verification/, apps/, prompts/, skill/, apps.json, node_modules/ or .env*", () => {
+    const mustNotShip = /^package\/(test|scripts|verification|apps|prompts|skill)\/|^package\/apps\.json$|(^|\/)node_modules\/|(^|\/)\.env/;
+    expect(listed.filter((name) => mustNotShip.test(name))).toEqual([]);
+  });
+
+  test("tgzProblems refuses the rollout's own files in a vendored copy: apps/, apps.json, prompts/, skill/ and .env* at any depth", () => {
+    const files = readTgz(tgz);
+    expect(tgzProblems(files)).toEqual([]);
+    const extra = ["package/apps.json", "package/apps/x.json", "package/prompts/p.md", "package/skill/SKILL.md", "package/.env", "package/css/.env.local", "package/dist/.env/key"];
+    for (const name of extra) files.set(name, new Uint8Array([1]));
+    expect(tgzProblems(files)).toEqual([...extra].sort().map((name) => `${name} must not ship`));
   });
 
   test("readTgz returns the files and bytes tar extracts; tokensCssSha256 matches the printed hash", () => {
@@ -88,6 +97,32 @@ describe("bun scripts/pack.ts --out <dir>", () => {
     expect([...files.keys()].sort()).toEqual([...listed].sort());
     for (const [name, bytes] of files) expect(Buffer.from(bytes).equals(readFileSync(join(extracted, name)))).toBe(true);
     expect(`tokens.css sha256: ${tokensCssSha256(tgz)}`).toBe(result.stdout.split("\n")[1]);
+  });
+
+  test("packing the same build again leaves the tgz as it is and says unchanged", () => {
+    const before = statSync(tgz);
+    const bytes = readFileSync(tgz);
+    const again = runPack(PKG, "--out", out);
+    expect(again.stderr).toBe("");
+    expect(again.status).toBe(0);
+    expect(again.stdout.split("\n")).toEqual([...result.stdout.split("\n"), "unchanged: the same bytes were already at this path"]);
+    expect(readFileSync(tgz).equals(bytes)).toBe(true);
+    expect(statSync(tgz).mtimeMs).toBe(before.mtimeMs);
+    expect(readdirSync(out)).toEqual([basename(tgz)]);
+  });
+
+  test("a tgz of the same name with different bytes is never overwritten: exit 1, its bytes kept, nothing else written", () => {
+    const other = join(tmp, "vendor-old");
+    mkdirSync(other);
+    const stale = Buffer.concat([readFileSync(tgz), Buffer.from([0])]);
+    writeFileSync(join(other, basename(tgz)), stale);
+    const refused = runPack(PKG, "--out", other);
+    expect(refused.status).toBe(1);
+    expect(refused.stdout).toBe("");
+    expect(refused.stderr).toContain(`${join(other, basename(tgz))} already exists with different bytes; refusing to overwrite it`);
+    expect(refused.stderr).toContain("Bump the patch version in package.json");
+    expect(readFileSync(join(other, basename(tgz))).equals(stale)).toBe(true);
+    expect(readdirSync(other)).toEqual([basename(tgz)]);
   });
 });
 

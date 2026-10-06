@@ -6,13 +6,18 @@
  *   bun run pack --out <app>/vendor  pack into an app's vendor folder
  *
  * Steps: refuse a stale build (the same check as `bun run check`), run `npm pack --json` from the
- * package root (npm's file name: codecaine-ai-design-system-<version>.tgz), then read the tgz back
- * and verify it carries the CSS, the font files fonts.css names and every file package.json exports,
- * and nothing from test/, scripts/, verification/ or node_modules/. A tgz that fails is deleted.
+ * package root into a temp folder (npm's file name: codecaine-ai-design-system-<version>.tgz), then read
+ * the tgz back and verify it carries the CSS, the font files fonts.css names and every file package.json
+ * exports, and nothing that must not ship (tgzProblems). Only a complete tgz is copied into the destination.
  *
- * On success it prints exactly two lines:
+ * A tgz of the same name already in the destination is never overwritten. The same bytes: it is left as
+ * it is and the output says `unchanged`. Different bytes: exit 1, because an app's lockfile pins the old
+ * bytes by integrity. Every repack of a changed build bumps the patch version in package.json first.
+ *
+ * On success it prints two lines, and a third when the tgz was already there:
  *   tgz: <absolute path>
  *   tokens.css sha256: <hex of the dist/css/tokens.css bytes inside the tgz>
+ *   unchanged: the same bytes were already at this path
  *
  * The conformance linter imports readTgz, tgzProblems and tokensCssSha256 to check a vendored copy.
  * Zero dependencies: gunzip from node:zlib and a small ustar reader (prefix field, pax and GNU long names).
@@ -20,9 +25,9 @@
 
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdirSync, readFileSync, rmSync } from "node:fs";
+import { constants, copyFileSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, posix, resolve } from "node:path";
+import { basename, join, posix, resolve } from "node:path";
 import { gunzipSync } from "node:zlib";
 import { ROOT, staleFiles, TokenError } from "./build.ts";
 
@@ -40,8 +45,12 @@ export const REQUIRED_ENTRIES = [
   "dist/tailwind/preset-v3.cjs",
 ].map((path) => `${TGZ_ROOT}${path}`);
 
-/** Package folders that must never ship. node_modules is refused at any depth. */
-export const FORBIDDEN_DIRS = ["test/", "scripts/", "verification/"];
+/**
+ * What must never ship, beyond package.json's `files` list (the first guard). Folders and files at the
+ * package root; node_modules/ and `.env*` (a file or folder) are refused at any depth.
+ */
+export const FORBIDDEN_DIRS = ["test/", "scripts/", "verification/", "apps/", "prompts/", "skill/"];
+export const FORBIDDEN_FILES = ["apps.json"];
 
 export class PackError extends Error {
   constructor(
@@ -189,7 +198,7 @@ function carriesTarget(files: Map<string, Uint8Array>, target: string): boolean 
 /**
  * What a vendored copy of the package is missing or must not carry. Empty when it is complete:
  * every required file, every font file fonts.css references, every file package.json exports,
- * and nothing from test/, scripts/, verification/ or node_modules/.
+ * and nothing from test/, scripts/, verification/, apps/, prompts/, skill/, apps.json, node_modules/ or `.env*`.
  */
 export function tgzProblems(files: Map<string, Uint8Array>): string[] {
   const problems: string[] = [];
@@ -217,7 +226,11 @@ export function tgzProblems(files: Map<string, Uint8Array>): string[] {
   for (const name of [...files.keys()].sort()) {
     const inner = name.startsWith(TGZ_ROOT) ? name.slice(TGZ_ROOT.length) : null;
     if (inner === null) problems.push(`${name} is outside ${TGZ_ROOT}`);
-    else if (FORBIDDEN_DIRS.some((dir) => inner.startsWith(dir)) || inner.split("/").includes("node_modules")) {
+    else if (
+      FORBIDDEN_DIRS.some((dir) => inner.startsWith(dir)) ||
+      FORBIDDEN_FILES.includes(inner) ||
+      inner.split("/").some((part) => part === "node_modules" || part.startsWith(".env"))
+    ) {
       problems.push(`${name} must not ship`);
     }
   }
@@ -243,9 +256,14 @@ export interface PackResult {
   tgz: string;
   /** sha256 of the dist/css/tokens.css bytes inside the tgz. */
   tokensCssSha256: string;
+  /** The tgz was already there with exactly these bytes, so nothing was written. */
+  unchanged: boolean;
 }
 
-/** Builds-checks, packs and verifies. Throws PackError (after deleting a bad tgz) when anything fails. */
+/**
+ * Builds-checks, packs and verifies. Throws PackError when anything fails, and when `out` already holds a
+ * tgz of the same name with different bytes. Nothing is written to `out` unless the tgz is complete and new.
+ */
 export async function pack(opts: PackOptions = {}): Promise<PackResult> {
   let stale: string[];
   try {
@@ -258,7 +276,18 @@ export async function pack(opts: PackOptions = {}): Promise<PackResult> {
 
   const out = resolve(opts.out ?? defaultOutDir());
   mkdirSync(out, { recursive: true });
-  const npm = spawnSync("npm", ["pack", "--pack-destination", out, "--json"], {
+  // npm writes into a private folder, so a tgz already in `out` is never overwritten by npm itself.
+  const staging = mkdtempSync(join(tmpdir(), "ds-pack-"));
+  try {
+    return place(npmPack(staging), out);
+  } finally {
+    rmSync(staging, { recursive: true, force: true });
+  }
+}
+
+/** Runs `npm pack` from the package root into `dest`. Returns the path of the tgz it wrote. */
+function npmPack(dest: string): string {
+  const npm = spawnSync("npm", ["pack", "--pack-destination", dest, "--json"], {
     cwd: ROOT,
     encoding: "utf8",
     env: { ...process.env, npm_config_update_notifier: "false", npm_config_fund: "false", npm_config_audit: "false" },
@@ -272,19 +301,37 @@ export async function pack(opts: PackOptions = {}): Promise<PackResult> {
     // reported below
   }
   if (typeof filename !== "string") throw new PackError(`design-system: npm pack printed no file name:\n${npm.stdout.trim()}`);
-  const tgz = join(out, filename);
+  return join(dest, filename);
+}
 
-  const files = readTgz(tgz);
+/**
+ * Checks the staged tgz, then copies it into `out` under npm's name (codecaine-ai-design-system-<version>.tgz).
+ * A file already there is never replaced: the same bytes leave it as it is (`unchanged`), different bytes
+ * refuse, because an app's lockfile pins the old bytes by integrity (consume.md: repack after a token change).
+ */
+function place(staged: string, out: string): PackResult {
+  const tgz = join(out, basename(staged));
+  const files = readTgz(staged);
   const problems = tgzProblems(files);
   const packed = files.get(TOKENS_CSS_ENTRY);
   if (packed && sha256(packed) !== sha256(readFileSync(join(ROOT, "dist/css/tokens.css")))) {
     problems.push(`${TOKENS_CSS_ENTRY} differs from dist/css/tokens.css (it changed while packing)`);
   }
-  if (problems.length || !packed) {
-    rmSync(tgz, { force: true });
-    throw new PackError(`design-system: ${tgz} is incomplete; deleted it:`, problems);
+  if (problems.length || !packed) throw new PackError(`design-system: the packed ${basename(tgz)} is incomplete; nothing written to ${out}:`, problems);
+
+  const result = { tgz, tokensCssSha256: sha256(packed) };
+  try {
+    // COPYFILE_EXCL: the existence check and the create are one step, so a file that appears meanwhile is not replaced either.
+    copyFileSync(staged, tgz, constants.COPYFILE_EXCL);
+    return { ...result, unchanged: false };
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
   }
-  return { tgz, tokensCssSha256: sha256(packed) };
+  if (lstatSync(tgz).isFile() && readFileSync(tgz).equals(readFileSync(staged))) return { ...result, unchanged: true };
+  throw new PackError(
+    `design-system: ${tgz} already exists with different bytes; refusing to overwrite it (a lockfile pins the old bytes by integrity). ` +
+      "Bump the patch version in package.json (every repack does), run `bun run build`, then pack again. Nothing written.",
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -314,6 +361,7 @@ export async function cli(argv: string[] = process.argv.slice(2)): Promise<numbe
     const result = await pack(parseArgs(argv));
     console.log(`tgz: ${result.tgz}`);
     console.log(`tokens.css sha256: ${result.tokensCssSha256}`);
+    if (result.unchanged) console.log("unchanged: the same bytes were already at this path");
     return 0;
   } catch (error) {
     if (error instanceof PackError) {
