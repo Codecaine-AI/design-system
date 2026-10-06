@@ -216,6 +216,23 @@ describe.skipIf(Boolean(unavailable))("sandbox profile", () => {
     }
   });
 
+  test("the tree's own design-system checkout stays read-only when the tool runs from another checkout (a tooling worktree)", () => {
+    const worktree = join(root, ".tooling", "worktree"); // the checkout the tool runs from, inside --root
+    mkdirSync(join(worktree, "scripts"), { recursive: true });
+    expect(
+      verdicts(
+        [
+          ["tree's design-system", `echo x > '${join(ds, "apps", "planted")}'`],
+          ["tree's design-system read", `cat '${join(ds, "apps", "serve.ts")}'`],
+          ["tool's checkout", `echo x > '${join(worktree, "scripts", "planted")}'`],
+          ["root", `echo x > '${join(root, "app", "out2.txt")}'`],
+        ],
+        policy({ designSystem: worktree }),
+      ),
+    ).toEqual(["denied tree's design-system", "ok tree's design-system read", "denied tool's checkout", "ok root"]);
+    expect(existsSync(join(ds, "apps", "planted"))).toBe(false);
+  });
+
   test("the design-system checkout stays readable inside a hidden owner tree (a tool run from the owner's checkout), never writable", () => {
     const ownerDs = join(owner, "design-system");
     mkdirSync(join(ownerDs, "apps"), { recursive: true });

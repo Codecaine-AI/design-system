@@ -194,7 +194,10 @@ export interface RunPolicyOptions {
   outDir: string;
   home?: string;
   ownerTree?: string;
-  /** The design-system checkout the tool runs from: readable, never writable. Default DESIGN_SYSTEM_ROOT. */
+  /**
+   * The design-system checkout the tool runs from: readable, never writable. Default DESIGN_SYSTEM_ROOT.
+   * `<root>/design-system`, when it exists, is read-only as well, whichever checkout the tool runs from.
+   */
   designSystem?: string;
   /** The app's port block (registry: 47000 + 10 x index): connect and listen. */
   blockPorts?: number[];
@@ -227,6 +230,10 @@ export function runPolicy(opts: RunPolicyOptions): SandboxPolicy {
   const home = opts.home ?? realHome();
   const owner = opts.ownerTree ?? OWNER_TREE;
   const designSystem = opts.designSystem ?? DESIGN_SYSTEM_ROOT;
+  // The design-system checkout the tool runs from may be a tooling worktree; the tree's own
+  // <root>/design-system is just as much the tool's (its apps.json, scripts, dist): read-only for runs too.
+  const rootDesignSystem = join(opts.root, "design-system");
+  const designSystems = [designSystem, ...(existsSync(rootDesignSystem) ? [rootDesignSystem] : [])];
   const ownerRun = sameDir(opts.root, owner);
   const hidden = HOME_SECRETS.map((rel) => join(home, rel));
   if (!ownerRun) hidden.push(owner);
@@ -234,8 +241,8 @@ export function runPolicy(opts: RunPolicyOptions): SandboxPolicy {
   return {
     home,
     writable: [opts.root, opts.tmp],
-    readOnly: [designSystem, opts.outDir],
-    readable: [opts.root, opts.tmp, opts.outDir, designSystem, ...HOME_RUNTIMES.map((rel) => join(home, rel))],
+    readOnly: [...designSystems, opts.outDir],
+    readable: [opts.root, opts.tmp, opts.outDir, ...designSystems, ...HOME_RUNTIMES.map((rel) => join(home, rel))],
     hidden,
     readableInHidden: [designSystem],
     connectPorts: opts.anyLoopback ? undefined : [...block, ...(opts.allowedLocalPorts ?? [])],
