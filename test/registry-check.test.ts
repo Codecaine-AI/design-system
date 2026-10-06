@@ -155,7 +155,10 @@ describe("registry:check keeps runs off the owner's ports and .env files", () =>
     ["an owner port in a safe test command", safe("bun --no-env-file test --port=4840"), "tests.safe[0] names owner port 4840"],
     ["a bun test without --no-env-file", safe("bun test src"), "tests.safe[0] runs bun without --no-env-file"],
     ["a bun script without --no-env-file after a cd", safe("cd sub && exec bun run typecheck"), "runs bun without --no-env-file"],
-    ["utilityClasses on a Tailwind app", { stack: { summary: "", tailwind: "v4", packageManager: "bun", utilityClasses: true } }, "stack.utilityClasses is redundant"],
+    ["utilityClasses on a Tailwind app", { stack: { summary: "", tailwind: "v4", packageManager: "bun", utilityClasses: true, hostTailwind: "v4" } }, "stack.utilityClasses is redundant"],
+    ["utilityClasses without the host's Tailwind", { stack: { summary: "", tailwind: "none", packageManager: "bun", utilityClasses: true } }, "stack.utilityClasses needs stack.hostTailwind"],
+    ["a hostTailwind that is no Tailwind", { stack: { summary: "", tailwind: "none", packageManager: "bun", utilityClasses: true, hostTailwind: "v2" as never } }, "stack.hostTailwind must be one of v3, v4, uno"],
+    ["a hostTailwind without utilityClasses", { stack: { summary: "", tailwind: "none", packageManager: "bun", hostTailwind: "v3" } }, "stack.hostTailwind is set without stack.utilityClasses"],
   ])("reports %s", (_, over, message) => {
     const problems = check([entry(over)]);
     expect(problems.some((p) => p.includes(message))).toBe(true);
@@ -166,7 +169,7 @@ describe("registry:check keeps runs off the owner's ports and .env files", () =>
       run: { ...entry().run, start: "bun --no-env-file {ds}/apps/fixtures/demo/serve.ts --port {port:ui} && bun x --bun vite" },
       runProfile: profile({ env: { KERNEL: "http://127.0.0.1:{port:ui}", OWN: "http://localhost:47009" }, flags: ["--api-port", "47001"], allowedLocalPorts: [47008] }),
       tests: { safe: [{ cmd: "bunx --bun tsc && bun --no-env-file test ./src/a.test.ts", cwd: "app" }] },
-      stack: { summary: "", tailwind: "none", packageManager: "bun", utilityClasses: true },
+      stack: { summary: "", tailwind: "none", packageManager: "bun", utilityClasses: true, hostTailwind: "uno" },
     });
     expect(check([ok])).toEqual([]);
   });

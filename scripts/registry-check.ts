@@ -15,7 +15,8 @@
  *     block, or a `--*port <n>` / `*PORT=<n>` outside it (use `{port:<name>}` for the app's own ports);
  *   - every bun runtime command (`bun test`, `bun run`, `bun <file>`) passes `--no-env-file`, so bun
  *     never auto-loads a `.env` from the app's directory (BUN_OPTIONS covers the processes it spawns);
- *   - `stack.utilityClasses` is a boolean and only set where `stack.tailwind` is "none";
+ *   - `stack.utilityClasses` is a boolean and only set where `stack.tailwind` is "none", and comes with
+ *     `stack.hostTailwind` (v3, v4 or uno: the host Tailwind that compiles its classes);
  *   - every allowlist file and fixture exists in this design-system checkout, an allowlist has the
  *     Allowlist shape with a reason on every entry, and no fixture is a .env file;
  *   - every `{ds}/...` script a run starts exists in this checkout.
@@ -108,13 +109,25 @@ export function bunEnvFileProblems(app: AppEntry): string[] {
   return problems;
 }
 
-/** `stack.utilityClasses` is optional, boolean, and only meaningful for apps without a Tailwind build. */
+export const HOST_TAILWIND = ["v3", "v4", "uno"] as const;
+
+/**
+ * `stack.utilityClasses` is optional, boolean, and only meaningful for apps without a Tailwind build.
+ * `stack.hostTailwind` names the host Tailwind that compiles those classes: one of HOST_TAILWIND, and
+ * set exactly where utilityClasses is true (the codemod and linter need to know which syntax applies).
+ */
 export function stackProblems(app: AppEntry): string[] {
-  const value = (app.stack as { utilityClasses?: unknown } | undefined)?.utilityClasses;
-  if (value === undefined) return [];
-  if (typeof value !== "boolean") return [`${app.id}: stack.utilityClasses must be true or false`];
-  if (value && app.stack.tailwind !== "none") return [`${app.id}: stack.utilityClasses is redundant: stack.tailwind ${app.stack.tailwind} already checks Tailwind classes`];
-  return [];
+  const stack = app.stack as { utilityClasses?: unknown; hostTailwind?: unknown; tailwind?: string } | undefined;
+  const problems: string[] = [];
+  const value = stack?.utilityClasses;
+  if (value !== undefined && typeof value !== "boolean") problems.push(`${app.id}: stack.utilityClasses must be true or false`);
+  else if (value && stack?.tailwind !== "none") problems.push(`${app.id}: stack.utilityClasses is redundant: stack.tailwind ${stack?.tailwind} already checks Tailwind classes`);
+  const host = stack?.hostTailwind;
+  if (host !== undefined && !(HOST_TAILWIND as readonly unknown[]).includes(host))
+    problems.push(`${app.id}: stack.hostTailwind must be one of ${HOST_TAILWIND.join(", ")}`);
+  else if (host !== undefined && value !== true) problems.push(`${app.id}: stack.hostTailwind is set without stack.utilityClasses (it names the host that compiles those classes)`);
+  if (value === true && host === undefined) problems.push(`${app.id}: stack.utilityClasses needs stack.hostTailwind (v3, v4 or uno: the host Tailwind that compiles its classes)`);
+  return problems;
 }
 
 /** Workspace-relative paths an entry promises exist under the root, labelled for messages. */

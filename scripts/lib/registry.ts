@@ -186,6 +186,13 @@ export interface AppEntry {
      * and templates without their own Tailwind build whose class strings their hosts compile.
      */
     utilityClasses?: boolean;
+    /**
+     * With `utilityClasses`: the Tailwind of the host that compiles this library's (or template's) class
+     * strings, which decides which class syntax and default scales apply: "v3" (Tailwind v3 with the
+     * design-system preset), "v4" (Tailwind v4 with tailwind-strict.css), "uno" (UnoCSS's Tailwind-compatible
+     * preset, as Slidev uses). Libraries with several hosts name the strictest one their code must suit.
+     */
+    hostTailwind?: "v3" | "v4" | "uno";
     packageManager: "bun" | "npm" | "none";
   };
   consume: { via: ConsumeVia; detail: string };
