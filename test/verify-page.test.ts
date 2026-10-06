@@ -100,6 +100,18 @@ describe.skipIf(Boolean(browserSkip))("checkPage", () => {
     expect(onlySplit["theme.switch"]).toMatchObject({ status: "fail", message: "no page, panel, text, border probe is checked in both themes: nothing shows the dark switch works" });
   }, 30_000);
 
+  test("an app that boots dark is read in light through its lightSwitch, and in dark through its darkSwitch", async () => {
+    const darkSwitch = { kind: "storage" as const, key: "fixture.theme", value: "dark" };
+    const lightSwitch = { kind: "storage" as const, key: "fixture.theme", value: "light" };
+    const seeded = await check("boots-dark", fixtureApp({ verify: { ...FIXTURE_VERIFY, darkSwitch, lightSwitch } }));
+    expect(seeded.filter((a) => a.status !== "pass").map((a) => `${a.id}: ${a.message}`)).toEqual([]);
+    expect(byId(seeded)["theme.switch"]?.status).toBe("pass");
+
+    // Without the seed the light reads are the dark boot.
+    const unseeded = byId(await check("boots-dark", fixtureApp({ verify: { ...FIXTURE_VERIFY, darkSwitch } })));
+    expect(unseeded["token.light: body background-color"]).toMatchObject({ status: "fail", message: expect.stringContaining("color.surface.page") });
+  }, 30_000);
+
   test("a spec without probes, or without a role, fails verify-spec", async () => {
     const empty = byId(await check("good", fixtureApp({ verify: { ...FIXTURE_VERIFY, probes: [] } })));
     expect(empty["verify-spec"]).toMatchObject({ status: "fail", message: expect.stringContaining("verify.probes is empty") });

@@ -1,0 +1,19 @@
+<!doctype html>
+<!-- verify:apps fixture (fix round 2, c9): a conformant page plus a print-only 400 rule with another URL after the package's; the inactive rule must not win. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>c9</title>
+    <link rel="stylesheet" href="/ds/css/fonts.css" />
+    <style>
+      @media print { @font-face { font-family: "IBM Plex Mono"; font-weight: 400; src: url("/ds/fonts/IBMPlexMono-Medium.woff2") format("woff2"); } }
+    </style>
+    <style>
+      body { margin: 0; font-family: Inter, sans-serif; font-weight: 400; }
+      code { font-family: "IBM Plex Mono", monospace; font-weight: 400; }
+    </style>
+  </head>
+  <body>
+    <p>Text in Inter, <code>a mono label</code>.</p>
+  </body>
+</html>

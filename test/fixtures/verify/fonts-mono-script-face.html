@@ -1,0 +1,23 @@
+<!doctype html>
+<!-- verify:apps fixture (Codex's fix-round-1 shape): the package declares IBM Plex Mono 400, 500 and 600; a script adds a foreign 600 FontFace (not declared in the package's fonts.css), which wins over the package's; the package's 600 URL is preloaded. Text renders only at 600. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>IBM Plex Mono 600 from a script FontFace</title>
+    <link rel="preload" href="/fonts/IBMPlexMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin />
+    <style>
+      @font-face { font-family: "Inter"; font-weight: 400; src: url("/fonts/Inter-Regular.woff2") format("woff2"); }
+      @font-face { font-family: "IBM Plex Mono"; font-weight: 400; src: url("/fonts/IBMPlexMono-Regular.woff2") format("woff2"); }
+      @font-face { font-family: "IBM Plex Mono"; font-weight: 500; src: url("/fonts/IBMPlexMono-Medium.woff2") format("woff2"); }
+      @font-face { font-family: "IBM Plex Mono"; font-weight: 600; src: url("/fonts/IBMPlexMono-SemiBold.woff2") format("woff2"); }
+      body { margin: 0; font-family: Inter, sans-serif; font-weight: 400; }
+      code { font-family: "IBM Plex Mono", monospace; font-weight: 600; }
+    </style>
+    <script>
+      document.fonts.add(new FontFace("IBM Plex Mono", 'url("/copy/design-system/fonts/IBMPlexMono-SemiBold.woff2") format("woff2")', { weight: "600" }));
+    </script>
+  </head>
+  <body>
+    <p>Text in Inter, <code>a semibold label</code>.</p>
+  </body>
+</html>

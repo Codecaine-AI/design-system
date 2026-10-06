@@ -5,7 +5,7 @@
  * guarding its requests is the runner's job (scripts/lib/app-runner.ts).
  */
 import { runSteps } from "../capture";
-import { type AppEntry, type PassId, probeActive, probeRole, switchRoles, verifySpecProblems, type VerifySpec } from "../registry";
+import { type AppEntry, lightSeed, type PassId, probeActive, probeRole, switchRoles, verifySpecProblems, type VerifySpec } from "../registry";
 import { type Assertion, fail, pass, type ResponseLog } from "./assertions";
 import { fontAssertions, fontProbeSelectors, type FontSourceJudge, readFonts } from "./fonts";
 import { checkSidebar } from "./sidebar";
@@ -170,8 +170,8 @@ const probeKey = (p: { selector: string; property: string; token: string }) => `
 
 /**
  * Every runtime assertion on a page that shows the verify route: the spec covers every role, token
- * probes in the default theme, web fonts, the dark switch (light-dark apps) and, for shell apps,
- * sidebar persistence. A probe is read only in the themes it lists (default both).
+ * probes in the default theme (after the storage lightSwitch, when the entry has one), web fonts, the
+ * dark switch (light-dark apps) and, for shell apps, sidebar persistence. A probe is read only in the themes it lists (default both).
  */
 export async function checkPage(page: any, opts: PageCheckOptions): Promise<Assertion[]> {
   const verify = opts.app.verify;
@@ -181,9 +181,17 @@ export async function checkPage(page: any, opts: PageCheckOptions): Promise<Asse
   await settle(page);
 
   const first: Theme = darkFirst ? "dark" : "light";
+  // A light-dark app that boots dark: write its storage lightSwitch, reload, prepare the route again, then read light.
+  const light = lightSeed(opts.app);
+  if (light) {
+    await page.evaluate(([key, value]: [string, string]) => localStorage.setItem(key, value), [light.key, light.value]);
+    await page.reload({ waitUntil: "load", timeout: 60_000 });
+    if (opts.prepare) await opts.prepare(page);
+    await settle(page);
+  }
   const firstReadings = await readProbes(page, verify.probes.filter((probe) => probeActive(probe, first)), opts.values, first);
   out.push(...probeAssertions(firstReadings, first, darkFirst ? "dark (default)" : "light"));
-  // Nothing before this forces a font load: readFonts reads what the page loaded, then forces only IBM Plex Mono when the route does not render it.
+  // Nothing before this forces a font load: readFonts reads what the page loaded, then forces only IBM Plex Mono's regular face when the route does not render it or renders it only in other faces.
   out.push(...fontAssertions(await readFonts(page, { textProbes: fontProbeSelectors(verify) }), opts.responses, opts.fontSource));
 
   if (!darkFirst) {

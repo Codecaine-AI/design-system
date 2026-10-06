@@ -12,14 +12,16 @@
  * Theme: the registry's `verify.darkSwitch` (attribute, storage, click, query or navigation-only steps)
  * switches away from the app's default theme (light, or dark on dark-first surfaces); the context's
  * prefers-color-scheme always matches the theme. Without a darkSwitch, prefers-color-scheme is the
- * only switch.
+ * only switch. A light-dark app that boots dark names a storage `verify.lightSwitch`: every light shot
+ * writes it into localStorage before the page loads (init script, so it holds across navigation-only
+ * route steps).
  *
  * Time: every capture context gets a fixed clock (FIXED_TIME) before the page loads, so "5 minutes
  * ago" and today's date render the same in every run. Electron: each shot resets the window (storage
  * cleared, the route's URL, prefers-color-scheme of the shot's theme, the fixed clock) and reloads it,
  * so no shot inherits the previous one's theme or state.
  */
-import type { AppEntry, RouteSpec } from "./registry";
+import { type AppEntry, lightSeed, type RouteSpec } from "./registry";
 import { guardedContext, splitBlocked, type RunningApp } from "./app-runner";
 import { safeSegment } from "./safe-paths";
 import type { Box, Theme } from "./snapshot-set";
@@ -434,9 +436,14 @@ interface ThemePlan {
   verify: (page: any) => Promise<void>;
 }
 
-/** How to put the app in `theme`. Only the non-default theme is switched; the default is left as the app boots. */
+/**
+ * How to put the app in `theme`. Only the non-default theme is switched; the default is left as the app
+ * boots, except light on an entry with a lightSwitch (lightSeed), which every light shot writes.
+ */
 export function themePlan(app: AppEntry, theme: Theme): ThemePlan {
   const none: ThemePlan = { method: "default", url: (url) => url, afterLoad: async () => undefined, verify: async () => undefined };
+  const light = theme === "light" ? lightSeed(app) : undefined;
+  if (light) return { ...none, method: "storage", init: { storage: { [light.key]: light.value } } };
   if (theme === defaultTheme(app)) return none;
   const sw = app.verify?.darkSwitch;
   if (!sw) return { ...none, method: "prefers-color-scheme" };

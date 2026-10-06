@@ -40,7 +40,7 @@ import { cleanupRuns, guardedContext, installSignalHandlers, launchBrowser, star
 import { appScope, changedCheckouts, checkoutStates } from "./lib/checkouts";
 import { pinRepos } from "./lib/git";
 import { toolOutputDir } from "./lib/output-dir";
-import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, resolvePath, type AppEntry, type Registry, type RouteSpec } from "./lib/registry";
+import { DESIGN_SYSTEM_ROOT, getApp, lightSeed, loadRegistry, resolvePath, type AppEntry, type Registry, type RouteSpec } from "./lib/registry";
 import { safeChildPath } from "./lib/safe-paths";
 
 /** The connection classifier lives in scripts/lib/egress.ts (the runner samples with it). */
@@ -219,6 +219,12 @@ async function loadRoute(browser: any, running: RunningApp, route: RouteSpec, th
   try {
     await page.goto(url, { waitUntil: "load", timeout: 60_000 });
     if (theme === "dark" && app.theme.rule !== "dark-first" && app.verify?.darkSwitch) await applyDark(page, app, url);
+    // A light-dark app that boots dark: its storage lightSwitch, before the route's steps, in every light load.
+    const light = theme === "light" ? lightSeed(app) : undefined;
+    if (light) {
+      await page.evaluate(([k, v]: string[]) => localStorage.setItem(k!, v!), [light.key, light.value]);
+      await page.reload({ waitUntil: "load" });
+    }
     for (const step of route.steps ?? []) await runStep(page, step);
     if (route.waitFor) await (await one(page, route.waitFor)).waitFor({ state: "visible", timeout: 30_000 });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});

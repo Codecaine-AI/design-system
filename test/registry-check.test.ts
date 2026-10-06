@@ -307,3 +307,34 @@ describe("the committed apps.json", () => {
     expect(checkRegistry(loadRegistry(), { root: root!, dsRoot: DESIGN_SYSTEM_ROOT })).toEqual([]);
   });
 });
+
+describe("verify.lightSwitch (an app that boots dark reaches light through it)", () => {
+  const verify = (lightSwitch: unknown) => ({ verify: { probes: PROBES, darkSwitch: { kind: "storage" as const, key: "theme", value: "dark" }, lightSwitch: lightSwitch as never } });
+
+  test("accepts a storage lightSwitch on a light-dark entry; an entry without one is unchanged", () => {
+    expect(check([entry(verify({ kind: "storage", key: "canvasAgentViewerStyle.v2", value: '{"theme":"light"}' }))])).toEqual([]);
+    expect(check([entry()])).toEqual([]);
+  });
+
+  test.each(["attribute", "query", "click", "steps"])("rejects a %s lightSwitch and says why", (kind) => {
+    expect(check([entry(verify({ kind, selector: "#light", param: "mode", value: "light", steps: [{ action: "click", target: "#light" }] }))])).toContain(
+      `demo: verify.lightSwitch.kind "${kind}" is not allowed: lightSwitch accepts only "storage" (a stored value survives the navigation a route step can make; attribute, query, click and steps switches can be lost or skip the route's preparation)`,
+    );
+  });
+
+  test.each<[string, unknown, Partial<AppEntry>, string]>([
+    ["a storage switch without a value", { kind: "storage", key: "theme" }, {}, "demo: verify.lightSwitch.value must be a non-empty string"],
+    ["a storage switch with an empty key", { kind: "storage", key: "", value: "light" }, {}, "demo: verify.lightSwitch.key must be a non-empty string"],
+    ["a non-object", "light", {}, 'demo: verify.lightSwitch must be an object { kind: "storage", key, value }'],
+    [
+      "a lightSwitch on a dark-first entry",
+      { kind: "storage", key: "theme", value: "light" },
+      { theme: { rule: "dark-first" } },
+      "demo: verify.lightSwitch is set on a dark-first entry: verify never reads light there, so nothing would check it (drop it, or make the rule light-dark)",
+    ],
+    ["a port in a storage lightSwitch value", { kind: "storage", key: "api", value: '{"port":47130}' }, {}, "verify.lightSwitch.value names port 47130 outside its block"],
+    ["an owner port in a storage lightSwitch value", { kind: "storage", key: "next", value: "http://localhost:4840" }, {}, "verify.lightSwitch.value names owner port 4840"],
+  ])("reports %s", (_, lightSwitch, over, message) => {
+    expect(check([entry({ ...verify(lightSwitch), ...over })]).some((p) => p.includes(message))).toBe(true);
+  });
+});

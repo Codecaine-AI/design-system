@@ -1,0 +1,36 @@
+<!doctype html>
+<!-- verify:apps fixture: good.html, but the app boots dark (the product default); light only when localStorage fixture.theme is "light". -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>boots-dark</title>
+    <script>document.documentElement.dataset.theme = localStorage.getItem("fixture.theme") === "light" ? "light" : "dark";</script>
+    <link rel="stylesheet" href="/tokens.css" />
+    <style>
+      @font-face { font-family: "Inter"; font-weight: 400; src: url("/fonts/Inter-Regular.woff2") format("woff2"); }
+      @font-face { font-family: "IBM Plex Mono"; font-weight: 400; src: url("/fonts/IBMPlexMono-Regular.woff2") format("woff2"); }
+      body { margin: 0; background: var(--ds-color-surface-page); color: var(--ds-color-text-body); font-family: var(--ds-font-family-sans); }
+      .panel { background: var(--ds-color-surface-panel); border: 1px solid var(--ds-color-border-default); }
+      code { font-family: var(--ds-font-family-mono); }
+    </style>
+  </head>
+  <body>
+    <div class="ds-shell" data-sidebar="expanded">
+      <button class="ds-sidebar-toggle" type="button">Toggle sidebar</button>
+      <button class="theme-toggle" type="button" onclick="document.documentElement.dataset.theme = 'dark'">Dark mode</button>
+      <div class="panel">Panel <code>mono</code></div>
+      <button class="reveal" type="button" onclick="this.insertAdjacentHTML('afterend', '<div class=&quot;revealed&quot;>revealed</div>')">Reveal</button>
+    </div>
+    <script>
+      const shell = document.querySelector(".ds-shell");
+      shell.dataset.sidebar = localStorage.getItem("fixture.sidebar") ?? "expanded";
+      document.querySelector(".ds-sidebar-toggle").addEventListener("click", () => {
+        const next = shell.dataset.sidebar === "collapsed" ? "expanded" : "collapsed";
+        shell.dataset.sidebar = next;
+        localStorage.setItem("fixture.sidebar", next);
+      });
+      for (const port of new URLSearchParams(location.search).getAll("fetch")) fetch(`http://127.0.0.1:${port}/`).catch(() => {});
+      for (const port of new URLSearchParams(location.search).getAll("bind")) fetch(`/bind?port=${port}`).catch(() => {});
+    </script>
+  </body>
+</html>

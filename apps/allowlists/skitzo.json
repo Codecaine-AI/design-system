@@ -2,13 +2,13 @@
   "literals": [
     {
       "file": "apps/skitzo/apps/frontend/src/app/(guest)/page.tsx",
-      "reason": "owner decision and audit wave 3: skitzo migrates its app screens only; the landing (hero, serif display, brass accent) is brand and stays (140 hits)"
+      "reason": "owner decision and audit wave 3: skitzo migrates its app screens only; the landing (hero, serif display, brass accent) is brand and stays (142 hits; includes the landing-route scrollbar radius; includes the system sans stack the landing actually rendered in, since Outfit never applied on :root)"
     },
     {
       "file": "apps/skitzo/apps/frontend/src/app/(app)/**",
       "match": "^text-\\[1\\.5rem\\]$",
       "category": "twArbitrary",
-      "reason": "page headings in the brand display face (Cormorant Garamond, font-display) at 24px (was text-2xl, written text-[1.5rem]/8 to keep its 32px line); no font-size token within 2px (reading 18px, title 36px): kept per decision 65a; heading-size token gap (9 hits)"
+      "reason": "page headings in the brand display face (Cormorant Garamond, font-display) at 24px (was text-2xl, written text-[1.5rem]/8 to keep its 32px line); no font-size token within 2px (reading 18px, title 36px): kept per decision 65a; heading-size token gap (3 hits: record titles kept as h2 in EditTemplateForm, EditContextForm and InterviewReport; page titles moved to the topbar in pass 2)"
     },
     {
       "file": "apps/skitzo/apps/frontend/src/app/(app)/layout.tsx",
@@ -33,12 +33,6 @@
       "match": "^max-w-\\[72%\\]$",
       "category": "twArbitrary",
       "reason": "chat bubble width cap (InterviewChat and its loading skeleton); layout geometry, kept (decision 43) (3 hits)"
-    },
-    {
-      "file": "apps/skitzo/apps/frontend/src/app/(app)/templates/new/page.tsx",
-      "match": "^max-h-\\[calc\\(100vh-3rem\\)\\]$",
-      "category": "twArbitrary",
-      "reason": "viewport clamp on the sticky left column (canvas-studio precedent); kept (decision 43) (1 hit)"
     }
   ],
   "twClasses": [

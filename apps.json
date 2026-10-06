@@ -450,14 +450,14 @@
       },
       "consume": {
         "via": "workspace",
-        "detail": "Already wired: `workspace:*` through Core; web/src/theme/tokens.css imports the package tokens.css. Add the package path to spaSourceRoots in src/spa.ts or `serve` keeps a stale build. A standalone docs-system install cannot resolve it (not in its workspaces)."
+        "detail": "Workspace member (`workspace:*` through Core). web/src/index.css loads fonts.css, the tokens (theme/tokens.css), tailwind-strict.css, tailwind.css and layout.css; spaSourceRoots in src/spa.ts scans the package's dist/, css/ and fonts/ so `serve` rebuilds on a token change. A standalone docs-system install cannot resolve it (not in its workspaces)."
       },
       "entryStylesheet": "codecaine/core/docs-system/packages/docs-workbench/web/src/main.tsx",
       "theme": {
         "rule": "light-dark",
         "storageKey": "docs-viewer-theme"
       },
-      "literalFloor": 14,
+      "literalFloor": 17,
       "allowlist": "apps/allowlists/docs-workbench.json",
       "shell": true,
       "folderStandard": true,
@@ -815,8 +815,8 @@
           "reason": "the 54 failing tests of 396 (workbench shell, useDocLabSession, style rail export/import, static public-site shell and others time out at about 1000 ms) fail at the mirror's owner HEAD under the normal environment too, so the sandbox denies nothing they need; tests.baselines[\"tests.safe[0]\"] names all 54, so test:apps fails only a new one"
         },
         {
-          "what": "literal floor 14",
-          "reason": "allowlisted: the PDF export stylesheet and page-number color (export output), the hidden color-control code in style-rail-panes.tsx, the grain mask gradient, and the legacy stock-metrics constant"
+          "what": "literal floor 17",
+          "reason": "allowlisted: the PDF export stylesheet and page-number color (export output), the hidden color-control code in style-rail-panes.tsx, the grain mask gradient, and the legacy stock-metrics constant; pass 1 (2026-10-06): the Style rail width transition list (decision 59), the full-screen canvas viewer z-index (no modal-layer token) and the grain noise rect fill (not a color)"
         },
         {
           "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
@@ -859,7 +859,7 @@
       "theme": {
         "rule": "light-dark"
       },
-      "literalFloor": 9,
+      "literalFloor": 7,
       "allowlist": "apps/allowlists/canvas-studio.json",
       "shell": true,
       "folderStandard": true,
@@ -1057,12 +1057,12 @@
             "token": "color.text.body"
           },
           {
-            "selector": "header.border-b h1",
+            "selector": "header.ds-topbar h1",
             "property": "color",
             "token": "color.text.ink"
           },
           {
-            "selector": "header.border-b",
+            "selector": "header.ds-topbar",
             "property": "border-bottom-color",
             "token": "color.border.default"
           }
@@ -1083,7 +1083,7 @@
         },
         {
           "what": "the boards list page fetches http://localhost:4803/api/canvases",
-          "reason": "4803 is the owner's docs-system self-docs dev API (docs-system/Makefile:23-45: make dev, dev-web, docs). The origin is DEFAULT_PROJECT_SERVER_ORIGIN in packages/studio/src/project/docs-server.ts:18, read in ProjectBoardsSection.tsx:33; the only override is localStorage studio.project-server-origin (docs-server.ts:20), with no env var, flag or config. The guard blocks it (2 requests per capture of the boards route) and the linked-boards section stays quiet, so rendering does not need it; verify runs on the gallery route, which makes no such request. A dev-only override (or a route storage seed) would let the boards route point it at a dead port in this block"
+          "reason": "4803 is the owner's docs-system self-docs dev API (docs-system/Makefile:23-45: make dev, dev-web, docs). The origin is DEFAULT_PROJECT_SERVER_ORIGIN in packages/studio/src/shared/docs-server.ts (DEFAULT_PROJECT_SERVER_ORIGIN), read in _components/BoardsPage/_components/ProjectBoardsSection/index.tsx; the only override is localStorage studio.project-server-origin (shared/docs-server.ts), with no env var, flag or config. The guard blocks it (2 requests per capture of the boards route) and the linked-boards section stays quiet, so rendering does not need it; verify runs on the gallery route, which makes no such request. A dev-only override (or a route storage seed) would let the boards route point it at a dead port in this block"
         },
         {
           "what": "the dev server proxies /api/agent/* and /api/canvases/:id/agent/* to the owner's :4820",
@@ -1382,7 +1382,7 @@
         },
         {
           "what": "the boards list page fetches http://localhost:4803/api/canvases",
-          "reason": "4803 is the owner's docs-system self-docs dev API (docs-system/Makefile:23-45: make dev, dev-web, docs). The origin is DEFAULT_PROJECT_SERVER_ORIGIN in packages/studio/src/project/docs-server.ts:18, read in ProjectBoardsSection.tsx:33; the only override is localStorage studio.project-server-origin (docs-server.ts:20), with no env var, flag or config. The guard blocks it (2 requests per capture of the boards route) and the linked-boards section stays quiet, so rendering does not need it; verify runs on the gallery route, which makes no such request. A dev-only override (or a route storage seed) would let the boards route point it at a dead port in this block"
+          "reason": "4803 is the owner's docs-system self-docs dev API (docs-system/Makefile:23-45: make dev, dev-web, docs). The origin is DEFAULT_PROJECT_SERVER_ORIGIN in packages/studio/src/shared/docs-server.ts (DEFAULT_PROJECT_SERVER_ORIGIN), read in _components/BoardsPage/_components/ProjectBoardsSection/index.tsx; the only override is localStorage studio.project-server-origin (shared/docs-server.ts), with no env var, flag or config. The guard blocks it (2 requests per capture of the boards route) and the linked-boards section stays quiet, so rendering does not need it; verify runs on the gallery route, which makes no such request. A dev-only override (or a route storage seed) would let the boards route point it at a dead port in this block"
         },
         {
           "what": "the dev server proxies /api/agent/* and /api/canvases/:id/agent/* to the owner's :4820",
@@ -1424,7 +1424,7 @@
       "entryStylesheet": "codecaine/core/canvas/packages/canvas-agent/src/viewer/main.tsx",
       "theme": {
         "rule": "light-dark",
-        "storageKey": "canvasAgentViewerStyle.v1"
+        "storageKey": "canvasAgentViewerStyle.v2"
       },
       "literalFloor": 0,
       "allowlist": null,
@@ -1466,24 +1466,20 @@
           "required": true
         },
         "verify": {
-          "required": false,
-          "reason": "run mode none: the viewer's dev server proxies /api to the owner's :4820; verified statically only"
+          "required": true
         },
         "snapshot": {
-          "required": false,
-          "reason": "run mode none: the viewer's dev server proxies /api to the owner's :4820; verified statically only"
+          "required": true
         },
         "pixelDiff": {
-          "required": false,
-          "reason": "run mode none: the viewer's dev server proxies /api to the owner's :4820; verified statically only"
+          "required": true
         },
         "tests": {
           "required": true
         }
       },
       "run": {
-        "mode": "none",
-        "reason": "the viewer's Vite proxy sends /api to the owner's :4820 through `const HARNESS_TARGET = \"http://127.0.0.1:4820\"` (packages/canvas-agent/src/viewer/vite.config.ts:41; no env var, flag or config reads around it), and the traces page fetches /api on load, so every run would reach the owner's service. Runnable once the target reads an env var (for example CANVAS_AGENT_HARNESS_URL, falling back to 4820): a dev-only override the pass-1 worker can decide on",
+        "mode": "browser",
         "cwd": "codecaine/core/canvas/packages/canvas-agent",
         "start": "bun x --no-env-file vite --config src/viewer/vite.config.ts {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)",
@@ -1542,7 +1538,8 @@
       ],
       "runProfile": {
         "env": {
-          "NO_COLOR": "1"
+          "NO_COLOR": "1",
+          "CANVAS_AGENT_HARNESS_URL": "http://127.0.0.1:{port:deadApi}"
         },
         "unsetEnv": [
           "DOCS_SHARED_API_URL",
@@ -1574,8 +1571,9 @@
           "deadApi": 47051
         },
         "proof": {
-          "status": "unproven",
-          "method": ""
+          "status": "proven",
+          "method": "scripts/registry-prove.ts on design-system/rollout (main, 2026-10-06) against canvas d32fb6a8 (CANVAS_AGENT_HARNESS_URL → deadApi 47051): sandboxed, egress sampled (31 samples, 0 failed, 0 foreign), selectors only; 4/4 route loads (light and dark) rendered; the only console errors are the proxy 502s from the dead harness port (the viewer shows its agent-service-not-running notice); stopped clean. Proof JSON in rollout/canvas-agent/prove/tooling/registry/proofs/canvas-agent.json. Light reads dark until verify.lightSwitch lands (decision 72).",
+          "date": "2026-10-06"
         }
       },
       "verify": {
@@ -1585,11 +1583,6 @@
             "selector": ".research-style-shell",
             "property": "background-color",
             "token": "color.surface.page"
-          },
-          {
-            "selector": "aside.w-56",
-            "property": "background-color",
-            "token": "color.surface.sidebar"
           },
           {
             "selector": ".research-style-shell",
@@ -1610,6 +1603,17 @@
         "sidebar": {
           "toggle": ".ds-sidebar-toggle",
           "storageKey": "canvas-agent.sidebar"
+        },
+        "waivedRoles": [
+          {
+            "role": "panel",
+            "reason": "pass 1 keeps the existing look: the w-56 aside paints no surface of its own (transparent over the page) and no other viewer chrome paints a panel role; pass 2's shell adds the sidebar surface and a panel probe (decision 72 batch, 2026-10-06)"
+          }
+        ],
+        "lightSwitch": {
+          "kind": "storage",
+          "key": "canvasAgentViewerStyle.v2",
+          "value": "{\"theme\":\"light\"}"
         }
       },
       "exceptions": [
@@ -3405,8 +3409,8 @@
         "rule": "light-dark",
         "storageKey": "personal-site:theme"
       },
-      "literalFloor": 0,
-      "allowlist": null,
+      "literalFloor": 16,
+      "allowlist": "apps/allowlists/personal-site.json",
       "shell": false,
       "folderStandard": true,
       "passes": {
@@ -3618,15 +3622,15 @@
         },
         {
           "what": "entryStylesheet is about/index.html",
-          "reason": "every content page links src/site/styles.css (which imports palette.css and layout.css) from its own HTML; the linter starts at one page, and the others link the same sheet"
+          "reason": "every content page links src/site/styles.css (which imports palette.css and layout.css) from its own HTML; the linter starts at one page, and the others link the same sheet Since pass 1, every content page links src/site/design-system.css (fonts.css and tokens.css from the vendored design-system tgz), then styles.css, which imports layout.css; palette.css is deleted."
         },
         {
           "what": "pass 3 on vanilla partials",
-          "reason": "the ledger plans slices (1h) for its _components partials; the linter's 400-line rule applies, the index.tsx rule does not fit vanilla HTML partials"
+          "reason": "The shared partials are Plain TypeScript DOM components (`_components/<Name>/index.ts`, `<Name>(): string`) composed at build time by `scripts/site-pages.mjs`, which imports each index file explicitly (Node ESM does not resolve directories); the 400-line rule applies (pass 3 accepted at a89b691)."
         },
         {
           "what": "blog article pages load docs-publish's docs.css before styles.css (known gap)",
-          "reason": "scripts/blog-pages.mjs:103 links ${runtime}/docs.css (runtime path :94, copied from @codecaine-ai/docs-publish dist/styles at :96-97) and an inline docsThemeHead <style> (:76-78) before /src/site/styles.css and blog.css on article pages (:141). docs.css (vendor tgz 0.1.0-proof.20) declares, unlayered at :root, 80 of the same --palette-*/--color-* names as src/site/palette.css and styles.css plus 962 --docs-* properties, a second tokens copy. The linter's single entry (about/index.html → styles.css → palette.css, layout.css) never sees docs.css, the inline theme style, blog.css → blog-style.css (also imported by services.css:5), resume.css or services.css; with /blog/ dropped no capture covers article pages. Pass 1 must check the blog graph by hand until the registry takes several entries"
+          "reason": "scripts/blog-pages.mjs:103 links ${runtime}/docs.css (runtime path :94, copied from @codecaine-ai/docs-publish dist/styles at :96-97) and an inline docsThemeHead <style> (:76-78) before /src/site/styles.css and blog.css on article pages (:141). docs.css (vendor tgz 0.1.0-proof.20) declares, unlayered at :root, 80 of the same --palette-*/--color-* names as src/site/palette.css and styles.css plus 962 --docs-* properties, a second tokens copy. The linter's single entry (about/index.html → styles.css → palette.css, layout.css) never sees docs.css, the inline theme style, blog.css → blog-style.css (also imported by services.css:5), resume.css or services.css; with /blog/ dropped no capture covers article pages. Pass 1 must check the blog graph by hand until the registry takes several entries Since pass 1 (decision 68 as amended), article and dev draft pages also link src/site/design-system.css while the vendored docs-publish is proof.20 (blog-pages.mjs articleDesignSystemLink and writing-draft-preview.mjs:88, each marked \"remove when docs-publish >= the design-system repack\"); the final phase removes both links with the docs-publish tgz swap."
         },
         {
           "what": "captures show production markup, not the owner's dev view",
@@ -3922,8 +3926,7 @@
       "root": "apps/skitzo/apps/frontend",
       "scan": {
         "paths": [
-          "apps/skitzo/apps/frontend/src/app",
-          "apps/skitzo/apps/frontend/src/components"
+          "apps/skitzo/apps/frontend/src/app"
         ],
         "exclude": []
       },
@@ -3940,7 +3943,7 @@
       "theme": {
         "rule": "dark-first"
       },
-      "literalFloor": 163,
+      "literalFloor": 158,
       "allowlist": "apps/allowlists/skitzo.json",
       "shell": true,
       "folderStandard": true,
@@ -4088,7 +4091,7 @@
             "token": "color.surface.page"
           },
           {
-            "selector": "aside",
+            "selector": "aside.ds-sidebar",
             "property": "background-color",
             "token": "color.surface.sidebar"
           },
@@ -4098,8 +4101,8 @@
             "token": "color.text.body"
           },
           {
-            "selector": "aside",
-            "property": "border-right-color",
+            "selector": "header.ds-topbar",
+            "property": "border-bottom-color",
             "token": "color.border.default"
           }
         ],
@@ -4115,7 +4118,7 @@
       "exceptions": [
         {
           "what": "allowlist",
-          "reason": "owner decision: the landing hero src/app/(guest)/page.tsx is brand and stays (140 literal hits and every class in that file). The serif display face Cormorant Garamond loads through next/font (src/app/layout.tsx:3,10-15; --font-display in globals.css:19), which is not a literal hit, so the allowlist has no entry for it"
+          "reason": "owner decision: the landing hero src/app/(guest)/page.tsx is brand and stays (142 literal hits and every class in that file). The serif display face Cormorant Garamond loads through next/font (src/app/layout.tsx:3,10-15; --font-display in globals.css:19), which is not a literal hit, so the allowlist has no entry for it"
         },
         {
           "what": "dormant since 2026-04-08",

@@ -7,7 +7,9 @@
  * cleared, the route's URL, the theme's color scheme, then a reload.
  *
  * In capture's order: load the route, wait for waitFor (when the route has no steps), switch the theme
- * the way the registry's verify.darkSwitch says, run the route's steps, wait for waitFor, screenshot.
+ * the way the registry's verify.darkSwitch says (light on an entry with a storage verify.lightSwitch: the
+ * value is written before the page loads, see capture themePlan), run the route's steps, wait for
+ * waitFor, screenshot.
  * Shell apps (verify.sidebar) then get the sidebar toggle clicked, a screenshot, and the toggle clicked
  * again. Last, up to MAX_HOVERS visible, enabled buttons and links outside any form are hovered. Every
  * click and Enter or Space press goes through the safety rules first (safety.ts); a refused step is
