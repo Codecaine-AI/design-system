@@ -30,10 +30,17 @@ import {
 import { adoptStyleSheet, DETERMINISM_CSS } from "../scripts/lib/capture.ts";
 import { loadPlaywright, playwrightAnchor, playwrightUnavailable } from "../scripts/lib/playwright.ts";
 import type { AppEntry } from "../scripts/lib/registry.ts";
+import { assertNoLeaks } from "./leaks.ts";
 
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-runner-test-")));
 const outDir = join(scratch, "out");
-afterAll(() => rmSync(scratch, { recursive: true, force: true }));
+afterAll(() => {
+  try {
+    assertNoLeaks(scratch);
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+});
 
 const started: RunningApp[] = [];
 afterEach(async () => {
@@ -578,19 +585,40 @@ describe("a tool that ends without stopping its apps", () => {
     expect(await portsClosed([46936, 46929], 1_000)).toBe(true);
   }, 40_000);
 
-  test("SIGKILL: the run record lets --cleanup stop exactly the orphans", async () => {
-    const records = join(scratch, "cleanup-out");
+  test("SIGKILL: no hook runs, yet the watchdog takes the run's process group down with the tool", async () => {
+    const records = join(scratch, "sigkill-out");
     const { tool, tmp } = await lifecycle("kill", [46907, 46908], records);
     tool.kill("SIGKILL");
     await tool.exited;
-    expect(await portOpen(46907)).toBe(true); // orphaned: no hook ran
+    expect(await portsClosed([46907, 46908], 3_000)).toBe(true);
+    // The record a crashed tool leaves is what --cleanup reads; here nothing is left to stop.
     expect(existsSync(join(records, "runs", "lifecycle-fixture.json"))).toBe(true);
-    const report = await cleanupRuns(records);
-    expect(report).toEqual([expect.stringMatching(/^lifecycle-fixture: stopped (\d+) of \1 leftover process\(es\)/)]);
-    expect(await portsClosed([46907, 46908], 2_000)).toBe(true);
+    expect(await cleanupRuns(records)).toEqual(["lifecycle-fixture: nothing left running"]);
     expect(existsSync(join(records, "runs", "lifecycle-fixture.json"))).toBe(false);
     expect(existsSync(tmp!)).toBe(false);
   }, 40_000);
+
+  test("--cleanup stops exactly the recorded processes of a dead tool that left the run's group", async () => {
+    const records = join(scratch, "cleanup-out");
+    const daemon = spawn("sleep", ["30"], { detached: true, stdio: "ignore" });
+    const bystander = spawn("sleep", ["30"], { detached: true, stdio: "ignore" });
+    const exited = new Promise((done) => daemon.once("exit", done));
+    try {
+      mkdirSync(join(records, "runs"), { recursive: true });
+      const started = rootProc(daemon.pid!).started;
+      writeFileSync(
+        join(records, "runs", "orphaned.json"),
+        JSON.stringify({ app: "orphaned", tool: { pid: 999_999, started: "gone" }, processes: [{ pid: daemon.pid, pgid: daemon.pid, started }] }),
+      );
+      expect(await cleanupRuns(records)).toEqual([`orphaned: stopped 1 of 1 leftover process(es) (pids ${daemon.pid})`]);
+      await exited;
+      expect(bystander.exitCode).toBeNull();
+      expect(existsSync(join(records, "runs", "orphaned.json"))).toBe(false);
+    } finally {
+      daemon.kill("SIGKILL");
+      bystander.kill("SIGKILL");
+    }
+  }, 20_000);
 });
 
 describe("launchBrowser", () => {

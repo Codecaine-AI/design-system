@@ -13,13 +13,20 @@ import { captureRoute, LAUNCH_OPTIONS } from "../scripts/lib/capture.ts";
 import { loadPlaywright, playwrightUnavailable } from "../scripts/lib/playwright.ts";
 import { decodePng } from "../scripts/lib/png.ts";
 import type { AppEntry, RouteSpec, VerifySpec } from "../scripts/lib/registry.ts";
+import { assertNoLeaks } from "./leaks.ts";
 
 const mirror = process.env.DS_MIRROR ?? "/Users/Ford/workspace-ds";
 const noPlaywright = playwrightUnavailable(mirror);
 if (noPlaywright) console.warn(`skipping the capture test: ${noPlaywright}`);
 
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-capture-test-")));
-afterAll(() => rmSync(scratch, { recursive: true, force: true }));
+afterAll(() => {
+  try {
+    assertNoLeaks(scratch); // no app this file started may still listen
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+});
 
 const app = {
   id: "capture-fixture",
