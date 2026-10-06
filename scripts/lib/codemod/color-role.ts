@@ -13,6 +13,7 @@
 import { chroma, composite, deltaE, rgbToOklab, toHex, type Rgba } from "./color.ts";
 import { selectorBranches, type Context, type Surface } from "./context.ts";
 import type { Theme, TokenData } from "./tokens.ts";
+import { HOST_CONTRACT, type HostAlias, type HostRead } from "../host-contract.ts";
 
 export interface ColorPick {
   path: string | null;
@@ -504,6 +505,63 @@ export interface ConsumerIndex {
   rolesOf(name: string): Set<string>;
   /** One reader per role (`src/a.css:12`), for the row's reason. */
   where?(name: string): Map<string, string>;
+  /** Every reader, with the interaction states it paints in (`hover`, `active`, `focus`), for the host-contract check. */
+  readers?(name: string): Reader[];
+}
+
+export interface Reader {
+  role: string;
+  at: string;
+  states: string[];
+}
+
+/** The shadcn names of the published host contract (scripts/lib/host-contract.ts): `--muted` -> its alias. */
+const CONTRACT = new Map(
+  HOST_CONTRACT.flatMap(({ aliases }) => aliases)
+    .filter((a): a is HostAlias & { reads: HostRead } => a.reads !== undefined)
+    .map((a) => [`--${a.name}`, a]),
+);
+/** States a reader paints in only on interaction: a token that rests on the surface does not fit them. */
+const INTERACTION = new Set(["hover", "active", "pressed", "focus"]);
+
+/**
+ * An app's own definition of a shadcn host-contract name (`--muted: #eceae6`) takes the token the
+ * published contract maps it to, before any ΔE pick: hosts that load host-contract.css get that
+ * value, so the app's copy should match it. The reason says when the app's own readers use the
+ * name otherwise than the contract's readers do (`--primary` read as a border, `--muted` read
+ * only on :hover), so the reviewer checks the row instead of trusting the role.
+ */
+function contractPick(data: TokenData, literal: Rgba, ctx: Context, consumers?: ConsumerIndex): ColorPick | null {
+  const name = ctx.definition;
+  const alias = name ? CONTRACT.get(name) : undefined;
+  const token = alias ? data.colors.get(alias.token) : undefined;
+  if (!name || !alias || !token) return null;
+  const theme = ctx.theme;
+  const de = round(deltaE(literal, token[theme], data.page[theme]));
+  const notes: string[] = [];
+  if (literal.a < 0.99) notes.push(`the literal's alpha ${round2(literal.a)} is dropped: the contract color is opaque`);
+  if (consumers) {
+    const read = consumers.rolesOf(name);
+    const at = consumers.where?.(name);
+    const label = (r: string) => (at?.get(r) ? `${r} (${at.get(r)})` : r);
+    if (read.size === 0) notes.push(`${name} is read nowhere in the scanned files`);
+    else if (read.size > 1 || !read.has(alias.reads)) {
+      notes.push(`usage differs: the app reads ${name} as ${[...read].sort().map(label).join(" and ")}; the contract's readers use it as ${alias.reads}`);
+    } else {
+      const own = (consumers.readers?.(name) ?? []).filter((r) => r.role === alias.reads);
+      // The focus ring paints on focus: that state is its own.
+      const ownState = (s: string) => INTERACTION.has(s) && !(s === "focus" && alias.token === "color.focus-ring");
+      const inState = own.map((r) => r.states.filter(ownState));
+      if (own.length && inState.every((s) => s.length)) {
+        const which = [...new Set(inState.flat())].sort().join(" or ");
+        const more = own.length > 1 ? ` and ${own.length - 1} more` : "";
+        const hover = which.includes("hover") && alias.reads === "background" && data.colors.has("color.fill.hover") ? "; color.fill.hover is the hover fill" : "";
+        notes.push(`usage differs: the app reads ${name} only as a ${which} ${alias.reads} (${own[0].at}${more}); the contract's ${alias.token} is a resting ${alias.reads}${hover}`);
+      }
+    }
+  }
+  const why = `host contract: ${name} is ${alias.token} (host-contract.css), ΔE ${de} in ${theme}`;
+  return { path: alias.token, method: "role", deltaE: de, why: notes.length ? `${why}; ${notes.join("; ")}` : why };
 }
 
 const isHue = (p: string) => HUES.some((x) => p.startsWith(`color.${x}.`));
@@ -523,6 +581,8 @@ export function pickColor(data: TokenData, literal: Rgba, ctx: Context, opts: Al
   }
   const fixed = fixedRegion(data, ctx);
   if (fixed) return none(fixed);
+  const contract = contractPick(data, literal, ctx, opts.consumers);
+  if (contract) return contract;
   const theme = ctx.theme;
   const page = data.page[theme];
   let role = propRoleOf(ctx.property);

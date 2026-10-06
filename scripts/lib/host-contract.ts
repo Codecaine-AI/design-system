@@ -28,9 +28,18 @@ export interface HostAlias {
    * code scrolls under. The build fails when the token is translucent in any theme. Triplets are always opaque.
    */
   opaque?: true;
+  /**
+   * What the contract's readers paint with it (shadcn names): `--primary` is ink read as a fill,
+   * `--primary-foreground` the page color read as text. The codemod seeds an app's own definition of
+   * the name from `token` and flags an app that reads it otherwise.
+   */
+  reads?: HostRead;
 }
 
+export type HostRead = "background" | "text" | "border";
+
 const rgb = (name: string, token: string): HostAlias => ({ name, token, format: "rgb" });
+const shadcn = (name: string, token: string, reads: HostRead): HostAlias => ({ name, token, format: "rgb", reads });
 const color = (name: string, token: string): HostAlias => ({ name, token, format: "color" });
 const solid = (name: string, token: string): HostAlias => ({ name, token, format: "color", opaque: true });
 
@@ -39,24 +48,24 @@ export const HOST_CONTRACT: ReadonlyArray<{ group: string; aliases: HostAlias[] 
   {
     group: "shadcn surfaces and text (viewer-ui, viewer-shell, prompt-kit, annotations)",
     aliases: [
-      rgb("background", "color.surface.page"),
-      rgb("foreground", "color.text.body"),
-      rgb("card", "color.surface.panel"),
-      rgb("card-foreground", "color.text.body"),
-      rgb("popover", "color.surface.panel"),
-      rgb("popover-foreground", "color.text.body"),
-      rgb("primary", "color.text.ink"),
-      rgb("primary-foreground", "color.surface.page"),
-      rgb("secondary", "color.fill.chip"),
-      rgb("secondary-foreground", "color.text.ink"),
-      rgb("muted", "color.fill.chip"),
-      rgb("muted-foreground", "color.text.muted"),
-      rgb("accent", "color.accent"),
-      rgb("accent-foreground", "color.text.on-solid"),
-      rgb("destructive", "color.status.danger.text"),
-      rgb("border", "color.border.default"),
-      rgb("input", "color.border.default"),
-      rgb("ring", "color.focus-ring"),
+      shadcn("background", "color.surface.page", "background"),
+      shadcn("foreground", "color.text.body", "text"),
+      shadcn("card", "color.surface.panel", "background"),
+      shadcn("card-foreground", "color.text.body", "text"),
+      shadcn("popover", "color.surface.panel", "background"),
+      shadcn("popover-foreground", "color.text.body", "text"),
+      shadcn("primary", "color.text.ink", "background"),
+      shadcn("primary-foreground", "color.surface.page", "text"),
+      shadcn("secondary", "color.fill.chip", "background"),
+      shadcn("secondary-foreground", "color.text.ink", "text"),
+      shadcn("muted", "color.fill.chip", "background"),
+      shadcn("muted-foreground", "color.text.muted", "text"),
+      shadcn("accent", "color.accent", "background"),
+      shadcn("accent-foreground", "color.text.on-solid", "text"),
+      shadcn("destructive", "color.status.danger.text", "text"),
+      shadcn("border", "color.border.default", "border"),
+      shadcn("input", "color.border.default", "border"),
+      shadcn("ring", "color.focus-ring", "border"),
       { name: "radius", token: "radius.base", format: "length" },
     ],
   },
