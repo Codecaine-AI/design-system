@@ -21,6 +21,7 @@ import { tmpdir } from "node:os";
 import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
 
 import { HOME_FORBIDDEN, OWNER_TREE } from "./owner";
+import { SYSTEM_BIN, SYSTEM_PATH } from "./system-bin";
 
 export { OWNER_TREE };
 
@@ -39,17 +40,18 @@ let cachedHome: string | undefined;
 export function realHome(): string {
   if (cachedHome) return cachedHome;
   const run = (cmd: string, args: string[]) => {
-    const result = spawnSync(cmd, args, { encoding: "utf8", timeout: 5_000, env: { PATH: "/usr/bin:/bin:/usr/sbin:/sbin" } });
+    if (!existsSync(cmd)) return "";
+    const result = spawnSync(cmd, args, { encoding: "utf8", timeout: 5_000, env: { PATH: SYSTEM_PATH } });
     return result.status === 0 && !result.error ? (result.stdout ?? "").trim() : "";
   };
   const uid = String(process.getuid?.() ?? "");
   const candidates = [
-    () => (existsSync("/usr/bin/id") ? run("/usr/bin/id", ["-P"]).split(":")[8] : undefined),
+    () => run(SYSTEM_BIN.id, ["-P"]).split(":")[8],
     () => {
-      const name = run("/usr/bin/id", ["-un"]);
-      return name && existsSync("/usr/bin/dscl") ? /^NFSHomeDirectory:\s*(\S.*)$/m.exec(run("/usr/bin/dscl", [".", "-read", `/Users/${name}`, "NFSHomeDirectory"]))?.[1] : undefined;
+      const name = run(SYSTEM_BIN.id, ["-un"]);
+      return name ? /^NFSHomeDirectory:\s*(\S.*)$/m.exec(run(SYSTEM_BIN.dscl, [".", "-read", `/Users/${name}`, "NFSHomeDirectory"]))?.[1] : undefined;
     },
-    () => (uid ? run("getent", ["passwd", uid]).split(":")[5] : undefined),
+    () => (uid ? run("/usr/bin/getent", ["passwd", uid]).split(":")[5] : undefined),
   ];
   for (const candidate of candidates) {
     const home = candidate()?.trim();
