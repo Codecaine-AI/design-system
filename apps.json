@@ -2458,17 +2458,17 @@
         {
           "id": "research-rail",
           "path": "/research?style=open",
-          "waitFor": "aside.style-settings-rail"
+          "waitFor": "aside.ds-inspector"
         },
         {
           "id": "traces",
           "path": "/traces",
-          "waitFor": "main.research-style-shell"
+          "waitFor": ".research-style-shell"
         },
         {
           "id": "traces-rail",
           "path": "/traces?style=open",
-          "waitFor": "aside.style-settings-rail"
+          "waitFor": "aside.ds-inspector"
         }
       ],
       "runProfile": {
@@ -2516,7 +2516,7 @@
         "route": "traces-rail",
         "probes": [
           {
-            "selector": "main.research-style-shell",
+            "selector": ".research-style-shell",
             "property": "background-color",
             "token": "color.surface.page"
           },
@@ -2526,17 +2526,17 @@
             "token": "color.surface.panel"
           },
           {
-            "selector": "main.research-style-shell",
+            "selector": ".research-style-shell",
             "property": "color",
             "token": "color.text.body"
           },
           {
-            "selector": "aside.style-settings-rail h2",
+            "selector": "aside.ds-inspector section:first-of-type .style-panel-heading",
             "property": "color",
             "token": "color.text.ink"
           },
           {
-            "selector": "aside.style-settings-rail",
+            "selector": "aside.ds-inspector section:first-of-type",
             "property": "border-left-color",
             "token": "color.border.default"
           }
@@ -2558,7 +2558,7 @@
         },
         {
           "what": "verify route traces-rail",
-          "reason": "the research-rail route has no solid viewer-shell panel (the rail is bg-card/85, its sections bg-background/30, and alpha never equals a token); the trace workspace list (workspace/KernelTraceWorkspace.tsx:255-256, bg-card) is one. Body text is the shell's own color (main.research-style-shell, colored by the host's own contract variables (pass 1 removed the engine's inline colors, a6820c2); host element examples/simple-research-kernel/src/_layouts/ResearchKernelLayout.tsx:72); the rail's hex inputs are color controls the owner decision hides, so they are not probed"
+          "reason": "From simple-research-kernel pass 2 the style rail renders as the host shell's inspector (aside.ds-inspector, the copied template Inspector titled Style) holding viewer-shell's StyleSettingsPanel; viewer-shell's StyleSettingsRail chrome is not rendered there. The probes read viewer-shell's own parts inside it: the first PanelSection (border border-border → color.border.default) and its PanelTitle (.style-panel-heading, text.ink). The research-rail route has no solid viewer-shell panel (its sections are translucent, and alpha never equals a token); the trace workspace list (workspace/KernelTraceWorkspace.tsx:255-256, bg-card) is one. Body text and page color are read on the engine root (.research-style-shell, the div that wraps the whole shell, colored by host-contract.css). The rail's hex inputs are color controls the owner decision hides, so they are not probed"
         },
         {
           "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
@@ -2877,22 +2877,22 @@
         {
           "id": "research",
           "path": "/research",
-          "waitFor": "main.research-style-shell"
+          "waitFor": ".research-style-shell"
         },
         {
           "id": "traces",
           "path": "/traces",
-          "waitFor": "main.research-style-shell"
+          "waitFor": ".research-style-shell"
         },
         {
           "id": "agents",
           "path": "/agents",
-          "waitFor": "main.research-style-shell"
+          "waitFor": ".research-style-shell"
         },
         {
           "id": "research-rail",
           "path": "/research?style=open",
-          "waitFor": "aside.style-settings-rail"
+          "waitFor": "aside.ds-inspector"
         }
       ],
       "runProfile": {
@@ -2940,7 +2940,7 @@
         "route": "research",
         "probes": [
           {
-            "selector": "main.research-style-shell",
+            "selector": ".research-style-shell",
             "property": "background-color",
             "token": "color.surface.page"
           },
@@ -2950,7 +2950,7 @@
             "token": "color.surface.panel"
           },
           {
-            "selector": "main.research-style-shell",
+            "selector": ".research-style-shell",
             "property": "color",
             "token": "color.text.body"
           },
