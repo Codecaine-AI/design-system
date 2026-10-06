@@ -10,74 +10,27 @@
  *   2. Loads every route, in each theme the route needs, in a `guardedContext`: the runner's
  *      guard aborts and records every request to a local port the run did not start and to any
  *      non-loopback host.
- *   3. Samples `lsof -nP -a -p <pids> -i` for the run's process groups the whole time and flags
- *      every connection that is not to or between the run's own listening ports.
+ *   3. The runner contains every run process in the OS sandbox and samples their TCP connections with
+ *      lsof from before the first spawn until stop; every connection that is not to or between the
+ *      run's own ports, and every failed sample, is a runner violation.
  *   4. Stops the run (only its own processes) and confirms its ports are free.
  *
- * Proven = every route rendered (so rendering needed none of the requests the guard blocked), no
- * foreign connection appeared and the run stopped clean. Blocked requests are listed per origin. Writes <out-dir>/tooling/registry/proofs/<app>.json and .log.
+ * Proven = every route rendered (so rendering needed none of the requests the guard blocked), the run
+ * had no violation, egress sampling took at least one sample and none failed (a missing or failing lsof
+ * leaves the proof inconclusive, never proven), and the run stopped clean. Blocked requests are listed
+ * per origin. Writes <out-dir>/tooling/registry/proofs/<app>.json and .log.
  * The result is evidence for the registry worker; apps.json records it in runProfile.proof.
  */
-import { spawnSync } from "node:child_process";
 import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { guardedContext, startApp, type RunningApp } from "./lib/app-runner";
-import { LAUNCH_OPTIONS } from "./lib/capture";
-import { loadPlaywright } from "./lib/playwright";
+import { guardedContext, launchBrowser, startApp, type RunningApp } from "./lib/app-runner";
 import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, type AppEntry, type RouteSpec } from "./lib/registry";
+import { safeOutputPath } from "./lib/safe-paths";
 
-const LOOPBACK = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);
-
-export interface Connection {
-  pid: number;
-  proto: string;
-  local: { host: string; port: number };
-  remote?: { host: string; port: number };
-  state?: string;
-  raw: string;
-}
-
-function splitHostPort(s: string): { host: string; port: number } | null {
-  const i = s.lastIndexOf(":");
-  if (i < 0) return null;
-  const port = Number(s.slice(i + 1));
-  if (s.slice(i + 1) === "" || !Number.isInteger(port)) return null;
-  return { host: s.slice(0, i), port };
-}
-
-/** Parse `lsof -nP -i` output into connections; the header and unparsable lines are dropped. */
-export function parseLsof(output: string): Connection[] {
-  const out: Connection[] = [];
-  for (const line of output.split("\n")) {
-    const cols = line.trim().split(/\s+/);
-    if (cols.length < 9 || cols[0] === "COMMAND") continue;
-    const pid = Number(cols[1]);
-    if (!Number.isInteger(pid)) continue;
-    const m = cols.slice(8).join(" ").match(/^(\S+?)(?:->(\S+))?(?:\s+\((\w+)\))?$/);
-    if (!m) continue;
-    const local = splitHostPort(m[1]!);
-    if (!local) continue;
-    const remote = m[2] ? (splitHostPort(m[2]) ?? undefined) : undefined;
-    out.push({ pid, proto: cols[7]!, local, remote, state: m[3], raw: line.trim() });
-  }
-  return out;
-}
-
-/**
- * Connections that leave the run: a non-loopback remote, or a loopback remote on a port outside
- * `ownPorts` (the ports the run started plus the app's named profile ports, which sit in its own
- * block, so a dead-port target such as deadApi reaches nobody). Inbound connections and listeners pass.
- */
-export function foreignConnections(conns: Connection[], ownPorts: ReadonlySet<number>): Connection[] {
-  return conns.filter((c) => {
-    if (!c.remote) return false; // a listener or an unconnected socket
-    if (!LOOPBACK.has(c.remote.host)) return true;
-    if (ownPorts.has(c.local.port)) return false; // inbound to one of the run's ports
-    return !ownPorts.has(c.remote.port);
-  });
-}
+/** The connection classifier lives in scripts/lib/egress.ts (the runner samples with it). */
+export { foreignConnections, parseLsof, type Connection } from "./lib/egress";
 
 /** Count blocked requests per origin ("<route>/<theme>: GET http://host:port/path" lines). */
 export function summarizeBlocked(lines: string[]): Record<string, number> {
@@ -94,27 +47,6 @@ export function summarizeBlocked(lines: string[]): Record<string, number> {
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-/** Every pid in the process groups of the processes listening on `ports`. */
-function runPids(ports: number[]): number[] {
-  const leaders = new Set<number>();
-  for (const port of ports) {
-    const out = spawnSync("lsof", ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN", "-t"], { encoding: "utf8" }).stdout ?? "";
-    for (const pid of out.split("\n").map(Number).filter((n) => Number.isInteger(n) && n > 0)) leaders.add(pid);
-  }
-  if (!leaders.size) return [];
-  const table = (spawnSync("ps", ["-A", "-o", "pid=,pgid="], { encoding: "utf8" }).stdout ?? "")
-    .split("\n")
-    .map((l) => l.trim().split(/\s+/).map(Number))
-    .filter(([pid, g]) => Number.isInteger(pid) && Number.isInteger(g)) as Array<[number, number]>;
-  const groups = new Set(table.filter(([pid]) => leaders.has(pid)).map(([, g]) => g));
-  return table.filter(([, g]) => groups.has(g)).map(([pid]) => pid);
-}
-
-function lsofFor(pids: number[]): string {
-  if (!pids.length) return "";
-  return spawnSync("lsof", ["-nP", "-a", "-p", pids.join(","), "-i"], { encoding: "utf8" }).stdout ?? "";
-}
 
 export interface RouteResult {
   id: string;
@@ -138,8 +70,14 @@ export interface ProofResult {
   blockedRequests: string[];
   /** Distinct origins the guard blocked, with counts (e.g. "http://127.0.0.1:47022": 18). */
   blockedTargets?: Record<string, number>;
+  /** The runner's isolation violations: connections that left the run, owner ports listened on, failed samples. */
   foreign: string[];
+  /** Distinct sockets the runner's egress sampling saw. */
   connectionsSeen: number;
+  /** Egress sampling: samples taken and failures (any failure, or no sample, leaves the proof inconclusive). */
+  egress?: { samples: number; failures: string[] };
+  /** Why the proof is inconclusive (egress unobserved), when it is. */
+  inconclusive?: string;
   stoppedClean: boolean;
   stopError?: string;
   proven: boolean;
@@ -152,7 +90,7 @@ async function prove(app: AppEntry, opts: { root: string; outDir: string }): Pro
     app: app.id,
     date: new Date().toISOString(),
     root: opts.root,
-    method: "scripts/registry-prove.ts: app-runner startApp(allowUnproven) + guardedContext + lsof sampling",
+    method: "scripts/registry-prove.ts: app-runner startApp(allowUnproven) in the OS sandbox + guardedContext + runner lsof sampling from before spawn",
     startedPorts: [],
     env: [],
     routes: [],
@@ -163,24 +101,11 @@ async function prove(app: AppEntry, opts: { root: string; outDir: string }): Pro
     proven: false,
   };
   let running: RunningApp | undefined;
-  const seen = new Map<string, Connection>();
-  let sampling = false;
-  let sampler: Promise<void> | undefined;
   try {
     running = await startApp(app, { root: opts.root, outDir: join(opts.outDir, "tooling", "registry", "runs"), allowUnproven: true });
     result.baseUrl = running.baseUrl;
     result.env = Object.keys(running.env).sort();
-    sampling = true;
-    const live = running;
-    sampler = (async () => {
-      while (sampling) {
-        // Key on everything after the FD column, so one socket counts once across samples.
-        for (const c of parseLsof(lsofFor(runPids(live.startedPorts)))) seen.set(`${c.pid} ${c.raw.split(/\s+/).slice(4).join(" ")}`, c);
-        await sleep(250);
-      }
-    })();
-    const playwright = loadPlaywright(opts.root);
-    const browser = await playwright.chromium.launch(LAUNCH_OPTIONS);
+    const browser = await launchBrowser(opts.root);
     try {
       for (const route of app.routes) {
         const themes = route.themes ?? (app.theme.rule === "dark-first" ? ["dark"] : ["light", "dark"]);
@@ -193,8 +118,6 @@ async function prove(app: AppEntry, opts: { root: string; outDir: string }): Pro
   } catch (error) {
     result.routes.push({ id: "(start)", theme: "-", url: result.baseUrl ?? "", ok: false, error: String(error).split("\n")[0], consoleErrors: [] });
   } finally {
-    sampling = false;
-    await sampler;
     if (running) {
       result.startedPorts = [...running.startedPorts];
       try {
@@ -203,16 +126,20 @@ async function prove(app: AppEntry, opts: { root: string; outDir: string }): Pro
       } catch (error) {
         result.stopError = String(error);
       }
+      // Read after stop(): its last sample may add violations.
+      result.foreign = [...(running.violations ?? [])];
+      result.egress = running.egress && { samples: running.egress.samples, failures: [...running.egress.failures] };
+      result.connectionsSeen = running.egress?.connections ?? 0;
       try {
         copyFileSync(running.logPath, join(proofDir, `${app.id}.log`));
       } catch {}
     }
   }
-  result.connectionsSeen = seen.size;
-  const ownPorts = new Set([...result.startedPorts, ...Object.values(app.runProfile.ports ?? {})]);
-  result.foreign = foreignConnections([...seen.values()], ownPorts).map((c) => c.raw);
+  if (running && (!result.egress || result.egress.samples === 0)) result.inconclusive = "egress sampling took no sample";
+  else if (result.egress?.failures.length) result.inconclusive = `egress sampling failed: ${result.egress.failures[0]}`;
   // Blocked requests are recorded, not fatal: every route still rendered, so rendering needed none of them.
-  result.proven = result.routes.length > 0 && result.routes.every((r) => r.ok) && result.foreign.length === 0 && result.stoppedClean;
+  result.proven =
+    result.routes.length > 0 && result.routes.every((r) => r.ok) && result.foreign.length === 0 && result.stoppedClean && !result.inconclusive;
   result.blockedTargets = summarizeBlocked(result.blockedRequests);
   writeFileSync(join(proofDir, `${app.id}.json`), JSON.stringify(result, null, 2) + "\n");
   return result;
@@ -235,6 +162,11 @@ async function loadRoute(browser: any, running: RunningApp, route: RouteSpec, th
     await sleep(500);
     let probes: RouteResult["probes"];
     if (app.verify && (app.verify.route ?? app.routes[0]?.id) === route.id) {
+      // A probe may list the themes it applies to (`themes`); skip it in the others.
+      const forTheme = app.verify.probes.filter((p) => {
+        const themes = (p as { themes?: unknown }).themes;
+        return !Array.isArray(themes) || themes.includes(theme);
+      });
       probes = await page.evaluate(
         (ps: Array<{ selector: string; property: string; token: string }>) =>
           ps.map((p) => {
@@ -242,7 +174,7 @@ async function loadRoute(browser: any, running: RunningApp, route: RouteSpec, th
             const el = all.length === 1 ? all[0]! : null;
             return { ...p, found: !!el, matches: all.length, value: el ? getComputedStyle(el).getPropertyValue(p.property) : null };
           }),
-        app.verify.probes,
+        forTheme.map(({ selector, property, token }) => ({ selector, property, token })),
       );
     }
     const ambiguous = (probes ?? []).filter((p) => p.matches !== 1);
@@ -315,13 +247,16 @@ if (import.meta.main) {
     return v;
   };
   const root = resolve(flag("--root") ?? resolve(DESIGN_SYSTEM_ROOT, ".."));
-  const outDir = resolve(flag("--out-dir") ?? process.env.DS_RUN ?? join(tmpdir(), "ds-rollout"));
+  const outDir = safeOutputPath(flag("--out-dir") ?? process.env.DS_RUN ?? join(tmpdir(), "ds-rollout"), { root, label: "--out-dir" });
   const registry = loadRegistry();
   let failed = false;
   for (const id of argv) {
     const r = await prove(getApp(registry, id), { root, outDir });
     failed ||= !r.proven;
-    console.log(`${id}: ${r.proven ? "PROVEN" : "NOT PROVEN"} url=${r.baseUrl ?? "-"} ports=${r.startedPorts.join(",")} connections=${r.connectionsSeen}`);
+    console.log(
+      `${id}: ${r.proven ? "PROVEN" : r.inconclusive ? "INCONCLUSIVE" : "NOT PROVEN"} url=${r.baseUrl ?? "-"} ports=${r.startedPorts.join(",")} connections=${r.connectionsSeen} samples=${r.egress?.samples ?? 0}`,
+    );
+    if (r.inconclusive) console.log(`  inconclusive: ${r.inconclusive}`);
     for (const route of r.routes)
       console.log(`  ${route.ok ? "ok  " : "FAIL"} ${route.id}/${route.theme} ${route.error ?? ""}${route.consoleErrors.length ? ` (${route.consoleErrors.length} console errors)` : ""}`);
     for (const [origin, n] of Object.entries(r.blockedTargets ?? {})) console.log(`  blocked ${n}x ${origin}`);
