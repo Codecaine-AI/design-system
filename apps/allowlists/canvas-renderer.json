@@ -56,6 +56,12 @@
       "match": "^rgba\\(0, 0, 0, 0\\.15\\)$",
       "category": "rgb",
       "reason": "FigJam paper-sticky drop shadow (STICKY_GEOMETRY.shadow): painted only when stickyStyle is \"paper\", which only FIGJAM_PRESET sets; schematic card stickies override it inline (canvas-owned FigJam art, audit 'Not included') (1 hit)"
+    },
+    {
+      "file": "codecaine/core/canvas/packages/canvas/src/stage/editor/features/text-editing/MarkdownSlotTextEditor.tsx",
+      "match": "^0px$",
+      "category": "pxFontSize",
+      "reason": "hidden markdown markers stay in the DOM so carets map back to the raw source but collapse to no box (fontSize 0 with lineHeight 0 and opacity 0): a collapse, not a type size; no token (1 hit, markerStyle)"
     }
   ],
   "twClasses": []

@@ -1139,7 +1139,7 @@
       "theme": {
         "rule": "light-dark"
       },
-      "literalFloor": 109,
+      "literalFloor": 110,
       "allowlist": "apps/allowlists/canvas-renderer.json",
       "shell": false,
       "folderStandard": false,
