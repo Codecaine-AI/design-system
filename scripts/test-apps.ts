@@ -160,6 +160,20 @@ export function parseOutput(output: string, paths: { root?: string; tmp?: string
   return { parser: "none", failing: [] };
 }
 
+/**
+ * Why a run executed fewer tests than its baseline (pass + fail below the baseline's), or null. Only a
+ * baseline with a test count (bun test, vitest, unittest) is compared; output with no test summary ran 0.
+ * Applies whatever the exit: a suite that silently stops loading files can still exit 0.
+ */
+export function fewerTests(parsed: ParsedResult, baseline: TestBaseline | undefined): string | null {
+  if (baseline?.pass === undefined) return null;
+  const expected = baseline.pass + (baseline.fail ?? 0);
+  const counted = parsed.parser === "bun" || parsed.parser === "vitest" || parsed.parser === "unittest";
+  const ran = counted ? (parsed.pass ?? 0) + (parsed.fail ?? 0) : 0;
+  if (ran >= expected) return null;
+  return `ran ${ran} test(s) (pass + fail${counted ? "" : `; the output has no test summary (reader: ${parsed.parser})`}), the baseline ran ${expected}`;
+}
+
 export interface Verdict {
   ok: boolean;
   /** Why it failed, one line each. */
@@ -175,14 +189,17 @@ export interface Verdict {
  * registry command now: a baseline recorded for another command is stale and compares with nothing.
  */
 export function compareWithBaseline(exit: number, parsed: ParsedResult, baseline: TestBaseline | undefined, cmd?: string): Verdict {
+  if (baseline && typeof baseline.cmd !== "string")
+    return { ok: false, reasons: ["the baseline records no cmd (the command it was recorded for), so a stale one cannot be told apart; the managing agent re-records it"], newFailures: [], fixed: [] };
   if (baseline?.cmd !== undefined && cmd !== undefined && baseline.cmd !== cmd)
     return { ok: false, reasons: [`the baseline was recorded for another command (${baseline.cmd}); the managing agent re-records it`], newFailures: [], fixed: [] };
   const known = new Set(baseline?.failing ?? []);
   const fixed = baseline?.failing?.filter((name) => !parsed.failing.includes(name)) ?? [];
-  if (exit === 0) return { ok: true, reasons: [], newFailures: [], fixed: baseline?.failing ?? [] };
+  const fewer = fewerTests(parsed, baseline);
+  if (exit === 0) return { ok: !fewer, reasons: fewer ? [fewer] : [], newFailures: [], fixed: baseline?.failing ?? [] };
   if (!baseline) return { ok: false, reasons: [`exit ${exit} and no recorded baseline`], newFailures: parsed.failing, fixed: [] };
   if (baseline.exit === 0) return { ok: false, reasons: [`exit ${exit}; the baseline exits 0`], newFailures: parsed.failing, fixed: [] };
-  const reasons: string[] = [];
+  const reasons: string[] = fewer ? [fewer] : [];
   const newFailures = parsed.failing.filter((name) => !known.has(name));
   if (newFailures.length) reasons.push(`${newFailures.length} failure(s) not in the baseline: ${newFailures.slice(0, 10).join("; ")}${newFailures.length > 10 ? "; ..." : ""}`);
   if (parsed.fail !== undefined && baseline.fail !== undefined && parsed.fail > baseline.fail) reasons.push(`${parsed.fail} failing, the baseline has ${baseline.fail}`);
@@ -414,17 +431,38 @@ export interface PlannedCommand {
   cwd: string;
 }
 
-/** The commands a run executes: every tests.safe entry (unless `tests` is false), then the named commands. */
-export function plannedCommands(app: AppEntry, opts: { tests?: boolean; commands?: string[] } = {}): PlannedCommand[] {
-  const planned: PlannedCommand[] = [];
-  if (opts.tests !== false) (app.tests?.safe ?? []).forEach((test, i) => planned.push({ label: `tests.safe[${i}]`, cmd: test.cmd, cwd: test.cwd }));
+export interface Plan {
+  /** What runs, in order. */
+  commands: PlannedCommand[];
+  /** Named commands the entry does not set, one line each ("commands.build: not set in apps.json (skipped)"). */
+  skipped: string[];
+}
+
+/**
+ * The commands a run executes: every tests.safe entry (unless `tests` is false), then each named command the
+ * entry sets. A named command the entry does not set is skipped, not refused (`--commands typecheck,build`
+ * fits every app); a name that is not a named command (install among them) throws.
+ */
+export function plannedCommands(app: AppEntry, opts: { tests?: boolean; commands?: string[] } = {}): Plan {
+  const commands: PlannedCommand[] = [];
+  const skipped: string[] = [];
+  if (opts.tests !== false) (app.tests?.safe ?? []).forEach((test, i) => commands.push({ label: `tests.safe[${i}]`, cmd: test.cmd, cwd: test.cwd }));
   for (const name of opts.commands ?? []) {
     if (!(NAMED_COMMANDS as readonly string[]).includes(name)) throw new Error(`--commands: "${name}" is not one of ${NAMED_COMMANDS.join(", ")} (install never runs here)`);
     const cmd = app.commands?.[name as NamedCommand];
-    if (!cmd) throw new Error(`${app.id}: commands.${name} is not set in the registry`);
-    planned.push({ label: `commands.${name}`, cmd, cwd: app.commands.cwd });
+    if (cmd) commands.push({ label: `commands.${name}`, cmd, cwd: app.commands.cwd });
+    else skipped.push(`commands.${name}: not set in apps.json (skipped)`);
   }
-  return planned;
+  return { commands, skipped };
+}
+
+/** Why a run has nothing to execute, with the --commands the entry does set (if any). */
+export function nothingToRun(app: AppEntry, opts: { tests?: boolean; commands?: string[] } = {}): string {
+  const set = NAMED_COMMANDS.filter((name) => app.commands?.[name]);
+  const tests = opts.tests === false ? "--no-tests" : `${app.id} has no tests.safe command`;
+  const named = opts.commands?.length ? `, and apps.json sets none of commands.${opts.commands.join(", commands.")}` : "";
+  const hint = set.length ? `the entry sets ${set.map((name) => `commands.${name}`).join(" and ")}: run it with --commands ${set.join(",")}` : "the entry sets no typecheck or build command either";
+  return `nothing to run: ${tests}${named}; ${hint}`;
 }
 
 /** Fixtures are design-system-relative; apps/fixtures/<id>/<rest> lands at <tmp>/<rest>, anything else at <tmp>/<basename>. No .env files. */
@@ -504,6 +542,8 @@ export interface AppReport {
   sandbox: string;
   scope: WriteScope;
   commands: CommandResult[];
+  /** Named commands the entry does not set (plannedCommands): listed, never run, never a failure. */
+  skipped: string[];
   /** Why nothing ran, when nothing could. */
   refused?: string;
   ok: boolean;
@@ -631,15 +671,15 @@ export async function testApp(app: AppEntry, opts: TestAppOptions): Promise<AppR
   // Canonical, as git and find print paths: the write check compares them with it.
   const root = realpathSync(resolve(opts.root));
   const outDir = safeOutputPath(opts.outDir, { root, label: "--out-dir" });
-  const report: AppReport = { app: app.id, root, date: new Date().toISOString(), sandbox: SANDBOX_EXEC, scope: { checkouts: [], gitDirs: {}, scan: [], prune: [] }, commands: [], ok: false };
-  const planned = plannedCommands(app, { tests: opts.tests, commands: opts.commands });
+  const { commands: planned, skipped } = plannedCommands(app, { tests: opts.tests, commands: opts.commands });
+  const report: AppReport = { app: app.id, root, date: new Date().toISOString(), sandbox: SANDBOX_EXEC, scope: { checkouts: [], gitDirs: {}, scan: [], prune: [] }, commands: [], skipped, ok: false };
   const noSandbox = sandboxUnavailable();
   if (noSandbox) {
     report.refused = `refusing to run without the OS sandbox: ${noSandbox}`;
     return report;
   }
   if (planned.length === 0) {
-    report.refused = `${app.id} has no tests.safe command${opts.commands?.length ? "" : " (name commands with --commands typecheck,build)"}`;
+    report.refused = nothingToRun(app, { tests: opts.tests, commands: opts.commands });
     return report;
   }
   const usesDs = planned.some((p) => p.cmd.includes("{ds}"));
@@ -672,11 +712,21 @@ export interface CliOptions {
   json: boolean;
 }
 
+/**
+ * The out dir when --out-dir is not given: $DS_RUN, else `ds-rollout` under the temp base, which must pass
+ * safeTempBase (an existing dir outside the owner's tree, not the home itself, not in ~/Library or a
+ * credential store), whatever TMPDIR says.
+ */
+export function defaultOutDir(env: NodeJS.ProcessEnv = process.env): string {
+  return env.DS_RUN || join(safeTempBase({ tmp: env.TMPDIR || tmpdir() }), "ds-rollout");
+}
+
 export function parseArgs(argv: string[], env: NodeJS.ProcessEnv = process.env): CliOptions {
+  const outDir = argv.includes("--out-dir") ? undefined : defaultOutDir(env);
   const opts: CliOptions = {
     root: resolve(DESIGN_SYSTEM_ROOT, ".."),
     registry: REGISTRY_PATH,
-    outDir: env.DS_RUN ?? join(tmpdir(), "ds-rollout"),
+    outDir: outDir ?? "",
     apps: [],
     commands: [],
     tests: true,
@@ -737,10 +787,11 @@ export async function cli(argv: string[] = process.argv.slice(2)): Promise<numbe
     try {
       report = await testApp(getApp(registry, id), { root: opts.root, outDir: opts.outDir, registry, tests: opts.tests, commands: opts.commands, timeoutMs: opts.timeoutMs });
     } catch (error) {
-      report = { app: id, root: opts.root, date: new Date().toISOString(), sandbox: SANDBOX_EXEC, scope: { checkouts: [], gitDirs: {}, scan: [], prune: [] }, commands: [], refused: (error as Error).message, ok: false };
+      report = { app: id, root: opts.root, date: new Date().toISOString(), sandbox: SANDBOX_EXEC, scope: { checkouts: [], gitDirs: {}, scan: [], prune: [] }, commands: [], skipped: [], refused: (error as Error).message, ok: false };
     }
     reports.push(report);
     if (opts.json) continue;
+    for (const line of report.skipped) console.log(`${id}: ${line}`);
     if (report.refused) console.log(`${id}: REFUSED ${report.refused}`);
     for (const result of report.commands) for (const line of describe(result)) console.log(`${id} ${line}`);
     if (!report.refused) console.log(`${id}: ${report.ok ? "ok" : "FAILED"}; report ${report.reportPath}`);

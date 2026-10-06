@@ -11,7 +11,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import type { AppEntry, TestBaseline } from "../scripts/lib/registry.ts";
+import { realHome } from "../scripts/lib/safe-paths.ts";
 import { sandboxUnavailable } from "../scripts/lib/sandbox.ts";
+import { parseArgs } from "../scripts/test-apps.ts";
 import { assertNoLeaks } from "./leaks.ts";
 import { PKG } from "./support.ts";
 
@@ -24,6 +26,8 @@ const write = (path, text = "x") => (mkdirSync(dirname(path), { recursive: true 
 const bunSummary = (pass, fail) => " " + pass + " pass\n " + fail + " fail\nRan " + (pass + fail) + " tests across 1 file. [5.00ms]";
 switch (mode) {
   case "pass": console.log("(pass) s > a [0.10ms]\n" + bunSummary(3, 0)); break;
+  // A suite that lost a test file: still green, one test fewer.
+  case "fewer": console.log(bunSummary(2, 0)); break;
   case "known-fail": console.error("(fail) s > a [0.10ms]\n" + bunSummary(2, 1)); process.exit(1);
   // bun 1.4's own layout for an error outside a test: the file header, a code frame, then the error line.
   case "unhandled":
@@ -127,22 +131,29 @@ function app(id: string, cmd: string, extra: { baselines?: Record<string, TestBa
 const run = (mode: string) => `bun --no-env-file standin.mjs ${mode}`;
 /** A listener this test starts before any run (registry tests' range 46940-46959): no run may reach it. */
 const PRE_EXISTING_PORT = 46941;
-const known = (failing: string[], over: Partial<TestBaseline> = {}): TestBaseline => ({ exit: 1, fail: failing.length, failing, date: "2026-10-05", method: "test", ...over });
+/** A baseline recorded for `cmd` with these failing names. */
+const known = (cmd: string, failing: string[], over: Partial<TestBaseline> = {}): TestBaseline => ({ cmd, exit: 1, fail: failing.length, failing, date: "2026-10-05", method: "test", ...over });
 
 const APPS: AppEntry[] = [
   app("pass", run("pass")),
-  app("known-fail", run("known-fail"), { baselines: { "tests.safe[0]": known(["s > a"]) } }),
-  app("new-fail", run("new-fail"), { baselines: { "tests.safe[0]": known(["s > a"]) } }),
+  app("known-fail", run("known-fail"), { baselines: { "tests.safe[0]": known(run("known-fail"), ["s > a"]) } }),
+  app("new-fail", run("new-fail"), { baselines: { "tests.safe[0]": known(run("new-fail"), ["s > a"]) } }),
   app("no-baseline", run("known-fail")),
   // The baseline names the file under {root}: recorded on one tree, it matches a run on another.
-  app("unhandled", run("unhandled"), { baselines: { "tests.safe[0]": known(["unhandled: a.test.ts: TypeError: boom in {root}/core/member/app/a.test.ts"], { errors: 1 }) } }),
+  app("unhandled", run("unhandled"), { baselines: { "tests.safe[0]": known(run("unhandled"), ["unhandled: a.test.ts: TypeError: boom in {root}/core/member/app/a.test.ts"], { errors: 1 }) } }),
   // Recorded for another command: the entry's command changed since, so the baseline is stale.
-  app("stale-baseline", run("known-fail"), { baselines: { "tests.safe[0]": known(["s > a"], { cmd: run("an-older-command") }) } }),
-  app("baseline-green", run("known-fail"), { baselines: { "tests.safe[0]": { exit: 0, pass: 3, fail: 0, date: "2026-10-05", method: "test" } } }),
-  app("vitest-new", run("vitest-new"), { baselines: { "tests.safe[0]": known(["src/a.test.ts > s > old"]) } }),
-  app("unittest-known", run("unittest-known"), { baselines: { "tests.safe[0]": known(["m.C.test_x"]) } }),
+  app("stale-baseline", run("known-fail"), { baselines: { "tests.safe[0]": known(run("an-older-command"), ["s > a"]) } }),
+  // Recorded without its command: a stale baseline could not be told apart, so it compares with nothing.
+  app("no-cmd-baseline", run("known-fail"), { baselines: { "tests.safe[0]": { exit: 1, fail: 1, failing: ["s > a"], date: "2026-10-05", method: "test" } } }),
+  app("baseline-green", run("known-fail"), { baselines: { "tests.safe[0]": { cmd: run("known-fail"), exit: 0, pass: 3, fail: 0, date: "2026-10-05", method: "test" } } }),
+  // Green, but one test fewer than the baseline ran.
+  app("fewer-tests", run("fewer"), { baselines: { "tests.safe[0]": { cmd: run("fewer"), exit: 0, pass: 3, fail: 0, date: "2026-10-05", method: "test" } } }),
+  app("vitest-new", run("vitest-new"), { baselines: { "tests.safe[0]": known(run("vitest-new"), ["src/a.test.ts > s > old"]) } }),
+  app("unittest-known", run("unittest-known"), { baselines: { "tests.safe[0]": known(run("unittest-known"), ["m.C.test_x"]) } }),
   // The baseline's tsc error sits on another line now (line numbers are not compared); the second error is new.
-  app("tsc", "", { typecheck: run("tsc"), build: run("bind"), baselines: { "commands.typecheck": known(["src/a.ts: TS2322: Type 'x' is not assignable to type 'y'."], { exit: 2 }) } }),
+  app("tsc", "", { typecheck: run("tsc"), build: run("bind"), baselines: { "commands.typecheck": known(run("tsc"), ["src/a.ts: TS2322: Type 'x' is not assignable to type 'y'."], { exit: 2 }) } }),
+  // No safe test and only a typecheck: a run without --commands has nothing to do.
+  app("typecheck-only", "", { typecheck: run("pass") }),
   app("write-tracked", run("write-tracked")),
   app("write-ignored", run("write-ignored")),
   app("delete-ignored", run("delete-ignored")),
@@ -233,7 +244,7 @@ afterAll(async () => {
 describe.skipIf(!!noSandbox)("bun run test:apps", () => {
   let main: ReturnType<typeof testApps>;
   let typecheck: ReturnType<typeof testApps>;
-  const ids = APPS.map((a) => a.id).filter((id) => !["hang", "tsc", "not-a-checkout"].includes(id));
+  const ids = APPS.map((a) => a.id).filter((id) => !["hang", "tsc", "not-a-checkout", "typecheck-only"].includes(id));
   beforeAll(() => {
     main = testApps(["--json", ...ids]);
     typecheck = testApps(["--json", "--no-tests", "--commands", "typecheck,build", "tsc"]);
@@ -255,8 +266,34 @@ describe.skipIf(!!noSandbox)("bun run test:apps", () => {
     ["no-baseline", false],
     ["baseline-green", false],
     ["stale-baseline", false],
+    ["no-cmd-baseline", false],
+    ["fewer-tests", false],
   ])("%s: ok %p against its baseline", (id, ok) => {
     expect(result(id)?.ok).toBe(ok);
+  });
+
+  test("a baseline that records no cmd fails the run: a stale one could not be told apart", () => {
+    expect(result("no-cmd-baseline").verdict.reasons).toEqual([
+      "the baseline records no cmd (the command it was recorded for), so a stale one cannot be told apart; the managing agent re-records it",
+    ]);
+  });
+
+  test("a run that executes fewer tests than its baseline fails, even when it exits 0", () => {
+    expect(result("fewer-tests").exit).toBe(0);
+    expect(result("fewer-tests").verdict.reasons).toEqual(["ran 2 test(s) (pass + fail), the baseline ran 3"]);
+  });
+
+  test("--commands typecheck,build skips a named command the entry does not set and runs the rest", () => {
+    const run = testApps(["--commands", "typecheck,build", "pass"]);
+    expect(run.status).toBe(0);
+    expect(run.stdout).toContain("pass: commands.typecheck: not set in apps.json (skipped)\npass: commands.build: not set in apps.json (skipped)\n");
+    expect(run.stdout).toContain("pass: ok");
+  }, 60_000);
+
+  test("an entry with nothing to run says which --commands it does set", () => {
+    const refused = testApps(["--json", "typecheck-only"]);
+    expect(refused.status).toBe(1);
+    expect(refused.reports["typecheck-only"].refused).toBe("nothing to run: typecheck-only has no tests.safe command; the entry sets commands.typecheck: run it with --commands typecheck");
   });
 
   test("a failure the baseline does not list is named, for bun test, vitest and tsc output", () => {
@@ -360,6 +397,12 @@ describe.skipIf(!!noSandbox)("bun run test:apps", () => {
     expect(green.status).toBe(0);
     expect(green.stdout).toContain("pass: ok");
   }, 60_000);
+});
+
+test("the default out dir ($DS_RUN, else under the temp base) refuses a TMPDIR that is the home itself", () => {
+  expect(parseArgs(["x"], { DS_RUN: "/run/folder" }).outDir).toBe("/run/folder");
+  expect(() => parseArgs(["x"], { TMPDIR: realHome() })).toThrow("is the home directory itself");
+  expect(parseArgs(["--out-dir", "/elsewhere", "x"], { TMPDIR: realHome() }).outDir).toBe("/elsewhere");
 });
 
 test("refuses install and unknown commands before running anything", () => {
