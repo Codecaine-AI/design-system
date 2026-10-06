@@ -16,13 +16,14 @@
  */
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, readlinkSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { installSignalHandlers } from "../app-runner";
 import { OWNER_TREE } from "../owner";
 import { appState, describePasses, parseLedger, passCells } from "../progress/ledger";
 import type { AppEntry, ConsumeVia, Registry } from "../registry";
 import { safeChildPath } from "../safe-paths";
+import { SYSTEM_BIN, SYSTEM_PATH } from "../system-bin";
 
 /** The owner's workspace (scripts/lib/owner.ts). Propagate never rebuilds it. */
 export { OWNER_TREE };
@@ -162,6 +163,8 @@ export interface JournalManifest {
   dsDir: string;
   files: Array<{ rel: string; sha256: string }>;
   restoredAt?: string;
+  /** sha256 of the build's inputs when the journal was written (buildInputsSha256): no build runs once they changed. */
+  buildInputs?: string;
   /** Set while a build runs (recorded before it starts); `identity` is the file in the journal holding its pid, group and start time. */
   activeBuild?: { script: string; identity: string; requestedAt: string };
 }
@@ -176,6 +179,37 @@ function writeManifest(journalDir: string, manifest: JournalManifest) {
   rmSync(tmp, { force: true });
   writeFileSync(tmp, `${JSON.stringify(manifest, null, 2)}\n`, { flag: "wx" });
   renameSync(tmp, journalPath(journalDir, MANIFEST));
+}
+
+/** Files whose content decides what `bun run <script>` executes in the design-system. */
+const BUILD_INPUT_FILES = ["package.json", "bunfig.toml", "tsconfig.json"];
+
+/**
+ * sha256 over the code a design-system build runs: package.json (its scripts), bunfig.toml and
+ * tsconfig.json (preloads, import paths) and every entry under scripts/ (a symlink by its target). An app
+ * that rewrote them while it ran under propagate would otherwise have its code run by the restore build.
+ */
+export function buildInputsSha256(dsDir: string): string {
+  const lines: string[] = [];
+  const entry = (rel: string) => {
+    const path = join(dsDir, rel);
+    const kind = entryKind(path);
+    if (kind === "missing") return `${rel}\0missing\n`;
+    if (kind === "symlink") return `${rel}\0symlink:${readlinkSync(path)}\n`;
+    if (kind === "file") return `${rel}\0${sha256(readFileSync(path))}\n`;
+    return `${rel}\0${kind}\n`;
+  };
+  for (const rel of BUILD_INPUT_FILES) lines.push(entry(rel));
+  const walk = (rel: string) => {
+    for (const name of readdirSync(join(dsDir, rel)).sort()) {
+      const child = `${rel}/${name}`;
+      if (entryKind(join(dsDir, child)) === "dir") walk(child);
+      else lines.push(entry(child));
+    }
+  };
+  if (entryKind(join(dsDir, "scripts")) === "dir") walk("scripts");
+  else lines.push(entry("scripts"));
+  return sha256(lines.join(""));
 }
 
 function pageValue(text: string): unknown {
@@ -214,6 +248,7 @@ export function writeJournal(dsDir: string, journalDir: string): JournalManifest
     createdAt: new Date().toISOString(),
     dsDir: dsReal,
     files: files.map(({ rel, data }) => ({ rel, sha256: sha256(data) })),
+    buildInputs: buildInputsSha256(dsReal),
   };
   writeManifest(journalDir, manifest);
   return manifest;
@@ -243,10 +278,17 @@ const SCRIPT_NAME = /^[A-Za-z0-9][A-Za-z0-9:_-]*$/;
 /**
  * The build's own shell ($0 bun, $1 script, $2 identity file, $3 its temp file) records its pid, group
  * and start time atomically (exclusive create, then rename), then execs bun, which keeps that pid and
- * start time. A build whose identity cannot be recorded does not run.
+ * start time. A build whose identity cannot be recorded does not run. ps, rm and mv are the system
+ * binaries by absolute path (SYSTEM_BIN), never whatever PATH finds.
  */
-const RECORD_AND_EXEC = `pg=$(LC_ALL=C ps -o pgid= -p $$) && st=$(LC_ALL=C ps -o lstart= -p $$) && [ -n "$pg" ] && [ -n "$st" ] && rm -f "$3" && set -C && printf '{"pid":%s,"pgid":%s,"started":"%s","script":"%s"}\\n' "$$" $pg "$st" "$1" > "$3" && mv -f "$3" "$2" || { echo "propagate: could not record the build identity in $2; not building" >&2; exit 97; }
+function recordAndExec(): string {
+  const ps = shellWord(SYSTEM_BIN.ps);
+  return `pg=$(LC_ALL=C ${ps} -o pgid= -p $$) && st=$(LC_ALL=C ${ps} -o lstart= -p $$) && [ -n "$pg" ] && [ -n "$st" ] && /bin/rm -f "$3" && set -C && printf '{"pid":%s,"pgid":%s,"started":"%s","script":"%s"}\\n' "$$" $pg "$st" "$1" > "$3" && /bin/mv -f "$3" "$2" || { echo "propagate: could not record the build identity in $2; not building" >&2; exit 97; }
 exec "$0" run "$1"`;
+}
+
+/** A path as one shell word (single-quoted unless plain). */
+const shellWord = (value: string) => (/^[A-Za-z0-9_\/.:-]+$/.test(value) ? value : `'${value.replace(/'/g, `'\\''`)}'`);
 
 /**
  * `bun run <script>` in a design-system directory, in its own process group: a Ctrl-C in the terminal
@@ -267,11 +309,17 @@ export function runPackageScript(dsDir: string, script: string, journalDir?: str
   if (!SCRIPT_NAME.test(script)) throw new Error(`package script name ${JSON.stringify(script)} does not match ${SCRIPT_NAME}`);
   const manifest = readJournal(journalDir);
   if (!manifest) throw new Refusal(`no propagate journal at ${journalDir} to record the build in`);
+  // The apps ran while the sentinel build was live: a build script they changed never runs.
+  if (manifest.buildInputs && buildInputsSha256(dsDir) !== manifest.buildInputs) {
+    throw new Refusal(
+      `${dsDir}: package.json, bunfig.toml, tsconfig.json or scripts/ changed since the propagate journal was written; refusing to run \`bun run ${script}\`. Check them, then rebuild by hand`,
+    );
+  }
   const identity = journalPath(journalDir, BUILD_IDENTITY);
   rmSync(identity, { force: true });
   writeManifest(journalDir, { ...manifest, activeBuild: { script, identity: BUILD_IDENTITY, requestedAt: new Date().toISOString() } });
   try {
-    return finish(spawnSync("/bin/sh", ["-c", RECORD_AND_EXEC, process.execPath, script, identity, journalPath(journalDir, `${BUILD_IDENTITY}.tmp`)], options));
+    return finish(spawnSync(SYSTEM_BIN.sh, ["-c", recordAndExec(), process.execPath, script, identity, journalPath(journalDir, `${BUILD_IDENTITY}.tmp`)], options));
   } finally {
     clearActiveBuild(journalDir);
   }
@@ -291,7 +339,7 @@ function clearActiveBuild(journalDir: string): void {
 const normalizeStart = (text: string) => text.trim().split(/\s+/).join(" ");
 
 function ps(args: string[]): { ok: boolean; out: string } {
-  const result = spawnSync("ps", args, { encoding: "utf8", env: { ...process.env, LC_ALL: "C" } });
+  const result = spawnSync(SYSTEM_BIN.ps, args, { encoding: "utf8", env: { ...process.env, PATH: SYSTEM_PATH, LC_ALL: "C" } });
   return { ok: result.status === 0, out: result.stdout ?? "" };
 }
 

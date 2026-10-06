@@ -17,6 +17,7 @@ import { FIXED_TIME } from "../scripts/lib/capture.ts";
 import { decodePng } from "../scripts/lib/png.ts";
 import { DESIGN_SYSTEM_ROOT } from "../scripts/lib/registry.ts";
 import { finishScratch, leakedListeners } from "./leaks.ts";
+import { plantBin } from "./planted-bin.ts";
 import { snapshotApp, writeRegistry } from "./snapshot-support.ts";
 import { browserSkip, FIXTURES } from "./verify-support.ts";
 
@@ -76,8 +77,10 @@ test.skipIf(Boolean(browserSkip))(
   "manifest fields, the fixed clock, dark-equals-light warnings, and a mixed-provenance merge that --exact rejects",
   () => {
     const t = tree();
-    const first = snapshot(t, "base");
-    expect([first.exitCode, first.stderr.toString()]).toEqual([0, ""]);
+    // git, ps and lsof planted in PATH: the capture must run the system binaries (provenance included).
+    const planted = plantBin(t.root);
+    const first = Bun.spawnSync(argv(t, "snapshot.ts", ["--set", "base", "--root", t.root]), { env: { ...env(t), PATH: planted.path } });
+    expect([first.exitCode, first.stderr.toString(), planted.calls()]).toEqual([0, "", []]);
     const base = manifest(t, "base");
     expect(base.expectedKeys).toEqual(["home-light", "home-dark", "other-light"]);
     expect(base.only).toBeNull();

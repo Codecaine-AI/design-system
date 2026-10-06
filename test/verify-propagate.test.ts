@@ -33,6 +33,7 @@ import {
 } from "../scripts/lib/verify/propagate.ts";
 import { browserSkip, MIRROR, makeFixtureRoot, runnableFixtureApp } from "./verify-support.ts";
 import { finishScratch } from "./leaks.ts";
+import { plantBin } from "./planted-bin.ts";
 
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-verify-propagate-")));
 afterAll(async () => {
@@ -541,5 +542,30 @@ describe("a build a crashed run left behind", () => {
     } finally {
       stranger.kill("SIGKILL");
     }
+  });
+});
+
+describe("what a propagate build runs", () => {
+  test("the build's own shell records its identity with the system ps, rm and mv, never ones planted in PATH", () => {
+    const { ds, journal } = miniDs("cp ../out/propagate-journal/build.json identity.json && cp tokens/themes/light.tokens.json dist/light.json");
+    const planted = plantBin(mkdtempSync(join(scratch, "path-")));
+    writeJournal(ds, journal);
+    const path = process.env.PATH;
+    process.env.PATH = planted.path;
+    try {
+      const result = runPackageScript(ds, "build", journal);
+      expect({ ok: result.ok, recorded: existsSync(join(ds, "identity.json")), planted: planted.calls() }).toEqual({ ok: true, recorded: true, planted: [] });
+    } finally {
+      process.env.PATH = path;
+    }
+  });
+
+  test("a build script changed after journaling never runs: the restore copies the theme files back, then refuses to build", () => {
+    const { ds, journal } = miniDs();
+    setSentinel(writeJournal(ds, journal));
+    // What an app could do while it ran during the propagate check: rewrite the design-system's build.
+    writeFileSync(join(ds, "package.json"), JSON.stringify({ scripts: { build: "touch tampered", check: "touch tampered" } }));
+    expect(() => restoreFromJournal(journal)).toThrow(/package\.json, bunfig\.toml, tsconfig\.json or scripts\/ changed since the propagate journal was written/);
+    expect({ tampered: existsSync(join(ds, "tampered")), theme: readOrNull(join(ds, "tokens/themes/light.tokens.json")) }).toEqual({ tampered: false, theme: THEME });
   });
 });

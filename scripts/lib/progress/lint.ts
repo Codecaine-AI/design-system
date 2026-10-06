@@ -129,7 +129,8 @@ export function runLinter(designSystemRoot: string, root: string, opts: { regist
     return { available: false, origin, reason: "scripts/lint-apps.ts is not in this design-system checkout yet" };
   const outDir = mkdtempSync(join(safeTempBase(), "ds-progress-lint-"));
   try {
-    const result = spawnSync("bun", [...args, "--out-dir", outDir], {
+    // This bun (process.execPath), never one found through PATH.
+    const result = spawnSync(process.execPath, [...args, "--out-dir", outDir], {
       cwd: designSystemRoot,
       encoding: "utf8",
       maxBuffer: 512 * 1024 * 1024,

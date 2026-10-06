@@ -14,6 +14,7 @@ import { type AppEntry, DESIGN_SYSTEM_ROOT } from "../scripts/lib/registry.ts";
 import { packageCheck, staticCheck } from "../scripts/lib/verify/static-check.ts";
 import { loadBuildValues } from "../scripts/lib/verify/tokens.ts";
 import { fixtureApp } from "./verify-support.ts";
+import { plantBin } from "./planted-bin.ts";
 
 const values = loadBuildValues(DESIGN_SYSTEM_ROOT);
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-verify-static-")));
@@ -52,12 +53,12 @@ const app = fixtureApp({
 const statuses = (root: string) => Object.fromEntries(staticCheck(app, root, values).map((a) => [a.id, [a.status, a.message]]));
 
 /** verify:apps on `root` with a registry listing `apps`; returns the exit code and stderr. */
-function verifyCli(root: string, out: string, apps: unknown[]) {
+function verifyCli(root: string, out: string, apps: unknown[], path = process.env.PATH) {
   const registry = join(root, "apps.json");
   writeFileSync(registry, JSON.stringify({ version: 1, apps }));
   const result = Bun.spawnSync([process.execPath, "scripts/verify-apps.ts", "--root", root, "--out-dir", out, "--registry", registry, "lib"], {
     cwd: DESIGN_SYSTEM_ROOT,
-    env: { ...process.env, DS_RUN: out },
+    env: { ...process.env, DS_RUN: out, PATH: path },
   });
   return { code: result.exitCode, stderr: result.stderr.toString() };
 }
@@ -98,6 +99,9 @@ test("verify:apps runs the static check for a mode-none app whose verify gate is
     return { code, assertions: Object.fromEntries(report.assertions.map((a: any) => [a.id, a.status])) };
   };
   expect(run(IMPORT)).toEqual({ code: 0, assertions: { runtime: "n/a", package: "pass", "entry-stylesheet": "pass", gate: "n/a" } });
+  // git planted in PATH: verify:apps reads the design-system's commit with the system git.
+  const planted = plantBin(mkdtempSync(join(scratch, "path-")));
+  expect([verifyCli(rootWith(inRoot, IMPORT), mkdtempSync(join(scratch, "out-")), [app], planted.path).code, planted.calls()]).toEqual([0, []]);
   expect(run(`/* ${IMPORT} */`)).toEqual({ code: 1, assertions: { runtime: "n/a", package: "pass", "entry-stylesheet": "fail", gate: "n/a" } });
 });
 

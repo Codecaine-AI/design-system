@@ -28,6 +28,7 @@ import { dirname, join, resolve } from "node:path";
 import { type AppEntry, DESIGN_SYSTEM_ROOT, getApp, loadRegistry, type PassId, REGISTRY_PATH, type Registry, resolvePath } from "./lib/registry";
 import { toolOutputDir } from "./lib/output-dir";
 import { safeAppId, safeChildPath, UnsafePathError } from "./lib/safe-paths";
+import { SYSTEM_BIN, SYSTEM_PATH } from "./lib/system-bin";
 import { type Assertion, fail, na, pass } from "./lib/verify/assertions";
 import { checkPage, sentinelAssertions } from "./lib/verify/page-checks";
 import {
@@ -117,7 +118,8 @@ interface AppResult {
 }
 
 function git(dir: string, ...args: string[]): string | null {
-  const result = spawnSync("git", ["--no-optional-locks", "-C", dir, ...args], { encoding: "utf8" });
+  // The system git by absolute path, with a system-only PATH: never a binary planted in PATH.
+  const result = spawnSync(SYSTEM_BIN.git, ["--no-optional-locks", "-C", dir, ...args], { encoding: "utf8", env: { ...process.env, PATH: SYSTEM_PATH } });
   return result.status === 0 ? result.stdout.trim() : null;
 }
 

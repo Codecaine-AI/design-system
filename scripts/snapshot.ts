@@ -55,6 +55,7 @@ import {
   type Theme,
   writeManifest,
 } from "./lib/snapshot-set";
+import { SYSTEM_BIN, SYSTEM_PATH } from "./lib/system-bin";
 import { propagateBlocker } from "./lib/verify/propagate";
 
 function flag(name: string): string | undefined {
@@ -150,8 +151,10 @@ orFail(() =>
   ),
 );
 
+/** The system git by absolute path, with a system-only PATH: never a binary planted in PATH. */
+const GIT_ENV = { ...process.env, PATH: SYSTEM_PATH };
 function git(repo: string, args: string[]): string {
-  const result = spawnSync("git", ["-C", repo, ...args], { encoding: "utf8" });
+  const result = spawnSync(SYSTEM_BIN.git, ["-C", repo, ...args], { encoding: "utf8", env: GIT_ENV });
   return result.status === 0 ? result.stdout.trimEnd() : `ERROR: ${result.stderr.trim()}`;
 }
 function repoState(path: string) {
@@ -167,7 +170,7 @@ const provenanceWarnings = new Set<string>();
 
 /** git's raw stdout, or null after recording why it failed. */
 function gitBytes(repo: string, args: string[]): Buffer | null {
-  const result = spawnSync("git", ["-C", repo, ...args], { maxBuffer: 1 << 30 });
+  const result = spawnSync(SYSTEM_BIN.git, ["-C", repo, ...args], { maxBuffer: 1 << 30, env: GIT_ENV });
   if (result.status === 0 && result.stdout) return result.stdout;
   provenanceWarnings.add(`provenance: git ${args.join(" ")} in ${repo} failed: ${(result.error?.message ?? result.stderr?.toString() ?? "").trim() || `exit ${result.status}`}`);
   return null;
@@ -200,7 +203,8 @@ const untrackedPathspecs = [app.root, ...(app.scan?.paths ?? [])]
  */
 function appContentSha256(): string {
   const hash = createHash("sha256");
-  const diff = gitBytes(appRepoPath, ["diff", "--binary", "HEAD"]);
+  // --no-ext-diff and --no-textconv: the repo's config never runs a command of its own here.
+  const diff = gitBytes(appRepoPath, ["diff", "--binary", "--no-ext-diff", "--no-textconv", "HEAD"]);
   hash.update(diff ?? `diff failed\n`);
   hash.update("\0untracked\0");
   if (untrackedPathspecs.length) {

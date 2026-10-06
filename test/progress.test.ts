@@ -16,6 +16,7 @@ import { buildProgress, type ProgressModel } from "../scripts/lib/progress/model
 import { renderHtml } from "../scripts/lib/progress/render-html.ts";
 import { renderMarkdown } from "../scripts/lib/progress/render-md.ts";
 import { loadRegistry } from "../scripts/lib/registry.ts";
+import { plantBin } from "./planted-bin.ts";
 import { declaredVars, PKG, readText } from "./support.ts";
 
 const FIXTURES = join(PKG, "test", "fixtures", "progress");
@@ -250,6 +251,18 @@ describe("outputs", () => {
     const missing = spawnSync("bun", ["scripts/progress.ts", ...args.slice(0, 6), "--state", join(out, "nope.md")], { cwd: PKG, encoding: "utf8" });
     expect(missing.status).toBe(2);
     expect(missing.stderr).toContain("nope.md does not exist");
+  });
+
+  test("runs the system git, never one planted in PATH", () => {
+    const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-progress-path-")));
+    try {
+      const planted = plantBin(scratch);
+      const args = ["--root", "/fixture/root", "--out-dir", join(scratch, "out"), "--lint-json", fixture("lint.json"), "--state", fixture("STATE.md"), "--registry", fixture("registry.json")];
+      const run = spawnSync(process.execPath, ["scripts/progress.ts", ...args], { cwd: PKG, encoding: "utf8", env: { ...process.env, PATH: planted.path } });
+      expect([run.status, planted.calls()]).toEqual([0, []]);
+    } finally {
+      rmSync(scratch, { recursive: true, force: true });
+    }
   });
 
   test("refuses an --out-dir inside a git checkout and an output file that is a symlink, writing nothing", () => {
