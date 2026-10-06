@@ -152,7 +152,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 432d57b; run 2026-10-05 20:53 CDT, proof JSON in rollout/tooling/r2-a1/prove-final): sandboxed (deny-by-default loopback: connect and listen only on its block 47000-47009, owner ports never; writes only in --root and the run's temp dir; no .env reads), egress sampled from before spawn (23 lsof samples, 0 failed; 20 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 6/6 route loads (light and dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox confines writes to --root and the run's temp dir.",
+          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 5d0cf5a; run 2026-10-05 21:05 CDT, proof JSON in rollout/tooling/r2-a1/prove-writes): sandboxed (deny-by-default loopback: connect and listen only on its block 47000-47009, owner ports never; writes denied everywhere but --root, the run's temp dir and device files; no .env reads), egress sampled from before spawn (24 lsof samples, 0 failed; 20 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 6/6 route loads (light and dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox denies every write outside --root and the run's temp dir.",
           "date": "2026-10-05"
         }
       },
@@ -339,7 +339,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 432d57b; run 2026-10-05 20:53 CDT, proof JSON in rollout/tooling/r2-a1/prove-final): sandboxed (deny-by-default loopback: connect and listen only on its block 47010-47019, owner ports never; writes only in --root and the run's temp dir; no .env reads), egress sampled from before spawn (18 lsof samples, 0 failed; 30 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 4/4 route loads (light and dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox confines writes to --root and the run's temp dir.",
+          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 5d0cf5a; run 2026-10-05 21:05 CDT, proof JSON in rollout/tooling/r2-a1/prove-writes): sandboxed (deny-by-default loopback: connect and listen only on its block 47010-47019, owner ports never; writes denied everywhere but --root, the run's temp dir and device files; no .env reads), egress sampled from before spawn (18 lsof samples, 0 failed; 30 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 4/4 route loads (light and dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox denies every write outside --root and the run's temp dir.",
           "date": "2026-10-05"
         }
       },
@@ -625,7 +625,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 432d57b; run 2026-10-05 20:53 CDT, proof JSON in rollout/tooling/r2-a1/prove-final): sandboxed (deny-by-default loopback: connect and listen only on its block 47020-47029, owner ports never; writes only in --root and the run's temp dir; no .env reads), egress sampled from before spawn (80 lsof samples, 0 failed; 124 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 13/13 route loads (light and dark) rendered; the guard blocked 36x http://127.0.0.1:47022; stopped clean. No separate write check this round: the sandbox confines writes to --root and the run's temp dir.",
+          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 5d0cf5a; run 2026-10-05 21:05 CDT, proof JSON in rollout/tooling/r2-a1/prove-writes): sandboxed (deny-by-default loopback: connect and listen only on its block 47020-47029, owner ports never; writes denied everywhere but --root, the run's temp dir and device files; no .env reads), egress sampled from before spawn (76 lsof samples, 0 failed; 122 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 13/13 route loads (light and dark) rendered; the guard blocked 36x http://127.0.0.1:47022; stopped clean. No separate write check this round: the sandbox denies every write outside --root and the run's temp dir.",
           "date": "2026-10-05"
         }
       },
@@ -885,7 +885,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 432d57b; run 2026-10-05 20:54 CDT, proof JSON in rollout/tooling/r2-a1/prove-final): sandboxed (deny-by-default loopback: connect and listen only on its block 47030-47039, owner ports never; writes only in --root and the run's temp dir; no .env reads), egress sampled from before spawn (58 lsof samples, 0 failed; 86 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 12/12 route loads (light and dark) rendered; the guard blocked 4x http://localhost:4803; stopped clean. No separate write check this round: the sandbox confines writes to --root and the run's temp dir.",
+          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 5d0cf5a; run 2026-10-05 21:06 CDT, proof JSON in rollout/tooling/r2-a1/prove-writes): sandboxed (deny-by-default loopback: connect and listen only on its block 47030-47039, owner ports never; writes denied everywhere but --root, the run's temp dir and device files; no .env reads), egress sampled from before spawn (58 lsof samples, 0 failed; 86 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 12/12 route loads (light and dark) rendered; the guard blocked 4x http://localhost:4803; stopped clean. No separate write check this round: the sandbox denies every write outside --root and the run's temp dir.",
           "date": "2026-10-05"
         }
       },
@@ -1132,7 +1132,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 432d57b; run 2026-10-05 20:54 CDT, proof JSON in rollout/tooling/r2-a1/prove-final): sandboxed (deny-by-default loopback: connect and listen only on its block 47040-47049, owner ports never; writes only in --root and the run's temp dir; no .env reads), egress sampled from before spawn (39 lsof samples, 0 failed; 58 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 8/8 route loads (light and dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox confines writes to --root and the run's temp dir.",
+          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 5d0cf5a; run 2026-10-05 21:06 CDT, proof JSON in rollout/tooling/r2-a1/prove-writes): sandboxed (deny-by-default loopback: connect and listen only on its block 47040-47049, owner ports never; writes denied everywhere but --root, the run's temp dir and device files; no .env reads), egress sampled from before spawn (39 lsof samples, 0 failed; 58 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 8/8 route loads (light and dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox denies every write outside --root and the run's temp dir.",
           "date": "2026-10-05"
         }
       },
@@ -1574,7 +1574,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 432d57b; run 2026-10-05 20:55 CDT, proof JSON in rollout/tooling/r2-a1/prove-final): sandboxed (deny-by-default loopback: connect and listen only on its block 47060-47069, owner ports never; writes only in --root and the run's temp dir; no .env reads), egress sampled from before spawn (8 lsof samples, 0 failed; 4 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 1/1 route loads (dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox confines writes to --root and the run's temp dir.",
+          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 5d0cf5a; run 2026-10-05 21:06 CDT, proof JSON in rollout/tooling/r2-a1/prove-writes): sandboxed (deny-by-default loopback: connect and listen only on its block 47060-47069, owner ports never; writes denied everywhere but --root, the run's temp dir and device files; no .env reads), egress sampled from before spawn (8 lsof samples, 0 failed; 5 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 1/1 route loads (dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox denies every write outside --root and the run's temp dir.",
           "date": "2026-10-05"
         }
       },
@@ -1817,7 +1817,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 432d57b; run 2026-10-05 20:55 CDT, proof JSON in rollout/tooling/r2-a1/prove-final): sandboxed (deny-by-default loopback: connect and listen only on its block 47070-47079, owner ports never; writes only in --root and the run's temp dir; no .env reads), egress sampled from before spawn (66 lsof samples, 0 failed; 105 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 14/14 route loads (light and dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox confines writes to --root and the run's temp dir.",
+          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 5d0cf5a; run 2026-10-05 21:06 CDT, proof JSON in rollout/tooling/r2-a1/prove-writes): sandboxed (deny-by-default loopback: connect and listen only on its block 47070-47079, owner ports never; writes denied everywhere but --root, the run's temp dir and device files; no .env reads), egress sampled from before spawn (65 lsof samples, 0 failed; 106 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 14/14 route loads (light and dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox denies every write outside --root and the run's temp dir.",
           "date": "2026-10-05"
         }
       },
@@ -2179,7 +2179,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 432d57b; run 2026-10-05 20:55 CDT, proof JSON in rollout/tooling/r2-a1/prove-final): sandboxed (deny-by-default loopback: connect and listen only on its block 47090-47099, owner ports never; writes only in --root and the run's temp dir; no .env reads), egress sampled from before spawn (33 lsof samples, 0 failed; 45 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 6/6 route loads (light and dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox confines writes to --root and the run's temp dir.",
+          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 5d0cf5a; run 2026-10-05 21:07 CDT, proof JSON in rollout/tooling/r2-a1/prove-writes): sandboxed (deny-by-default loopback: connect and listen only on its block 47090-47099, owner ports never; writes denied everywhere but --root, the run's temp dir and device files; no .env reads), egress sampled from before spawn (33 lsof samples, 0 failed; 45 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 6/6 route loads (light and dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox denies every write outside --root and the run's temp dir.",
           "date": "2026-10-05"
         }
       },
@@ -2557,7 +2557,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 432d57b; run 2026-10-05 20:55 CDT, proof JSON in rollout/tooling/r2-a1/prove-final): sandboxed (deny-by-default loopback: connect and listen only on its block 47110-47119, owner ports never; writes only in --root and the run's temp dir; no .env reads), egress sampled from before spawn (40 lsof samples, 0 failed; 60 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 8/8 route loads (light and dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox confines writes to --root and the run's temp dir.",
+          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 5d0cf5a; run 2026-10-05 21:07 CDT, proof JSON in rollout/tooling/r2-a1/prove-writes): sandboxed (deny-by-default loopback: connect and listen only on its block 47110-47119, owner ports never; writes denied everywhere but --root, the run's temp dir and device files; no .env reads), egress sampled from before spawn (39 lsof samples, 0 failed; 60 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 8/8 route loads (light and dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox denies every write outside --root and the run's temp dir.",
           "date": "2026-10-05"
         }
       },
@@ -3127,7 +3127,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 432d57b; run 2026-10-05 20:56 CDT, proof JSON in rollout/tooling/r2-a1/prove-final): sandboxed (deny-by-default loopback: connect and listen only on its block 47140-47149, owner ports never; writes only in --root and the run's temp dir; no .env reads), egress sampled from before spawn (37 lsof samples, 0 failed; 60 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 10/10 route loads (light and dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox confines writes to --root and the run's temp dir.",
+          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 5d0cf5a; run 2026-10-05 21:07 CDT, proof JSON in rollout/tooling/r2-a1/prove-writes): sandboxed (deny-by-default loopback: connect and listen only on its block 47140-47149, owner ports never; writes denied everywhere but --root, the run's temp dir and device files; no .env reads), egress sampled from before spawn (36 lsof samples, 0 failed; 60 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 10/10 route loads (light and dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox denies every write outside --root and the run's temp dir.",
           "date": "2026-10-05"
         }
       },
@@ -3384,7 +3384,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 432d57b; run 2026-10-05 20:56 CDT, proof JSON in rollout/tooling/r2-a1/prove-final): sandboxed (deny-by-default loopback: connect and listen only on its block 47150-47159, owner ports never; writes only in --root and the run's temp dir; no .env reads), egress sampled from before spawn (38 lsof samples, 0 failed; 1 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 10/10 route loads (light and dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox confines writes to --root and the run's temp dir.",
+          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 5d0cf5a; run 2026-10-05 21:08 CDT, proof JSON in rollout/tooling/r2-a1/prove-writes): sandboxed (deny-by-default loopback: connect and listen only on its block 47150-47159, owner ports never; writes denied everywhere but --root, the run's temp dir and device files; no .env reads), egress sampled from before spawn (36 lsof samples, 0 failed; 1 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 10/10 route loads (light and dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox denies every write outside --root and the run's temp dir.",
           "date": "2026-10-05"
         }
       },
