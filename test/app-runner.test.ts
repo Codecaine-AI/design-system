@@ -34,6 +34,7 @@ import {
 import { adoptStyleSheet, DETERMINISM_CSS } from "../scripts/lib/capture.ts";
 import { loadPlaywright, playwrightAnchor, playwrightUnavailable } from "../scripts/lib/playwright.ts";
 import { realHome } from "../scripts/lib/safe-paths.ts";
+import { SYSTEM_BIN } from "../scripts/lib/system-bin.ts";
 import { loadRegistry, type AppEntry, type Registry } from "../scripts/lib/registry.ts";
 import { finishScratch } from "./leaks.ts";
 
@@ -814,19 +815,37 @@ describe("a tool that ends without stopping its apps", () => {
   }, 40_000);
 });
 
+describe("system tools", () => {
+  test("ps and lsof run by absolute path, never through PATH (a planted ps on PATH is not run)", async () => {
+    const planted = join(scratch, "planted-bin");
+    mkdirSync(planted, { recursive: true });
+    const marker = join(scratch, "planted-ran");
+    for (const tool of ["ps", "lsof"]) writeFileSync(join(planted, tool), `#!/bin/sh\ntouch '${marker}'\nexit 1\n`, { mode: 0o755 });
+    const saved = process.env.PATH;
+    process.env.PATH = `${planted}:${saved}`;
+    try {
+      const running = await start(fixtureApp({ ui: 46911, helper: 46912 }), makeRoot());
+      await running.stop();
+    } finally {
+      process.env.PATH = saved;
+    }
+    expect(existsSync(marker)).toBe(false);
+    expect(Object.values(SYSTEM_BIN).every((path) => path.startsWith("/") && existsSync(path))).toBe(true);
+  }, 40_000);
+});
+
 describe("stop() when ps fails", () => {
   test("kills the run's root groups, but does not claim the stop: it rejects and keeps the run record", async () => {
     const records = join(scratch, "ps-fails");
     const running = await startApp(fixtureApp({ ui: 46924, helper: 46927 }), { root: makeRoot(), outDir: records, timeoutMs: 20_000 });
-    const fakeBin = join(scratch, "fake-ps-bin");
-    mkdirSync(fakeBin, { recursive: true });
-    writeFileSync(join(fakeBin, "ps"), "#!/bin/sh\nexit 1\n", { mode: 0o755 });
-    const saved = process.env.PATH;
-    process.env.PATH = `${fakeBin}:${saved}`;
+    const failingPs = join(scratch, "failing-ps");
+    writeFileSync(failingPs, "#!/bin/sh\nexit 1\n", { mode: 0o755 });
+    const saved = SYSTEM_BIN.ps;
+    SYSTEM_BIN.ps = failingPs;
     try {
       await expect(running.stop()).rejects.toThrow(/could not confirm the run stopped \(ps failed\)/);
     } finally {
-      process.env.PATH = saved;
+      SYSTEM_BIN.ps = saved;
     }
     expect(await portsClosed([46924, 46927], 2_000)).toBe(true);
     expect(existsSync(join(records, "runs", "runner-fixture.json"))).toBe(true);
