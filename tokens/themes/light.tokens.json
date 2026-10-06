@@ -162,7 +162,7 @@
       }
     },
     "chart": {
-      "$description": "Data-viz palette for charts (ECharts, SVG, canvas). series.1 to series.8 are categorical: assign them in order and never cycle; a ninth series folds into Other. Scatter, bubble and small-multiple charts use at most series.1 to series.3. Each theme passes the dataviz checks: OKLCH lightness in band, chroma >= 0.1, adjacent series apart under protanopia and deuteranopia (OKLab dE >= 8) and normal vision (dE >= 15), and >= 3:1 on page and panel. Text never takes a series color: labels and values use color.text.*, gridlines color.border.subtle, axes color.border.strong.",
+      "$description": "Data-viz palette for charts (ECharts, SVG, canvas). series.1 to series.8 are categorical: assign them in order and never cycle; a ninth series folds into Other. Scatter, bubble and small-multiple charts use at most series.1 to series.3. Each theme passes the dataviz checks: OKLCH lightness in band, chroma >= 0.1, adjacent series apart under protanopia and deuteranopia (OKLab dE >= 8) and normal vision (dE >= 15), and >= 3:1 on page and panel. Not on surface.sunken: light series 2, 4, 5 and 8 fall to 2.84-2.88:1 there, so a chart sits on page or panel. Text never takes a series color: labels and values use color.text.*, gridlines color.border.subtle, axes color.border.strong.",
       "series": {
         "1": { "$type": "color", "$value": "#088bd9", "$description": "Series 1 (blue). A single-series chart uses this slot." },
         "2": { "$type": "color", "$value": "#dd6d07", "$description": "Series 2 (orange)." },

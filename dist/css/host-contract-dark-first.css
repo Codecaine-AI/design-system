@@ -9,7 +9,7 @@
  * Formats, as the readers use them today:
  *   RGB triplet "r g b": the shadcn names, --trace-*, --status-*, --syntax-*, --agentprism-*,
  *     --tree-caret, --tree-connector, --selection-color, --zebra-color. Read as rgb(var(--x) / <alpha>).
- *   Color: --editor-*. Read as var(--x).
+ *   Color: --editor-*. Read as var(--x). --editor-bg and --editor-gutter-bg are always opaque.
  *   Length: --radius, the one design-system radius.
  *
  * A triplet cannot be computed from a var() in CSS, so the build writes it from the token's resolved
@@ -142,7 +142,7 @@
   --syntax-number: var(--ds-dark-rgb-color-syntax-number);
   --syntax-boolean: var(--ds-dark-rgb-color-syntax-boolean);
   /* editor surface (prompt-kit) */
-  --editor-bg: var(--ds-dark-color-code-bg);
+  --editor-bg: var(--ds-dark-color-code-gutter-bg);
   --editor-fg: var(--ds-dark-color-code-chip-ink);
   --editor-line-number: var(--ds-dark-color-code-gutter-fg);
   --editor-line-number-active: var(--ds-dark-color-code-header-fg);
@@ -216,7 +216,7 @@
   --syntax-number: var(--ds-light-rgb-color-syntax-number);
   --syntax-boolean: var(--ds-light-rgb-color-syntax-boolean);
   /* editor surface (prompt-kit) */
-  --editor-bg: var(--ds-light-color-code-bg);
+  --editor-bg: var(--ds-light-color-code-gutter-bg);
   --editor-fg: var(--ds-light-color-code-chip-ink);
   --editor-line-number: var(--ds-light-color-code-gutter-fg);
   --editor-line-number-active: var(--ds-light-color-code-header-fg);

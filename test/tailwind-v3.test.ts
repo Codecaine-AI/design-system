@@ -119,18 +119,25 @@ describe("dist/tailwind/preset-v3.cjs", () => {
     expect(spacing).toEqual(Object.fromEntries(Object.keys(spacing).map((key) => [key, step(key)])));
 
     expect(preset.darkMode).toEqual(["variant", darkSelector]);
-    expect(Object.keys(preset).sort()).toEqual(["darkMode", "theme"]); // no content, plugins or corePlugins
+    // No content or corePlugins. The one plugin replaces preflight's gray placeholder (compiled below).
+    expect(Object.keys(preset).sort()).toEqual(["darkMode", "plugins", "theme"]);
+    expect(preset.plugins).toHaveLength(1);
   });
 });
 
 /** Tailwind 3.4 and PostCSS as Core's v3 apps resolve them; null when the workspace or its install is absent. */
-function tailwind3(): { tailwind: any; postcss: any; defaultTheme: any } | null {
+function tailwind3(): { tailwind: any; postcss: any; defaultTheme: any; colors: any } | null {
   const root = workspaceRoot();
   if (!root) return null;
   try {
     const require = createRequire(join(root, "codecaine/core/package.json"));
     if (!require("tailwindcss/package.json").version.startsWith("3.4.")) return null;
-    return { tailwind: require("tailwindcss"), postcss: require("postcss"), defaultTheme: require("tailwindcss/defaultTheme") };
+    return {
+      tailwind: require("tailwindcss"),
+      postcss: require("postcss"),
+      defaultTheme: require("tailwindcss/defaultTheme"),
+      colors: require("tailwindcss/colors"),
+    };
   } catch {
     return null;
   }
@@ -150,13 +157,12 @@ interface Rule {
 }
 
 let compiled: Promise<Rule[]> | undefined;
+let compiledWithPreflight: Promise<Rule[]> | undefined;
 
-/** One compile of every candidate above, with the preset and nothing else. */
-function compile(): Promise<Rule[]> {
-  compiled ??= tw!.postcss([
-    tw!.tailwind({ presets: [preset], content: [{ raw: [...GENERATES, ...TAILWIND_DEFAULTS].join(" ") }], corePlugins: { preflight: false } }),
-  ])
-    .process("@tailwind base;\n@tailwind utilities;", { from: undefined })
+/** Compiles `content` with the preset and nothing else; rules in output order. */
+function compileWith(content: string[], preflight: boolean): Promise<Rule[]> {
+  return tw!.postcss([tw!.tailwind({ presets: [preset], content: [{ raw: content.join(" ") }], corePlugins: { preflight } })])
+    .process("@tailwind base;\n@tailwind components;\n@tailwind utilities;", { from: undefined })
     .then((result: any) => {
       const rules: Rule[] = [];
       result.root.walkRules((rule: any) => {
@@ -168,7 +174,55 @@ function compile(): Promise<Rule[]> {
       });
       return rules;
     });
+}
+
+/** One compile of every candidate above, preflight off. */
+function compile(): Promise<Rule[]> {
+  compiled ??= compileWith([...GENERATES, ...TAILWIND_DEFAULTS], false);
   return compiled;
+}
+
+/** The same candidates plus the utilities that read preflight's defaults (border, divide, ring offset), preflight on. */
+function compilePreflight(): Promise<Rule[]> {
+  compiledWithPreflight ??= compileWith([...GENERATES, ...TAILWIND_DEFAULTS, "border", "divide-y", "ring-offset-2", "outline", "placeholder:text-faint"], true);
+  return compiledWithPreflight;
+}
+
+/** Tailwind's default palette as "r g b" (skipping the deprecated aliases, whose getters log a warning). */
+function defaultPalette(): Set<string> {
+  const out = new Set<string>();
+  const walk = (node: object) => {
+    for (const [, descriptor] of Object.entries(Object.getOwnPropertyDescriptors(node))) {
+      if (descriptor.get) continue;
+      const value = descriptor.value;
+      if (typeof value === "string" && /^#[0-9a-f]{3}([0-9a-f]{3})?$/i.test(value)) out.add(hexChannels(value).slice(0, 3).join(" "));
+      else if (value && typeof value === "object") walk(value);
+    }
+  };
+  walk(tw!.colors);
+  return out;
+}
+
+/** [r, g, b, a] of #rgb, #rgba, #rrggbb or #rrggbbaa. */
+function hexChannels(hex: string): number[] {
+  const digits = hex.slice(1);
+  const full = digits.length <= 4 ? [...digits].map((d) => d + d).join("") : digits;
+  const [r, g, b, a = 255] = full.match(/../g)!.map((pair) => Number.parseInt(pair, 16));
+  return [r, g, b, a / 255];
+}
+
+/** Color literals in a value from Tailwind's default palette: hex, or rgb()/rgba() with numeric channels. Fully transparent ones (#0000) are not palette colors. */
+function paletteLiterals(value: string, palette: Set<string>): string[] {
+  const found: string[] = [];
+  for (const [literal] of value.matchAll(/#[0-9a-f]{3,8}\b/gi)) {
+    const [r, g, b, a] = hexChannels(literal);
+    if ([4, 5, 7, 9].includes(literal.length) && a > 0 && palette.has(`${r} ${g} ${b}`)) found.push(literal);
+  }
+  for (const [literal, args] of value.matchAll(/rgba?\(([^)]*)\)/gi)) {
+    const channels = args.split(/[\s,/]+/).slice(0, 3).map(Number);
+    if (channels.every(Number.isFinite) && palette.has(channels.join(" "))) found.push(literal);
+  }
+  return found;
 }
 
 /** A value with var() references to custom properties declared in the same rule substituted. */
@@ -215,6 +269,34 @@ describe.skipIf(!tw)(`Tailwind 3.4 with the preset${tw ? "" : " (skipped: no Tai
     const generated = new Set((await compile()).map((r) => r.selector));
     expect(generated.has(".bg-page")).toBe(true); // the same content was scanned
     expect(TAILWIND_DEFAULTS.filter((name) => generated.has(`.${name}`))).toEqual([]);
+  });
+
+  test("with preflight on, no color from Tailwind's default palette survives the cascade; placeholders take color.text.faint", async () => {
+    const rules = await compilePreflight();
+    const palette = defaultPalette();
+    expect(palette.has("156 163 175")).toBe(true); // gray-400, preflight's placeholder fallback
+    const selectors = (rule: Rule) => rule.selector.split(",").map((part) => part.trim().replace(/\s+/g, " "));
+    // The last declaration of a property for a selector wins: every literal here has the same selector, so the same specificity.
+    const live: string[] = [];
+    const overridden: string[] = [];
+    rules.forEach((rule, i) => {
+      for (const [prop, value] of Object.entries(rule.decls)) {
+        const literals = paletteLiterals(value, palette);
+        if (!literals.length) continue;
+        const replaced = selectors(rule).every((sel) => rules.slice(i + 1).some((later) => selectors(later).includes(sel) && prop in later.decls));
+        (replaced ? overridden : live).push(`${rule.selector.replace(/\s+/g, " ")} { ${prop}: ${literals.join(" ")} }`);
+      }
+    });
+    expect(live).toEqual([]);
+    // Tailwind still writes its fallback into preflight's own rule (the preset has no colors.gray.400, and adding
+    // it would generate bg-gray-400); the preset's base rule after it is what applies.
+    expect(overridden).toEqual(["input::placeholder, textarea::placeholder { color: #9ca3af }"]);
+    for (const sel of ["input::placeholder", "textarea::placeholder"]) {
+      const last = rules.filter((rule) => selectors(rule).includes(sel) && "color" in rule.decls).at(-1);
+      expect(last?.decls.color).toBe("var(--ds-color-text-faint)");
+    }
+    // With preflight off (the compile above), the preset adds no base rule.
+    expect((await compile()).filter((rule) => rule.selector.includes("::placeholder"))).toEqual([]);
   });
 
   test("spacing keeps Tailwind 3's default keys", () => {

@@ -4,6 +4,7 @@
  * meets 4.5:1 on that solid. Where neither does, it is the better of the two, and the test names it.
  */
 import { describe, expect, test } from "bun:test";
+import { evaluateColor } from "../scripts/lib/color.ts";
 import { readJson, type Theme, THEMES } from "./support.ts";
 
 const HUES = ["gray", "blue", "teal", "green", "yellow", "orange", "red", "violet", "pink"];
@@ -101,7 +102,7 @@ describe("chart palette", () => {
   const BAND: Record<Theme, [number, number]> = { light: [0.43, 0.77], dark: [0.48, 0.67] };
   const series = (theme: Theme) => [1, 2, 3, 4, 5, 6, 7, 8].map((n) => values(theme)[`color.chart.series.${n}`]);
 
-  test.each([...THEMES])("%s series: in the lightness band, chroma >= 0.1, and >= 3:1 on page and panel", (theme) => {
+  test.each([...THEMES])("%s series: in the lightness band, chroma >= 0.1, and >= 3:1 on page and panel (the surfaces charts sit on)", (theme) => {
     const v = values(theme);
     const report = series(theme).map((hex) => {
       const [L, a, b] = oklab(linear(hex));
@@ -109,6 +110,23 @@ describe("chart palette", () => {
     });
     const [lo, hi] = BAND[theme];
     expect(report.filter((r) => r.L < lo || r.L > hi || r.C < 0.1 || r.page < 3 || r.panel < 3)).toEqual([]);
+  });
+
+  test("3:1 is promised on page and panel only: on surface.sunken exactly light series 2, 4, 5 and 8 fall under (color.chart's description says so)", () => {
+    const hex = (value: string) => {
+      const { r, g, b, a } = evaluateColor(value);
+      if (a !== 1) throw new Error(`${value} is not opaque`);
+      // The 8-bit color the screen shows.
+      return `#${[r, g, b].map((c) => Math.round(c).toString(16).padStart(2, "0")).join("")}`;
+    };
+    const under = THEMES.flatMap((theme) => {
+      const sunken = hex(values(theme)["color.surface.sunken"]);
+      return series(theme).flatMap((color, i) => {
+        const ratio = contrast(color, sunken);
+        return ratio < 3 ? [`${theme} series.${i + 1} ${ratio.toFixed(2)}:1`] : [];
+      });
+    });
+    expect(under).toEqual(["light series.2 2.86:1", "light series.4 2.85:1", "light series.5 2.88:1", "light series.8 2.84:1"]);
   });
 
   test.each([...THEMES])("%s series: neighbors stay apart under protanopia and deuteranopia (dE >= 8) and normal vision (dE >= 15)", (theme) => {

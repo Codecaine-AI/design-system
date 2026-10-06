@@ -1,6 +1,6 @@
 {
   "name": "@codecaine-ai/design-system",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "One look for every Codecaine and Lascari AI app: design tokens (CSS, Tailwind v4, JS, JSON), layout CSS and the style guide.",
   "type": "module",

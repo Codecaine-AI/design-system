@@ -200,7 +200,8 @@ const HEADER = (note: string) => [
   "// border-rule, p-1 (--ds-space-1), rounded, text-ui-sm, font-medium, shadow-glass, max-w-lane-text.",
   "// Tailwind's default palette, type, radius, shadow, blur and easing scales are removed, as with",
   "// tailwind-strict.css, so bg-red-500, text-sm and shadow-md do not generate. Every value reads a",
-  "// --ds-* custom property, so utilities follow data-theme; `dark:` matches data-theme=\"dark\" and .dark.",
+  "// --ds-* custom property, so utilities follow data-theme; `dark:` matches data-theme=\"dark\" and .dark,",
+  "// also inside a light region nested in a dark one (guide/tokens.md, Theming).",
   "//",
   "// Usage (tailwind.config.cjs), with @codecaine-ai/design-system/tokens.css loaded before Tailwind's layers:",
   "//   module.exports = {",
@@ -244,6 +245,21 @@ export function renderTailwindV3Preset(model: Model): string {
   for (const [path, section] of sections) if (!path.startsWith("extend.")) lines.push(...property(path, section, "    "));
   lines.push("    extend: {");
   for (const [path, section] of extend) lines.push(...property(path.slice("extend.".length), section, "      "));
-  lines.push("    },", "  },", "};");
+  lines.push("    },", "  },");
+  const faint = model.themePaths.includes("color.text.faint") ? cssName("color.text.faint") : null;
+  if (faint) {
+    lines.push(
+      "  plugins: [",
+      "    // Preflight colors placeholders with theme('colors.gray.400', #9ca3af). The preset has no gray-400, so",
+      "    // Tailwind writes its gray fallback. This base rule comes after preflight with the same selectors and",
+      "    // sets the faint text token instead. Without preflight it adds nothing.",
+      "    ({ addBase, corePlugins }) => {",
+      '      if (!corePlugins("preflight")) return;',
+      `      addBase({ "input::placeholder, textarea::placeholder": { color: ${str(`var(${faint})`)} } });`,
+      "    },",
+      "  ],",
+    );
+  }
+  lines.push("};");
   return `${lines.join("\n")}\n`;
 }

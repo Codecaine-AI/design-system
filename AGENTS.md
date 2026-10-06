@@ -51,4 +51,4 @@ Run in `/Users/Ford/workspace/design-system`. `--root` is the workspace to check
 | `bun run snapshot`, `snapshot:diff`, `snapshot:sheet` | Screenshot an app's routes in each theme (`--app <id> --set <name>`), pixel-diff two sets (`--a <set> --b <set>`), write a before/after sheet. `--exact` exits 1 on a changed pixel, a missing or unstable shot, a partial set without `--only`, or a set from two trees. |
 | `bun run codemod:literals --app <id> propose` | Propose a token for every hard-coded literal in a mapping table. `apply --table <mapping.json>` changes only rows marked `"approve": "yes"`. |
 | `bun run progress [--root <dir>]` | Write `progress.html` and `progress.md`: every app's pass status and literal count. "Literals removed" needs `--baseline-lint <lint:apps --json report>` from before the apps moved. |
-| `bun run pack [--out <dir>]` | Pack a tgz for a vendored app. Prints its path and its `tokens.css` sha256. |
+| `bun run pack [--out <dir>]` | Pack a tgz for a vendored app. Prints its path and its `tokens.css` sha256. Never overwrites a same-name tgz with different bytes: every repack of a changed build bumps the patch version first. |
