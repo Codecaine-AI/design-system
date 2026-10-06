@@ -71,6 +71,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { createRequire } from "node:module";
+import { connect } from "node:net";
 import { tmpdir } from "node:os";
 import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
 
@@ -1684,6 +1685,11 @@ export interface GuardInputs {
   /** The profile's dead ports (deadPorts). */
   dead: ReadonlySet<number>;
   reads: Pick<ListenerReads, "last" | "next">;
+  /**
+   * Whether anything may accept connections on the URL's host and port now (acceptsConnections); false
+   * refuses at once. Omitted: every undecided port waits for a read.
+   */
+  accepting?: (url: URL) => Promise<boolean>;
   /** performance.now() unless a test sets the clock. */
   now?: () => number;
 }
@@ -1696,7 +1702,9 @@ export interface GuardInputs {
  *   - an owner port and a non-loopback host (guardVerdict);
  *   - a port outside the run's block while the run is sandboxed (no run process can listen there);
  *   - a dead port (deadPorts): the app is pointed there on purpose and the run does not serve it. It is
- *     allowed only while a fresh read shows a run listener on it, like any port.
+ *     allowed only while a fresh read shows a run listener on it, like any port;
+ *   - a port in the block that nothing listens on (`accepting`: a refused connect after the request
+ *     arrived): the request could reach no one, so it is refused without waiting for a read.
  *
  * Why the age cap is safe: it only ever widens an allow for a port inside the run's own block that a run
  * process listened on at most LISTENER_MAX_AGE_MS ago. Owner ports are refused whatever a read says (and
@@ -1725,6 +1733,7 @@ export function portGuard(inputs: GuardInputs): { quick(url: URL): boolean | und
     const known = quick(url);
     if (known !== undefined) return known;
     const arrived = now();
+    if (inputs.accepting && !(await inputs.accepting(url))) return false;
     // The read in flight (or the next one): a port it shows is allowed (it has just finished).
     const next = await inputs.reads.next();
     if (next && ok(url, next)) return true;
@@ -1736,12 +1745,45 @@ export function portGuard(inputs: GuardInputs): { quick(url: URL): boolean | und
   return { quick, decide };
 }
 
+/** The loopback addresses a URL's host stands for: `localhost` is both 127.0.0.1 and ::1. */
+function loopbackAddresses(host: string): string[] {
+  if (host === "localhost" || host.endsWith(".localhost")) return ["127.0.0.1", "::1"];
+  if (host === "[::1]") return ["::1"];
+  if (host === "0.0.0.0") return ["127.0.0.1"];
+  return [host];
+}
+
+/** How long a connect probe may take before the port counts as possibly listening. */
+const CONNECT_PROBE_MS = 1_000;
+
+/**
+ * Whether anything may accept TCP connections on a loopback URL's port: false only when every address
+ * the host stands for refuses the connection (nothing listens). A timeout or any other error counts as
+ * possibly listening (the guard then waits for a read). The probe connects from this tool, never the
+ * page, and closes at once; it sends nothing.
+ */
+export function acceptsConnections(url: URL): Promise<boolean> {
+  const port = urlPort(url);
+  const probe = (host: string) =>
+    new Promise<boolean>((resolve) => {
+      const socket = connect({ host, port });
+      const finish = (accepting: boolean) => {
+        socket.destroy();
+        resolve(accepting);
+      };
+      socket.setTimeout(CONNECT_PROBE_MS, () => finish(true));
+      socket.once("connect", () => finish(true));
+      socket.once("error", (error: NodeJS.ErrnoException) => finish(error.code !== "ECONNREFUSED"));
+    });
+  return Promise.all(loopbackAddresses(url.hostname).map(probe)).then((results) => results.some(Boolean));
+}
+
 /** The guard's inputs for a run: its reads when startApp started it, else its startedPorts as a fixed read. */
 function guardInputs(running: RunningApp): GuardInputs {
   const internal = internals.get(running);
   const allowedLocalPorts = running.app.runProfile?.allowedLocalPorts ?? [];
   const dead = deadPorts(running.app);
-  if (internal) return { allowedLocalPorts, listenable: internal.listenable, dead, reads: internal.reads };
+  if (internal) return { allowedLocalPorts, listenable: internal.listenable, dead, reads: internal.reads, accepting: acceptsConnections };
   const fixed = (): ListenerRead => ({ started: performance.now(), finished: performance.now(), ports: new Set(running.startedPorts.filter((port) => !OWNER_PORTS.includes(port))) });
   return { allowedLocalPorts, listenable: null, dead, reads: { get last() { return fixed(); }, next: async () => fixed() } };
 }

@@ -21,6 +21,7 @@ import {
   registryProblems,
   validateLoadedRegistry,
   guardVerdict,
+  acceptsConnections,
   deadPorts,
   killRun,
   ListenerReads,
@@ -303,12 +304,37 @@ describe("portGuard", () => {
     expect(calls).toHaveLength(1);
   });
 
+  test("a port in the block that nothing listens on is refused without a read; one that accepts waits for the read", async () => {
+    const probed: number[] = [];
+    const accepting = async (target: URL) => (probed.push(Number(target.port)), Number(target.port) === 47026);
+    const { guard, calls } = fixture(read(9_000, 9_900, 47020), [read(10_000, 10_100, 47020, 47026)], { accepting });
+    expect(await guard.decide(url(47025))).toBe(false);
+    expect(calls).toEqual([]);
+    expect(await guard.decide(url(47026))).toBe(true);
+    expect(calls).toHaveLength(1);
+    expect(probed).toEqual([47025, 47026]);
+  });
+
   test("allowedLocalPorts are allowed without a read; an unsandboxed run reads for ports outside the block", async () => {
     const allowed = fixture(undefined, [], { allowedLocalPorts: [47999] });
     expect(await allowed.guard.decide(url(47999))).toBe(true);
     const unsandboxed = fixture(undefined, [read(10_000, 10_100, 47999)], { listenable: null });
     expect(await unsandboxed.guard.decide(url(47999))).toBe(true);
     expect(unsandboxed.calls).toHaveLength(1);
+  });
+});
+
+describe("acceptsConnections", () => {
+  test("true while a server listens on the port, false once nothing does; localhost counts both loopback addresses", async () => {
+    const server = Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: () => new Response("") });
+    const port = server.port;
+    try {
+      expect(await acceptsConnections(new URL(`http://127.0.0.1:${port}/`))).toBe(true);
+      expect(await acceptsConnections(new URL(`http://localhost:${port}/`))).toBe(true);
+    } finally {
+      server.stop(true);
+    }
+    expect(await acceptsConnections(new URL(`http://127.0.0.1:${port}/`))).toBe(false);
   });
 });
 
