@@ -13,10 +13,11 @@
  * app sources come from --root (default: the directory that holds this checkout).
  */
 
-import { mkdirSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
-import { DESIGN_SYSTEM_ROOT, REGISTRY_PATH, loadRegistry, validateRegistry } from "./lib/registry";
-import { safeAppId, safeOutputPath } from "./lib/safe-paths";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { validateLoadedRegistry } from "./lib/app-runner";
+import { DESIGN_SYSTEM_ROOT, REGISTRY_PATH, loadRegistry } from "./lib/registry";
+import { canonicalPath, safeAppId, safeChildPath, safeOutputPath } from "./lib/safe-paths";
 import { loadDesignSystem } from "./lib/lint/design-system";
 import { exitCode, formatText, lintApps, registryDirOf } from "./lib/lint/run";
 import type { PassNumber } from "./lib/lint/types";
@@ -34,7 +35,8 @@ const USAGE = `Usage: bun run lint:apps [--root <dir>] [--pass <1|2|3>] [--json]
 
 Exit: 0 when every required check passes, 1 when one fails, 2 on a usage error
 (bad flags, unknown app, unreadable or invalid registry, no or stale design-system
-build, an --out-dir in the owner's tree).
+build, an --out-dir in the owner's tree or in any git checkout, a lint/ or report path
+under --out-dir that is a symlink).
 `;
 
 interface Args {
@@ -44,6 +46,26 @@ interface Args {
   outDir: string | null;
   registry: string;
   apps: string[];
+}
+
+/** The git checkout (a directory holding `.git`) that holds `dir` or one of its ancestors, or null. */
+export function gitCheckoutOf(dir: string): string | null {
+  for (let d = canonicalPath(dir); ; d = dirname(d)) {
+    if (existsSync(join(d, ".git"))) return d;
+    if (dirname(d) === d) return null;
+  }
+}
+
+/**
+ * Where the JSON report goes: `<out-dir>/lint/<timestamp>.json`. The out-dir is refused in the owner's
+ * tree and in any git checkout (a report is run output, never a source change); `lint/` and the file are
+ * validated as children of it, so a symlinked `lint/` cannot carry the write elsewhere.
+ */
+export function reportPath(outDir: string, root: string, stamp: string): string {
+  const base = safeOutputPath(outDir, { root, label: "--out-dir" });
+  const checkout = gitCheckoutOf(base);
+  if (checkout) throw new Error(`--out-dir ${outDir} is inside the git checkout ${checkout}; write reports outside any checkout (the run folder or a temp dir)`);
+  return safeChildPath({ base, root, label: "--out-dir" }, "lint", `${stamp}.json`);
 }
 
 export function parseArgs(argv: string[]): Args {
@@ -103,23 +125,19 @@ function main() {
     process.stderr.write(`lint:apps: not in ${args.registry}: ${unknown.join(", ")}\n`);
     process.exit(2);
   }
-  const problems = validateRegistry(registry);
-  for (const app of registry.apps) {
-    try {
-      safeAppId(app.id);
-    } catch (err) {
-      problems.push(`${(err as Error).message}`);
-    }
-  }
-  if (problems.length) {
-    for (const p of problems) process.stderr.write(`lint:apps: registry: ${p}\n`);
-    process.stderr.write(`lint:apps: ${args.registry} has ${problems.length} problem(s); fix the registry first\n`);
+  // The same rules every registry-loading tool applies (registry:check's, port blocks included).
+  try {
+    validateLoadedRegistry(registry, args.registry);
+    for (const app of registry.apps) safeAppId(app.id);
+  } catch (err) {
+    process.stderr.write(`lint:apps: registry: ${(err as Error).message}\nlint:apps: fix the registry first\n`);
     process.exit(2);
   }
-  let outDir: string | null = null;
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  let reportFile: string | null = null;
   if (args.outDir) {
     try {
-      outDir = safeOutputPath(args.outDir, { root, label: "--out-dir" });
+      reportFile = reportPath(args.outDir, root, stamp);
     } catch (err) {
       process.stderr.write(`lint:apps: ${(err as Error).message}\n`);
       process.exit(2);
@@ -135,12 +153,17 @@ function main() {
   }
   const report = lintApps({ root, registry, registryDir: registryDirOf(args.registry), ds, pass: args.pass, apps: args.apps });
   const json = JSON.stringify(report, null, 2) + "\n";
-  if (outDir) {
-    const dir = join(outDir, "lint");
-    mkdirSync(dir, { recursive: true });
-    const file = join(dir, `${new Date().toISOString().replace(/[:.]/g, "-")}.json`);
-    writeFileSync(file, json);
-    if (!args.json) process.stderr.write(`lint:apps: wrote ${file}\n`);
+  if (reportFile) {
+    try {
+      mkdirSync(dirname(reportFile), { recursive: true });
+      // Checked again right before the write: a symlink planted while the checks ran is refused too.
+      // `wx` never follows or replaces an existing file at the last component.
+      writeFileSync(reportPath(args.outDir!, root, stamp), json, { flag: "wx" });
+    } catch (err) {
+      process.stderr.write(`lint:apps: ${(err as Error).message}\n`);
+      process.exit(2);
+    }
+    if (!args.json) process.stderr.write(`lint:apps: wrote ${reportFile}\n`);
   }
   process.stdout.write(args.json ? json : formatText(report) + "\n");
   // Not process.exit(): it drops whatever a pipe has not taken yet (a 1.8 MB report arrived cut at 1.5 MB).
