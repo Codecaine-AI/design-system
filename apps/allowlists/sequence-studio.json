@@ -1,7 +1,7 @@
 {
   "literals": [
     {
-      "file": "codecaine/core/sequence/packages/studio/src/StyleRail.tsx",
+      "file": "codecaine/core/sequence/packages/studio/src/_components/EditorPage/_components/DraftEditor/_components/StyleRail/_components/ColorControls/_components/ColorRow/utils.ts",
       "match": "^#0{3}(0{3})?$",
       "category": "hex",
       "kind": "inline",
