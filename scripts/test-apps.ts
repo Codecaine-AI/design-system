@@ -10,24 +10,26 @@
  *   - with the app's profile environment (profileEnv: allowlisted variables only, HOME and the XDG dirs in a
  *     fresh temp dir with the profile's fixtures, BUN_OPTIONS=--no-env-file, runProfile.env, unsetEnv removed),
  *     placeholders ({root}, {tmp}, {ds}, {port:<name>}) substituted;
- *   - inside the OS sandbox (sandbox.ts runPolicy), narrowed so a run may write only where the write check
- *     looks: the checkouts the app touches (below) and its temp dir; never a sibling checkout, a `.git` entry,
- *     a git dir inside --root, the design-system checkout or the out dir. No `.env` reads; loopback only. A
- *     test command may connect to and listen on any loopback port (suites start their own servers on
- *     ephemeral ports) except the owner's ports and every port something already listens on when it starts
- *     (netstat, every user's sockets): a listener the run did not start counts as an owner service. A named
- *     command (typecheck, build) gets no port at all. Without a working sandbox-exec, without a listener
- *     snapshot, or when a touched dir is in no git checkout inside --root, it refuses to run anything;
+ *   - inside the OS sandbox (sandbox.ts runPolicy, one place: commandPolicy). Writes: only the app's own
+ *     writable scope (checkouts.ts appScope, decision 29: the checkouts holding its repo, root and scan paths)
+ *     and its temp dir; never a `.git` entry, a git dir inside --root, another repository's checkout nested
+ *     in the app's, the enclosing checkout (Core), the design-system checkout, the run folder or the out dir.
+ *     No `.env` reads. Network (decision 31): a test command connects only to its port block and the
+ *     ephemeral range 49152-65535 on loopback, minus every port something listens on when it starts
+ *     (netstat, every user's sockets) and the owner's ports, so a service that starts listening later
+ *     outside those ranges stays out of reach; a named command (typecheck, build) gets no port at all.
+ *     Without a working sandbox-exec, without a listener snapshot, or when the app's own folder is in no git
+ *     checkout inside --root, it refuses to run anything;
  *   - in its own process group, with a watchdog that kills the group when this tool dies, and a timeout;
  *     afterwards every process still carrying the run's tag in its environment (one that left the group) is
  *     killed and fails the run;
- *   - between two write checks over the checkouts the app touches (those holding its repo, root and command
- *     cwds, the checkouts nested in those, and the checkouts around them below --root; sibling checkouts
- *     nested in those are pruned, so a worker in a sibling repo cannot trip it):
- *       `git status --ignored --porcelain`, git pinned to each checkout's git dir as recorded before the run,
- *       with no system or global config and fsmonitor off (a checkout whose `.git` entry changed gets no
- *       status: the change itself is reported); `find -newer/-cnewer <marker>` for new and changed files
- *       and for folders that lost an entry (a deletion or rename); and each `.git` entry's content.
+ *   - between two write checks over exactly what the run may write (appWriteScope: the app's own checkouts,
+ *     the read-only dirs inside them pruned), so an edit anywhere else (a concurrent worker in Core, the
+ *     design-system checkout, the run folder) cannot fail the app:
+ *       `git status --ignored --porcelain`, git pinned to each checkout's git dir as recorded before the run
+ *       (checkouts.ts, git.ts: hook-free, no system or global config, fsmonitor off; a checkout whose `.git`
+ *       entry changed gets no status: the change itself is reported); `find -newer/-cnewer <marker>` for new
+ *       and changed files and for folders that lost an entry (a deletion or rename); and each `.git` entry.
  * System tools run by absolute path (TOOLS).
  *
  * Build caches are listed but never fail a run (BUILD_CACHES): node_modules/.vite, node_modules/.vite-temp,
@@ -52,20 +54,25 @@
  * Known limits: a write that keeps an old mtime and ctime is not seen, nor a deletion in a folder that also
  * gained an entry; network use is contained by the sandbox, not sampled; a stray platform binary (/bin/sleep)
  * hides its environment from ps, so only runtime strays (bun, node, python) are found by tag; run nothing else
- * in the app's checkouts while this runs (their edits would count as the app's writes).
+ * in the app's own checkouts while this runs (their edits would count as the app's writes); a bind to port 0
+ * matches no single port, so a suite's binds stay a deny list (owner ports and the listeners at start).
  */
 import { spawn, spawnSync } from "node:child_process";
-import { appendFileSync, cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 
-import { expandPlaceholders, killRun, profileEnv, rootProc, stripAnsi, validateLoadedRegistry, type ProcInfo } from "./lib/app-runner";
+import { expandPlaceholders, killRun, profileBlock, profileEnv, rootProc, stripAnsi, validateLoadedRegistry, type ProcInfo } from "./lib/app-runner";
+import { appScope, gitEntries, statusSnapshot, type WriteScope } from "./lib/checkouts";
+import { discoverRepo } from "./lib/git";
 import { OWNER_PORTS } from "./lib/owner";
 import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, REGISTRY_PATH, resolvePath, type AppEntry, type Registry, type TestBaseline } from "./lib/registry";
 import { safeAppId, safeChildPath, safeOutputPath, safeTempBase } from "./lib/safe-paths";
-import { runPolicy, sandboxCommand, sandboxUnavailable, SANDBOX_EXEC } from "./lib/sandbox";
+import { EPHEMERAL_PORTS, runPolicy, sandboxCommand, sandboxUnavailable, SANDBOX_EXEC, type SandboxPolicy } from "./lib/sandbox";
 import { SYSTEM_BIN, SYSTEM_PATH } from "./lib/system-bin";
+
+export type { WriteScope };
 
 /** Build caches: writes there are listed, never failed. Matched against root-relative paths. */
 export const BUILD_CACHES: ReadonlyArray<{ pattern: RegExp; what: string }> = [
@@ -221,110 +228,32 @@ export function compareWithBaseline(exit: number, parsed: ParsedResult, baseline
 // ---------------------------------------------------------------------------
 
 /** System binaries by absolute path (SYSTEM_BIN, plus find and netstat): never through PATH. */
-export const TOOLS = { git: SYSTEM_BIN.git, ps: SYSTEM_BIN.ps, sh: SYSTEM_BIN.sh, find: "/usr/bin/find", netstat: "/usr/sbin/netstat" } as const;
-
-/**
- * git as the write check runs it: no system or global config, no fsmonitor, no optional locks, a minimal
- * environment. `pin` fixes the git dir and work tree recorded before the run, so a `.git` file the run
- * rewrote cannot point git at a repository (and its config) the run made.
- */
-function git(dir: string, args: string[], pin?: { gitDir: string }): { status: number | null; stdout: string } {
-  const env: Record<string, string> = { PATH: SYSTEM_PATH, GIT_CONFIG_NOSYSTEM: "1", GIT_CONFIG_GLOBAL: "/dev/null", GIT_OPTIONAL_LOCKS: "0", HOME: "/var/empty", LANG: "C" };
-  if (pin) Object.assign(env, { GIT_DIR: pin.gitDir, GIT_WORK_TREE: dir });
-  const result = spawnSync(TOOLS.git, ["-c", "core.fsmonitor=false", "-c", "core.untrackedCache=false", "-C", dir, ...args], { encoding: "utf8", env, maxBuffer: 256 << 20, timeout: 120_000 });
-  return { status: result.status, stdout: result.stdout ?? "" };
-}
-
-/** The checkout holding `dir`, or null. */
-function toplevel(dir: string): string | null {
-  if (!existsSync(dir)) return null;
-  const out = git(statSync(dir).isDirectory() ? dir : dirname(dir), ["rev-parse", "--show-toplevel"]);
-  return out.status === 0 && out.stdout.trim() ? out.stdout.trim() : null;
-}
+export const TOOLS = { ps: SYSTEM_BIN.ps, sh: SYSTEM_BIN.sh, find: "/usr/bin/find", netstat: "/usr/sbin/netstat" } as const;
 
 function find(args: string[]): string[] {
   const out = spawnSync(TOOLS.find, args, { encoding: "utf8", maxBuffer: 256 << 20, timeout: 300_000 });
   return (out.stdout ?? "").split("\n").filter(Boolean);
 }
 
-/** Git checkouts below `dir` (a `.git` file or folder), not inside node_modules. */
-function nestedCheckouts(dir: string): string[] {
-  return find([dir, "-mindepth", "2", "(", "-name", "node_modules", "-prune", ")", "-o", "(", "-name", ".git", "-print", "-prune", ")"]).map((path) => dirname(path));
-}
-
 const inside = (path: string, dir: string) => path === dir || path.startsWith(dir.endsWith(sep) ? dir : dir + sep);
 
-export interface WriteScope {
-  /** Every checkout whose `git status` is compared, with its git dir (absolute, recorded before any run). */
-  checkouts: string[];
-  gitDirs: Record<string, string>;
-  /** Top-most dirs `find` walks: also the only dirs (with the run's temp dir) a run may write. */
-  scan: string[];
-  /** Nested checkouts `find` skips and the run may not write (the app touches none of them). */
-  prune: string[];
-}
-
 /**
- * The checkouts an app touches: those holding its repo, its root and each command's cwd (plus the
- * design-system checkout when a command names {ds}), every checkout nested in those, and every checkout
- * around them below --root (a bun workspace root whose node_modules the app shares). Sibling checkouts
- * nested in an enclosing one are pruned. Throws when a touched dir is in no checkout inside --root: the
- * write check needs one.
+ * What the write check watches: exactly what a run of the app may write (checkouts.ts appScope, decision 29),
+ * its own checkouts, with the read-only dirs inside them (other repositories' checkouts nested there, git
+ * dirs inside --root) pruned. Nothing else under --root: a run cannot write there, so an edit there (another
+ * worker in Core, the design-system checkout, the run folder) is not the app's. Throws when the app's own
+ * folder is in no git checkout inside --root: the write check needs one.
  */
-export function writeScope(root: string, dirs: string[]): WriteScope {
-  const realRoot = existsSync(root) ? realpathSync(root) : resolve(root);
-  const touched = new Set<string>();
-  for (const dir of dirs) {
-    const top = toplevel(dir);
-    if (!top || !inside(top, realRoot) || top === realRoot) throw new Error(`${dir} is in no git checkout inside ${realRoot}; the write check needs one`);
-    touched.add(top);
-  }
-  const enclosing = new Set<string>();
-  for (const top of touched) {
-    for (let parent = dirname(top); inside(parent, realRoot) && parent !== realRoot; parent = dirname(parent)) {
-      const outer = toplevel(parent);
-      if (!outer || !inside(outer, realRoot) || outer === realRoot) break;
-      enclosing.add(outer);
-      parent = outer;
-    }
-  }
-  const nested = new Set<string>();
-  for (const top of touched) for (const dir of nestedCheckouts(top)) nested.add(dir);
-  const own = new Set([...touched, ...nested]);
-  const prune = new Set<string>();
-  for (const outer of enclosing) for (const dir of nestedCheckouts(outer)) if (!own.has(dir) && !enclosing.has(dir) && ![...own].some((o) => inside(o, dir))) prune.add(dir);
-  const all = [...new Set([...touched, ...enclosing])].sort();
-  const scan = all.filter((dir) => !all.some((other) => other !== dir && inside(dir, other)));
-  const checkouts = [...new Set([...all, ...nested])].sort();
+export function appWriteScope(root: string, app: AppEntry): WriteScope {
+  const own = appScope(root, app);
+  if (own.fallback) throw new Error(`${own.fallback} is in no git checkout inside ${realpathSync(root)}; the write check needs one`);
   const gitDirs: Record<string, string> = {};
-  for (const dir of checkouts) {
-    const out = git(dir, ["rev-parse", "--absolute-git-dir"]);
-    if (out.status !== 0 || !out.stdout.trim()) throw new Error(`${dir}: git cannot read its git dir`);
-    gitDirs[dir] = out.stdout.trim();
+  for (const dir of own.checkouts) {
+    const repo = discoverRepo(dir);
+    if (!repo) throw new Error(`${dir}: git cannot read its git dir`);
+    gitDirs[dir] = repo.gitDir;
   }
-  return { checkouts, gitDirs, scan, prune: [...prune].sort() };
-}
-
-/** What a run must not change in a checkout's git setup: each `.git` entry's content (a gitdir file) or kind. */
-export function gitEntries(scope: WriteScope): Map<string, string> {
-  const entries = new Map<string, string>();
-  for (const dir of scope.checkouts) {
-    const entry = join(dir, ".git");
-    let state = "missing";
-    try {
-      const stat = lstatSync(entry);
-      state = stat.isSymbolicLink() ? "symlink" : stat.isDirectory() ? "dir" : `file ${readFileSync(entry, "utf8")}`;
-    } catch {}
-    entries.set(entry, state);
-  }
-  return entries;
-}
-
-/** `git status --ignored --porcelain` lines of each checkout, git pinned to its recorded git dir. */
-export function statusSnapshot(scope: WriteScope, skip: ReadonlySet<string> = new Set()): Map<string, string[]> {
-  return new Map(
-    scope.checkouts.filter((dir) => !skip.has(dir)).map((dir) => [dir, git(dir, ["status", "--ignored", "--porcelain"], { gitDir: scope.gitDirs[dir]! }).stdout.split("\n").filter(Boolean)]),
-  );
+  return { checkouts: own.checkouts, gitDirs, scan: own.writable, prune: own.readOnly };
 }
 
 export interface WriteReport {
@@ -571,6 +500,31 @@ function stamp(): string {
   return new Date().toISOString().replace(/[:.]/g, "-");
 }
 
+/**
+ * The sandbox one command runs in: the one place test:apps builds it. Writes: only the app's own writable
+ * scope (the write check's scan, its read-only dirs pruned) and the run's temp dir (runPolicy keeps every
+ * `.git` entry under them, the tool's dirs and the design-system checkouts read-only). Network (decision 31):
+ * a test command gets runPolicy's suiteNetwork (its port block and 49152-65535 on loopback, minus the ports
+ * listening now and the owner's); a named command no port at all.
+ */
+export function commandPolicy(
+  app: AppEntry,
+  planned: PlannedCommand,
+  ctx: { root: string; tmp: string; outDir: string; scope: WriteScope; registry?: Registry },
+): { policy: SandboxPolicy; network: string } {
+  const base = { root: ctx.root, tmp: ctx.tmp, outDir: ctx.outDir, writable: ctx.scope.scan, readOnly: ctx.scope.prune };
+  if (!planned.label.startsWith("tests.")) return { policy: runPolicy(base), network: "no network port" };
+  const block = profileBlock(app, ctx.registry);
+  const blockPorts = block ? Array.from({ length: block.size }, (_, i) => block.start + i) : [];
+  const listeners = listeningPorts();
+  const range = block ? `its block ${block.start}-${block.start + block.size - 1} and ` : "";
+  const denied = [...new Set([...OWNER_PORTS, ...listeners])].sort((a, b) => a - b);
+  return {
+    policy: runPolicy({ ...base, blockPorts, suiteNetwork: { listeners } }),
+    network: `loopback only to ${range}${EPHEMERAL_PORTS.min}-${EPHEMERAL_PORTS.max}, minus ${listeners.length} port(s) listening at start and the owner's ports; never ${denied.join(",")}`,
+  };
+}
+
 async function runOne(app: AppEntry, planned: PlannedCommand, opts: TestAppOptions & { dir: string; scope: WriteScope }): Promise<CommandResult> {
   const root = opts.root;
   const tmp = mkdtempSync(join(safeTempBase(), `ds-test-${app.id}-`));
@@ -582,20 +536,9 @@ async function runOne(app: AppEntry, planned: PlannedCommand, opts: TestAppOptio
     const env = { ...profileEnv(app, { root, tmp }), DS_TEST_APPS_RUN: tag };
     const expanded = expandPlaceholders(planned.cmd, { root, tmp, ports: app.runProfile?.ports ?? {} });
     const cwd = resolvePath(root, planned.cwd);
-    // Test suites start their own servers on ephemeral ports: any loopback port but the owner's and every port
-    // already listened on (decision 22). Named commands (typecheck, build) need no port.
-    const listening = planned.label.startsWith("tests.") ? listeningPorts() : undefined;
-    const base = listening ? runPolicy({ root, tmp, outDir: opts.outDir, anyLoopback: true, extraDeniedPorts: listening }) : runPolicy({ root, tmp, outDir: opts.outDir });
-    // Writes only where the write check looks (the scope's checkouts) and the run's temp dir; never a sibling
-    // checkout, a .git entry or a git dir inside --root.
-    const gitGuard = opts.scope.checkouts.flatMap((dir) => [join(dir, ".git"), ...(inside(opts.scope.gitDirs[dir]!, root) ? [opts.scope.gitDirs[dir]!] : [])]);
-    const policy = { ...base, writable: [...opts.scope.scan, tmp], readOnly: [...(base.readOnly ?? []), ...opts.scope.prune, ...new Set(gitGuard)] };
-    const deniedPorts = listening ? [...new Set([...OWNER_PORTS, ...listening])].sort((a, b) => a - b) : undefined;
-    const argv = sandboxCommand(policy, [TOOLS.sh, "-c", withWatchdog(expanded)]);
-    writeFileSync(
-      log,
-      `$ ${expanded}\n  (cwd ${cwd}, sandboxed, HOME ${tmp}, writes only in ${opts.scope.scan.join(", ")} and HOME; ${deniedPorts ? `loopback except ${deniedPorts.length} owner or listening ports: ${deniedPorts.join(",")}` : "no network port"})\n`,
-    );
+    const sandbox = commandPolicy(app, planned, { root, tmp, outDir: opts.outDir, scope: opts.scope, registry: opts.registry });
+    const argv = sandboxCommand(sandbox.policy, [TOOLS.sh, "-c", withWatchdog(expanded)]);
+    writeFileSync(log, `$ ${expanded}\n  (cwd ${cwd}, sandboxed, HOME ${tmp}, writes only in ${opts.scope.scan.join(", ")} and HOME; ${sandbox.network})\n`);
 
     const marker = join(opts.dir, `.marker-${name}`);
     const before = { status: statusSnapshot(opts.scope), git: gitEntries(opts.scope) };
@@ -690,8 +633,7 @@ export async function testApp(app: AppEntry, opts: TestAppOptions): Promise<AppR
     report.refused = nothingToRun(app, { tests: opts.tests, commands: opts.commands });
     return report;
   }
-  const usesDs = planned.some((p) => p.cmd.includes("{ds}"));
-  report.scope = writeScope(root, [app.repo, app.root, ...planned.map((p) => p.cwd)].map((p) => resolvePath(root, p)).concat(usesDs ? [DESIGN_SYSTEM_ROOT] : []));
+  report.scope = appWriteScope(root, app);
   // Through safeChildPath: no symlink on the way can send the report into the owner's tree.
   const dir = safeChildPath({ base: outDir, root, label: "--out-dir" }, app.id, "test-apps", stamp());
   mkdirSync(dir, { recursive: true });

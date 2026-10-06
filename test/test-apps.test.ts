@@ -40,17 +40,17 @@ switch (mode) {
   case "tsc": console.log("src/a.ts(40,3): error TS2322: Type 'x' is not assignable to type 'y'.\nsrc/b.ts(1,1): error TS2304: Cannot find name 'z'."); process.exit(2);
   case "write-tracked": appendFileSync("tracked.txt", "more\n"); console.log(bunSummary(1, 0)); break;
   case "write-ignored": write("dist/new.txt"); console.log(bunSummary(1, 0)); break;
-  case "write-enclosing": write("../../stray.txt"); console.log(bunSummary(1, 0)); break;
   case "delete-ignored": rmSync("dist/old.txt"); console.log(bunSummary(1, 0)); break;
   case "quiet-writes":
-    write("../../node_modules/.vite/deps/chunk.js");
+    write("../node_modules/.vite/deps/chunk.js");
     write("tsconfig.tsbuildinfo");
     console.log(bunSummary(1, 0));
     break;
-  // Writes the sandbox must refuse: a sibling checkout, the app's own .git, a file outside every checkout.
+  // Writes the sandbox must refuse: a sibling checkout, the enclosing checkout (Core: read-only, decision 29),
+  // the app's own .git, a file outside every checkout.
   case "denied-writes": {
     const allowed = [];
-    for (const [path, text] of [["../../sibling/edit.txt", "x"], ["../.git/config", "[core]\n\tfsmonitor = touch " + arg + "\n"], [arg, "x"]]) {
+    for (const [path, text] of [["../../sibling/edit.txt", "x"], ["../../stray.txt", "x"], ["../.git/config", "[core]\n\tfsmonitor = touch " + arg + "\n"], [arg, "x"]]) {
       try { appendFileSync(path, text); allowed.push(path); } catch {}
     }
     console.log((allowed.length ? "wrote " + allowed.join(", ") + "\n" : "") + bunSummary(allowed.length ? 0 : 1, allowed.length ? 1 : 0));
@@ -86,6 +86,18 @@ switch (mode) {
     console.log(problems.join("\n") + "\n" + bunSummary(problems.length ? 0 : 1, problems.length ? 1 : 0));
     process.exit(problems.length ? 1 : 0);
   }
+  // Keeps trying a port that starts listening only after the run began (outside its block and the ephemeral range).
+  case "connect-late": {
+    write("node_modules/.cache/connect-late.started", "1");
+    let reached = false;
+    for (const until = Date.now() + 8000; Date.now() < until && !reached; await new Promise((r) => setTimeout(r, 200))) {
+      try { await fetch("http://127.0.0.1:" + arg + "/", { signal: AbortSignal.timeout(500) }); reached = true; } catch {}
+    }
+    console.log((reached ? "reached the listener that started on " + arg + " after the run began\n" : "") + bunSummary(reached ? 0 : 1, reached ? 1 : 0));
+    process.exit(reached ? 1 : 0);
+  }
+  // Runs long enough for a concurrent writer elsewhere in the tree to land inside the run's window.
+  case "slow-pass": await new Promise((r) => setTimeout(r, 1500)); console.log(bunSummary(1, 0)); break;
   case "bind": {
     let bound = false;
     try { Bun.serve({ hostname: "127.0.0.1", port: 0, fetch: () => new Response("") }).stop(true); bound = true; } catch {}
@@ -131,6 +143,8 @@ function app(id: string, cmd: string, extra: { baselines?: Record<string, TestBa
 const run = (mode: string) => `bun --no-env-file standin.mjs ${mode}`;
 /** A listener this test starts before any run (registry tests' range 46940-46959): no run may reach it. */
 const PRE_EXISTING_PORT = 46941;
+/** A listener this test starts only after a run began, outside every block and the ephemeral range: no run may reach it either. */
+const LATE_PORT = 46942;
 /** A baseline recorded for `cmd` with these failing names. */
 const known = (cmd: string, failing: string[], over: Partial<TestBaseline> = {}): TestBaseline => ({ cmd, exit: 1, fail: failing.length, failing, date: "2026-10-05", method: "test", ...over });
 
@@ -157,12 +171,13 @@ const APPS: AppEntry[] = [
   app("write-tracked", run("write-tracked")),
   app("write-ignored", run("write-ignored")),
   app("delete-ignored", run("delete-ignored")),
-  app("write-enclosing", run("write-enclosing")),
   app("quiet-writes", run("quiet-writes")),
   app("denied-writes", `${run("denied-writes")} {root}/outside.txt`),
   app("stray", run("stray")),
   app("env", `${run("env")} {tmp}`, { env: { FROM_PROFILE: "yes" } }),
   app("connect", `${run("connect")} ${PRE_EXISTING_PORT}`),
+  app("connect-late", `${run("connect-late")} ${LATE_PORT}`),
+  app("slow-pass", run("slow-pass")),
   app("hang", `${run("hang")} node_modules/.cache/hang.pid`),
   { ...app("not-a-checkout", run("pass")), repo: "plain", root: "plain/app", commands: { cwd: "plain/app" }, tests: { safe: [{ cmd: run("pass"), cwd: "plain/app" }] } },
 ];
@@ -244,7 +259,7 @@ afterAll(async () => {
 describe.skipIf(!!noSandbox)("bun run test:apps", () => {
   let main: ReturnType<typeof testApps>;
   let typecheck: ReturnType<typeof testApps>;
-  const ids = APPS.map((a) => a.id).filter((id) => !["hang", "tsc", "not-a-checkout", "typecheck-only"].includes(id));
+  const ids = APPS.map((a) => a.id).filter((id) => !["hang", "tsc", "not-a-checkout", "typecheck-only", "connect-late", "slow-pass"].includes(id));
   beforeAll(() => {
     main = testApps(["--json", ...ids]);
     typecheck = testApps(["--json", "--no-tests", "--commands", "typecheck,build", "tsc"]);
@@ -304,16 +319,16 @@ describe.skipIf(!!noSandbox)("bun run test:apps", () => {
     expect(result("tsc").verdict.newFailures).toEqual(["src/b.ts: TS2304: Cannot find name 'z'."]);
   });
 
-  test("writes in the app's checkouts fail the run: a tracked file, a new file in or a deletion from an existing ignored folder, a file in the enclosing checkout", () => {
+  test("writes in the app's own checkout fail the run: a tracked file, a new file in or a deletion from an existing ignored folder", () => {
     expect(result("write-tracked").writes.unexpected).toEqual(["core/member/app/tracked.txt", "core/member/app/tracked.txt (git status: M new)"]);
     expect(result("write-ignored").writes.unexpected).toEqual(["core/member/app/dist/new.txt"]);
     expect(result("delete-ignored").writes.unexpected).toEqual(["core/member/app/dist/ (an entry was removed or renamed)"]);
-    expect(result("write-enclosing").writes.unexpected).toEqual(["core/stray.txt", "core/stray.txt (git status: ?? new)"]);
-    for (const id of ["write-tracked", "write-ignored", "delete-ignored", "write-enclosing"]) expect(result(id).ok).toBe(false);
+    for (const id of ["write-tracked", "write-ignored", "delete-ignored"]) expect(result(id).ok).toBe(false);
   });
 
-  test("the sandbox refuses writes the check does not watch: a sibling checkout, the checkout's .git, anything outside the checkouts", () => {
+  test("the sandbox refuses writes the check does not watch: a sibling checkout, the enclosing checkout, the checkout's .git, anything outside the checkouts", () => {
     expect({ ok: result("denied-writes").ok, log: readFileSync(result("denied-writes").log, "utf8") }).toMatchObject({ ok: true });
+    expect(existsSync(join(root, "core/stray.txt"))).toBe(false);
     expect(readFileSync(join(root, "core/member/.git/config"), "utf8")).not.toContain("fsmonitor");
     expect(existsSync(join(root, "outside.txt"))).toBe(false);
   });
@@ -338,8 +353,8 @@ describe.skipIf(!!noSandbox)("bun run test:apps", () => {
     expect(result("quiet-writes").writes.caches).toEqual([
       "core/member/app/tsconfig.tsbuildinfo",
       "core/member/app/tsconfig.tsbuildinfo (git status: ?? new)",
-      "core/node_modules/ (git status: !! new)",
-      "core/node_modules/.vite/deps/chunk.js",
+      "core/member/node_modules/ (git status: ?? new)",
+      "core/member/node_modules/.vite/deps/chunk.js",
     ]);
   });
 
@@ -353,6 +368,38 @@ describe.skipIf(!!noSandbox)("bun run test:apps", () => {
     expect(preExistingHits()).toBe(0);
   });
 
+  test("a test command cannot reach a port that starts listening after it began, outside its block and the ephemeral range", async () => {
+    const started = join(root, "core/member/app/node_modules/.cache/connect-late.started");
+    rmSync(started, { force: true });
+    const cli = Bun.spawn([process.execPath, "scripts/test-apps.ts", "--root", root, "--registry", registry, "--out-dir", out, "--json", "connect-late"], { cwd: PKG, stdout: "pipe", stderr: "pipe" });
+    for (let i = 0; i < 400 && !existsSync(started); i++) await Bun.sleep(50);
+    writeFileSync(join(scratch, "late.mjs"), `import { appendFileSync } from "node:fs";\nBun.serve({ hostname: "127.0.0.1", port: ${LATE_PORT}, fetch: () => (appendFileSync("late-hits.txt", "x"), new Response("not the run's")) });\n`);
+    const late = Bun.spawn([process.execPath, "--no-env-file", "late.mjs"], { cwd: scratch, stdio: ["ignore", "ignore", "inherit"] });
+    try {
+      const [stdout] = await Promise.all([new Response(cli.stdout).text(), cli.exited]);
+      const report = (JSON.parse(stdout) as any[])[0];
+      expect({ ok: report.commands[0].ok, log: readFileSync(report.commands[0].log, "utf8") }).toMatchObject({ ok: true });
+      expect(existsSync(join(scratch, "late-hits.txt"))).toBe(false);
+    } finally {
+      late.kill("SIGKILL");
+      await late.exited;
+    }
+  }, 60_000);
+
+  test("another process writing elsewhere in the tree (the enclosing checkout) during a run does not fail the app", async () => {
+    // A concurrent worker's edit outside the app's own checkout: test:apps does not watch what the run may not write.
+    const writer = Bun.spawn([process.execPath, "--no-env-file", "-e", `setInterval(() => require("node:fs").appendFileSync(${JSON.stringify(join(root, "core/concurrent.txt"))}, "x"), 50)`], { stdio: ["ignore", "ignore", "inherit"] });
+    try {
+      const run = testApps(["--json", "slow-pass"]);
+      expect(run.reports["slow-pass"].commands[0].writes.unexpected).toEqual([]);
+      expect(run.status).toBe(0);
+    } finally {
+      writer.kill("SIGKILL");
+      await writer.exited;
+      rmSync(join(root, "core/concurrent.txt"), { force: true });
+    }
+  }, 60_000);
+
   test("a named command (build, typecheck) gets no network port at all", () => {
     const build = typecheck.reports["tsc"].commands[1];
     expect(build.label).toBe("commands.build");
@@ -365,7 +412,8 @@ describe.skipIf(!!noSandbox)("bun run test:apps", () => {
   });
 
   test("a command that outlives --timeout fails and its whole process group is killed", () => {
-    const hung = testApps(["--json", "--timeout", "3", "hang"]);
+    // A suite's profile (its ephemeral range: 16384 rules) takes about 5 s to compile before the command starts.
+    const hung = testApps(["--json", "--timeout", "15", "hang"]);
     expect(hung.status).toBe(1);
     expect(hung.reports["hang"].commands[0].timedOut).toBe(true);
     const pid = Number(readFileSync(join(root, "core/member/app/node_modules/.cache/hang.pid"), "utf8"));

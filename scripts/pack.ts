@@ -27,10 +27,11 @@
  * in a directory this user cannot write (nor any directory on the way to it): a `npm` or `node` found first
  * in a user-writable PATH dir that comes before the nvm dir (~/.local/bin, ~/.bun/bin, /usr/local/bin on this
  * machine) is refused before anything runs, because an unsandboxed process could have planted it there.
- * npm runs inside the OS sandbox (packPolicy): writes only in its staging folder and its temp HOME, reads
- * under the home only the checkout, those two and ~/.nvm, no network at all, credential stores and the owner's
- * tree hidden (the checkout itself stays readable). Its PATH is pinned to the real dirs of node and npm and
- * the system dirs (SYSTEM_PATH). No sandbox-exec, no pack.
+ * npm runs inside the OS sandbox (sandbox.ts packPolicy, decision 31): writes only in its staging folder and its
+ * temp HOME, reads under the home only the checkout, those two and the runtimes (~/.nvm), no network at all
+ * (no IP, no Unix socket, no bind), credential stores and the owner's tree hidden (the checkout itself stays
+ * readable, never writable). Its PATH is pinned to the real dirs of node and npm and the system dirs
+ * (SYSTEM_PATH). No sandbox-exec, no pack.
  *
  * On success it prints two lines, and a third when the tgz was already there:
  *   tgz: <absolute path>
@@ -48,9 +49,9 @@ import { tmpdir } from "node:os";
 import { basename, dirname, isAbsolute, join, posix } from "node:path";
 import { gunzipSync } from "node:zlib";
 import { ROOT, staleFiles, TokenError } from "./build.ts";
-import { HOME_SECRETS, OWNER_PORTS, OWNER_TREE } from "./lib/owner.ts";
+import { OWNER_TREE } from "./lib/owner.ts";
 import { canonicalPath, isWithin, realHome, safeOutputPath, safeTempBase, UnsafePathError } from "./lib/safe-paths.ts";
-import { sandboxCommand, SandboxUnavailable, type SandboxPolicy } from "./lib/sandbox.ts";
+import { packPolicy, sandboxCommand, SandboxUnavailable } from "./lib/sandbox.ts";
 import { SYSTEM_PATH } from "./lib/system-bin.ts";
 
 /** Every path in an npm-packed tgz starts with this folder. */
@@ -376,26 +377,6 @@ export function npmCommand(npm: ResolvedTool, node: ResolvedTool): { argv: strin
 }
 
 /**
- * The sandbox npm pack runs in: writes only in its staging folder and its temp HOME (plus the devices every
- * runtime opens); reads under the home only the checkout, those two and ~/.nvm; credential stores and the
- * owner's tree hidden, the checkout itself readable inside it; no network at all (no IP, no Unix socket, no
- * listening).
- */
-export function packPolicy(opts: { root: string; staging: string; npmHome: string; home: string; ownerTree?: string }): SandboxPolicy {
-  return {
-    home: opts.home,
-    writable: [opts.staging, opts.npmHome],
-    readable: [opts.root, opts.staging, opts.npmHome, join(opts.home, ".nvm")],
-    hidden: [...HOME_SECRETS.map((rel) => join(opts.home, rel)), opts.ownerTree ?? OWNER_TREE],
-    readableInHidden: [opts.root],
-    connectPorts: [],
-    bindPorts: [],
-    unixSockets: { paths: [], dirs: [] },
-    deniedPorts: OWNER_PORTS,
-  };
-}
-
-/**
  * The canonical destination for a pack. A checkout inside the owner's tree packs anywhere (the owner's own
  * vendoring flow); a checkout outside it (the rollout mirror) is refused any destination in the owner's
  * tree, directly or through a symlink, case variant or firmlink spelling. Throws UnsafePathError.
@@ -496,7 +477,7 @@ function npmPack(root: string, dest: string, base: string, tools: { npm: Resolve
   const env = npmEnv(process.env, base, path);
   let command: string[];
   try {
-    command = sandboxCommand(packPolicy({ root, staging: dest, npmHome: env.HOME!, home: tools.home, ownerTree: tools.ownerTree }), [
+    command = sandboxCommand(packPolicy({ packageRoot: root, staging: dest, npmHome: env.HOME!, home: tools.home, ownerTree: tools.ownerTree }), [
       ...argv,
       "pack",
       "--ignore-scripts",
