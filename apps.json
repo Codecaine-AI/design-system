@@ -2199,13 +2199,13 @@
       },
       "consume": {
         "via": "relative-import",
-        "detail": "Build-time @import: src/styles.css imports docs-workbench's theme/index.css (which imports the package tokens.css) by relative path, so dist/styles/docs.css carries the tokens; src/editor.css imports theme/tokens.css."
+        "detail": "Build-time @import: src/styles.css loads @codecaine-ai/design-system fonts.css, then the Tailwind theme, tailwind-strict.css, tailwind.css and the temporary tailwind-bridge.css (decision 67), then docs-workbench's theme/index.css (which imports tokens.css), so dist/styles/docs.css carries the fonts (woff2 beside it) and the tokens; src/editor.css imports theme/tokens.css and the same strict, theme and bridge sheets."
       },
       "entryStylesheet": "codecaine/core/docs-system/packages/docs-publish/src/styles.css",
       "theme": {
         "rule": "light-dark"
       },
-      "literalFloor": 7,
+      "literalFloor": 8,
       "allowlist": "apps/allowlists/docs-publish.json",
       "shell": false,
       "folderStandard": false,

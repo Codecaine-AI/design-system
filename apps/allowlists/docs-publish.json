@@ -6,6 +6,13 @@
       "category": "hex",
       "kind": "definition",
       "reason": "host fallbacks only: the .docs-draft-editor definitions at editor.css 68-76 are var(--color-*, <literal>) (#fff, #222, #2563eb, #f1f1ef), so the draft editor renders on a host without the site palette (7 hits; the floor of 7 caps them). The status and accent block at 82-103 (--destructive, --status-*, --color-bg-blue, --color-text-blue) is not excused: pass 1 migrates it to color.status.*"
+    },
+    {
+      "file": "codecaine/core/docs-system/packages/docs-publish/src/styles.css",
+      "match": "^25px$",
+      "category": "pxFontSize",
+      "kind": "inline",
+      "reason": "the expand button's ⤢ glyph (.docs-diagram-expand, styles.css:56): an icon glyph sized to its 36px button, not text; no font-size token within 2px (reading 18px, title 36px), so it stays as written (decision 65a) and joins the heading-size token gap in the backlog (1 hit)"
     }
   ],
   "twClasses": []
