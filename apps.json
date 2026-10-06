@@ -1057,12 +1057,12 @@
             "token": "color.text.body"
           },
           {
-            "selector": "header.border-b h1",
+            "selector": "header.ds-topbar h1",
             "property": "color",
             "token": "color.text.ink"
           },
           {
-            "selector": "header.border-b",
+            "selector": "header.ds-topbar",
             "property": "border-bottom-color",
             "token": "color.border.default"
           }
