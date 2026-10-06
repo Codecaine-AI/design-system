@@ -57,7 +57,7 @@ import { randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 
-import { expandPlaceholders, killRun, profileEnv, rootProc, stripAnsi, validateLoadedRegistry } from "./lib/app-runner";
+import { expandPlaceholders, killRun, profileEnv, rootProc, stripAnsi, validateLoadedRegistry, type ProcInfo } from "./lib/app-runner";
 import { OWNER_PORTS } from "./lib/owner";
 import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, REGISTRY_PATH, resolvePath, type AppEntry, type Registry, type TestBaseline } from "./lib/registry";
 import { safeAppId, safeChildPath, safeOutputPath, safeTempBase } from "./lib/safe-paths";
@@ -445,6 +445,19 @@ function withWatchdog(cmd: string): string {
 
 const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
 
+/** The members of process group `pgid` now, with their identities (killRun signals an exited root's group only through members it saw). */
+function groupMembers(pgid: number): ProcInfo[] {
+  const out = spawnSync(TOOLS.ps, ["-A", "-o", "pid=,ppid=,pgid=,lstart="], { encoding: "utf8", timeout: 30_000, env: { PATH: SYSTEM_PATH } }).stdout ?? "";
+  const procs: ProcInfo[] = [];
+  for (const line of out.split("\n")) {
+    const cols = line.trim().split(/\s+/);
+    if (cols.length < 4) continue;
+    const [pid, ppid, group] = cols.slice(0, 3).map(Number) as [number, number, number];
+    if (group === pgid && Number.isInteger(pid)) procs.push({ pid, ppid, pgid: group, started: cols.slice(3).join(" ") });
+  }
+  return procs;
+}
+
 /**
  * SIGKILLs every process whose environment carries `DS_TEST_APPS_RUN=<tag>`: a descendant that left the
  * command's process group (setsid, a detached child) still carries the run's environment. macOS hides the
@@ -552,7 +565,8 @@ async function runOne(app: AppEntry, planned: PlannedCommand, opts: TestAppOptio
     };
     child.stdout!.on("data", onData);
     child.stderr!.on("data", onData);
-    const closed = new Promise<void>((done) => child.on("close", () => done()));
+    // stdout and stderr only: the watchdog's fd 3 stays open on this side until the child is gone.
+    const closed = Promise.all([child.stdout!, child.stderr!].map((stream) => new Promise<void>((done) => stream.once("close", () => done()))));
     const exited = new Promise<number>((done) => {
       child.on("exit", (code, signal) => done(code ?? (signal ? 128 : 1)));
       child.on("error", () => done(127));
@@ -560,12 +574,25 @@ async function runOne(app: AppEntry, planned: PlannedCommand, opts: TestAppOptio
     let timedOut = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timeout = opts.timeoutMs ?? 15 * 60_000;
+    // The group's members as they appear (the watchdog among them): killRun stops an exited root's group
+    // only through members it has seen.
+    const known = new Map<number, ProcInfo>();
+    let running = true;
+    const watch = (async () => {
+      while (running && child.pid) {
+        for (const proc of groupMembers(child.pid)) if (!known.has(proc.pid)) known.set(proc.pid, proc);
+        await sleep(250);
+      }
+    })();
     const exit = await Promise.race([exited, new Promise<number>((done) => (timer = setTimeout(() => ((timedOut = true), done(-1)), timeout)))]);
     clearTimeout(timer);
-    if (root$) await killRun([root$], 2_000);
+    running = false;
+    await watch;
+    if (root$) await killRun([root$], 2_000, [...known.values()]);
     const strays = killTagged(tag);
     // Every byte the command wrote, before reading the result (a stray holding the pipe is dead by now).
     await Promise.race([closed, sleep(5_000)]);
+    (child.stdio[3] as { destroy?: () => void } | null)?.destroy?.();
     const code = timedOut ? 124 : exit;
     const seconds = (Date.now() - started) / 1000;
     appendFileSync(log, `\n[exit ${code}${timedOut ? `, timed out after ${timeout / 1000} s` : ""}] ${seconds.toFixed(1)} s${strays.length ? `; killed ${strays.length} stray process(es) outside its group: ${strays.join(", ")}` : ""}\n`);
