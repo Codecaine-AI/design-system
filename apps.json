@@ -1774,11 +1774,11 @@
           "tests.safe[1]": {
             "cmd": "bun --no-env-file test src/__tests__/design-system-assets.test.ts",
             "exit": 0,
-            "pass": 3,
+            "pass": 4,
             "fail": 0,
             "errors": 0,
             "date": "2026-10-06",
-            "method": "added by the docs-mcp-home pass-1 worker (decision 30 route test); the file exists from its pass-1 commit on, so earlier trees fail it. Calls the route handler in process: binds no port, fetches nothing, writes nothing"
+            "method": "added by the docs-mcp-home pass-1 worker (decision 30 route test), 4 tests after review round 1 (062608c: realpath allowlist, octet-stream, nosniff); the file exists from its pass-1 commit on, so earlier trees fail it. Calls the route handler in process: binds no port, fetches nothing; writes only a temp folder it removes"
           }
         }
       },
