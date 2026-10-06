@@ -11,7 +11,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DESIGN_SYSTEM_ROOT } from "../scripts/lib/registry.ts";
 import type { ResponseLog } from "../scripts/lib/verify/assertions.ts";
-import { fontSourceJudge } from "../scripts/lib/verify/font-source.ts";
+import type { RunningApp } from "../scripts/lib/app-runner.ts";
+import { fontDiskPath, fontSourceJudge } from "../scripts/lib/verify/font-source.ts";
 import { type FaceStatus, fontAssertions, type FontReading, type FontSourceJudge, weightCovers } from "../scripts/lib/verify/fonts.ts";
 import { MIRROR } from "./verify-support.ts";
 
@@ -175,5 +176,35 @@ describe("fontSourceJudge", () => {
     expect(fromDisk(data, null)).toMatchObject({ ok: false, how: expect.stringContaining(DECISION_20) });
     expect(fromDisk(data, "http://x/run-tmp/design-system-fonts.css")).toMatchObject({ ok: true, how: expect.stringMatching(/^an inlined copy of the package's fonts\/Inter-Regular\.woff2/) });
     expect(fromDisk(`data:font/woff2;base64,${Buffer.from("other").toString("base64")}`, "http://x/run-tmp/design-system-fonts.css")).toMatchObject({ ok: false });
+  });
+});
+
+describe("fontSourceJudge with the runner's served-path mapping (decision 30)", () => {
+  // As verify:apps builds it: the resolved package's real path, the run's temp dir and the app's copy dir, fontDiskPath.
+  const root = join(scratch, "prefix-root");
+  const pkg = join(root, "app/node_modules/@codecaine-ai/design-system");
+  const web = join(root, "app/web");
+  for (const dir of [join(pkg, "fonts"), join(pkg, "css"), join(web, "assets"), join(root, "tmp")]) mkdirSync(dir, { recursive: true });
+  writeFileSync(join(pkg, "package.json"), '{"name":"@codecaine-ai/design-system"}');
+  copyFileSync(join(FONTS, "Inter-Regular.woff2"), join(pkg, "fonts/Inter-Regular.woff2"));
+  copyFileSync(FONTS_CSS, join(pkg, "css/fonts.css"));
+  writeFileSync(join(web, "assets/brand.woff2"), "the app's own font");
+  copyFileSync(join(FONTS, "Inter-Regular.woff2"), join(web, "assets/Inter-Regular-3f2a.woff2"));
+  writeFileSync(join(web, "assets/my.css"), "@font-face{}");
+  const running = { app: { id: "prefix-app", root: "app", run: { mode: "static", serveRoot: "app/web" } }, root, tmp: join(root, "tmp"), serveRoot: web, baseUrl: "http://127.0.0.1:47000" } as unknown as RunningApp;
+  const judgeFor = fontSourceJudge({ packageDirs: [realpathSync(pkg)], buildFontsDir: FONTS, buildFontsCss: FONTS_CSS, copyDirs: [running.tmp, web], diskPath: (url) => fontDiskPath(running, url) });
+  const PREFIX = "http://127.0.0.1:47000/@codecaine-ai/design-system";
+  const COPY = "http://127.0.0.1:47000/assets/Inter-Regular-3f2a.woff2";
+
+  test("a package font or fonts.css under the prefix passes; the app's own font, a directory or a %3F/%23-crafted URL does not", () => {
+    expect(judgeFor(`${PREFIX}/fonts/Inter-Regular.woff2`, null)).toMatchObject({ ok: true, how: expect.stringContaining("the package's fonts/") });
+    expect(judgeFor(COPY, `${PREFIX}/css/fonts.css`)).toMatchObject({ ok: true, how: expect.stringContaining("declared in the package's fonts.css") });
+    expect(judgeFor("http://127.0.0.1:47000/assets/brand.woff2", null)).toMatchObject({ ok: false, how: expect.stringContaining("not from the design-system package's fonts/") });
+    expect(judgeFor(`${PREFIX}/fonts/`, null)).toEqual({ ok: false, how: "the URL maps to no file on disk" });
+    // The server reads a decoded %3F/%23 as part of the path: it sends the app's brand.woff2 or my.css, not the package's file.
+    for (const crafted of ["%3F", "%23"]) {
+      expect(judgeFor(`${PREFIX}/fonts/Inter-Regular.woff2${crafted}%2F..%2F..%2F..%2F..%2Fweb%2Fassets%2Fbrand.woff2`, null)).toEqual({ ok: false, how: "the URL maps to no file on disk" });
+      expect(judgeFor(COPY, `${PREFIX}/css/fonts.css${crafted}%2F..%2F..%2F..%2F..%2Fweb%2Fassets%2Fmy.css`)).toMatchObject({ ok: false, how: expect.stringContaining("maps to no file on disk") });
+    }
   });
 });

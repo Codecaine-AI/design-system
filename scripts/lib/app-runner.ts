@@ -1416,18 +1416,21 @@ function serveStatic(dir: string, dirReal: string, request: Request, served: Set
 /**
  * The file a `/@codecaine-ai/design-system/<package path>` path names in the design-system package the
  * app resolves (decision 30: the host serves that prefix from it; lint:apps maps it the same way), or
- * null: no package, a `.` or `..` segment, a `%` left after decoding (double encoding), a backslash or
- * NUL, or a file whose real path leaves the package. A file that does not exist maps lexically.
+ * null: no package; a `?` or `#` (only a decoded %3F/%23 gets here, and the server reads it as part of
+ * the path), a `%` left after decoding (double encoding), a backslash or NUL; a `.` or `..` segment; a
+ * directory; or a file whose real path leaves the package. A file that does not exist maps lexically.
  */
 function designSystemFile(path: string, packageDir: () => string | null): string | null {
+  if (/[?#%\\\0]/.test(path.slice(DS_URL_PREFIX.length))) return null;
   const rest = designSystemUrlPath(path);
-  if (rest === null || /[%\\\0]/.test(rest) || rest.split("/").some((segment) => segment === "." || segment === "..")) return null;
+  if (rest === null || rest.split("/").some((segment) => segment === "." || segment === "..")) return null;
   const dir = packageDir();
   if (!dir) return null;
   const file = join(dir, rest);
   if (!isInside(file, dir)) return null;
   if (!existsSync(file)) return file;
-  return isInside(realpathSync(file), dir) ? file : null;
+  const real = realpathSync(file);
+  return isInside(real, dir) && statSync(real).isFile() ? file : null;
 }
 
 /**
@@ -1494,9 +1497,11 @@ export function servedDiskPath(running: RunningApp, entry: string): string | nul
 }
 
 /**
- * Checks that served module/file URLs (Vite `/@fs/...`, `/src/...`, static files) or absolute disk paths
- * resolve inside `running.root` (or the run's own temp dir, where fixture servers build). Symlinks are
- * resolved, so a linked package outside the root is reported in `outside`. A path that maps to no file
+ * Checks that served module/file URLs (Vite `/@fs/...`, `/src/...`, static files, the decision-30
+ * `/@codecaine-ai/design-system/<package path>` prefix) or absolute disk paths resolve inside
+ * `running.root` (or the run's own temp dir, where fixture servers build). Symlinks are resolved, so a
+ * linked package outside the root is reported in `outside`; a prefix file is checked through the real
+ * path of the package the app resolves, so a package link that leaves the root is reported there too. A path that maps to no file
  * is reported in `unresolved` (pass only module and file URLs: scripts, styles, fonts, images, not page
  * routes). ok means both lists are empty.
  */

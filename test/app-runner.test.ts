@@ -532,39 +532,75 @@ describe("servedFromRoot", () => {
   });
 
   test("maps /@codecaine-ai/design-system/<package path> to the package the app resolves (decision 30), never outside it", () => {
+    // The app resolves the package through a node_modules link in an ancestor dir (like a bun link in the root).
     const root = makeRoot();
-    const pkg = join(root, "app/node_modules/@codecaine-ai/design-system");
+    const pkg = join(root, "ds-checkout");
     mkdirSync(join(pkg, "fonts"), { recursive: true });
+    mkdirSync(join(pkg, "css"), { recursive: true });
     writeFileSync(join(pkg, "package.json"), '{"name":"@codecaine-ai/design-system"}');
     writeFileSync(join(pkg, "fonts/Inter-Regular.woff2"), "font");
+    writeFileSync(join(pkg, "css/fonts.css"), "@font-face{}");
+    mkdirSync(join(root, "node_modules/@codecaine-ai"), { recursive: true });
+    symlinkSync(pkg, join(root, "node_modules/@codecaine-ai/design-system"));
     writeFileSync(join(root, "app/secret.txt"), "not the package's");
+    mkdirSync(join(root, "app/web/assets"), { recursive: true });
+    writeFileSync(join(root, "app/web/assets/brand.woff2"), "the app's own font");
     const elsewhere = mkdtempSync(join(scratch, "elsewhere-"));
     writeFileSync(join(elsewhere, "Inter-Regular.woff2"), "font");
     symlinkSync(join(elsewhere, "Inter-Regular.woff2"), join(pkg, "fonts/linked.woff2"));
+    symlinkSync(elsewhere, join(pkg, "fonts/linked-dir"));
     const running = { app: fixtureApp({ ui: 46911 }), root, serveRoot: join(root, "app/web"), baseUrl: "http://127.0.0.1:46911" } as RunningApp;
+    const H = "http://127.0.0.1:46911";
 
-    const font = "http://127.0.0.1:46911/@codecaine-ai/design-system/fonts/Inter-Regular.woff2";
+    const font = `${H}/@codecaine-ai/design-system/fonts/Inter-Regular.woff2`;
     expect(servedDiskPath(running, font)).toBe(join(pkg, "fonts/Inter-Regular.woff2"));
     expect(servedDiskPath(running, "/@codecaine-ai/design-system/fonts/Inter-Regular.woff2?v=1")).toBe(join(pkg, "fonts/Inter-Regular.woff2"));
-    const gone = "http://127.0.0.1:46911/@codecaine-ai/design-system/fonts/gone.woff2";
+    expect(servedDiskPath(running, `${H}/@codecaine-ai/design-system/css/fonts.css?t=2`)).toBe(join(pkg, "css/fonts.css"));
+    const gone = `${H}/@codecaine-ai/design-system/fonts/gone.woff2`;
     expect(servedFromRoot(running, [font, gone])).toEqual({ ok: false, outside: [], unresolved: [`${gone} -> ${join(pkg, "fonts/gone.woff2")}`] });
+    // /@fs/ keeps its mapping.
+    expect(servedDiskPath(running, `/@fs${elsewhere}/Inter-Regular.woff2`)).toBe(join(elsewhere, "Inter-Regular.woff2"));
+    expect(servedDiskPath(running, `${H}/@fs${elsewhere}/Inter-Regular.woff2?v=3`)).toBe(join(elsewhere, "Inter-Regular.woff2"));
 
     for (const entry of [
-      "http://127.0.0.1:46911/@codecaine-ai/design-system/fonts%2F..%2F..%2F..%2F..%2Fsecret.txt",
-      "http://127.0.0.1:46911/@codecaine-ai/design-system/%252e%252e/%252e%252e/%252e%252e/secret.txt",
-      "/@codecaine-ai/design-system/../../../secret.txt",
-      "/@codecaine-ai/design-system/%2e%2e/%2e%2e/%2e%2e/secret.txt",
-      "/@codecaine-ai/design-system/fonts\\..\\..\\..\\secret.txt",
-      "http://127.0.0.1:46911/@codecaine-ai/design-system/fonts/linked.woff2",
-      "http://127.0.0.1:46911/@codecaine-ai/design-system/",
+      // A decoded %3F or %23 is part of the path the server reads (it sends the app's brand.woff2 or my.css).
+      `${H}/@codecaine-ai/design-system/fonts/Inter-Regular.woff2%3F%2F..%2F..%2F..%2Fapp%2Fweb%2Fassets%2Fbrand.woff2`,
+      `${H}/@codecaine-ai/design-system/fonts/Inter-Regular.woff2%23%2F..%2F..%2F..%2Fapp%2Fweb%2Fassets%2Fbrand.woff2`,
+      `${H}/@codecaine-ai/design-system/css/fonts.css%3F%2F..%2F..%2F..%2Fapp%2Fweb%2Fassets%2Fmy.css`,
+      `${H}/@codecaine-ai/design-system/fonts%2F..%2F..%2Fapp%2Fsecret.txt`,
+      `${H}/@codecaine-ai/design-system/%252e%252e/app/secret.txt`,
+      `${H}/@codecaine-ai/design-system/fonts%5C..%5C..%5Capp%5Csecret.txt`,
+      `${H}/@codecaine-ai/design-system/fonts/Inter-Regular.woff2%00.txt`,
+      "/@codecaine-ai/design-system/fonts/Inter-Regular.woff2\0.txt",
+      "/@codecaine-ai/design-system/../app/secret.txt",
+      "/@codecaine-ai/design-system/%2e%2e/app/secret.txt",
+      "/@codecaine-ai/design-system/fonts\\..\\..\\app\\secret.txt",
+      `${H}/@codecaine-ai/design-system/fonts/linked.woff2`,
+      `${H}/@codecaine-ai/design-system/fonts/linked-dir/Inter-Regular.woff2`,
+      `${H}/@codecaine-ai/design-system/fonts`,
+      `${H}/@codecaine-ai/design-system/fonts/`,
+      `${H}/@codecaine-ai/design-system/`,
       "/@codecaine-ai/design-systemx/fonts/Inter-Regular.woff2",
       "/@vite/client",
       "/@id/@codecaine-ai/design-system/fonts/Inter-Regular.woff2",
     ])
       expect([entry, servedDiskPath(running, entry)]).toEqual([entry, null]);
     // No resolved package: the prefix maps to nothing.
-    rmSync(pkg, { recursive: true });
+    rmSync(join(root, "node_modules"), { recursive: true });
     expect(servedDiskPath(running, font)).toBeNull();
+  });
+
+  test("a prefix file of a package linked from outside the root is reported outside", () => {
+    const root = makeRoot();
+    const outsidePkg = mkdtempSync(join(scratch, "outside-pkg-"));
+    mkdirSync(join(outsidePkg, "fonts"));
+    writeFileSync(join(outsidePkg, "package.json"), '{"name":"@codecaine-ai/design-system"}');
+    writeFileSync(join(outsidePkg, "fonts/Inter-Regular.woff2"), "font");
+    mkdirSync(join(root, "app/node_modules/@codecaine-ai"), { recursive: true });
+    symlinkSync(outsidePkg, join(root, "app/node_modules/@codecaine-ai/design-system"));
+    const running = { app: fixtureApp({ ui: 46911 }), root, serveRoot: join(root, "app"), baseUrl: "http://127.0.0.1:46911" } as RunningApp;
+    const font = "http://127.0.0.1:46911/@codecaine-ai/design-system/fonts/Inter-Regular.woff2";
+    expect(servedFromRoot(running, [font])).toEqual({ ok: false, outside: [`${font} -> ${join(outsidePkg, "fonts/Inter-Regular.woff2")}`], unresolved: [] });
   });
 });
 
