@@ -280,13 +280,13 @@
       "run": {
         "mode": "browser",
         "cwd": "codecaine/core/sequence/packages/studio",
-        "start": "bun x --bun vite {flags}",
+        "start": "bun x --no-env-file --bun vite {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
       },
       "commands": {
         "cwd": "codecaine/core/sequence/packages/studio",
-        "typecheck": "bun x --bun tsc -p tsconfig.json --noEmit",
-        "build": "bun x --bun vite build --outDir {tmp}/sequence-studio-dist --emptyOutDir"
+        "typecheck": "bun x --no-env-file --bun tsc -p tsconfig.json --noEmit",
+        "build": "bun x --no-env-file --bun vite build --outDir {tmp}/sequence-studio-dist --emptyOutDir"
       },
       "tests": {
         "safe": [],
@@ -478,7 +478,7 @@
       },
       "commands": {
         "cwd": "codecaine/core/docs-system",
-        "typecheck": "bunx --bun tsc --noEmit"
+        "typecheck": "bunx --no-env-file --bun tsc --noEmit"
       },
       "tests": {
         "safe": [
@@ -788,13 +788,13 @@
       "run": {
         "mode": "browser",
         "cwd": "codecaine/core/canvas/packages/studio",
-        "start": "mkdir -p {tmp}/canvases && cp -R ../../canvases/. {tmp}/canvases/ && exec bun x --bun vite {flags}",
+        "start": "mkdir -p {tmp}/canvases && cp -R ../../canvases/. {tmp}/canvases/ && exec bun x --no-env-file --bun vite {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
       },
       "commands": {
         "cwd": "codecaine/core/canvas/packages/studio",
-        "typecheck": "bun x --bun tsc -p tsconfig.json --noEmit",
-        "build": "bun x --bun vite build --outDir {tmp}/canvas-studio-dist --emptyOutDir"
+        "typecheck": "bun x --no-env-file --bun tsc -p tsconfig.json --noEmit",
+        "build": "bun x --no-env-file --bun vite build --outDir {tmp}/canvas-studio-dist --emptyOutDir"
       },
       "tests": {
         "safe": [
@@ -1046,7 +1046,7 @@
       "run": {
         "mode": "browser",
         "cwd": "codecaine/core/canvas/packages/studio",
-        "start": "mkdir -p {tmp}/canvases && cp -R ../../canvases/. {tmp}/canvases/ && exec bun x --bun vite {flags}",
+        "start": "mkdir -p {tmp}/canvases && cp -R ../../canvases/. {tmp}/canvases/ && exec bun x --no-env-file --bun vite {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
       },
       "commands": {
@@ -1296,7 +1296,7 @@
         "mode": "none",
         "reason": "the viewer's Vite proxy sends /api to the owner's :4820 through `const HARNESS_TARGET = \"http://127.0.0.1:4820\"` (packages/canvas-agent/src/viewer/vite.config.ts:41; no env var, flag or config reads around it), and the traces page fetches /api on load, so every run would reach the owner's service. Runnable once the target reads an env var (for example CANVAS_AGENT_HARNESS_URL, falling back to 4820): a dev-only override the pass-1 worker can decide on",
         "cwd": "codecaine/core/canvas/packages/canvas-agent",
-        "start": "bun x vite --config src/viewer/vite.config.ts {flags}",
+        "start": "bun x --no-env-file vite --config src/viewer/vite.config.ts {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)",
         "serveRoot": "codecaine/core/canvas/packages/canvas-agent/src/viewer"
       },
@@ -1718,7 +1718,7 @@
       },
       "commands": {
         "cwd": "codecaine/core/docs-system",
-        "typecheck": "bunx --bun tsc --noEmit"
+        "typecheck": "bunx --no-env-file --bun tsc --noEmit"
       },
       "tests": {
         "safe": [
@@ -2110,7 +2110,7 @@
       "run": {
         "mode": "browser",
         "cwd": "codecaine/core/agent-kernel/examples/simple-research-kernel",
-        "start": "bun x vite {flags}",
+        "start": "bun x --no-env-file vite {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
       },
       "commands": {
@@ -2477,7 +2477,7 @@
       "run": {
         "mode": "browser",
         "cwd": "codecaine/core/agent-kernel/examples/simple-research-kernel",
-        "start": "bun x vite {flags}",
+        "start": "bun x --no-env-file vite {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
       },
       "commands": {
@@ -3876,7 +3876,7 @@
         "mode": "none",
         "reason": "blocked by uncommitted owner work; profile unproven",
         "cwd": "codecaine/core/observatory",
-        "start": "bun x --bun vite --config src/ui/vite.config.ts {flags}",
+        "start": "bun x --no-env-file --bun vite --config src/ui/vite.config.ts {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)",
         "serveRoot": "codecaine/core/observatory/src/ui"
       },
@@ -4508,7 +4508,7 @@
         "mode": "none",
         "reason": "blocked by uncommitted owner work; profile unproven",
         "cwd": "life/budget/apps/web",
-        "start": "bun x vite {flags}",
+        "start": "bun x --no-env-file vite {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
       },
       "commands": {
