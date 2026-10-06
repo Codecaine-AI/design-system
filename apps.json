@@ -672,7 +672,7 @@
           "steps": [
             {
               "action": "click",
-              "target": "aside button:text-is(\"Export\")"
+              "target": "button:text-is(\"Export\")"
             }
           ],
           "waitFor": "dialog[open]"
@@ -756,19 +756,24 @@
             "token": "color.surface.page"
           },
           {
-            "selector": "aside.w-72.border-r",
-            "property": "background-color",
-            "token": "color.surface.sidebar"
-          },
-          {
             "selector": "[data-doc-editor=\"true\"] p[data-block-id=\"b-15-callout-lead-2\"]",
             "property": "color",
             "token": "color.text.body"
           },
           {
-            "selector": "aside.w-72.border-r",
-            "property": "border-right-color",
+            "selector": "aside.ds-sidebar",
+            "property": "background-color",
+            "token": "color.surface.sidebar"
+          },
+          {
+            "selector": "header.ds-topbar",
+            "property": "border-bottom-color",
             "token": "color.border.default"
+          },
+          {
+            "selector": "header.ds-topbar h1",
+            "property": "color",
+            "token": "color.text.ink"
           }
         ],
         "darkSwitch": {
