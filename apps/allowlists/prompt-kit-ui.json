@@ -4,6 +4,24 @@
       "file": "codecaine/core/prompt-kit/packages/prompt-kit/src/ui/**",
       "kind": "fallback",
       "reason": "audit consume rule: var(--ds-*) with fallbacks, so hosts that do not load tokens.css still render (56 hits)"
+    },
+    {
+      "file": "codecaine/core/prompt-kit/packages/prompt-kit/src/ui/lab/page/PageHeader.tsx",
+      "match": "^text-\\[24px\\]$",
+      "category": "twArbitrary",
+      "reason": "decision 65a: the lab page title (h1, agent name) is 24px; no font-size token lies within 2px (reading 18px, title 36px), so it stays as written and joins the heading-size token gap in the backlog (1 hit)"
+    },
+    {
+      "file": "codecaine/core/prompt-kit/packages/prompt-kit/src/ui/style/PromptStyleRail.tsx",
+      "match": "^-mt-\\[5px\\]$",
+      "category": "twArbitrary",
+      "reason": "kept geometry, decision 43: centers the 16px WebKit slider thumb on the 6px track ((6 - 16) / 2) in a [&::-webkit-slider-thumb] variant, which cannot move to an inline style; no token equals 5px (1 hit)"
+    },
+    {
+      "file": "codecaine/core/prompt-kit/packages/prompt-kit/src/ui/editor/buffer/index.tsx",
+      "match": "^border-\\[3px\\]$",
+      "category": "twArbitrary",
+      "reason": "kept geometry, decision 43: the transparent 3px inset around the editor scrollbar thumb (bg-clip-content) in a [&::-webkit-scrollbar-thumb] variant, which cannot move to an inline style; border.width.rail (3px) is the accent-rail role (1 hit)"
     }
   ],
   "twClasses": []

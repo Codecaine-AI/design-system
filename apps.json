@@ -3011,14 +3011,14 @@
       },
       "consume": {
         "via": "host-css",
-        "detail": "var(--ds-*) with fallbacks; hosts compile its classes."
+        "detail": "Host CSS: its hosts load tokens.css and compile its classes. Existing var() fallbacks stay; values migrated in pass 1 read var(--ds-*) without px or hex fallbacks (decision 50)."
       },
       "entryStylesheet": null,
       "theme": {
         "rule": "light-dark",
-        "storageKey": "agentKernel.promptEditorStyle.v2"
+        "storageKey": "agentKernel.promptEditorStyle.v3"
       },
-      "literalFloor": 56,
+      "literalFloor": 59,
       "allowlist": "apps/allowlists/prompt-kit-ui.json",
       "shell": false,
       "folderStandard": false,
