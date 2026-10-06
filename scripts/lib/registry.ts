@@ -144,6 +144,8 @@ export interface TestSpec {
 
 /** One command's recorded result (see TestSpec.baselines). */
 export interface TestBaseline {
+  /** The registry command it was recorded for; when the entry's command changes, test:apps fails the stale baseline. */
+  cmd?: string;
   /** The command's exit status. */
   exit: number;
   /** Test counts, when the output had a summary test:apps reads (bun test, vitest, unittest). */

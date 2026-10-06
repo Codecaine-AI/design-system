@@ -103,7 +103,22 @@
             "cmd": "bun --no-env-file test packages/sequence/src",
             "cwd": "codecaine/core/sequence"
           }
-        ]
+        ],
+        "baselines": {
+          "tests.safe[0]": {
+            "exit": 0,
+            "pass": 79,
+            "fail": 0,
+            "errors": 0,
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs"
+          },
+          "commands.typecheck": {
+            "exit": 0,
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
+          }
+        }
       },
       "routes": [
         {
@@ -152,7 +167,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. All 3 routes rendered light and dark; 0 blocked requests; 18 connections seen, all inbound to :47000; no foreign connection. Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 6 route loads ok, 0 blocked requests, 20 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
+          "method": "scripts/registry-prove.ts under the final runner (rollout-r2-a1 5d0cf5a merged into rollout-r2-c), re-run 2026-10-05 21:37 CDT by R2-C after the fixture's font change (49e8e71), proof JSON in rollout/tooling/fix-r2c/prove-fixtures: sandboxed (deny-by-default loopback: connect and listen only on its block 47000-47009, owner ports never; writes denied everywhere but --root, the run's temp dir and device files; no .env reads), egress sampled from before spawn (24 lsof samples, 0 failed; 18 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 6/6 route loads (light and dark) rendered with no console error; the guard blocked nothing; stopped clean. Write check around the run (test:apps' check: git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): 0 unexpected, 0 cache writes.",
           "date": "2026-10-05"
         }
       },
@@ -193,8 +208,8 @@
           "reason": "a library has no UI: apps/fixtures/sequence-renderer/serve.ts renders the engine's own example programs inline in a host page that loads tokens.css, so before/after sheets exist for the pilot"
         },
         {
-          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
-          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 1 s (79 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
+          "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds twice, under the final sandbox (rollout-r2-a1 5d0cf5a: writes only in the app's checked checkouts and the run tmp, loopback except owner and already-listening ports, no .env reads) with the write check (git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): run 1: exit 0, 79 pass, 0 fail in 5.5 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2: exit 0, 79 pass, 0 fail in 5.5 s, 0 unexpected writes, 0 cache writes, 0 strays. tests.baselines[\"tests.safe[0]\"] records the result (failing names of both runs united); reports in rollout/tooling/fix-r2c/final-1 and final-2"
         }
       ]
     },
@@ -290,7 +305,14 @@
       },
       "tests": {
         "safe": [],
-        "unsafe": []
+        "unsafe": [],
+        "baselines": {
+          "commands.typecheck": {
+            "exit": 0,
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
+          }
+        }
       },
       "routes": [
         {
@@ -339,7 +361,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. gallery and editor rendered light and dark; 0 blocked requests; 30 connections seen, all inbound to :47010; no foreign connection.",
+          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 5d0cf5a; run 2026-10-05 21:05 CDT, proof JSON in rollout/tooling/r2-a1/prove-writes): sandboxed (deny-by-default loopback: connect and listen only on its block 47010-47019, owner ports never; writes denied everywhere but --root, the run's temp dir and device files; no .env reads), egress sampled from before spawn (18 lsof samples, 0 failed; 30 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 4/4 route loads (light and dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox denies every write outside --root and the run's temp dir.",
           "date": "2026-10-05"
         }
       },
@@ -504,7 +526,83 @@
             "cmd": "bun test packages/docs-workbench/src/__tests__/serve-routes.test.ts",
             "reason": "writes into the repo: seeds packages/docs-workbench/web/dist-static/index.html (serve-routes.test.ts:331-336, also 377, 451, 490), and its export path runs ensureSpaBuilt (src/spa.ts:105), which runs `bun x vite build` into the checkout"
           }
-        ]
+        ],
+        "baselines": {
+          "tests.safe[0]": {
+            "exit": 1,
+            "pass": 342,
+            "fail": 54,
+            "errors": 0,
+            "failing": [
+              "StandaloneCanvasEmbed loaded canvases > deep-links sidecar authoring actions into Studio's editor",
+              "StandaloneCanvasEmbed loaded canvases > keeps the existing canvas validation error state",
+              "StandaloneCanvasEmbed loaded canvases > loads a sidecar as the same inert, expandable preview",
+              "StandaloneSequenceEmbed full-screen pan and zoom > normalizes line-mode wheel deltas to pixels before clamping",
+              "StandaloneSequenceEmbed full-screen pan and zoom > opens fitted and centered, zooms toward the wheel cursor, and Fit restores the framing",
+              "StandaloneSequenceEmbed sidecar src loading > fetches the sidecar, validates it, and renders the read-only viewer",
+              "StandaloneSequenceEmbed sidecar src loading > surfaces schema validation failures instead of rendering",
+              "annotate mode > Cmd+drag text selection pins a text-range target and annotates it",
+              "annotate mode > an unmodified release with a text selection does not pin a range target",
+              "annotate mode > creates an agent-request annotation against a clicked block",
+              "annotate mode > hover-targets a block (glide ring + block type chip) and clicking opens the anchored composer",
+              "doc peek wiring > a doc-reference event with intent 'navigate' routes through hash navigation",
+              "doc peek wiring > a doc-reference event with intent 'peek' opens the peek panel with the target doc",
+              "doc peek wiring > loads a legacy overview doc ref from its canonical parent bundle",
+              "doc peek wiring > toggles the lab without remounting it and remembers the choice across navigation and reload",
+              "docs lab integration > renders staged before/after regions, excludes their blocks, and accepts",
+              "docs lab integration > shows stale proposals as conflict rows instead of inline regions",
+              "docs lab integration > uses glass tabs for targeting, disconnected Apply, wash, and Escape",
+              "edit mode save loop > a 409 stale save keeps the draft and shows the stale banner with a reload option",
+              "edit mode save loop > a draft lock held by another session pauses saving (acquire conflict) and 423s direct ops",
+              "edit mode save loop > auto-saves through /api/ops on the debounce alone (no manual action)",
+              "edit mode save loop > navigating away while dirty flushes the old doc without clobbering the new one",
+              "edit mode save loop > saves ops through /api/ops (hash precondition) on Cmd+S, persists to disk, and undoes once from the header",
+              "edit mode save loop > shows the rejected op path and validation message instead of only the generic detail",
+              "edit mode save loop > switching to annotate mode flushes pending edits through the unmount save",
+              "live change events > another actor's ops arrive over SSE, refresh the open bundle, and flash the changed block",
+              "page title rename > commits an edited title as a bundle move (prefix kept) and reports the new path",
+              "page title rename > reverts on Escape and on empty/unchanged titles without touching disk",
+              "shared global theme > follows another tab's change to the shared cache without echoing it back",
+              "shared global theme > keeps the per-project repo theme when the host does not offer global",
+              "shared global theme > lands every project on global, ignoring a stored repo theme id and stale per-project caches",
+              "shared global theme > never writes global after a read failure other than 404",
+              "shared global theme > renders stock when global does not exist yet, and the first change creates it",
+              "shared global theme > writes the explicit save to global",
+              "static public-site shell > keeps the live shell unchanged: no repository link, Export button present",
+              "static public-site shell > renders a read-only reading site with the exported site title and repository link",
+              "style rail list settings > includes list settings in export/import and reset-to-defaults",
+              "style rail navigation > round-trips the complete settings object through export and import",
+              "useDocLabSession > accepts a proposal, applies the returned doc, and makes it undoable",
+              "useDocLabSession > fetches change-sets and overlays the latest kernel event view",
+              "useDocLabSession > keeps the static projection when the kernel session is not live",
+              "useDocLabSession > populates session proposals from the initial fetch",
+              "useDocLabSession > rejects the staged proposal and refreshes the bundle",
+              "useDocLabSession > rejects without resolving the annotation before adding fallback feedback",
+              "useDocLabSession > sends reject feedback through a live kernel session and refetches proposals",
+              "useDocLabSession > surfaces stale accepts and refetches proposals",
+              "useDocLabSession > targets a live kernel accept by transaction id",
+              "useDocLabSession > tracks accept busy state through the applied refetch and records failures",
+              "useDocLabSession > undoes the most recently accepted proposal",
+              "workbench shell > keeps the rail hidden and performs no write-back on a theme-locked serve",
+              "workbench shell > loads repo settings ahead of stale cache and writes annotate edits to the active theme",
+              "workbench shell > renders a legacy overview route and replaces its hash with the section route",
+              "workbench shell > renders the tree, doc header, and AI toolbar toggle",
+              "workbench shell > static mode renders read-only: no mode switcher, no undo, content still renders"
+            ],
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs (failing names united)"
+          },
+          "commands.typecheck": {
+            "exit": 2,
+            "fail": 2,
+            "failing": [
+              "packages/docs-server/src/agent-tools.ts: TS2322: Type '(InteractiveCanvasObject | { id: string; style: CanvasObjectStyle | undefined; author?: string | null | undefined; type: InteractiveCanvasObjectType; ... 8 more ...; layout?: { ...; } | ... 1 more ... | undefined; })[]' is not assignable to type 'InteractiveCanvasObject[]'.",
+              "packages/docs-server/src/agent-tools.ts: TS2322: Type '{ id: string; label?: string | null | undefined; color?: CanvasHue | null | undefined; style?: CanvasConnectionStyle | null | undefined; from: CanvasConnectionEndpoint; to: CanvasConnectionEndpoint; waypoints?: [...][] | ... 1 more ... | undefined; labelPosition?: { ...; } | ... 1 more ... | undefined; arrow?: Canva...' is not assignable to type 'InteractiveCanvasConnection[]'."
+            ],
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
+          }
+        }
       },
       "routes": [
         {
@@ -625,7 +723,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. State isolation recipe of verification/docs-system/README.md with a corpus copied from the repo's docs/ into {tmp}; serve runs --standalone --dev, never the central service. All 7 routes rendered (12 captures); the only blocked requests were 36 to the dead kernel port :47022 (own block, never bound; rendering did not need them); 120 connections seen, all inbound to :47021 or vite->api on :47020; no connection to :4820, :4840 or any other port; verify probes matched the light and dark token values. Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 13 route loads ok, blocked 36x http://127.0.0.1:47022, 120 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
+          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 5d0cf5a; run 2026-10-05 21:05 CDT, proof JSON in rollout/tooling/r2-a1/prove-writes): sandboxed (deny-by-default loopback: connect and listen only on its block 47020-47029, owner ports never; writes denied everywhere but --root, the run's temp dir and device files; no .env reads), egress sampled from before spawn (76 lsof samples, 0 failed; 122 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 13/13 route loads (light and dark) rendered; the guard blocked 36x http://127.0.0.1:47022; stopped clean. No separate write check this round: the sandbox denies every write outside --root and the run's temp dir.",
           "date": "2026-10-05"
         }
       },
@@ -694,15 +792,19 @@
         },
         {
           "what": "baseline test failures",
-          "reason": "at the mirror owner HEAD the safe suite (30 files, serve-routes and live-smoke excluded) has 54 failing tests of 396 (workbench shell, useDocLabSession, style rail export/import, static public-site shell and others time out at about 1000 ms); the same 54 failed before serve-routes left the set (54 of 425) and fail under the normal environment, so the sandbox denies nothing they need; the tests gate compares against this baseline"
+          "reason": "the 54 failing tests of 396 (workbench shell, useDocLabSession, style rail export/import, static public-site shell and others time out at about 1000 ms) fail at the mirror's owner HEAD under the normal environment too, so the sandbox denies nothing they need; tests.baselines[\"tests.safe[0]\"] names all 54, so test:apps fails only a new one"
         },
         {
           "what": "literal floor 14",
           "reason": "allowlisted: the PDF export stylesheet and page-number color (export output), the hidden color-control code in style-rail-panes.tsx, the grain mask gradient, and the legacy stock-metrics constant"
         },
         {
-          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
-          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 1 in 63 s (342 pass, 54 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
+          "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds twice, under the final sandbox (rollout-r2-a1 5d0cf5a: writes only in the app's checked checkouts and the run tmp, loopback except owner and already-listening ports, no .env reads) with the write check (git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): run 1: exit 1, 342 pass, 54 fail in 67.7 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2: exit 1, 342 pass, 54 fail in 67.3 s, 0 unexpected writes, 0 cache writes, 0 strays. tests.baselines[\"tests.safe[0]\"] records the result (failing names of both runs united); reports in rollout/tooling/fix-r2c/final-1 and final-2"
+        },
+        {
+          "what": "typecheck baseline errors",
+          "reason": "bun run test:apps --no-tests --commands typecheck (2026-10-05, final sandbox, no network port): exit 2 with 2 tsc error(s) at the owner HEAD, outside the app's own code: packages/docs-server/src/agent-tools.ts: TS2322: Type '(InteractiveCanvasObject | { id: string; style: CanvasObjectStyle | undefined; author?: string | null | undefined; type: InteractiveCanvasObjectType; ... 8 more ...; layout?: { ...; } | ... 1 more ... | undefined; })[]' is not assignable to type 'InteractiveCanvasObject[]'. | packages/docs-server/src/agent-tools.ts: TS2322: Type '{ id: string;; tests.baselines[\"commands.typecheck\"] records them, so only a new error fails test:apps"
         }
       ]
     },
@@ -812,7 +914,26 @@
             "cmd": "make studio-web",
             "reason": "also starts the canvas-agent harness on the owner's :4820"
           }
-        ]
+        ],
+        "baselines": {
+          "tests.safe[0]": {
+            "exit": 1,
+            "pass": 77,
+            "fail": 2,
+            "errors": 0,
+            "failing": [
+              "withRootPageFrame > parents roots without disturbing existing nesting",
+              "withRootPageFrame > seeds the conventional background page frame"
+            ],
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs (failing names united)"
+          },
+          "commands.typecheck": {
+            "exit": 0,
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
+          }
+        }
       },
       "routes": [
         {
@@ -885,7 +1006,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. All 6 routes rendered light and dark (12 captures); the guard blocked 4 requests to localhost:4803 (the owner's docs-system dev API, asked for linked boards by the boards route only; rendering did not need them, and the verify route gallery makes none); 86 connections seen, all inbound to :47030; no connection to :4820 or any other port; the canvas repo stayed clean (CANVAS_DIR copy in {tmp}). Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 12 route loads ok, blocked 4x http://localhost:4803, 86 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
+          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 5d0cf5a; run 2026-10-05 21:06 CDT, proof JSON in rollout/tooling/r2-a1/prove-writes): sandboxed (deny-by-default loopback: connect and listen only on its block 47030-47039, owner ports never; writes denied everywhere but --root, the run's temp dir and device files; no .env reads), egress sampled from before spawn (58 lsof samples, 0 failed; 86 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 12/12 route loads (light and dark) rendered; the guard blocked 4x http://localhost:4803; stopped clean. No separate write check this round: the sandbox denies every write outside --root and the run's temp dir.",
           "date": "2026-10-05"
         }
       },
@@ -942,15 +1063,15 @@
         },
         {
           "what": "baseline test failures",
-          "reason": "at the mirror's owner HEAD `bun test packages/studio` has 2 failing tests (withRootPageFrame), the same under the profile env and the normal env; the tests gate compares against this baseline"
+          "reason": "the 2 failing tests (withRootPageFrame) fail at the mirror's owner HEAD under the normal environment too; tests.baselines[\"tests.safe[0]\"] names them, so test:apps fails only a new one"
         },
         {
           "what": "allowlist",
           "reason": "the swatch checkerboard in src/index.css:300-305 (transparency art behind color swatches, 5 hits) and the color-input fallback #000000 in src/style/StyleRail.tsx:514 (color-control code kept per owner decision; <input type=color> needs a hex value)"
         },
         {
-          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
-          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 1 in 1 s (77 pass, 2 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
+          "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds twice, under the final sandbox (rollout-r2-a1 5d0cf5a: writes only in the app's checked checkouts and the run tmp, loopback except owner and already-listening ports, no .env reads) with the write check (git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): run 1: exit 1, 77 pass, 2 fail in 6.5 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2: exit 1, 77 pass, 2 fail in 6.1 s, 0 unexpected writes, 0 cache writes, 0 strays. tests.baselines[\"tests.safe[0]\"] records the result (failing names of both runs united); reports in rollout/tooling/fix-r2c/final-1 and final-2"
         }
       ]
     },
@@ -1069,7 +1190,37 @@
             "cmd": "bun tools/dev-icons/generate.ts --vendor",
             "reason": "fetches npm tarballs over the network and rewrites the generated glyph files"
           }
-        ]
+        ],
+        "baselines": {
+          "tests.safe[0]": {
+            "exit": 1,
+            "pass": 1186,
+            "fail": 13,
+            "errors": 9,
+            "failing": [
+              "AnchorDots (P3 — D5/D15) > keeps the connector cursor token confined to CanvasStage's connector-mode cursor",
+              "editor: connector color flyout (selection toolbar) > selecting a connector and picking a swatch patches {color} onto the connection",
+              "import boundaries > stage/editor/features/ slices do not import sideways except snapping service imports and current section-fit exceptions",
+              "outline-anchor-baseline > matches every recorded connection-cascade result exactly",
+              "unhandled: packages/canvas/src/connectors/__tests__/routing.astar.test.ts: error: Cannot find module '../../../../../canvases/v2-flow-interactive.canvas.json' from '{root}/codecaine/core/canvas/packages/canvas/src/connectors/__tests__/routing.astar.test.ts'",
+              "unhandled: packages/canvas/src/stage/__tests__/below-slot-fixture-text.test.tsx: error: Cannot find module '../../../../../canvases/v2-flow-elements.canvas.json' from '{root}/codecaine/core/canvas/packages/canvas/src/stage/__tests__/below-slot-fixture-text.test.tsx'",
+              "unhandled: packages/canvas/src/stage/__tests__/w2-render-smoke.test.tsx: error: Cannot find module '../../../../../canvases/v2-flow-elements.canvas.json' from '{root}/codecaine/core/canvas/packages/canvas/src/stage/__tests__/w2-render-smoke.test.tsx'",
+              "unhandled: packages/canvas/src/stage/editor/__tests__/hotkeys.test.tsx: error: Cannot find module '../../../../../../canvases/synthetic.canvas.json' from '{root}/codecaine/core/canvas/packages/canvas/src/stage/editor/__tests__/hotkeys.test.tsx'",
+              "unhandled: packages/canvas/src/stage/editor/__tests__/viewer-view-crop.test.tsx: error: Cannot find module '../../../../../../canvases/synthetic.canvas.json' from '{root}/codecaine/core/canvas/packages/canvas/src/stage/editor/__tests__/viewer-view-crop.test.tsx'",
+              "unhandled: packages/canvas/src/stage/editor/__tests__/viewport.test.ts: error: Cannot find module '../../../../../../canvases/synthetic.canvas.json' from '{root}/codecaine/core/canvas/packages/canvas/src/stage/editor/__tests__/viewport.test.ts'",
+              "unhandled: packages/canvas/src/state/__tests__/schema-and-actions.test.tsx: error: Cannot find module '../../../../../canvases/synthetic.canvas.json' from '{root}/codecaine/core/canvas/packages/canvas/src/state/__tests__/schema-and-actions.test.tsx'",
+              "unhandled: packages/canvas/src/state/__tests__/schema.waypoints.test.ts: error: Cannot find module '../../../../../canvases/synthetic.canvas.json' from '{root}/codecaine/core/canvas/packages/canvas/src/state/__tests__/schema.waypoints.test.ts'",
+              "unhandled: packages/canvas/src/state/__tests__/w2-sections-and-shapes.test.ts: error: Cannot find module '../../../../../canvases/v2-flow-elements.canvas.json' from '{root}/codecaine/core/canvas/packages/canvas/src/state/__tests__/w2-sections-and-shapes.test.ts'"
+            ],
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs (failing names united)"
+          },
+          "commands.typecheck": {
+            "exit": 0,
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
+          }
+        }
       },
       "routes": [
         {
@@ -1132,7 +1283,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. All 4 routes rendered light and dark through the studio host (8 captures); 0 blocked requests; 58 connections seen, all inbound to :47040; no foreign connection; the canvas repo stayed clean. Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 8 route loads ok, 0 blocked requests, 58 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
+          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 5d0cf5a; run 2026-10-05 21:06 CDT, proof JSON in rollout/tooling/r2-a1/prove-writes): sandboxed (deny-by-default loopback: connect and listen only on its block 47040-47049, owner ports never; writes denied everywhere but --root, the run's temp dir and device files; no .env reads), egress sampled from before spawn (39 lsof samples, 0 failed; 58 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 8/8 route loads (light and dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox denies every write outside --root and the run's temp dir.",
           "date": "2026-10-05"
         }
       },
@@ -1177,7 +1328,7 @@
       "exceptions": [
         {
           "what": "baseline test failures",
-          "reason": "at the mirror's owner HEAD `bun test packages/canvas/src` has 13 failing tests and 9 errors (import boundaries, outline-anchor baseline, AnchorDots cursor, connector color flyout ...), the same under the profile env and the normal env; the tests gate compares against this baseline"
+          "reason": "13 failures at the mirror's owner HEAD under the normal environment too: 4 tests (import boundaries, outline-anchor baseline, AnchorDots cursor, connector color flyout) and 9 files that cannot load ../canvases/*.canvas.json fixtures absent from the checkout (named \"unhandled: <file>: error: Cannot find module ...\"); tests.baselines[\"tests.safe[0]\"] names all 13, so test:apps fails only a new one"
         },
         {
           "what": "rendered through canvas studio's dev server",
@@ -1204,8 +1355,8 @@
           "reason": "packages/studio/vite.config.ts:59 mounts createAgentProxyHandler({}) with no target; server/agent-proxy.ts:21 (AGENT_PATH_PATTERN: /api/agent, /api/agent/*, /api/agent?..., /api/canvases/<id>/agent[/...]) pipes method, headers and body to DEFAULT_TARGET http://127.0.0.1:4820 (agent-proxy.ts:23); no env var, flag or config overrides the target. These are the only proxied prefixes in the dev server. No registry route, step or verify probe requests them (checked from the per-route request log); the AI panel that calls them is never opened. The run sandbox (decision 12) denies the connection to :4820 as the hard boundary"
         },
         {
-          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
-          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 1 in 6 s (1186 pass, 13 fail, 9 errors); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
+          "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds twice, under the final sandbox (rollout-r2-a1 5d0cf5a: writes only in the app's checked checkouts and the run tmp, loopback except owner and already-listening ports, no .env reads) with the write check (git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): run 1: exit 1, 1186 pass, 13 fail, 9 errors in 10.3 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2: exit 1, 1186 pass, 13 fail, 9 errors in 9.7 s, 0 unexpected writes, 0 cache writes, 0 strays. tests.baselines[\"tests.safe[0]\"] records the result (failing names of both runs united); reports in rollout/tooling/fix-r2c/final-1 and final-2"
         }
       ]
     },
@@ -1320,7 +1471,22 @@
             "cmd": "bun run harness / make traces",
             "reason": "starts the harness on :4820 (an owner port), writes canvas/.agent-kernel and calls LLMs"
           }
-        ]
+        ],
+        "baselines": {
+          "tests.safe[0]": {
+            "exit": 0,
+            "pass": 4,
+            "fail": 0,
+            "errors": 0,
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs"
+          },
+          "commands.typecheck": {
+            "exit": 0,
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
+          }
+        }
       },
       "routes": [
         {
@@ -1416,8 +1582,8 @@
           "reason": "tsconfig pins React types to ./node_modules/@types/react, which the mirror's canvas-agent/node_modules does not hold"
         },
         {
-          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
-          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 0 s (4 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
+          "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds twice, under the final sandbox (rollout-r2-a1 5d0cf5a: writes only in the app's checked checkouts and the run tmp, loopback except owner and already-listening ports, no .env reads) with the write check (git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): run 1: exit 0, 4 pass, 0 fail in 5.4 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2: exit 0, 4 pass, 0 fail in 5.3 s, 0 unexpected writes, 0 cache writes, 0 strays. tests.baselines[\"tests.safe[0]\"] records the result (failing names of both runs united); reports in rollout/tooling/fix-r2c/final-1 and final-2"
         }
       ]
     },
@@ -1531,7 +1697,27 @@
             "cmd": "bun src/cli.ts (dev, daemon)",
             "reason": "the supervisor reads ~/.local/state/codecaine-docs/background.json, writes its registry and token, and binds the owner's :4820"
           }
-        ]
+        ],
+        "baselines": {
+          "tests.safe[0]": {
+            "exit": 0,
+            "pass": 4,
+            "fail": 0,
+            "errors": 0,
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs"
+          },
+          "commands.typecheck": {
+            "exit": 2,
+            "fail": 2,
+            "failing": [
+              "../docs-server/src/agent-tools.ts: TS2322: Type '(InteractiveCanvasObject | { id: string; style: CanvasObjectStyle | undefined; type: InteractiveCanvasObjectType; ... 9 more ...; author?: string | ... 1 more ... | undefined; })[]' is not assignable to type 'InteractiveCanvasObject[]'.",
+              "../docs-server/src/agent-tools.ts: TS2322: Type '{ id: string; label?: string | null | undefined; color?: CanvasHue | null | undefined; style?: CanvasConnectionStyle | null | undefined; from: CanvasConnectionEndpoint; to: CanvasConnectionEndpoint; waypoints?: [...][] | ... 1 more ... | undefined; labelPosition?: { ...; } | ... 1 more ... | undefined; arrow?: Canva...' is not assignable to type 'InteractiveCanvasConnection[]'."
+            ],
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
+          }
+        }
       },
       "routes": [
         {
@@ -1574,7 +1760,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. The fixture server rendered the real directoryHtml; the home route rendered in dark (the only theme of a dark-first surface); 0 blocked requests (the page's /api polls hit the fixture); 5 connections seen, all inbound to :47060; no foreign connection. Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 1 route loads ok, 0 blocked requests, 5 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
+          "method": "scripts/registry-prove.ts under the final runner (rollout-r2-a1 5d0cf5a merged into rollout-r2-c), re-run 2026-10-05 21:37 CDT by R2-C after the fixture's font change (49e8e71), proof JSON in rollout/tooling/fix-r2c/prove-fixtures: sandboxed (deny-by-default loopback: connect and listen only on its block 47060-47069, owner ports never; writes denied everywhere but --root, the run's temp dir and device files; no .env reads), egress sampled from before spawn (8 lsof samples, 0 failed; 5 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 1/1 route loads (dark) rendered with no console error; the guard blocked nothing; stopped clean. Write check around the run (test:apps' check: git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): 0 unexpected, 0 cache writes.",
           "date": "2026-10-05"
         }
       },
@@ -1618,8 +1804,12 @@
           "reason": "apps/fixtures/docs-mcp-home/serve.ts renders the real directoryHtml with 4 synthetic projects and answers the page's /api/projects, /api/discovery and /api/status polls in memory; the supervisor (which reads ~/.local/state and binds :4820) is never imported"
         },
         {
-          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
-          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 0 s (4 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
+          "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds twice, under the final sandbox (rollout-r2-a1 5d0cf5a: writes only in the app's checked checkouts and the run tmp, loopback except owner and already-listening ports, no .env reads) with the write check (git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): run 1: exit 0, 4 pass, 0 fail in 5.3 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2: exit 0, 4 pass, 0 fail in 5.3 s, 0 unexpected writes, 0 cache writes, 0 strays. tests.baselines[\"tests.safe[0]\"] records the result (failing names of both runs united); reports in rollout/tooling/fix-r2c/final-1 and final-2"
+        },
+        {
+          "what": "typecheck baseline errors",
+          "reason": "bun run test:apps --no-tests --commands typecheck (2026-10-05, final sandbox, no network port): exit 2 with 2 tsc error(s) at the owner HEAD, outside the app's own code: ../docs-server/src/agent-tools.ts: TS2322: Type '(InteractiveCanvasObject | { id: string; style: CanvasObjectStyle | undefined; type: InteractiveCanvasObjectType; ... 9 more ...; author?: string | ... 1 more ... | undefined; })[]' is not assignable to type 'InteractiveCanvasObject[]'. | ../docs-server/src/agent-tools.ts: TS2322: Type '{ id: string; label?: string | null | undefined; color?: Canvas; tests.baselines[\"commands.typecheck\"] records them, so only a new error fails test:apps"
         }
       ]
     },
@@ -1732,7 +1922,30 @@
             "cmd": "bun test (whole suite) / bun test src/__tests__",
             "reason": "running src/__tests__ as a set opened TLS connections to 162.159.128.61:443 and 172.66.147.243:443 (Cloudflare) in two profile runs; no single file reproduces it alone, so the source is not yet pinned. The other 30 test files made no outside connection"
           }
-        ]
+        ],
+        "baselines": {
+          "tests.safe[0]": {
+            "exit": 1,
+            "pass": 351,
+            "fail": 1,
+            "errors": 0,
+            "failing": [
+              "DocEditor save boundary > the DOM-mutation + input-event pipeline reaches ProseMirror state (dom-sync)"
+            ],
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs (failing names united)"
+          },
+          "commands.typecheck": {
+            "exit": 2,
+            "fail": 2,
+            "failing": [
+              "packages/docs-server/src/agent-tools.ts: TS2322: Type '(InteractiveCanvasObject | { id: string; style: CanvasObjectStyle | undefined; author?: string | null | undefined; type: InteractiveCanvasObjectType; ... 8 more ...; layout?: { ...; } | ... 1 more ... | undefined; })[]' is not assignable to type 'InteractiveCanvasObject[]'.",
+              "packages/docs-server/src/agent-tools.ts: TS2322: Type '{ id: string; label?: string | null | undefined; color?: CanvasHue | null | undefined; style?: CanvasConnectionStyle | null | undefined; from: CanvasConnectionEndpoint; to: CanvasConnectionEndpoint; waypoints?: [...][] | ... 1 more ... | undefined; labelPosition?: { ...; } | ... 1 more ... | undefined; arrow?: Canva...' is not assignable to type 'InteractiveCanvasConnection[]'."
+            ],
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
+          }
+        }
       },
       "routes": [
         {
@@ -1817,7 +2030,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. Same isolation recipe as docs-workbench (fixture launcher, corpus copied into {tmp}, --standalone --dev, dead kernel port). All 6 playground routes rendered with ?theme=light and ?theme=dark (12 captures); 0 blocked requests; 91 connections seen, all inbound to :47071 or vite->api on :47070; no foreign connection; verify probes matched the light and dark token values. Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 14 route loads ok, 0 blocked requests, 105 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
+          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 5d0cf5a; run 2026-10-05 21:06 CDT, proof JSON in rollout/tooling/r2-a1/prove-writes): sandboxed (deny-by-default loopback: connect and listen only on its block 47070-47079, owner ports never; writes denied everywhere but --root, the run's temp dir and device files; no .env reads), egress sampled from before spawn (65 lsof samples, 0 failed; 106 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 14/14 route loads (light and dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox denies every write outside --root and the run's temp dir.",
           "date": "2026-10-05"
         }
       },
@@ -1876,8 +2089,16 @@
           "reason": "web/vite.config.ts:45-50 bakes them into the open-in-studio links (defaults are the owner's :3999 and :3998); the profile points them at 47073 and 47074, named ports nothing binds, so a click reaches nobody and the guard counts it as expected-blocked"
         },
         {
-          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
-          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 3 s (352 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
+          "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds twice, under the final sandbox (rollout-r2-a1 5d0cf5a: writes only in the app's checked checkouts and the run tmp, loopback except owner and already-listening ports, no .env reads) with the write check (git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): run 1: exit 0, 352 pass, 0 fail in 7.7 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2: exit 1, 351 pass, 1 fail in 17.6 s, 0 unexpected writes, 0 cache writes, 0 strays. tests.baselines[\"tests.safe[0]\"] records the result (failing names of both runs united); reports in rollout/tooling/fix-r2c/final-1 and final-2"
+        },
+        {
+          "what": "typecheck baseline errors",
+          "reason": "bun run test:apps --no-tests --commands typecheck (2026-10-05, final sandbox, no network port): exit 2 with 2 tsc error(s) at the owner HEAD, outside the app's own code: packages/docs-server/src/agent-tools.ts: TS2322: Type '(InteractiveCanvasObject | { id: string; style: CanvasObjectStyle | undefined; author?: string | null | undefined; type: InteractiveCanvasObjectType; ... 8 more ...; layout?: { ...; } | ... 1 more ... | undefined; })[]' is not assignable to type 'InteractiveCanvasObject[]'. | packages/docs-server/src/agent-tools.ts: TS2322: Type '{ id: string;; tests.baselines[\"commands.typecheck\"] records them, so only a new error fails test:apps"
+        },
+        {
+          "what": "flaky baseline failure",
+          "reason": "DocEditor save boundary > the DOM-mutation + input-event pipeline reaches ProseMirror state (dom-sync) timed out at 10 s in 1 of 2 sandboxed runs (352/352 in the other); tests.baselines[\"tests.safe[0]\"] lists it, so the flake does not fail test:apps while any other failure does"
         }
       ]
     },
@@ -1979,7 +2200,17 @@
             "cmd": "bun --no-env-file test src",
             "cwd": "codecaine/core/docs-system/packages/docs-publish"
           }
-        ]
+        ],
+        "baselines": {
+          "tests.safe[0]": {
+            "exit": 0,
+            "pass": 11,
+            "fail": 0,
+            "errors": 0,
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs"
+          }
+        }
       },
       "routes": [],
       "runProfile": {
@@ -2016,8 +2247,8 @@
           "reason": "the publish build output (gitignored); every token change needs a rebuild, npm pack and a version bump in personal-site"
         },
         {
-          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
-          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 1 s (11 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
+          "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds twice, under the final sandbox (rollout-r2-a1 5d0cf5a: writes only in the app's checked checkouts and the run tmp, loopback except owner and already-listening ports, no .env reads) with the write check (git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): run 1: exit 0, 11 pass, 0 fail in 5.4 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2: exit 0, 11 pass, 0 fail in 5.4 s, 0 unexpected writes, 0 cache writes, 0 strays. tests.baselines[\"tests.safe[0]\"] records the result (failing names of both runs united); reports in rollout/tooling/fix-r2c/final-1 and final-2"
         }
       ]
     },
@@ -2123,7 +2354,22 @@
             "cmd": "bun --no-env-file test ./packages/viewer-shell/src",
             "cwd": "codecaine/core/agent-kernel"
           }
-        ]
+        ],
+        "baselines": {
+          "tests.safe[0]": {
+            "exit": 0,
+            "pass": 35,
+            "fail": 0,
+            "errors": 0,
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs"
+          },
+          "commands.typecheck": {
+            "exit": 0,
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
+          }
+        }
       },
       "routes": [
         {
@@ -2179,7 +2425,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. Through simple-research-kernel's Vite 5 frontend with API_TARGET at the dead port :47091 (own block, never bound). Both routes rendered light and dark (4 captures; the console errors are the failed API calls); 0 blocked browser requests; 30 connections seen, all inbound to :47090; no connection outside the run's own ports; the agent-kernel repo stayed clean. Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 6 route loads ok, 0 blocked requests, 47 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
+          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 5d0cf5a; run 2026-10-05 21:07 CDT, proof JSON in rollout/tooling/r2-a1/prove-writes): sandboxed (deny-by-default loopback: connect and listen only on its block 47090-47099, owner ports never; writes denied everywhere but --root, the run's temp dir and device files; no .env reads), egress sampled from before spawn (33 lsof samples, 0 failed; 45 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 6/6 route loads (light and dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox denies every write outside --root and the run's temp dir.",
           "date": "2026-10-05"
         }
       },
@@ -2232,8 +2478,8 @@
           "reason": "the research-rail route has no solid viewer-shell panel (the rail is bg-card/85, its sections bg-background/30, and alpha never equals a token); the trace workspace list (workspace/KernelTraceWorkspace.tsx:255-256, bg-card) is one. Body text is the shell's own color (main.research-style-shell, colored by viewer-shell's style vars, style/style-settings.ts:324; host element examples/simple-research-kernel/src/_layouts/ResearchKernelLayout.tsx:72); the rail's hex inputs are color controls the owner decision hides, so they are not probed"
         },
         {
-          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
-          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 0 s (35 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
+          "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds twice, under the final sandbox (rollout-r2-a1 5d0cf5a: writes only in the app's checked checkouts and the run tmp, loopback except owner and already-listening ports, no .env reads) with the write check (git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): run 1: exit 0, 35 pass, 0 fail in 5.3 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2: exit 0, 35 pass, 0 fail in 5.2 s, 0 unexpected writes, 0 cache writes, 0 strays. tests.baselines[\"tests.safe[0]\"] records the result (failing names of both runs united); reports in rollout/tooling/fix-r2c/final-1 and final-2"
         }
       ]
     },
@@ -2347,7 +2593,22 @@
             "cmd": "bun test ./src/trace-viewer/detail-panel/DetailShell.overflow.test.tsx ./src/trace-viewer/detail-panel/renderers/hierarchy-live-review.test.tsx ./src/trace-viewer/detail-panel/renderers/state-outline.test.ts ./src/trace-viewer/detail-panel/state-tab-postures.test.tsx",
             "reason": "open the owner's live kernel trace DB canvas/.agent-kernel/trace.db (read-only, WAL) through reviewed-capture.test-helper.ts:29 and DetailShell.overflow.test.tsx:21-23, state-tab-postures.test.tsx:45-47, renderers/hierarchy-live-review.test.tsx:35-37, renderers/state-outline.test.ts:18-20; real trace data is never test input"
           }
-        ]
+        ],
+        "baselines": {
+          "tests.safe[0]": {
+            "exit": 0,
+            "pass": 318,
+            "fail": 0,
+            "errors": 0,
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs"
+          },
+          "commands.typecheck": {
+            "exit": 0,
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
+          }
+        }
       },
       "routes": [],
       "runProfile": {
@@ -2385,8 +2646,8 @@
           "reason": "tests.safe lists the 34 test files that open no trace data; the 4 files that read canvas/.agent-kernel/trace.db are in tests.unsafe, so a new test file is not run until it is checked and listed"
         },
         {
-          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
-          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 1 s (318 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
+          "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds twice, under the final sandbox (rollout-r2-a1 5d0cf5a: writes only in the app's checked checkouts and the run tmp, loopback except owner and already-listening ports, no .env reads) with the write check (git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): run 1: exit 0, 318 pass, 0 fail in 6.3 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2: exit 0, 318 pass, 0 fail in 6.0 s, 0 unexpected writes, 0 cache writes, 0 strays. tests.baselines[\"tests.safe[0]\"] records the result (failing names of both runs united); reports in rollout/tooling/fix-r2c/final-1 and final-2"
         }
       ]
     },
@@ -2496,7 +2757,22 @@
             "cmd": "bun run dev / bun run api",
             "reason": "the API writes .agent-kernel/, .pi-agent and research-memory/ into the example folder (no temp-dir flag) and POST /api/run calls an LLM"
           }
-        ]
+        ],
+        "baselines": {
+          "tests.safe[0]": {
+            "exit": 0,
+            "pass": 7,
+            "fail": 0,
+            "errors": 0,
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs"
+          },
+          "commands.typecheck": {
+            "exit": 0,
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
+          }
+        }
       },
       "routes": [
         {
@@ -2557,7 +2833,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. UI only, API_TARGET at the dead port :47111 (own block, never bound), so the API that writes .agent-kernel/ never starts. All 4 routes rendered light and dark (8 captures; console errors are the failed API calls); 0 blocked browser requests; 61 connections seen, all inbound to :47110; no connection outside the run's own ports.",
+          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 5d0cf5a; run 2026-10-05 21:07 CDT, proof JSON in rollout/tooling/r2-a1/prove-writes): sandboxed (deny-by-default loopback: connect and listen only on its block 47110-47119, owner ports never; writes denied everywhere but --root, the run's temp dir and device files; no .env reads), egress sampled from before spawn (39 lsof samples, 0 failed; 60 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 8/8 route loads (light and dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox denies every write outside --root and the run's temp dir.",
           "date": "2026-10-05"
         }
       },
@@ -2601,8 +2877,8 @@
           "reason": "API_TARGET points the Vite proxy at a dead port in this app's block; pages render their layout, sidebar and rail with the API error state"
         },
         {
-          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
-          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 0 s (7 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
+          "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds twice, under the final sandbox (rollout-r2-a1 5d0cf5a: writes only in the app's checked checkouts and the run tmp, loopback except owner and already-listening ports, no .env reads) with the write check (git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): run 1: exit 0, 7 pass, 0 fail in 5.2 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2: exit 0, 7 pass, 0 fail in 5.3 s, 0 unexpected writes, 0 cache writes, 0 strays. tests.baselines[\"tests.safe[0]\"] records the result (failing names of both runs united); reports in rollout/tooling/fix-r2c/final-1 and final-2"
         }
       ]
     },
@@ -2709,7 +2985,22 @@
             "cmd": "bun --no-env-file test tests",
             "cwd": "codecaine/core/prompt-kit/packages/prompt-kit"
           }
-        ]
+        ],
+        "baselines": {
+          "tests.safe[0]": {
+            "exit": 0,
+            "pass": 749,
+            "fail": 0,
+            "errors": 0,
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs"
+          },
+          "commands.typecheck": {
+            "exit": 0,
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
+          }
+        }
       },
       "routes": [],
       "runProfile": {
@@ -2746,8 +3037,8 @@
           "reason": "audit: migrate last; the editor is effectively dark-only today"
         },
         {
-          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
-          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 4 s (749 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
+          "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds twice, under the final sandbox (rollout-r2-a1 5d0cf5a: writes only in the app's checked checkouts and the run tmp, loopback except owner and already-listening ports, no .env reads) with the write check (git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): run 1: exit 0, 749 pass, 0 fail in 8.8 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2: exit 0, 749 pass, 0 fail in 9.8 s, 0 unexpected writes, 0 cache writes, 0 strays. tests.baselines[\"tests.safe[0]\"] records the result (failing names of both runs united); reports in rollout/tooling/fix-r2c/final-1 and final-2"
         }
       ]
     },
@@ -2858,7 +3149,14 @@
             "cmd": "bun run install:launcher / scripts/dev-launch.sh",
             "reason": "write ~/Applications, ~/Desktop and ~/.local/state/system-view"
           }
-        ]
+        ],
+        "baselines": {
+          "commands.typecheck": {
+            "exit": 0,
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
+          }
+        }
       },
       "routes": [
         {
@@ -3069,7 +3367,22 @@
             "cmd": "npm run docs-theme:sync",
             "reason": "copies from the owner's ~/.local/state/codecaine-docs/themes"
           }
-        ]
+        ],
+        "baselines": {
+          "tests.safe[0]": {
+            "exit": 0,
+            "pass": 92,
+            "fail": 0,
+            "errors": 0,
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs"
+          },
+          "commands.typecheck": {
+            "exit": 0,
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
+          }
+        }
       },
       "routes": [
         {
@@ -3127,7 +3440,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "apps/fixtures/personal-site/serve.ts: Vite 7.3.3 JS API with configFile false; plugins sitePages, inlineLandingLoader, externalLinks, @tailwindcss/vite and resume-pages.mjs's resumeContent transform; no devContentEditor, resumePages, watchBlog/generateBlog, writingDraftPreview or feedback handlers; cacheDir in {tmp}, watcher and dep discovery off, GET/HEAD only (POST /__dev-content-edit, /api/logo-feedback, /api/landing-feedback answer 405; /blog/, /sitemap.xml, /robots.txt, /blog/drafts/ answer 404). First proof by the fixture's author: 10 loads, 16 distinct URLs all on 127.0.0.1:47140, 0 console errors, 61 sockets (1 listener, 60 inbound), 0 foreign; git status and find -newer (node_modules/.vite and .vite-temp included) unchanged. Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 10 route loads ok, 0 blocked requests, 60 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
+          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 5d0cf5a; run 2026-10-05 21:07 CDT, proof JSON in rollout/tooling/r2-a1/prove-writes): sandboxed (deny-by-default loopback: connect and listen only on its block 47140-47149, owner ports never; writes denied everywhere but --root, the run's temp dir and device files; no .env reads), egress sampled from before spawn (36 lsof samples, 0 failed; 60 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 10/10 route loads (light and dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox denies every write outside --root and the run's temp dir.",
           "date": "2026-10-05"
         }
       },
@@ -3196,8 +3509,8 @@
           "reason": "tsc -b (the app's build step) can write tsconfig.tsbuildinfo into the checkout; the project is a single non-composite tsconfig with noEmit (tsconfig.json:16), so `tsc -p tsconfig.json --noEmit` checks the same files and writes nothing"
         },
         {
-          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
-          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 2 s (Tests  92 passed (92)); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
+          "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds twice, under the final sandbox (rollout-r2-a1 5d0cf5a: writes only in the app's checked checkouts and the run tmp, loopback except owner and already-listening ports, no .env reads) with the write check (git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): run 1: exit 0, 92 pass, 0 fail in 6.4 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2: exit 0, 92 pass, 0 fail in 6.9 s, 0 unexpected writes, 0 cache writes, 0 strays. tests.baselines[\"tests.safe[0]\"] records the result (failing names of both runs united); reports in rollout/tooling/fix-r2c/final-1 and final-2"
         }
       ]
     },
@@ -3301,7 +3614,17 @@
             "cmd": "PYTHONDONTWRITEBYTECODE=1 python3 manager/test_server.py",
             "cwd": "lascari-ai/agent-skills"
           }
-        ]
+        ],
+        "baselines": {
+          "tests.safe[0]": {
+            "exit": 0,
+            "pass": 10,
+            "fail": 0,
+            "errors": 0,
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs"
+          }
+        }
       },
       "routes": [
         {
@@ -3384,7 +3707,7 @@
         },
         "proof": {
           "status": "proven",
-          "method": "scripts/registry-prove.ts: app-runner startApp (allowUnproven, only for proving) with env -i style allowlisted env, temp HOME/XDG, profile ports; every route in every theme loaded in guardedContext (aborts and logs requests to local ports the run did not start and to non-loopback hosts); lsof -nP -a -p <run pids> -i sampled every 250 ms; stop() confirmed the ports free. python3 manager/server.py --root {tmp}/skills (synthetic catalog copied from apps/fixtures; HOME and the agent links inside {tmp}). All 5 routes rendered light and dark (10 captures, no console errors once the runner applied its determinism CSS under the CSP); 0 blocked requests; no foreign connection; the agent-skills repo stayed clean. Re-proved 2026-10-05 (fix-c1) through scripts/registry-prove.ts with a write check around it: 10 route loads ok, 0 blocked requests, 1 connections, 0 foreign, stopped clean; git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root and run.cwd: no new file outside node_modules. The runner did not yet wrap the app in the OS sandbox (fix-a1 wires sandbox-exec into startApp).",
+          "method": "scripts/registry-prove.ts under the final runner (design-system/rollout-r2-a1 5d0cf5a; run 2026-10-05 21:08 CDT, proof JSON in rollout/tooling/r2-a1/prove-writes): sandboxed (deny-by-default loopback: connect and listen only on its block 47150-47159, owner ports never; writes denied everywhere but --root, the run's temp dir and device files; no .env reads), egress sampled from before spawn (36 lsof samples, 0 failed; 1 sockets seen, 0 foreign), selectors only (each probe selector matches one element; verify:apps compares the values). 10/10 route loads (light and dark) rendered; the guard blocked nothing; stopped clean. No separate write check this round: the sandbox denies every write outside --root and the run's temp dir.",
           "date": "2026-10-05"
         }
       },
@@ -3428,8 +3751,8 @@
           "reason": "apps/fixtures/agent-skills-manager/skills (3 invented skills, agents under the temp HOME) replaces the repo's real catalog and the owner's ~/.claude, ~/.codex skill links; writes happen only on POST /api/apply, which no route triggers"
         },
         {
-          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
-          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 1 s (Ran 10 tests in 0.195s, OK); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
+          "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
+          "reason": "bun run test:apps --root /Users/Ford/workspace-ds twice, under the final sandbox (rollout-r2-a1 5d0cf5a: writes only in the app's checked checkouts and the run tmp, loopback except owner and already-listening ports, no .env reads) with the write check (git status of the app's checkouts pinned to their git dirs, find -newer/-cnewer, .git entries): run 1: exit 0, 10 pass, 0 fail in 5.4 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2: exit 0, 10 pass, 0 fail in 5.5 s, 0 unexpected writes, 0 cache writes, 0 strays. tests.baselines[\"tests.safe[0]\"] records the result (failing names of both runs united); reports in rollout/tooling/fix-r2c/final-1 and final-2"
         }
       ]
     },
@@ -3532,7 +3855,14 @@
             "cmd": "npm run dev / npm run build",
             "reason": "Clerk keyless mode calls Clerk's API and writes .clerk/; app pages need Postgres on :4300 and the FastAPI backend on :4200 with LLM keys"
           }
-        ]
+        ],
+        "baselines": {
+          "commands.typecheck": {
+            "exit": 0,
+            "date": "2026-10-05",
+            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
+          }
+        }
       },
       "routes": [
         {
@@ -3782,8 +4112,8 @@
           "reason": "no standalone page: it renders inside docs-viewer and prompt-kit hosts; a host-based route (docs-workbench lab-annotate) can prove it later"
         },
         {
-          "what": "safe tests re-run in the run sandbox (fix-c1, 2026-10-05)",
-          "reason": "profile env (temp HOME/XDG, BUN_OPTIONS=--no-env-file) inside sandbox-exec (scripts/lib/sandbox.ts runPolicy: owner ports, non-loopback hosts, .env files and the owner tree denied), lsof of the run's process group every 200 ms. tests.safe[0]: exit 0 in 1 s (68 pass, 0 fail); git status --ignored --porcelain of the 25 mirror checkouts identical before and after; find -newer over the app root: no file outside node_modules; connections: none; no sandbox denial in the log"
+          "what": "tests.safe not run: blocked",
+          "reason": "the app is blocked by uncommitted owner work (STATE.md app_ledger), so test:apps did not run it and tests.baselines has no entry; when it unblocks, the managing agent runs bun run test:apps <app> (twice) and records the baseline before the tests gate counts it"
         }
       ]
     },
@@ -4209,8 +4539,8 @@
           "reason": "pinned light today; not on the owner's dark-first list, so it gains a dark theme with the tokens"
         },
         {
-          "what": "safe tests not re-run: blocked",
-          "reason": "the app is blocked and its dependencies are not installed in the mirror; run tests.safe in the run sandbox with write detection when it unblocks, before the tests gate counts it"
+          "what": "tests.safe not run: blocked",
+          "reason": "the app is blocked by uncommitted owner work (STATE.md app_ledger), so test:apps did not run it and tests.baselines has no entry; when it unblocks, the managing agent runs bun run test:apps <app> (twice) and records the baseline before the tests gate counts it"
         }
       ]
     },
@@ -4659,8 +4989,8 @@
           "reason": "the owner's life/budget/.env holds MERCURY_* and SIMPLEFIN_* credentials and bun auto-loads .env from its cwd; every bun command here passes --no-env-file, and the run sandbox denies .env reads"
         },
         {
-          "what": "safe tests not re-run: blocked",
-          "reason": "the app is blocked and its dependencies are not installed in the mirror; run tests.safe in the run sandbox with write detection when it unblocks, before the tests gate counts it"
+          "what": "tests.safe not run: blocked",
+          "reason": "the app is blocked by uncommitted owner work (STATE.md app_ledger), so test:apps did not run it and tests.baselines has no entry; when it unblocks, the managing agent runs bun run test:apps <app> (twice) and records the baseline before the tests gate counts it"
         }
       ]
     },
@@ -4869,8 +5199,8 @@
           "reason": "light only today; not on the owner's dark-first list"
         },
         {
-          "what": "safe tests not re-run: blocked",
-          "reason": "the app is blocked and its dependencies are not installed in the mirror; run tests.safe in the run sandbox with write detection when it unblocks, before the tests gate counts it"
+          "what": "tests.safe not run: blocked",
+          "reason": "the app is blocked by uncommitted owner work (STATE.md app_ledger), so test:apps did not run it and tests.baselines has no entry; when it unblocks, the managing agent runs bun run test:apps <app> (twice) and records the baseline before the tests gate counts it"
         }
       ]
     },
@@ -5308,8 +5638,8 @@
           "reason": "owner decision: keep its effect knobs, hide color controls, bump styleSettings.v1"
         },
         {
-          "what": "safe tests not re-run: blocked",
-          "reason": "the app is blocked and its dependencies are not installed in the mirror; run tests.safe in the run sandbox with write detection when it unblocks, before the tests gate counts it"
+          "what": "tests.safe not run: blocked",
+          "reason": "the app is blocked by uncommitted owner work (STATE.md app_ledger), so test:apps did not run it and tests.baselines has no entry; when it unblocks, the managing agent runs bun run test:apps <app> (twice) and records the baseline before the tests gate counts it"
         }
       ]
     },
@@ -5521,8 +5851,8 @@
           "reason": "vite dev on its own port with a WebGL scene; mask the canvas in diffs (the scene animates); needs npm install"
         },
         {
-          "what": "safe tests not re-run: blocked",
-          "reason": "the app is blocked and its dependencies are not installed in the mirror; run tests.safe in the run sandbox with write detection when it unblocks, before the tests gate counts it"
+          "what": "tests.safe not run: blocked",
+          "reason": "the app is blocked by uncommitted owner work (STATE.md app_ledger), so test:apps did not run it and tests.baselines has no entry; when it unblocks, the managing agent runs bun run test:apps <app> (twice) and records the baseline before the tests gate counts it"
         }
       ]
     }
