@@ -1907,7 +1907,7 @@
       "theme": {
         "rule": "light-dark"
       },
-      "literalFloor": 22,
+      "literalFloor": 7,
       "allowlist": "apps/allowlists/docs-publish.json",
       "shell": false,
       "folderStandard": false,
@@ -2009,7 +2009,7 @@
       "exceptions": [
         {
           "what": "allowlist",
-          "reason": "src/editor.css .docs-draft-editor block (lines 67-105, comment 63-66): 22 custom-property definitions with the editor's container defaults (host --color-*/--site-* fallbacks at 68-76, status and accent palette at 82-103), scoped to that file, kind definition, category hex and the block's 8 literal values; the floor of 22 caps them, so any new definition in the file fails the check. The fallback at editor.css:171 and the inline literals in styles.css:44-46 migrate"
+          "reason": "src/editor.css .docs-draft-editor host fallbacks only (lines 68-76): 7 custom-property definitions var(--color-*, <literal>) (#fff, #222, #2563eb, #f1f1ef) so the draft editor renders on a host without the site palette; scoped to that file, kind definition, category hex and those 4 values; the floor of 7 caps them, so any new definition in the file fails the check. Not excused: the status and accent palette at 82-103 (--destructive, --status-*, --color-bg-blue, --color-text-blue; 15 hits, the same in light and dark), which pass 1 maps to color.status.*, the fallback at editor.css:171 and the inline literals in styles.css:44-46"
         },
         {
           "what": "commands.build writes the package's own dist/",

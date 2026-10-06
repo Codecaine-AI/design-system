@@ -2,6 +2,7 @@
   "literals": [
     {
       "file": "codecaine/core/annotations/src/react/targeting/useTargeting.tsx",
+      "match": "^(#6366f1|#ffffff|#18181b|#71717a|rgba\\(0, 0, 0, 0\\.15\\)|#dc2626|#1c1c20|#e4e4e7|#a1a1aa|rgba\\(255, 255, 255, 0\\.14\\)|#f87171)$",
       "kind": "definition",
       "reason": "the TARGETING_CSS --_annotation-* layer (useTargeting.tsx 148-164) is var(--annotation-*, <literal>): the injected CSS must render in hosts without tokens.css; it gains --ds-* names in the chain (11 hits)"
     },
