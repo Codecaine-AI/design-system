@@ -1,0 +1,20 @@
+{
+  "literals": [
+    {
+      "file": "lascari-ai/personal-site/index.html",
+      "match": "^bottom-\\[42vh\\]$",
+      "category": "twArbitrary",
+      "reason": "the landing is the CircleSnakes engine (product art; owner decision: landing heroes stay, audit Skip); its scene height on phones stays (1 hit)"
+    },
+    {
+      "file": "lascari-ai/personal-site/src/site/blog-style.css",
+      "reason": "style-engine values: the dev Style panel's save file for the article reading style (scripts/blog-style.mjs parses the numbers and font options back and rewrites the file whole, so var() would break it); the owner keeps size controls and it has no color controls (main's ruling, personal-site p1) (7 hits: 2 font stacks, 5 px sizes)"
+    },
+    {
+      "file": "lascari-ai/personal-site/src/site/*.css",
+      "match": "^(22|24|26|28|44)px$",
+      "category": "pxFontSize",
+      "reason": "page and section headings with no font-size token within 2px (reading 18px, title 36px): kept per decision 65a; heading-size token gap (8 hits: h2 26px in styles.css, layout.css and blog.css; h1 44px in layout.css and blog.css; post-list titles 24px; resume h2 22px; resume h1 28px on phones)"
+    }
+  ]
+}

@@ -3405,8 +3405,8 @@
         "rule": "light-dark",
         "storageKey": "personal-site:theme"
       },
-      "literalFloor": 0,
-      "allowlist": null,
+      "literalFloor": 16,
+      "allowlist": "apps/allowlists/personal-site.json",
       "shell": false,
       "folderStandard": true,
       "passes": {
@@ -3618,7 +3618,7 @@
         },
         {
           "what": "entryStylesheet is about/index.html",
-          "reason": "every content page links src/site/styles.css (which imports palette.css and layout.css) from its own HTML; the linter starts at one page, and the others link the same sheet"
+          "reason": "every content page links src/site/styles.css (which imports palette.css and layout.css) from its own HTML; the linter starts at one page, and the others link the same sheet Since pass 1, every content page links src/site/design-system.css (fonts.css and tokens.css from the vendored design-system tgz), then styles.css, which imports layout.css; palette.css is deleted."
         },
         {
           "what": "pass 3 on vanilla partials",
@@ -3626,7 +3626,7 @@
         },
         {
           "what": "blog article pages load docs-publish's docs.css before styles.css (known gap)",
-          "reason": "scripts/blog-pages.mjs:103 links ${runtime}/docs.css (runtime path :94, copied from @codecaine-ai/docs-publish dist/styles at :96-97) and an inline docsThemeHead <style> (:76-78) before /src/site/styles.css and blog.css on article pages (:141). docs.css (vendor tgz 0.1.0-proof.20) declares, unlayered at :root, 80 of the same --palette-*/--color-* names as src/site/palette.css and styles.css plus 962 --docs-* properties, a second tokens copy. The linter's single entry (about/index.html → styles.css → palette.css, layout.css) never sees docs.css, the inline theme style, blog.css → blog-style.css (also imported by services.css:5), resume.css or services.css; with /blog/ dropped no capture covers article pages. Pass 1 must check the blog graph by hand until the registry takes several entries"
+          "reason": "scripts/blog-pages.mjs:103 links ${runtime}/docs.css (runtime path :94, copied from @codecaine-ai/docs-publish dist/styles at :96-97) and an inline docsThemeHead <style> (:76-78) before /src/site/styles.css and blog.css on article pages (:141). docs.css (vendor tgz 0.1.0-proof.20) declares, unlayered at :root, 80 of the same --palette-*/--color-* names as src/site/palette.css and styles.css plus 962 --docs-* properties, a second tokens copy. The linter's single entry (about/index.html → styles.css → palette.css, layout.css) never sees docs.css, the inline theme style, blog.css → blog-style.css (also imported by services.css:5), resume.css or services.css; with /blog/ dropped no capture covers article pages. Pass 1 must check the blog graph by hand until the registry takes several entries Since pass 1 (decision 68 as amended), article and dev draft pages also link src/site/design-system.css while the vendored docs-publish is proof.20 (blog-pages.mjs articleDesignSystemLink and writing-draft-preview.mjs:88, each marked \"remove when docs-publish >= the design-system repack\"); the final phase removes both links with the docs-publish tgz swap."
         },
         {
           "what": "captures show production markup, not the owner's dev view",
