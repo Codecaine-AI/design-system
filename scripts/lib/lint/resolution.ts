@@ -34,6 +34,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
+import { SYSTEM_BIN, SYSTEM_PATH } from "../system-bin";
 import { stripCss } from "../../scan-literals";
 import { buildFile, fileSha256, sha256, type DesignSystemBuild } from "./design-system";
 import { isDsLoad, type Load } from "./loads";
@@ -59,15 +60,18 @@ function declaredSpec(pkg: any, name: string): string | null {
   return null;
 }
 
+/** tar runs by absolute path with a system-only PATH: a `tar` planted earlier on PATH never runs. */
+const SYSTEM_ENV = { ...process.env, PATH: SYSTEM_PATH };
+
 /** The tgz's member names (`package/…`, a leading `./` dropped); null when tar cannot list it. */
 function tgzMembers(tgz: string): Set<string> | null {
-  const r = spawnSync("tar", ["-tzf", tgz], { encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
+  const r = spawnSync(SYSTEM_BIN.tar, ["-tzf", tgz], { env: SYSTEM_ENV, encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
   if (r.status !== 0) return null;
   return new Set(r.stdout.split("\n").map((l) => l.trim().replace(/^\.\//, "")).filter(Boolean));
 }
 
 function tgzMemberSha(tgz: string, member: string): string | null {
-  const r = spawnSync("tar", ["-xzOf", tgz, member], { maxBuffer: 64 * 1024 * 1024 });
+  const r = spawnSync(SYSTEM_BIN.tar, ["-xzOf", tgz, member], { env: SYSTEM_ENV, maxBuffer: 64 * 1024 * 1024 });
   return r.status === 0 && r.stdout ? sha256(r.stdout) : null;
 }
 

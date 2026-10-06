@@ -1,7 +1,8 @@
 /**
  * lint:apps --out-dir and registry loading (round 2): the report lands only in a validated
  * `<out-dir>/lint/<timestamp>.json`, never through a symlinked `lint/`, never inside a git checkout;
- * the registry passes the same port rules every registry-loading tool applies.
+ * the registry passes the same port rules every registry-loading tool applies; system binaries
+ * (git, tar) run by absolute path, never whatever PATH finds first.
  */
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
@@ -59,6 +60,26 @@ test("an --out-dir inside a git checkout exits 2 and writes nothing", () => {
   expect(stderr).toContain(`is inside the git checkout ${repo}`);
   expect(stdout).toBe("");
   expect(existsSync(join(repo, "reports"))).toBe(false);
+});
+
+test("a git or tar planted first on PATH never runs: the linter calls system binaries by absolute path", () => {
+  const bin = join(tmp, "planted-bin");
+  const marker = join(tmp, "planted-ran");
+  mkdirSync(bin, { recursive: true });
+  for (const name of ["git", "tar"]) {
+    writeFileSync(join(bin, name), `#!/bin/sh\necho ${name} >> "${marker}"\nexit 1\n`, { mode: 0o755 });
+  }
+  // `vendored` lists and extracts its tgz (tar); every run reads the build's commit (git).
+  const r = Bun.spawnSync([process.execPath, "scripts/lint-apps.ts", "--root", ws.root, "--registry", ws.registryPath, "--json", "connected", "vendored"], {
+    cwd: PKG,
+    env: { ...process.env, PATH: `${bin}:${process.env.PATH ?? ""}` },
+  });
+  expect(existsSync(marker) ? readFileSync(marker, "utf8") : "").toBe("");
+  const report = JSON.parse(r.stdout.toString());
+  const head = Bun.spawnSync(["/usr/bin/git", "-C", PKG, "rev-parse", "HEAD"]).stdout.toString().trim();
+  expect(report.designSystem.commit).toBe(head);
+  expect(report.apps.find((a: any) => a.id === "vendored").checks.find((c: any) => c.id === "resolution")).toMatchObject({ status: "pass", violations: [] });
+  expect([0, 1]).toContain(r.exitCode);
 });
 
 test("a registry that breaks the shared port rules exits 2 before any check runs", () => {

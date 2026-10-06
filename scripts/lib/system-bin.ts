@@ -13,6 +13,7 @@ export const SYSTEM_BIN = {
   git: "/usr/bin/git",
   sandboxExec: "/usr/bin/sandbox-exec",
   sh: "/bin/sh",
+  tar: "/usr/bin/tar",
 };
 
 /** The environment for a system tool: a PATH of system dirs only, so whatever it runs in turn is a system binary too. */
