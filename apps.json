@@ -859,7 +859,7 @@
       "theme": {
         "rule": "light-dark"
       },
-      "literalFloor": 9,
+      "literalFloor": 7,
       "allowlist": "apps/allowlists/canvas-studio.json",
       "shell": true,
       "folderStandard": true,
@@ -1424,7 +1424,7 @@
       "entryStylesheet": "codecaine/core/canvas/packages/canvas-agent/src/viewer/main.tsx",
       "theme": {
         "rule": "light-dark",
-        "storageKey": "canvasAgentViewerStyle.v1"
+        "storageKey": "canvasAgentViewerStyle.v2"
       },
       "literalFloor": 0,
       "allowlist": null,
@@ -1466,24 +1466,20 @@
           "required": true
         },
         "verify": {
-          "required": false,
-          "reason": "run mode none: the viewer's dev server proxies /api to the owner's :4820; verified statically only"
+          "required": true
         },
         "snapshot": {
-          "required": false,
-          "reason": "run mode none: the viewer's dev server proxies /api to the owner's :4820; verified statically only"
+          "required": true
         },
         "pixelDiff": {
-          "required": false,
-          "reason": "run mode none: the viewer's dev server proxies /api to the owner's :4820; verified statically only"
+          "required": true
         },
         "tests": {
           "required": true
         }
       },
       "run": {
-        "mode": "none",
-        "reason": "the viewer's Vite proxy sends /api to the owner's :4820 through `const HARNESS_TARGET = \"http://127.0.0.1:4820\"` (packages/canvas-agent/src/viewer/vite.config.ts:41; no env var, flag or config reads around it), and the traces page fetches /api on load, so every run would reach the owner's service. Runnable once the target reads an env var (for example CANVAS_AGENT_HARNESS_URL, falling back to 4820): a dev-only override the pass-1 worker can decide on",
+        "mode": "browser",
         "cwd": "codecaine/core/canvas/packages/canvas-agent",
         "start": "bun x --no-env-file vite --config src/viewer/vite.config.ts {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)",
@@ -1542,7 +1538,8 @@
       ],
       "runProfile": {
         "env": {
-          "NO_COLOR": "1"
+          "NO_COLOR": "1",
+          "CANVAS_AGENT_HARNESS_URL": "http://127.0.0.1:{port:deadApi}"
         },
         "unsetEnv": [
           "DOCS_SHARED_API_URL",
@@ -1574,8 +1571,9 @@
           "deadApi": 47051
         },
         "proof": {
-          "status": "unproven",
-          "method": ""
+          "status": "proven",
+          "method": "scripts/registry-prove.ts on design-system/rollout (main, 2026-10-06) against canvas d32fb6a8 (CANVAS_AGENT_HARNESS_URL → deadApi 47051): sandboxed, egress sampled (31 samples, 0 failed, 0 foreign), selectors only; 4/4 route loads (light and dark) rendered; the only console errors are the proxy 502s from the dead harness port (the viewer shows its agent-service-not-running notice); stopped clean. Proof JSON in rollout/canvas-agent/prove/tooling/registry/proofs/canvas-agent.json. Light reads dark until verify.lightSwitch lands (decision 72).",
+          "date": "2026-10-06"
         }
       },
       "verify": {
@@ -1585,11 +1583,6 @@
             "selector": ".research-style-shell",
             "property": "background-color",
             "token": "color.surface.page"
-          },
-          {
-            "selector": "aside.w-56",
-            "property": "background-color",
-            "token": "color.surface.sidebar"
           },
           {
             "selector": ".research-style-shell",
@@ -1610,7 +1603,13 @@
         "sidebar": {
           "toggle": ".ds-sidebar-toggle",
           "storageKey": "canvas-agent.sidebar"
-        }
+        },
+        "waivedRoles": [
+          {
+            "role": "panel",
+            "reason": "pass 1 keeps the existing look: the w-56 aside paints no surface of its own (transparent over the page) and no other viewer chrome paints a panel role; pass 2's shell adds the sidebar surface and a panel probe (decision 72 batch, 2026-10-06)"
+          }
+        ]
       },
       "exceptions": [
         {

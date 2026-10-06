@@ -15,18 +15,6 @@
       "reason": "color-input fallback in the Style rail's color controls; owner decision: style engines hide color controls but keep the code, and <input type=color> needs a hex value"
     },
     {
-      "file": "codecaine/core/canvas/packages/studio/src/_components/EditorPage/_components/StyleRail/index.tsx",
-      "match": "^max-w-\\[calc\\(100vw-2rem\\)\\]$",
-      "category": "twArbitrary",
-      "reason": "viewport clamp on a floating panel (w-80 at right-4) so it stays inside narrow windows; layout geometry with no token, kept (decision 43)"
-    },
-    {
-      "file": "codecaine/core/canvas/packages/studio/src/_components/EditorPage/_components/EditorOverlay/_components/AgentSidebar/index.tsx",
-      "match": "^max-w-\\[calc\\(100vw-2rem\\)\\]$",
-      "category": "twArbitrary",
-      "reason": "viewport clamp on a floating panel (w-80 at right-4) so it stays inside narrow windows; layout geometry with no token, kept (decision 43)"
-    },
-    {
       "file": "codecaine/core/canvas/packages/studio/src/_components/ViewerPage/index.tsx",
       "match": "^max-w-\\[50vw\\]$",
       "category": "twArbitrary",
