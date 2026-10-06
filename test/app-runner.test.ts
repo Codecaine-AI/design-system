@@ -170,6 +170,23 @@ describe("validateLoadedRegistry", () => {
   });
 });
 
+describe("profileBlock", () => {
+  const registry = { version: 1, apps: [fixtureApp({ ui: 47000 }, { id: "first" }), fixtureApp({ ui: 46913, helper: 46914 }, { id: "stand-in" })] } as Registry;
+
+  test("a registry app gets 47000 + 10 x its index; a stand-in on tool-test ports keeps its own aligned block", () => {
+    expect(profileBlock(registry.apps[0]!, registry)).toEqual({ start: 47000, size: 10 });
+    expect(profileBlock(registry.apps[1]!, registry)).toEqual({ start: 46910, size: 10 });
+    expect(registryProblems(registry).filter((problem) => problem.includes("block"))).toEqual([]);
+  });
+
+  test("a stand-in that strays outside 46900-46999 falls back to its index block", () => {
+    const strayed = structuredClone(registry);
+    strayed.apps[1]!.runProfile.ports = { ui: 46913, helper: 47014 };
+    expect(profileBlock(strayed.apps[1]!, strayed)).toEqual({ start: 47010, size: 10 });
+    expect(registryProblems(strayed)).toContain("stand-in: port ui=46913 is outside its block 47010-47019");
+  });
+});
+
 describe("readyUrl", () => {
   test.each([
     ["Vite with colors", "  \u001b[1mLocal\u001b[22m:   \u001b[36mhttp://127.0.0.1:\u001b[1m46950\u001b[22m/\u001b[39m", "Local:\\s+(http://\\S+)", "http://127.0.0.1:46950", 46950],
@@ -315,12 +332,11 @@ describe("startApp", () => {
   });
 
   test("refuses ports outside the block its registry index gives it, before it spawns anything", async () => {
-    // Index 1 in the registry it came from: block 47010-47019, whatever block its own ports suggest.
-    const app = fixtureApp({ ui: 46913, helper: 46914 });
+    // Index 1 in the registry it came from: block 47010-47019 (one port is outside the tool-test range).
+    const app = fixtureApp({ ui: 46913, helper: 47014 });
     const root = makeRoot();
     app.run.start = `touch ${join(root, "spawned")} && bun serve.ts`;
     const registry = { version: 1, apps: [fixtureApp({ ui: 47000 }, { id: "first" }), app] } as Registry;
-    expect(profileBlock(app, registry)).toEqual({ start: 47010, size: 10 });
     await expect(startApp(app, { root, outDir, registry })).rejects.toThrow(/port ui=46913 is outside its block 47010-47019/);
     expect(existsSync(join(root, "spawned"))).toBe(false);
   });
