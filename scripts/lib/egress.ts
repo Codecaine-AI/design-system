@@ -9,6 +9,7 @@
  * treat the observation as inconclusive.
  */
 import { OWNER_PORTS } from "./owner";
+import { SYSTEM_BIN, SYSTEM_PATH } from "./system-bin";
 
 const LOOPBACK = new Set(["127.0.0.1", "localhost", "::1", "[::1]", "::ffff:127.0.0.1", "[::ffff:127.0.0.1]"]);
 
@@ -94,7 +95,7 @@ export async function lsofConnections(pids: number[], protocol: "-iTCP" | "-i" =
   if (pids.length === 0) return { ok: true, conns: [] };
   let proc: ReturnType<typeof Bun.spawn>;
   try {
-    proc = Bun.spawn(["lsof", "-nP", "-w", "-a", "-p", pids.join(","), protocol], { stdout: "pipe", stderr: "pipe", stdin: "ignore" });
+    proc = Bun.spawn([SYSTEM_BIN.lsof, "-nP", "-w", "-a", "-p", pids.join(","), protocol], { stdout: "pipe", stderr: "pipe", stdin: "ignore", env: { PATH: SYSTEM_PATH } });
   } catch (error) {
     return { ok: false, reason: `lsof did not run: ${error instanceof Error ? error.message : String(error)}` };
   }
