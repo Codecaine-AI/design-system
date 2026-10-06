@@ -19,12 +19,14 @@
  * and a nested checkout's git dir is read from its `.git` entry the way git reads it.
  */
 import { spawnSync } from "node:child_process";
-import { existsSync, lstatSync, readFileSync } from "node:fs";
-import { dirname, isAbsolute, join, resolve, sep } from "node:path";
+import { existsSync } from "node:fs";
+import { dirname, join, sep } from "node:path";
 
-import { appsHaveStarted, discoverRepo, gitAt, gitEntryState, pinFor } from "./git";
+import { appsHaveStarted, discoverRepo, gitAt, gitDirsOf, gitEntryState, pinFor } from "./git";
 import { resolvePath, type AppEntry } from "./registry";
 import { canonicalPath } from "./safe-paths";
+
+export { gitDirsOf };
 
 /** find by absolute path (never PATH). */
 export const FIND = "/usr/bin/find";
@@ -38,34 +40,6 @@ const inside = (path: string, dir: string) => path === dir || path.startsWith(di
 export function toplevel(dir: string): string | null {
   if (appsHaveStarted()) return pinFor(dir, { optional: true })?.workTree ?? null;
   return discoverRepo(dir)?.workTree ?? null;
-}
-
-/**
- * A checkout's git dir and common dir, read from its `.git` entry without running git: the `.git` dir
- * itself, or the dir a `gitdir: <path>` file names, plus that dir's `commondir` file. Canonical; [] when
- * the entry is neither.
- */
-export function gitDirsOf(workTree: string): string[] {
-  const entry = join(workTree, ".git");
-  try {
-    const stat = lstatSync(entry);
-    let gitDir: string | null = null;
-    if (stat.isDirectory()) gitDir = entry;
-    else if (stat.isFile()) {
-      const named = /^gitdir:\s*(.+?)\s*$/m.exec(readFileSync(entry, "utf8"))?.[1];
-      if (named) gitDir = isAbsolute(named) ? named : resolve(workTree, named);
-    }
-    if (!gitDir) return [];
-    const dirs = [canonicalPath(gitDir)];
-    const common = join(gitDir, "commondir");
-    if (existsSync(common)) {
-      const text = readFileSync(common, "utf8").trim();
-      if (text) dirs.push(canonicalPath(isAbsolute(text) ? text : resolve(gitDir, text)));
-    }
-    return [...new Set(dirs)];
-  } catch {
-    return [];
-  }
 }
 
 function find(args: string[]): string[] {
