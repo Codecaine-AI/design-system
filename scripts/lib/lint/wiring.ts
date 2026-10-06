@@ -152,7 +152,18 @@ export function checkWiring(ctx: AppContext): CheckOutput {
 
   if ((app.stack?.tailwind ?? "none") === "v4") violations.push(...tailwindV4(ctx, graph.loads, entryRel));
 
-  return { violations, warnings };
+  // A stylesheet two roots share is walked for each (loads.ts): its findings are reported once.
+  return { violations: unique(violations), warnings: unique(warnings) };
+}
+
+function unique(findings: Finding[]): Finding[] {
+  const seen = new Set<string>();
+  return findings.filter((f) => {
+    const key = `${f.file}\0${f.line}\0${f.message}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 /** Tailwind v4: Tailwind, tailwind-strict.css and tailwind.css in order, in one compilation root. */
