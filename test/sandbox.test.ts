@@ -1,31 +1,48 @@
 /**
  * The OS sandbox every run process starts under. Real children run under the real profile; the owner
- * is a stand-in (a temp "home" and "owner tree", test ports 46930-46931), never the real owner.
+ * is a stand-in laid out like the real machine (a temp "home" holding the owner's tree, the mirror with
+ * the design-system checkout and the run folder inside it, credential dirs, runtimes), never the real
+ * owner. Test ports 46931-46936.
  */
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
+import { spawnSync } from "node:child_process";
 
-import { runPolicy, sandboxCommand, sandboxUnavailable, SandboxUnavailable, type SandboxPolicy } from "../scripts/lib/sandbox.ts";
+import { realHome, runPolicy, sandboxCommand, sandboxProfile, sandboxUnavailable, SandboxUnavailable, type SandboxPolicy } from "../scripts/lib/sandbox.ts";
 
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-sandbox-")));
 const home = join(scratch, "home");
 const owner = join(home, "workspace");
 const root = join(home, "workspace-ds");
-const runTmp = join(scratch, "run-tmp");
+const ds = join(root, "design-system"); // the real layout: the checkout the tool runs from sits inside --root
 const out = join(root, "rollout");
-for (const dir of [owner, join(root, "app"), runTmp, out]) mkdirSync(dir, { recursive: true });
+const runTmp = join(scratch, "run-tmp");
+const sharedTmp = join(scratch, "shared-tmp"); // stands in for the system temp dir every run shares
+for (const dir of [owner, join(root, "app"), join(ds, "apps"), join(out, "runs"), runTmp, join(sharedTmp, "other-run"), join(home, ".codex"), join(home, ".bun", "bin"), join(home, "Library", "Caches", "ms-playwright"), join(home, "Documents")])
+  mkdirSync(dir, { recursive: true });
 writeFileSync(join(owner, "data.json"), "{}");
-writeFileSync(join(root, "app", ".env"), "SECRET=1");
-writeFileSync(join(root, "app", ".env.local"), "SECRET=2");
+for (const name of [".env", ".env.local", ".envrc", ".env-local", ".env_prod"]) writeFileSync(join(root, "app", name), "SECRET=1");
 writeFileSync(join(root, "app", "config.json"), "{}");
+writeFileSync(join(ds, "apps", "serve.ts"), "// fixture server");
+writeFileSync(join(home, ".zsh_history"), "secret history");
+writeFileSync(join(home, "Documents", "notes.txt"), "personal");
+writeFileSync(join(home, ".codex", "auth.json"), "{}");
+writeFileSync(join(home, ".bun", "bin", "tool"), "runtime");
+writeFileSync(join(home, "Library", "Caches", "ms-playwright", "browser"), "runtime");
 
-const DENIED = 46930;
-const ALLOWED = 46931;
+// 46931 the run's own block, 46932 an owner port inside the block, 46933 allowedLocalPorts,
+// 46934 a listener the run did not start (an owner service it does not know about), 46936 free in the block.
+const OWN = 46931;
+const OWNER = 46932;
+const ALLOWED = 46933;
+const STRAY = 46934;
+const OUTSIDE_BLOCK = 46935;
+const FREE_IN_BLOCK = 46936;
 let servers: Array<ReturnType<typeof Bun.serve>> = [];
 beforeAll(() => {
-  servers = [DENIED, ALLOWED].map((port) => Bun.serve({ hostname: "127.0.0.1", port, fetch: () => new Response("up") }));
+  servers = [OWN, OWNER, ALLOWED, STRAY].map((port) => Bun.serve({ hostname: "127.0.0.1", port, fetch: () => new Response("up") }));
 });
 afterAll(() => {
   for (const server of servers) server.stop(true);
@@ -35,8 +52,20 @@ afterAll(() => {
 const unavailable = sandboxUnavailable();
 if (unavailable) console.warn(`skipping the sandbox tests: ${unavailable}`);
 
-function policy(): SandboxPolicy {
-  return runPolicy({ root, tmp: runTmp, outDir: out, home, ownerTree: owner, deniedPorts: [DENIED] });
+function policy(overrides: Partial<Parameters<typeof runPolicy>[0]> = {}): SandboxPolicy {
+  const p = runPolicy({
+    root,
+    tmp: runTmp,
+    outDir: out,
+    home,
+    ownerTree: owner,
+    designSystem: ds,
+    blockPorts: [OWN, OWNER, FREE_IN_BLOCK],
+    allowedLocalPorts: [ALLOWED],
+    deniedPorts: [OWNER],
+    ...overrides,
+  });
+  return { ...p, sharedTemp: [sharedTmp] };
 }
 
 /** Runs `sh -c script` under the policy; returns exit code and combined output. */
@@ -45,63 +74,151 @@ function sandboxed(script: string, p: SandboxPolicy = policy()): { code: number;
   return { code: result.exitCode, output: `${result.stdout.toString()}${result.stderr.toString()}` };
 }
 
+/** One "ok <label>" / "denied <label>" line per shell test, in order. */
+function verdicts(checks: Array<[label: string, shell: string]>, p?: SandboxPolicy): string[] {
+  const script = checks.map(([label, shell]) => `(${shell}) >/dev/null 2>&1 && echo "ok ${label}" || echo "denied ${label}"`).join("; ");
+  // Only the verdict lines: a shell may add its own warnings (getcwd outside the readable dirs).
+  return sandboxed(script, p)
+    .output.trim()
+    .split("\n")
+    .filter((line) => /^(ok|denied) /.test(line));
+}
+
+// --no-env-file: bun exits 1 without a word when the sandbox denies the .env files in its cwd.
+const bind = (port: number) => `${process.execPath} --no-env-file -e 'Bun.serve({ hostname: "127.0.0.1", port: ${port}, fetch: () => new Response("x") }).stop(true)'`;
+
 describe.skipIf(Boolean(unavailable))("sandbox profile", () => {
-  test("a run process reaches allowed loopback ports but never a denied port or a non-loopback address", () => {
-    const allowed = sandboxed(`/usr/bin/nc -v -z -G 2 127.0.0.1 ${ALLOWED}`);
-    expect(allowed).toMatchObject({ code: 0 });
-    // Both test ports are listening: the only thing that can stop these connects is the sandbox.
-    const denied = sandboxed(`/usr/bin/nc -v -z -G 2 127.0.0.1 ${DENIED}`);
-    expect(denied.output).toContain("Operation not permitted");
-    const external = sandboxed("/usr/bin/nc -v -z -G 2 192.0.2.1 9"); // TEST-NET-1: denied before a packet leaves
-    expect(external.output).toContain("Operation not permitted");
+  test("network: only the run's own block and allowedLocalPorts; never an owner port, another listener or a non-loopback address", () => {
+    expect(
+      verdicts([
+        ["own", `/usr/bin/nc -z -G 2 127.0.0.1 ${OWN}`],
+        ["allowedLocalPorts", `/usr/bin/nc -z -G 2 127.0.0.1 ${ALLOWED}`],
+        ["owner port in the block", `/usr/bin/nc -z -G 2 127.0.0.1 ${OWNER}`],
+        ["a listener the run did not start", `/usr/bin/nc -z -G 2 127.0.0.1 ${STRAY}`],
+        ["non-loopback", "/usr/bin/nc -z -G 2 192.0.2.1 9"], // TEST-NET-1: refused before a packet leaves
+      ]),
+    ).toEqual(["ok own", "ok allowedLocalPorts", "denied owner port in the block", "denied a listener the run did not start", "denied non-loopback"]);
   });
 
-  test("writes under the real home land only in the root, the run folder and the run's temp dir", () => {
-    const writes = sandboxed(
-      [`${join(owner, "planted")}`, `${join(home, ".zshrc")}`, `${join(root, "app", "out.txt")}`, `${join(out, "log.txt")}`, `${join(runTmp, "state")}`]
-        .map((path) => `(echo x > '${path}') 2>/dev/null && echo "ok ${path}" || echo "denied ${path}"`)
-        .join("; "),
-    );
-    expect(writes.output.trim().split("\n")).toEqual([
-      `denied ${join(owner, "planted")}`,
-      `denied ${join(home, ".zshrc")}`,
-      `ok ${join(root, "app", "out.txt")}`,
-      `ok ${join(out, "log.txt")}`,
-      `ok ${join(runTmp, "state")}`,
+  test("network: listening only on the block, never an owner port", () => {
+    expect(
+      verdicts([
+        ["free port in the block", bind(FREE_IN_BLOCK)],
+        ["outside the block", bind(OUTSIDE_BLOCK)],
+        ["ephemeral port", bind(0)],
+      ]),
+    ).toEqual(["ok free port in the block", "denied outside the block", "denied ephemeral port"]);
+  });
+
+  test("Unix sockets: only those under the run's temp dir (and the system DNS/syslog sockets)", async () => {
+    const outside = join(scratch, "owner.sock");
+    const inside = join(runTmp, "run.sock");
+    const listeners = [outside, inside].map((unix) => Bun.listen({ unix, socket: { data() {} } }));
+    try {
+      const connect = (path: string) => `/usr/bin/python3 -c "import socket; s = socket.socket(socket.AF_UNIX); s.connect('${path}')"`;
+      expect(
+        verdicts([
+          ["run tmp socket", connect(inside)],
+          ["owner socket", connect(outside)],
+          ["DNS", `/usr/bin/python3 -c "import socket; socket.getaddrinfo('localhost', ${OWN})"`],
+        ]),
+      ).toEqual(["ok run tmp socket", "denied owner socket", "ok DNS"]);
+    } finally {
+      for (const listener of listeners) listener.stop(true);
+    }
+  });
+
+  test("writes: the root and the run's temp dir only; never the design-system checkout or the out dir inside the root", () => {
+    expect(
+      verdicts([
+        ["root", `echo x > '${join(root, "app", "out.txt")}'`],
+        ["run tmp", `echo x > '${join(runTmp, "state")}'`],
+        ["design-system", `echo x > '${join(ds, "apps", "planted")}'`],
+        ["out dir log", `echo x > '${join(out, "log.txt")}'`],
+        ["forged run record", `echo '{}' > '${join(out, "runs", "forged.json")}'`],
+        ["owner tree", `echo x > '${join(owner, "planted")}'`],
+        ["home", `echo x > '${join(home, ".zshrc")}'`],
+        ["another run's temp dir", `echo x > '${join(sharedTmp, "other-run", "planted")}'`],
+        ["shared temp dir", `echo x > '${join(sharedTmp, "planted")}'`],
+      ]),
+    ).toEqual([
+      "ok root",
+      "ok run tmp",
+      "denied design-system",
+      "denied out dir log",
+      "denied forged run record",
+      "denied owner tree",
+      "denied home",
+      "denied another run's temp dir",
+      "denied shared temp dir",
     ]);
-    expect(existsSync(join(owner, "planted"))).toBe(false);
+    for (const planted of [join(ds, "apps", "planted"), join(out, "runs", "forged.json"), join(owner, "planted"), join(sharedTmp, "planted")]) expect(existsSync(planted)).toBe(false);
   });
 
-  test("no run process reads a .env file or the owner's tree; ordinary files stay readable", () => {
-    const reads = sandboxed(
-      [".env", ".env.local", "config.json", join(owner, "data.json")]
-        .map((path) => `cat '${path}' >/dev/null 2>&1 && echo "ok ${path}" || echo "denied ${path}"`)
-        .join("; "),
-    );
-    expect(reads.output.trim().split("\n")).toEqual(["denied .env", "denied .env.local", "ok config.json", `denied ${join(owner, "data.json")}`]);
+  test("reads under home: the root, the design-system checkout and the runtimes only; never personal files, credentials, the owner's tree or a .env file", () => {
+    expect(
+      verdicts([
+        ["root file", `cat '${join(root, "app", "config.json")}'`],
+        ["design-system", `cat '${join(ds, "apps", "serve.ts")}'`],
+        ["runtime", `cat '${join(home, ".bun", "bin", "tool")}'`],
+        ["browser cache", `cat '${join(home, "Library", "Caches", "ms-playwright", "browser")}'`],
+        ["home realpath", `cd '${join(root, "app")}' && /bin/pwd -P`],
+        ["shell history", `cat '${join(home, ".zsh_history")}'`],
+        ["personal file", `cat '${join(home, "Documents", "notes.txt")}'`],
+        ["home listing", `ls '${home}'`],
+        ["credential store", `cat '${join(home, ".codex", "auth.json")}'`],
+        ["owner tree", `cat '${join(owner, "data.json")}'`],
+        ...[".env", ".env.local", ".envrc", ".env-local", ".env_prod"].map((name): [string, string] => [name, `cat ${name}`]),
+      ]),
+    ).toEqual([
+      "ok root file",
+      "ok design-system",
+      "ok runtime",
+      "ok browser cache",
+      "ok home realpath",
+      "denied shell history",
+      "denied personal file",
+      "denied home listing",
+      "denied credential store",
+      "denied owner tree",
+      "denied .env",
+      "denied .env.local",
+      "denied .envrc",
+      "denied .env-local",
+      "denied .env_prod",
+    ]);
   });
 
-  test("the design-system checkout the tool runs from stays readable inside a hidden owner tree, never writable", () => {
-    const ds = join(owner, "design-system");
-    mkdirSync(join(ds, "apps"), { recursive: true });
-    writeFileSync(join(ds, "apps", "serve.ts"), "// fixture server");
-    writeFileSync(join(ds, ".env"), "SECRET=3");
-    const p = runPolicy({ root, tmp: runTmp, outDir: out, home, ownerTree: owner, deniedPorts: [DENIED], designSystem: ds });
-    const result = sandboxed(
-      [
-        `cat '${join(ds, "apps", "serve.ts")}' >/dev/null 2>&1 && echo "read ok" || echo "read denied"`,
-        `cat '${join(ds, ".env")}' >/dev/null 2>&1 && echo "env ok" || echo "env denied"`,
-        `(echo x > '${join(ds, "apps", "planted")}') 2>/dev/null && echo "write ok" || echo "write denied"`,
-        `cat '${join(owner, "data.json")}' >/dev/null 2>&1 && echo "owner ok" || echo "owner denied"`,
-      ].join("; "),
-      p,
-    );
-    expect(result.output.trim().split("\n")).toEqual(["read ok", "env denied", "write denied", "owner denied"]);
+  test("signals: a run process can stop its own children, never a process outside the sandbox", async () => {
+    const outside = Bun.spawn(["sleep", "30"]);
+    try {
+      expect(verdicts([["outside", `kill -TERM ${outside.pid}`], ["own child", "sleep 30 & kill -TERM $!"]])).toEqual(["denied outside", "ok own child"]);
+      expect(outside.exitCode).toBeNull();
+    } finally {
+      outside.kill("SIGKILL");
+    }
+  });
+
+  test("the design-system checkout stays readable inside a hidden owner tree (a tool run from the owner's checkout), never writable", () => {
+    const ownerDs = join(owner, "design-system");
+    mkdirSync(join(ownerDs, "apps"), { recursive: true });
+    writeFileSync(join(ownerDs, "apps", "serve.ts"), "// fixture server");
+    writeFileSync(join(ownerDs, ".env"), "SECRET=3");
+    expect(
+      verdicts(
+        [
+          ["read", `cat '${join(ownerDs, "apps", "serve.ts")}'`],
+          ["env", `cat '${join(ownerDs, ".env")}'`],
+          ["write", `echo x > '${join(ownerDs, "apps", "planted")}'`],
+          ["owner", `cat '${join(owner, "data.json")}'`],
+        ],
+        policy({ designSystem: ownerDs }),
+      ),
+    ).toEqual(["ok read", "denied env", "denied write", "denied owner"]);
   });
 
   test("a run whose --root is the owner's tree may read and write it", () => {
-    const ownerRun = runPolicy({ root: owner, tmp: runTmp, outDir: out, home, ownerTree: owner, deniedPorts: [DENIED] });
-    expect(sandboxed(`cat '${join(owner, "data.json")}' && echo x > '${join(owner, "written")}' && echo done`, ownerRun).output).toContain("done");
+    expect(verdicts([["owner", `cat '${join(owner, "data.json")}' && echo x > '${join(owner, "written")}'`]], policy({ root: owner }))).toEqual(["ok owner"]);
   });
 
   test("a home given by a symlinked spelling (/var for /private/var) is still enforced", () => {
@@ -110,6 +227,35 @@ describe.skipIf(Boolean(unavailable))("sandbox profile", () => {
     const p: SandboxPolicy = { home: spelled, writable: [], hidden: [], deniedPorts: [] };
     expect(sandboxed(`(echo x > '${join(home, "planted")}') 2>/dev/null && echo written || echo denied`, p).output.trim()).toBe("denied");
   });
+});
+
+test("the profile lists the block's ports and never an owner port among them", () => {
+  const text = sandboxProfile(policy());
+  expect(text).toContain(`(allow network-outbound (remote ip "localhost:${OWN}"))`);
+  expect(text).toContain(`(allow network-outbound (remote ip "localhost:${ALLOWED}"))`);
+  expect(text).not.toContain(`localhost:${OWNER}"))`);
+  expect(text).toContain(`(allow network-bind (local ip "localhost:${FREE_IN_BLOCK}"))`);
+  expect(text).not.toContain(`(allow network-bind (local ip "localhost:${ALLOWED}"))`);
+});
+
+test("anyLoopback (test suites with their own servers) still denies owner ports and non-loopback hosts", () => {
+  const text = sandboxProfile(policy({ anyLoopback: true }));
+  expect(text).toContain('(allow network-outbound (remote ip "localhost:*"))');
+  expect(text).toContain(`(deny network-outbound (remote ip "localhost:${OWNER}"))`);
+  expect(text).toContain(`(deny network-bind (local ip "localhost:${OWNER}"))`);
+  expect(text).toContain('(deny network-outbound (remote ip "*:*"))');
+});
+
+test("realHome reads the user database, not $HOME", () => {
+  const fake = join(scratch, "fake-home");
+  mkdirSync(fake, { recursive: true });
+  const probe = spawnSync(process.execPath, ["-e", `import("${join(import.meta.dir, "../scripts/lib/sandbox.ts")}").then((m) => console.log(m.realHome()))`], {
+    encoding: "utf8",
+    env: { ...process.env, HOME: fake },
+  });
+  expect(probe.stdout.trim()).toBe(realHome());
+  expect(probe.stdout.trim()).not.toBe(fake);
+  expect(realHome()).toMatch(/^\/Users\/[^/]+$/);
 });
 
 test("fails closed when sandbox-exec is missing", () => {

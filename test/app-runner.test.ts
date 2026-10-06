@@ -16,6 +16,7 @@ import { spawn } from "node:child_process";
 import {
   cleanupRuns,
   guardedContext,
+  installGuard,
   profileBlock,
   registryProblems,
   validateLoadedRegistry,
@@ -32,14 +33,15 @@ import {
 } from "../scripts/lib/app-runner.ts";
 import { adoptStyleSheet, DETERMINISM_CSS } from "../scripts/lib/capture.ts";
 import { loadPlaywright, playwrightAnchor, playwrightUnavailable } from "../scripts/lib/playwright.ts";
+import { realHome } from "../scripts/lib/safe-paths.ts";
 import { loadRegistry, type AppEntry, type Registry } from "../scripts/lib/registry.ts";
-import { assertNoLeaks } from "./leaks.ts";
+import { finishScratch } from "./leaks.ts";
 
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-runner-test-")));
 const outDir = join(scratch, "out");
-afterAll(() => {
+afterAll(async () => {
   try {
-    assertNoLeaks(scratch);
+    await finishScratch(scratch);
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }
@@ -126,6 +128,7 @@ describe("profileEnv", () => {
       expect(Object.keys(env).filter((key) => !allowed.has(key) && !key.startsWith("BUN_INSTALL"))).toEqual([]);
       expect(env.PATH).toBe(process.env.PATH!);
       expect(env.HOME).toBe("/t/run");
+      expect(env.TMPDIR).toBe("/t/run"); // the sandbox denies writes to the shared system temp dirs
       for (const key of ["XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME"]) expect(env[key]!.startsWith("/t/run/")).toBe(true);
       expect(env.DATA_DIR).toBe("/t/run/data");
       expect(env.API_URL).toBe("http://127.0.0.1:47011");
@@ -300,7 +303,7 @@ describe("startApp", () => {
     const other = Bun.serve({ hostname: "127.0.0.1", port: 46939, fetch: () => (hits++, new Response("not the app")) });
     try {
       // Printed from parts: registry:check's rules already refuse a start command that names the URL.
-      const app = fixtureApp({ ui: 46913, helper: 46914 }, {}, { start: "printf 'Local: http://127.0.0.1:%s/\\n' 46939; sleep 30" });
+      const app = fixtureApp({ ui: 46913, helper: 46914 }, {}, { start: "printf 'Local: http://%s:%s/\\n' 127.0.0.1 46939; sleep 30" });
       await expect(startApp(app, { root: makeRoot(), outDir, timeoutMs: 10_000 })).rejects.toThrow(/not on one of its profile ports/);
       expect(hits).toBe(0);
     } finally {
@@ -389,18 +392,47 @@ describe("startApp", () => {
     expect(JSON.parse(readFileSync(join(running.tmp, "env.json"), "utf8")).FIXTURE_SECRET).toBeUndefined();
   });
 
-  test("records a server-side connection to a loopback port the run does not own as a violation", async () => {
-    const foreign = Bun.serve({ hostname: "127.0.0.1", port: 46939, fetch: () => new Response("foreign"), idleTimeout: 30 });
+  test("the sandbox keeps run processes to their own block, out of the real home and out of the tool's out dir", async () => {
+    // A live listener the run did not start (46939, outside its block 46900-46909): treated as an owner service.
+    let strayHits = 0;
+    const stray = Bun.serve({ hostname: "127.0.0.1", port: 46939, fetch: () => (strayHits++, new Response("stray")) });
     try {
-      // A run process that, after the run is ready, holds a connection to 46939 (not an owner port, so the
-      // sandbox lets it through: only the egress sampling sees it).
-      const app = fixtureApp({ ui: 46903, helper: 46904 }, {}, { start: "(sleep 1; /usr/bin/nc -d 127.0.0.1 46939) & bun serve.ts" });
+      const probes = [
+        `/usr/bin/nc -v -z -G 2 127.0.0.1 46939 > "$HOME/stray.txt" 2>&1`,
+        `ls '${realHome()}' > "$HOME/home.txt" 2>&1`,
+        `echo '{}' > '${join(outDir, "runs", "forged.json")}' 2> "$HOME/record.txt"`,
+        `echo x > '${join(outDir, "runner-fixture", "logs", "planted.log")}' 2> "$HOME/log.txt"`,
+      ];
+      const running = await start(fixtureApp({ ui: 46901, helper: 46902 }, {}, { start: `(${probes.join("; ")}); bun serve.ts` }), makeRoot());
+      for (const file of ["stray.txt", "home.txt", "record.txt", "log.txt"]) expect(`${file}: ${readFileSync(join(running.tmp, file), "utf8")}`).toContain("Operation not permitted");
+      expect(existsSync(join(outDir, "runs", "forged.json"))).toBe(false);
+      expect(JSON.parse(readFileSync(join(running.tmp, "env.json"), "utf8")).TMPDIR).toBe(running.tmp);
+      expect(strayHits).toBe(0);
+    } finally {
+      stray.stop(true);
+    }
+  });
+
+  test("refuses an Electron app unless the tool opts in, before it builds anything", async () => {
+    expect(process.env.DS_ALLOW_ELECTRON).toBeUndefined();
+    const root = makeRoot();
+    const app = fixtureApp({}, {}, { mode: "electron", start: undefined, readyPattern: undefined, electron: { build: `touch ${join(root, "built")}`, main: "app/main.js" } });
+    await expect(startApp(app, { root, outDir })).rejects.toThrow(/Electron runs are refused.*DS_ALLOW_ELECTRON=1/);
+    expect(existsSync(join(root, "built"))).toBe(false);
+  });
+
+  test("records a server-side connection to a loopback port the run does not own as a violation", async () => {
+    // 46909 is in the run's block (46900-46909), so the sandbox lets the connection through; the run neither
+    // listens there nor names it, so only the egress sampling can flag it.
+    const foreign = Bun.serve({ hostname: "127.0.0.1", port: 46909, fetch: () => new Response("foreign"), idleTimeout: 30 });
+    try {
+      const app = fixtureApp({ ui: 46903, helper: 46904 }, {}, { start: "(sleep 1; /usr/bin/nc -d 127.0.0.1 46909) & bun serve.ts" });
       const running = await start(app, makeRoot());
       expect(running.violations ?? []).toEqual([]);
       const deadline = Date.now() + 8_000;
-      while (!(running.violations ?? []).some((v) => v.includes("->127.0.0.1:46939")) && Date.now() < deadline) await Bun.sleep(100);
+      while (!(running.violations ?? []).some((v) => v.includes("->127.0.0.1:46909")) && Date.now() < deadline) await Bun.sleep(100);
       await running.stop();
-      expect(running.violations).toEqual([expect.stringMatching(/^egress: nc\(\d+\) TCP 127\.0\.0\.1:\d+->127\.0\.0\.1:46939/)]);
+      expect(running.violations).toEqual([expect.stringMatching(/^egress: nc\(\d+\) TCP 127\.0\.0\.1:\d+->127\.0\.0\.1:46909/)]);
       expect(running.egress!.samples).toBeGreaterThan(0);
       expect(running.egress!.failures).toEqual([]);
     } finally {
@@ -480,6 +512,41 @@ describe("guardedContext", () => {
     },
     30_000,
   );
+});
+
+describe("guardedContext WebSockets", () => {
+  test.skipIf(Boolean(noPlaywright))(
+    "blocks and records a WebSocket to a local port the run did not start; the run's own WebSocket connects",
+    async () => {
+      let strayOpens = 0;
+      const stray = Bun.serve({
+        hostname: "127.0.0.1",
+        port: 46939,
+        websocket: { open: (socket) => (strayOpens++, socket.send("hello")), message: () => {} },
+        fetch: (request, server) => (server.upgrade(request) ? undefined : new Response("stray")),
+      });
+      const running = await start(fixtureApp({ ui: 46916, helper: 46917 }), makeRoot());
+      const browser = await launchBrowser(process.env.DS_MIRROR ?? "/Users/Ford/workspace-ds");
+      try {
+        const { context, blocked } = await guardedContext(browser, running);
+        const page = await context.newPage();
+        await page.goto(`${running.baseUrl}/ws-probe`);
+        expect(await page.evaluate(() => (globalThis as any).wsResults)).toEqual({ own: "ok", stray: "failed" });
+        expect(strayOpens).toBe(0);
+        expect(blocked()).toEqual(["WS ws://127.0.0.1:46939/"]);
+      } finally {
+        await browser.close();
+        stray.stop(true);
+      }
+    },
+    30_000,
+  );
+
+  test("refuses to guard a context that cannot route WebSockets (fails closed)", async () => {
+    const context = { route: async () => undefined };
+    const running = { app: fixtureApp({ ui: 46916 }), ports: { ui: 46916 }, startedPorts: [46916] } as unknown as RunningApp;
+    await expect(installGuard(context, running)).rejects.toThrow(/routeWebSocket/);
+  });
 });
 
 describe("guardedContext and ports the run gave up", () => {
@@ -576,6 +643,21 @@ describe("installSignalHandlers", () => {
   );
 });
 
+/** A stand-in run root the way the runner starts one: `sh -c` with the watchdog first, in its own group. */
+function fakeRunRoot(body: string) {
+  return spawn("/bin/sh", ["-c", `{ cat >/dev/null; kill -KILL 0; } <&3 &\n{\n${body}\n} 3<&-`], { detached: true, stdio: ["ignore", "ignore", "ignore", "pipe"] });
+}
+
+/** Writes a run record for a dead tool, the way startApp does, naming these roots and processes. */
+function writeRecord(outDir: string, app: string, ids: { roots: number[]; processes: number[] }) {
+  mkdirSync(join(outDir, "runs"), { recursive: true });
+  const identity = (pid: number) => ({ pid, pgid: pid, started: rootProc(pid).started });
+  writeFileSync(
+    join(outDir, "runs", `${app}.json`),
+    JSON.stringify({ version: 2, app, tool: { pid: 999_999, started: "gone" }, roots: ids.roots.map(identity), processes: ids.processes.map(identity) }),
+  );
+}
+
 /** Runs test/fixtures/runner/lifecycle.ts; resolves once it printed READY, with its tmp dir. */
 async function lifecycle(mode: string, ports: number[], outDirFor = outDir) {
   const tool = Bun.spawn(["bun", join(import.meta.dir, "fixtures/runner/lifecycle.ts"), mode, makeRoot(), outDirFor, ...ports.map(String)], {
@@ -664,27 +746,103 @@ describe("a tool that ends without stopping its apps", () => {
     expect(existsSync(tmp!)).toBe(false);
   }, 40_000);
 
-  test("--cleanup stops exactly the recorded processes of a dead tool that left the run's group", async () => {
+  test("--cleanup stops a dead tool's run from its identity-checked root (descendants and group) and leaves a recorded process outside them alone", async () => {
     const records = join(scratch, "cleanup-out");
-    const daemon = spawn("sleep", ["30"], { detached: true, stdio: "ignore" });
+    const root = fakeRunRoot("sleep 30 & sleep 30; wait");
     const bystander = spawn("sleep", ["30"], { detached: true, stdio: "ignore" });
-    const exited = new Promise((done) => daemon.once("exit", done));
+    const rootExited = new Promise((done) => root.once("exit", done));
     try {
-      mkdirSync(join(records, "runs"), { recursive: true });
-      const started = rootProc(daemon.pid!).started;
-      writeFileSync(
-        join(records, "runs", "orphaned.json"),
-        JSON.stringify({ app: "orphaned", tool: { pid: 999_999, started: "gone" }, processes: [{ pid: daemon.pid, pgid: daemon.pid, started }] }),
-      );
-      expect(await cleanupRuns(records)).toEqual([`orphaned: stopped 1 of 1 leftover process(es) (pids ${daemon.pid})`]);
-      await exited;
+      await Bun.sleep(300);
+      writeRecord(records, "orphaned", { roots: [root.pid!], processes: [bystander.pid!] });
+      const report = await cleanupRuns(records);
+      expect(report).toEqual([
+        expect.stringMatching(new RegExp(`^orphaned: stopped (\\d+) of \\1 leftover process\\(es\\) \\(pids ${root.pid}.*; left alone 1 recorded process\\(es\\) .*\\(pids ${bystander.pid}\\)`)),
+      ]);
+      await rootExited;
       expect(bystander.exitCode).toBeNull();
-      expect(existsSync(join(records, "runs", "orphaned.json"))).toBe(false);
+      expect(bystander.signalCode).toBeNull();
+      // A process it could not account for keeps the record for a look by hand.
+      expect(existsSync(join(records, "runs", "orphaned.json"))).toBe(true);
     } finally {
-      daemon.kill("SIGKILL");
+      root.kill("SIGKILL");
       bystander.kill("SIGKILL");
     }
   }, 20_000);
+
+  test("--cleanup never signals a process a record names as its root unless it is a runner root", async () => {
+    const records = join(scratch, "forged-out");
+    // A process that is not a runner root (no watchdog shell), named with its true start time.
+    const victim = spawn("sleep", ["30"], { detached: true, stdio: "ignore" });
+    try {
+      await Bun.sleep(100);
+      writeRecord(records, "forged", { roots: [victim.pid!], processes: [victim.pid!] });
+      expect(await cleanupRuns(records)).toEqual([expect.stringMatching(new RegExp(`^forged: nothing left running; left alone 1 recorded process\\(es\\) .*\\(pids ${victim.pid}\\)`))]);
+      await Bun.sleep(200);
+      expect(victim.exitCode).toBeNull();
+      expect(victim.signalCode).toBeNull();
+    } finally {
+      victim.kill("SIGKILL");
+    }
+  }, 20_000);
+
+  test.each([
+    ["SIGTERM", 143],
+    ["SIGHUP", 129],
+  ] as const)("%s to a tool that installed no handlers itself: startApp's handlers stop the app cleanly, then exit %d", async (sig, code) => {
+    const records = join(scratch, `signal-${sig}`);
+    const { tool, tmp } = await lifecycle("plain", [46920, 46921], records);
+    expect(tmp).toBeDefined();
+    tool.kill(sig);
+    expect(await tool.exited).toBe(code);
+    expect(await portsClosed([46920, 46921], 1_000)).toBe(true);
+    // A clean stop, not the watchdog: the temp dir and the run record are gone too.
+    expect(existsSync(tmp!)).toBe(false);
+    expect(existsSync(join(records, "runs", "lifecycle-fixture.json"))).toBe(false);
+  }, 40_000);
+
+  test("a second signal while the graceful stop waits on an app that ignores SIGTERM: everything is SIGKILLed at once", async () => {
+    const { tool, tmp } = await lifecycle("stubborn", [46922, 46923]);
+    expect(tmp).toBeDefined();
+    tool.kill("SIGINT");
+    await Bun.sleep(1_000); // the stop now waits out its 8 s grace: the app ignores SIGTERM
+    expect(await portOpen(46922)).toBe(true);
+    const second = Date.now();
+    tool.kill("SIGINT");
+    expect(await tool.exited).toBe(130);
+    expect(Date.now() - second).toBeLessThan(3_000);
+    expect(await portsClosed([46922, 46923], 1_000)).toBe(true);
+  }, 40_000);
+});
+
+describe("stop() when ps fails", () => {
+  test("kills the run's root groups, but does not claim the stop: it rejects and keeps the run record", async () => {
+    const records = join(scratch, "ps-fails");
+    const running = await startApp(fixtureApp({ ui: 46924, helper: 46927 }), { root: makeRoot(), outDir: records, timeoutMs: 20_000 });
+    const fakeBin = join(scratch, "fake-ps-bin");
+    mkdirSync(fakeBin, { recursive: true });
+    writeFileSync(join(fakeBin, "ps"), "#!/bin/sh\nexit 1\n", { mode: 0o755 });
+    const saved = process.env.PATH;
+    process.env.PATH = `${fakeBin}:${saved}`;
+    try {
+      await expect(running.stop()).rejects.toThrow(/could not confirm the run stopped \(ps failed\)/);
+    } finally {
+      process.env.PATH = saved;
+    }
+    expect(await portsClosed([46924, 46927], 2_000)).toBe(true);
+    expect(existsSync(join(records, "runs", "runner-fixture.json"))).toBe(true);
+    rmSync(join(records, "runs", "runner-fixture.json"));
+  }, 60_000);
+});
+
+describe("registry-prove", () => {
+  test("cleans up the run records a crashed proof left before it proves anything", async () => {
+    const out = join(scratch, "prove-out");
+    writeRecord(join(out, "tooling", "registry", "runs"), "sequence-studio", { roots: [], processes: [] });
+    const cli = Bun.spawnSync(["bun", join(import.meta.dir, "../scripts/registry-prove.ts"), "--root", scratch, "--out-dir", out], { stderr: "pipe", stdout: "pipe" });
+    expect(cli.stderr.toString()).toContain("registry-prove: cleanup: sequence-studio: nothing left running");
+    expect(cli.exitCode).toBe(0);
+    expect(existsSync(join(out, "tooling", "registry", "runs", "runs", "sequence-studio.json"))).toBe(false);
+  }, 30_000);
 });
 
 describe("launchBrowser", () => {
@@ -722,9 +880,11 @@ const electronDir = (() => {
 })();
 // Opt-in: any real Electron launch makes cfprefsd write the owner's shared ~/Library/Preferences/com.github.Electron.plist,
 // which the sandbox cannot stop (cfprefsd writes it, not the app). `bun run test` launches no Electron.
-const electronOptIn = process.env.DS_TEST_ELECTRON === "1";
+const electronOptIn = process.env.DS_TEST_ELECTRON === "1" && process.env.DS_ALLOW_ELECTRON === "1";
 if (!electronOptIn)
-  console.warn("skipping the electron test: set DS_TEST_ELECTRON=1 to run it; any Electron launch writes ~/Library/Preferences/com.github.Electron.plist through cfprefsd");
+  console.warn(
+    "skipping the electron test: set DS_TEST_ELECTRON=1 and DS_ALLOW_ELECTRON=1 to run it; an Electron launch may write ~/Library/Preferences/com.github.Electron.plist through cfprefsd",
+  );
 else if (!electronDir) console.warn("skipping the electron test: electron does not resolve from the mirror's system-view");
 
 describe("startApp electron", () => {
