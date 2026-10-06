@@ -118,7 +118,8 @@ export function stepsProblems(steps: unknown, where: string): string[] {
  * renders without), which use:app reports under expectedFailedRequests instead of failing the run. A
  * request matches when it goes to the app's own origin (the URL the runner read from the server output),
  * its method is `method`, it failed with `status`, and `urlPattern` (a regular expression anchored at
- * the start of the path, "^/") matches its path and query. Its matching "Failed to load resource" console
+ * the start of the path, "^/"; every alternative stays anchored, see expectedPattern) matches its path and
+ * query. A pattern that matches "/" or a made-up path (CANARY_PATHS) is refused as a blanket. Its matching "Failed to load resource" console
  * error is expected too. Only HTTP statuses 400-599; a request that never got a response is never expected.
  */
 export interface ExpectedFailure {
@@ -143,21 +144,41 @@ export function expectedFailuresProblems(list: unknown): string[] {
     if (typeof e.urlPattern !== "string" || !e.urlPattern.startsWith("^/") || e.urlPattern.startsWith("^//")) {
       problems.push(`${name}.urlPattern must be a regular expression anchored at the start of a path on the app's own origin ("^/api/..."): it is matched against the path and query only`);
     } else {
+      let pattern: RegExp | undefined;
       try {
-        new RegExp(e.urlPattern);
+        pattern = expectedPattern(e.urlPattern);
       } catch (error) {
         problems.push(`${name}.urlPattern is not a valid regular expression: ${(error as Error).message}`);
       }
+      const blanket = pattern ? CANARY_PATHS.filter((path) => pattern!.test(path)) : [];
+      if (blanket.length)
+        problems.push(`${name}.urlPattern ${JSON.stringify(e.urlPattern)} is a blanket pattern: it also matches ${blanket.join(" and ")}; name the one endpoint that fails by design`);
     }
   });
   return problems;
 }
 
 /**
- * The expected failure that covers a failed request, or undefined. `origin` is the app's own origin;
- * a request to any other origin (another port, another host) is never expected.
+ * Paths no expected failure may match: the origin's root, and made-up asset and query paths. A pattern
+ * that matches one would excuse failures on paths the entry never named (a missing JS chunk, a font).
  */
-export function expectedFailure(list: readonly ExpectedFailure[] | undefined, origin: string | undefined, request: { method: string; url: string; status: number }): ExpectedFailure | undefined {
+export const CANARY_PATHS = ["/", "/__ds_canary__/x.js", "/__ds_canary__?x=1"] as const;
+
+/**
+ * An expected failure's urlPattern as matched: "^/a|/b" becomes ^(?:/a|/b), so every alternative is
+ * anchored at the start of the path (a bare top-level `|` cannot reach past the anchor). Throws on an
+ * invalid pattern.
+ */
+export function expectedPattern(urlPattern: string): RegExp {
+  return new RegExp(`^(?:${urlPattern.slice(1)})`);
+}
+
+/**
+ * The expected failure that covers a failed request, or undefined. `origin` is the app's own origin;
+ * a request to any other origin (another port, another host) is never expected. Without `method` (a
+ * console message names only the URL and the status) any entry's method matches.
+ */
+export function expectedFailure(list: readonly ExpectedFailure[] | undefined, origin: string | undefined, request: { method?: string; url: string; status: number }): ExpectedFailure | undefined {
   if (!list?.length || !origin) return undefined;
   let url: URL;
   try {
@@ -167,12 +188,15 @@ export function expectedFailure(list: readonly ExpectedFailure[] | undefined, or
   }
   if (url.origin !== new URL(origin).origin) return undefined;
   const path = `${url.pathname}${url.search}`;
-  return list.find((e) => e.method === request.method && e.status === request.status && safeTest(e.urlPattern, path));
+  return list.find((e) => (request.method === undefined || e.method === request.method) && e.status === request.status && safeTest(e.urlPattern, path));
 }
 
-function safeTest(pattern: string, text: string): boolean {
+/** Whether the urlPattern matches the path; a pattern validation would refuse (not "^/", blanket, invalid) never does. */
+function safeTest(urlPattern: string, path: string): boolean {
+  if (typeof urlPattern !== "string" || !urlPattern.startsWith("^/") || urlPattern.startsWith("^//")) return false;
   try {
-    return new RegExp(pattern).test(text);
+    const pattern = expectedPattern(urlPattern);
+    return !CANARY_PATHS.some((canary) => pattern.test(canary)) && pattern.test(path);
   } catch {
     return false;
   }
@@ -468,6 +492,12 @@ export function probeRole(probe: VerifySpec["probes"][number]): ProbeRole | null
   if (token.startsWith("color.text.")) return "text";
   if (token.startsWith("color.border.")) return "border";
   return null;
+}
+
+/** The route verify:apps checks: verify.route, else the first route. */
+export function verifyRoute(app: { verify?: { route?: string }; routes?: RouteSpec[] }): RouteSpec | undefined {
+  const id = app.verify?.route;
+  return id ? app.routes?.find((route) => route.id === id) : app.routes?.[0];
 }
 
 /** The themes verify:apps checks an app in: dark only on a dark-first surface, else light then dark. */

@@ -39,7 +39,10 @@ export interface ElementInfo {
   submit: boolean;
   /** Inside a <form>, or owned by one through the form attribute. */
   inForm: boolean;
-  /** aria-label, title and value of the element and of the control it sits in: always read for write words. */
+  /**
+   * The accessible names of the element and of the control it sits in (aria-label, title, aria-labelledby,
+   * its <label>s, a wrapping <label>) and an input's value: always read for write words.
+   */
   names: string[];
   /** Visible text of the element and of the control it sits in (none for the page body): read when short or at its start. */
   texts: string[];
@@ -68,6 +71,15 @@ export function describeElement(el: any): ElementInfo {
   for (const node of control === el ? [el] : [el, control]) {
     push(names, node.getAttribute?.("aria-label"));
     push(names, node.getAttribute?.("title"));
+    // The accessible name a user reads: aria-labelledby, the native labels (<label for>, a wrapping
+    // <label>) and any wrapping <label> of a non-labelable element. A checkbox's own text is empty.
+    for (const id of String(node.getAttribute?.("aria-labelledby") ?? "").split(/\s+/).filter(Boolean)) {
+      const label = node.ownerDocument?.getElementById(id);
+      if (label) push(names, label.innerText ?? label.textContent);
+    }
+    for (const label of Array.from((node.labels ?? []) as Iterable<any>)) push(names, label.innerText ?? label.textContent);
+    const wrapping = node.closest?.("label");
+    if (wrapping) push(names, wrapping.innerText ?? wrapping.textContent);
     if (String(node.tagName).toLowerCase() === "input") push(names, node.value);
     if (!page(node)) push(texts, node.innerText ?? node.textContent);
   }

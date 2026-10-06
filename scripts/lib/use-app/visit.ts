@@ -113,8 +113,10 @@ function watch(page: any, visit: Visit, expected: { list?: ExpectedFailure[]; or
       if (message.type() !== "error" || /net::ERR_BLOCKED_BY_CLIENT/.test(message.text())) return;
       const status = Number(LOAD_FAILED.exec(message.text())?.[1]);
       const url = String(message.location?.()?.url ?? "");
-      // Reported with its response (the console error names the URL and status, not the method; it may come first).
-      if (status && expected.list?.some((e) => covered(e.method, url, status))) return;
+      // Reported with its response. Chromium's message names only the URL and the status, never the
+      // method, and may arrive before the response event: match URL and status only. A request with
+      // another method to that path still lands in failedRequests through its response, so the run fails.
+      if (status && expectedFailure(expected.list, expected.origin, { url, status })) return;
       visit.consoleErrors.push(message.text().slice(0, 300));
     },
     pageerror: (error) => visit.consoleErrors.push(`pageerror: ${String(error?.message ?? error).slice(0, 300)}`),

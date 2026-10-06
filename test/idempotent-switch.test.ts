@@ -12,7 +12,7 @@
  *   lightSteps reach the right theme in every visit, and the expected 404 is reported apart.
  */
 import { afterAll, expect, test } from "bun:test";
-import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -23,10 +23,12 @@ import { decodePng } from "../scripts/lib/png.ts";
 import { type AppEntry, DESIGN_SYSTEM_ROOT, expectedFailure, type ExpectedFailure, validateRegistry, type VerifySpec } from "../scripts/lib/registry.ts";
 import { captureSha256 } from "../scripts/lib/snapshot-set.ts";
 import { judge, type Visit } from "../scripts/lib/use-app/log.ts";
-import { activates, type ElementInfo, stepRefusal, stepSelector } from "../scripts/lib/use-app/safety.ts";
+import { activates, describeElement, type ElementInfo, stepRefusal, stepSelector } from "../scripts/lib/use-app/safety.ts";
+import { checkPage } from "../scripts/lib/verify/page-checks.ts";
+import { loadBuildValues } from "../scripts/lib/verify/tokens.ts";
 import { finishScratch } from "./leaks.ts";
 import { snapshotApp, writeRegistry } from "./snapshot-support.ts";
-import { browserSkip, MIRROR } from "./verify-support.ts";
+import { browserSkip, fixtureFontSource, MIRROR } from "./verify-support.ts";
 
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-idempotent-switch-")));
 afterAll(async () => {
@@ -81,6 +83,10 @@ test("validation: step actions, check/uncheck targets, lightSteps and expectedFa
     ["an unanchored pattern", entry({ expectedFailures: [{ ...themeMissing, urlPattern: "/api/theme" }] }), /urlPattern must be a regular expression anchored/],
     ["a protocol-relative pattern", entry({ expectedFailures: [{ ...themeMissing, urlPattern: "^//evil.example/" }] }), /urlPattern must be a regular expression anchored/],
     ["a bad regex", entry({ expectedFailures: [{ ...themeMissing, urlPattern: "^/api/(" }] }), /urlPattern is not a valid regular expression/],
+    // Blanket patterns: a top-level alternative past the anchor, or one that matches the root or a made-up path.
+    ...["^/x|", "^/x|/", "^/api/theme$|.*", "^/", "^/.*$", "^/(?:)|.", "^/[^]*", "^/__ds_canary__"].map(
+      (urlPattern): [string, AppEntry, RegExp] => [`blanket ${urlPattern}`, entry({ expectedFailures: [{ ...themeMissing, urlPattern }] }), /is a blanket pattern: it also matches/],
+    ),
     ["a success status", entry({ expectedFailures: [{ ...themeMissing, status: 200 }] }), /status must be an HTTP error status/],
     ["a lower-case method", entry({ expectedFailures: [{ ...themeMissing, method: "get" }] }), /method must be an upper-case HTTP method/],
   ];
@@ -104,6 +110,16 @@ test("expectedFailure: the app's own origin, the method, the status and the path
   ] as const)
     expect([method, url, status, hit(method, url, status)]).toEqual([method, url, status, null]);
   expect(expectedFailure(list, undefined, { method: "GET", url: `${origin}/api/theme`, status: 404 })).toBeUndefined(); // no origin read: nothing is expected
+  // Every alternative is anchored: "^/a|/b" is ^(?:/a|/b), so /b matches only at the start of the path.
+  const both = [{ ...themeMissing, urlPattern: "^/api/theme$|/api/other$" }];
+  expect(expectedFailure(both, origin, { method: "GET", url: `${origin}/api/other`, status: 404 })?.reason).toBe(themeMissing.reason);
+  expect(expectedFailure(both, origin, { method: "GET", url: `${origin}/assets/api/other`, status: 404 })).toBeUndefined();
+  // A blanket pattern that got past validation (a hand-edited log, a direct call) still excuses nothing.
+  for (const urlPattern of ["^/api/theme$|", "^/x|/", "^/(?:)|.", "^/.*$", "^/"])
+    expect([urlPattern, expectedFailure([{ ...themeMissing, urlPattern }], origin, { method: "GET", url: `${origin}/assets/app.js`, status: 404 })]).toEqual([urlPattern, undefined]);
+  // Without a method (a console message), the URL and status decide.
+  expect(expectedFailure(list, origin, { url: `${origin}/api/theme`, status: 404 })?.reason).toBe(themeMissing.reason);
+  expect(expectedFailure(list, origin, { url: `${origin}/api/theme`, status: 500 })).toBeUndefined();
   expect(expectedFailure(undefined, origin, { method: "GET", url: `${origin}/api/theme`, status: 404 })).toBeUndefined();
 });
 
@@ -209,9 +225,10 @@ test.skipIf(Boolean(browserSkip))(
 );
 
 /** A root with the persisted-theme stand-in at app/ (index.html), and Playwright from the mirror. */
-function tree(): string {
+function tree(pages: Record<string, string> = {}): string {
   const root = mkdtempSync(join(scratch, "root-"));
   mkdirSync(join(root, "app"));
+  for (const [file, html] of Object.entries(pages)) writeFileSync(join(root, "app", file), html);
   cpSync(join(import.meta.dir, "fixtures/use-app/persisted-theme-serve.ts"), join(root, "app/serve.ts"));
   cpSync(join(import.meta.dir, "fixtures/use-app/persisted-theme.html"), join(root, "app/index.html"));
   mkdirSync(join(root, "codecaine"));
@@ -336,4 +353,106 @@ test.skipIf(Boolean(browserSkip))(
     ]);
   },
   240_000,
+);
+
+// -- fix round 1: the accessible name, blanket patterns in a run, verify's lightSteps ----------------
+
+/** Write-labelled toggles (each handler fetches /fired-<n>, a 404 a run would record), and docs-workbench's Dark mode row. */
+const LABELLED = `<!doctype html><html><body>
+<label>Delete all records<input id="wrapped" type="checkbox" onclick="fetch('/fired-wrapped')" /></label>
+<label for="external">Remove every draft</label><input id="external" type="checkbox" onclick="fetch('/fired-external')" />
+<span id="sync-label">Sync all folders</span>
+<div id="switch" role="switch" aria-checked="true" aria-labelledby="sync-label" tabindex="0" onclick="fetch('/fired-switch'); this.setAttribute('aria-checked', this.getAttribute('aria-checked') === 'true' ? 'false' : 'true')">on</div>
+<label class="flex min-h-8 items-center justify-between gap-3 text-ui-xs"><span class="style-rail-row-label"><span></span><span>Dark mode</span></span><input class="style-toggle" type="checkbox" /></label>
+<script>fetch("/unrelated.js")</script>
+</body></html>`;
+
+test.skipIf(Boolean(browserSkip))(
+  "describeElement reads a control's accessible name: write-labelled checkboxes and switches are refused, the Dark mode row passes",
+  async () => {
+    const browser = await loadPlaywright(MIRROR).chromium.launch(LAUNCH_OPTIONS);
+    try {
+      const page = await browser.newPage();
+      await page.setContent(LABELLED);
+      const refusal = async (action: Step["action"], target: string) => stepRefusal({ action, target }, await page.locator(target).evaluate(describeElement));
+      for (const action of ["check", "uncheck", "click"] as const) {
+        expect([action, await refusal(action, "#wrapped")]).toEqual([action, expect.stringContaining('"Delete all records" names a write')]);
+        expect([action, await refusal(action, "#external")]).toEqual([action, expect.stringContaining('"Remove every draft" names a write')]);
+        expect([action, await refusal(action, "#switch")]).toEqual([action, expect.stringContaining('"Sync all folders" names a write')]);
+        expect([action, await refusal(action, 'label:has-text("Dark mode") input.style-toggle')]).toEqual([action, null]);
+      }
+    } finally {
+      await browser.close();
+    }
+  },
+  60_000,
+);
+
+test.skipIf(Boolean(browserSkip))(
+  "use:app refuses check and uncheck on write-labelled controls without firing them; an unrelated 404 stays a failure beside an expected one",
+  () => {
+    const root = tree({ "labelled.html": LABELLED });
+    const out = join(scratch, "labelled-out");
+    const registry = join(mkdtempSync(join(scratch, "registry-")), "apps.json");
+    const routes = [
+      { id: "wrapped", path: "/labelled.html", themes: ["light" as const], steps: [{ action: "check" as const, target: "#wrapped" }] },
+      { id: "switch", path: "/labelled.html", themes: ["light" as const], steps: [{ action: "uncheck" as const, target: "#switch" }] },
+      { id: "dark-mode", path: "/labelled.html", themes: ["light" as const], steps: [{ action: "check" as const, target: 'label:has-text("Dark mode") input.style-toggle' }] },
+    ];
+    // The page fetches only /unrelated.js, which the expected entry (/api/theme) does not cover.
+    writeRegistry(registry, [entry({ expectedFailures: [themeMissing] }, { routes, runProfile: { ...snapshotApp().runProfile, ports: { ui: 46955 } } })]);
+    const result = Bun.spawnSync([process.execPath, join(DESIGN_SYSTEM_ROOT, "scripts/use-app.ts"), "--app", "demo", "--root", root, "--registry", registry, "--out-dir", out], { env: { ...process.env } });
+    const dir = join(out, "demo", "use-app");
+    const log = JSON.parse(readFileSync(join(dir, readdirSync(dir).find((file) => file.endsWith(".json"))!), "utf8"));
+    const visit = (id: string) => (log.visits as Visit[]).find((v) => v.route === id)!;
+    expect(visit("wrapped").actions.find((a) => a.target === "check #wrapped")?.refused).toMatch(/"Delete all records" names a write/);
+    expect(visit("switch").actions.find((a) => a.target === "uncheck #switch")?.refused).toMatch(/"Sync all folders" names a write/);
+    expect(visit("dark-mode").actions.find((a) => a.target.startsWith("check label"))).toMatchObject({ ok: true });
+    for (const v of log.visits as Visit[]) {
+      // Never fired: no /fired-* request in any visit (hovers never activate either).
+      expect([v.route, v.failedRequests.filter((r) => r.includes("/fired-"))]).toEqual([v.route, []]);
+      // /unrelated.js is no expected failure: it fails the visit; nothing was expected here.
+      expect([v.route, v.failedRequests, v.expectedFailedRequests]).toEqual([v.route, ["404 GET http://127.0.0.1:46955/unrelated.js"], []]);
+      expect(v.consoleErrors).toEqual([expect.stringMatching(/^Failed to load resource: the server responded with a status of 404/)]);
+    }
+    expect(log.totals).toMatchObject({ refused: 2, failedRequests: 3, expectedFailedRequests: 0 });
+    expect([result.exitCode, log.ok]).toEqual([1, false]);
+  },
+  180_000,
+);
+
+test.skipIf(Boolean(browserSkip))(
+  "verify checkPage runs lightSteps after the route is prepared and reads light, though the server saved dark; then the darkSwitch reads dark",
+  async () => {
+    const root = tree();
+    const app = entry(
+      { probes: [{ selector: "body", property: "background-color", token: "color.surface.page" }], darkSwitch: checkDark, lightSteps: uncheckLight },
+      { routes: [{ id: "home", path: "/", waitFor: "p.ready" }], runProfile: { ...snapshotApp().runProfile, ports: { ui: 46956 } } },
+    );
+    const running = await startApp(app, { root, outDir: join(scratch, "verify-out"), timeoutMs: 20_000 });
+    const browser = await loadPlaywright(MIRROR).chromium.launch(LAUNCH_OPTIONS);
+    try {
+      // A previous visit saved dark on the server.
+      await fetch(`${running.baseUrl}/api/theme`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ dark: true }) });
+      const page = await browser.newPage();
+      const order: string[] = [];
+      await page.exposeFunction("recordToggle", (checked: boolean) => void order.push(`toggle ${checked ? "dark" : "light"}`));
+      await page.addInitScript(() => document.addEventListener("change", (event) => (window as any).recordToggle((event.target as HTMLInputElement).checked), true));
+      await page.goto(`${running.baseUrl}/`);
+      const prepare = async (p: any) => {
+        await p.locator("p.ready").waitFor({ state: "visible" });
+        order.push(`prepared ${await p.evaluate(() => document.documentElement.getAttribute("data-theme"))}`);
+      };
+      await prepare(page);
+      const assertions = await checkPage(page, { app, values: loadBuildValues(DESIGN_SYSTEM_ROOT), responses: new Map(), fontSource: fixtureFontSource(), prepare });
+      const actual = (id: string) => String(assertions.find((a) => a.id === id)?.message.match(/rgb\([^)]*\)/)?.[0]);
+      // The page loaded the saved dark; lightSteps (after preparation) unchecked it, then the darkSwitch checked it.
+      expect(order).toEqual(["prepared dark", "toggle light", "toggle dark"]);
+      expect([actual("token.light: body background-color"), actual("token.dark: body background-color")]).toEqual(["rgb(255, 255, 255)", "rgb(0, 0, 0)"]);
+    } finally {
+      await browser.close();
+      await running.stop();
+    }
+  },
+  120_000,
 );

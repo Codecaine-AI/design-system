@@ -18,7 +18,7 @@ import {
   splitBlocked,
   startApp,
 } from "../app-runner";
-import type { AppEntry, Registry, RouteSpec } from "../registry";
+import { type AppEntry, type Registry, type RouteSpec, verifyRoute } from "../registry";
 import { type Assertion, fail, pass, type ResponseLog, trackResponses, warn } from "./assertions";
 
 export interface Session {
@@ -58,11 +58,8 @@ export interface PageContext {
   running: RunningApp;
 }
 
-/** The route verify:apps checks: verify.route, else the first route. */
-export function verifyRoute(app: AppEntry): RouteSpec | undefined {
-  const id = app.verify?.route;
-  return id ? app.routes.find((route) => route.id === id) : app.routes[0];
-}
+/** The route verify:apps checks (registry.ts verifyRoute; re-exported here, where its callers import it). */
+export { verifyRoute };
 
 /**
  * Brings a loaded page to the route's state, in capture's order: the steps first (open an editor from

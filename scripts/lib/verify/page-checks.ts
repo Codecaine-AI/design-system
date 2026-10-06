@@ -5,7 +5,7 @@
  * guarding its requests is the runner's job (scripts/lib/app-runner.ts).
  */
 import { runSteps } from "../capture";
-import { type AppEntry, lightSeed, lightSteps, type PassId, probeActive, probeRole, switchRoles, verifySpecProblems, type VerifySpec } from "../registry";
+import { type AppEntry, lightSeed, lightSteps, type PassId, verifyRoute, probeActive, probeRole, switchRoles, verifySpecProblems, type VerifySpec } from "../registry";
 import { type Assertion, fail, pass, type ResponseLog } from "./assertions";
 import { fontAssertions, fontProbeSelectors, type FontSourceJudge, readFonts } from "./fonts";
 import { checkSidebar } from "./sidebar";
@@ -191,8 +191,7 @@ export async function checkPage(page: any, opts: PageCheckOptions): Promise<Asse
     await settle(page);
   }
   // An app whose theme outlives a visit: its lightSteps, after the route was prepared, before the light reads.
-  const verifyRoute = verify.route ? opts.app.routes?.find((route) => route.id === verify.route) : opts.app.routes?.[0];
-  const toLight = darkFirst ? undefined : lightSteps(opts.app, verifyRoute);
+  const toLight = darkFirst ? undefined : lightSteps(opts.app, verifyRoute(opts.app));
   if (toLight) {
     await runSteps(page, toLight);
     await settle(page);
