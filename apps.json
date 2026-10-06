@@ -1609,7 +1609,12 @@
             "role": "panel",
             "reason": "pass 1 keeps the existing look: the w-56 aside paints no surface of its own (transparent over the page) and no other viewer chrome paints a panel role; pass 2's shell adds the sidebar surface and a panel probe (decision 72 batch, 2026-10-06)"
           }
-        ]
+        ],
+        "lightSwitch": {
+          "kind": "storage",
+          "key": "canvasAgentViewerStyle.v2",
+          "value": "{\"theme\":\"light\"}"
+        }
       },
       "exceptions": [
         {
