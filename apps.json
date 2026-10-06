@@ -3622,7 +3622,7 @@
         },
         {
           "what": "pass 3 on vanilla partials",
-          "reason": "the ledger plans slices (1h) for its _components partials; the linter's 400-line rule applies, the index.tsx rule does not fit vanilla HTML partials"
+          "reason": "The shared partials are Plain TypeScript DOM components (`_components/<Name>/index.ts`, `<Name>(): string`) composed at build time by `scripts/site-pages.mjs`, which imports each index file explicitly (Node ESM does not resolve directories); the 400-line rule applies (pass 3 accepted at a89b691)."
         },
         {
           "what": "blog article pages load docs-publish's docs.css before styles.css (known gap)",
