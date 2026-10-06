@@ -7,10 +7,15 @@
  *   - runs every process it starts inside the OS sandbox, a profile generated per run (sandbox.ts):
  *     network only to its own port block and allowedLocalPorts on loopback (listening only on the
  *     block), no Unix socket but DNS/syslog and its temp dir, no reads under the real home but --root and
- *     the runtimes, writes only in --root (never the design-system checkout or the out dir) and its temp
- *     dir, no `.env*` reads, signals only to its own processes; TMPDIR is its temp dir. Without a working
- *     sandbox-exec startApp throws, unless the caller passes allowUnsandboxed (proof/debug only;
+ *     the runtimes, writes only in the app's own checkouts (checkouts.ts appScope, decision 29; never a
+ *     `.git` entry, another repository nested there, the run folder, .tooling, .bun-global, a
+ *     design-system checkout or Core's node_modules) and its temp dir, no `.env*` reads, no `open`,
+ *     AppleEvents or cfprefsd, signals only to its own processes; TMPDIR is its temp dir. Without a
+ *     working sandbox-exec startApp throws, unless the caller passes allowUnsandboxed (proof/debug only;
  *     running.unsandboxed is then set);
+ *   - refuses to start while any port of its block or allowedLocalPorts has a listener (named or not);
+ *   - before its first process starts: pins the repositories every git call reads (git.ts) and loads and
+ *     hashes Playwright (playwright.ts pinPlaywright; Electron too when opted in);
  *   - samples its processes' TCP connections with lsof from before the first spawn until stop(); every
  *     connection that leaves the run, and every failed sample, goes into running.violations;
  *   - binds only its profile's ports (46900-47999, never an owner port) and refuses a busy port;
