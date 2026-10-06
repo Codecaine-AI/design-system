@@ -7,36 +7,43 @@
     },
     {
       "file": "codecaine/core/docs-system/packages/docs-viewer/src/components/file-tree/FileTreeDocsBlock.tsx",
+      "match": "^#(f8f8f7|e6e5e3|1f1f1f|666562|9b9a97|26744f|c62121|805f01)$",
       "kind": "definition",
       "reason": "audit \"Keep literal fallbacks\": custom-property definitions whose value is var(--host-name, <literal>) (a host-less fallback in definition position), so the viewer renders without the host stylesheet (17 hits)"
     },
     {
       "file": "codecaine/core/docs-system/packages/docs-viewer/src/components/interaction-surface/InteractionSurfaceDocsBlock.tsx",
+      "match": "^#(9d530d|d9730d|f8f8f7|faebdd|0b6e99|ddebf1|6940a5|eae4f2)$",
       "kind": "definition",
       "reason": "audit \"Keep literal fallbacks\": custom-property definitions whose value is var(--host-name, <literal>) (a host-less fallback in definition position), so the viewer renders without the host stylesheet (12 hits)"
     },
     {
       "file": "codecaine/core/docs-system/packages/docs-viewer/src/components/outline-rows/OutlineRows.tsx",
+      "match": "^#(f8f8f7|e6e5e3|1f1f1f|666562|26744f|287c55|c62121|e03e3e|805f01|dfab01|9cdcfe|dcdcaa|4ec9b0|569cd6|c586c0|ce9178|b5cea8|d4d4d4)$",
       "kind": "definition",
       "reason": "audit \"Keep literal fallbacks\": custom-property definitions whose value is var(--host-name, <literal>) (a host-less fallback in definition position), so the viewer renders without the host stylesheet (26 hits)"
     },
     {
       "file": "codecaine/core/docs-system/packages/docs-viewer/src/components/outline-rows/tree-rows.tsx",
+      "match": "^#(26744f|287c55|f8f8f7|c62121|e03e3e|805f01|dfab01)$",
       "kind": "definition",
       "reason": "audit \"Keep literal fallbacks\": custom-property definitions whose value is var(--host-name, <literal>) (a host-less fallback in definition position), so the viewer renders without the host stylesheet (12 hits)"
     },
     {
       "file": "codecaine/core/docs-system/packages/docs-viewer/src/components/process-outline/ProcessOutlineDocsBlock.tsx",
+      "match": "^#(008000|e6e5e3|1f1f1f|f8f8f7|0b6e99|26744f|6940a5|805f01|0d7164|ad1a72)$",
       "kind": "definition",
       "reason": "audit \"Keep literal fallbacks\": custom-property definitions whose value is var(--host-name, <literal>) (a host-less fallback in definition position), so the viewer renders without the host stylesheet (12 hits)"
     },
     {
       "file": "codecaine/core/docs-system/packages/docs-viewer/src/components/rich-text/CalloutDocsBlock.tsx",
+      "match": "^#(0b6e99|1f1f1f|2a2a2a|e6e5e3|6940a5|9a5b00|c62121|26744f|245a81|666562)$",
       "kind": "definition",
       "reason": "audit \"Keep literal fallbacks\": custom-property definitions whose value is var(--host-name, <literal>) (a host-less fallback in definition position), so the viewer renders without the host stylesheet (16 hits)"
     },
     {
       "file": "codecaine/core/docs-system/packages/docs-viewer/src/components/stack/StackDocsBlock.tsx",
+      "match": "^#(1f1f1f|666562|2a2a2a|fdfdfd|151b23|0b6e99|26744f|805f01|6940a5|ad1a72)$",
       "kind": "definition",
       "reason": "audit \"Keep literal fallbacks\": custom-property definitions whose value is var(--host-name, <literal>) (a host-less fallback in definition position), so the viewer renders without the host stylesheet (15 hits)"
     }
