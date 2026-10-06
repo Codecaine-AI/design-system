@@ -11,7 +11,8 @@
  * Assertions: the design-system package the app uses resolves inside --root with the current
  * tokens.css (every run mode), the verify spec probes page, panel, text and border, token probes
  * compute to the current build's values in the default theme and after the dark switch (dark-first:
- * dark is the default), the regular faces of Inter and IBM Plex Mono load from the package's fonts/,
+ * dark is the default), the regular faces of Inter and IBM Plex Mono load from the package's fonts/
+ * (IBM Plex Mono rendered only in other faces: those faces too; scripts/lib/verify/fonts.ts),
  * the sidebar state survives a reload (shell apps; n/a at --pass 1 unless the shell renders), the URL
  * came from the server output, every served file is inside --root, and no request was blocked.
  * Run mode none: always the static check (package and entry stylesheet), reported as not

@@ -1,0 +1,31 @@
+<!doctype html>
+<!-- verify:apps fixture (fix round 2, a11): no text uses IBM Plex Mono; a script 400 face from another package is loaded, then deleted as soon as the check first reads document.fonts; the package 400 URL is preloaded. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>a11</title>
+    <link rel="stylesheet" href="/ds/css/fonts.css" />
+    <link rel="preload" href="/ds/fonts/IBMPlexMono-Regular.woff2" as="font" type="font/woff2" crossorigin />
+    <style>
+      body { margin: 0; font-family: Inter, sans-serif; font-weight: 400; }
+      code { font-family: "IBM Plex Mono", monospace; font-weight: 400; }
+    </style>
+    <script>
+      const face = new FontFace("IBM Plex Mono", 'url("/copy/text-measure/fonts/IBMPlexMono-Regular.woff2") format("woff2")', { weight: "400" });
+      document.fonts.add(face);
+      face.load();
+      const iterate = FontFaceSet.prototype[Symbol.iterator];
+      let armed = false;
+      FontFaceSet.prototype[Symbol.iterator] = function () {
+        if (face.status === "loaded" && !armed) {
+          armed = true;
+          setTimeout(() => document.fonts.delete(face), 0);
+        }
+        return iterate.call(this);
+      };
+    </script>
+  </head>
+  <body>
+    <p>Text in Inter only.</p>
+  </body>
+</html>

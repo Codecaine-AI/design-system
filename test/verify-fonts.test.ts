@@ -2,8 +2,10 @@
  * verify:apps font assertions without a browser. The regular face (400, normal) must be one the page
  * loaded itself, judged on the statuses read before the check forced anything: Inter is never forced;
  * IBM Plex Mono is force-loaded only when the route does not render it, and then passes as "available,
- * not rendered" when the face comes from the package. The winning @font-face rule's url() must be the
- * design-system package's font, or a byte copy declared in the package's fonts.css (decision 20).
+ * not rendered" when the face comes from the package, or when the route renders it only in other faces,
+ * and then every face the page loaded must come from the package too. The winning @font-face rule's
+ * url() must be the design-system package's font, or a byte copy declared in the package's fonts.css
+ * (decision 20).
  */
 import { afterAll, describe, expect, test } from "bun:test";
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
@@ -13,7 +15,7 @@ import { DESIGN_SYSTEM_ROOT } from "../scripts/lib/registry.ts";
 import type { ResponseLog } from "../scripts/lib/verify/assertions.ts";
 import type { RunningApp } from "../scripts/lib/app-runner.ts";
 import { fontDiskPath, fontSourceJudge } from "../scripts/lib/verify/font-source.ts";
-import { type FaceStatus, fontAssertions, type FontReading, type FontSourceJudge, weightCovers } from "../scripts/lib/verify/fonts.ts";
+import { type FaceStatus, fontAssertions, type FontReading, type FontSourceJudge, canonicalRange, forcedLoad, sameFace, weightCovers } from "../scripts/lib/verify/fonts.ts";
 import { MIRROR } from "./verify-support.ts";
 
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-verify-fonts-")));
@@ -27,6 +29,13 @@ const PKG_400 = "http://127.0.0.1:47000/@fs/pkg/Inter-Regular.woff2";
 const PKG_700 = "http://127.0.0.1:47000/@fs/pkg/Inter-Bold.woff2";
 const OTHER_400 = "http://127.0.0.1:47000/@fs/text-measure/Inter-Regular.woff2";
 const COPY_400 = "http://127.0.0.1:47000/assets/Inter-Regular-3f2a.woff2";
+const PKG_500 = "http://127.0.0.1:47000/@fs/pkg/Inter-Medium.woff2";
+const MONO_500 = "http://127.0.0.1:47000/@fs/pkg/IBMPlexMono-Medium.woff2";
+const MONO_600 = "http://127.0.0.1:47000/@fs/pkg/IBMPlexMono-SemiBold.woff2";
+const OTHER_600 = "http://127.0.0.1:47000/@fs/text-measure/IBMPlexMono-SemiBold.woff2";
+const COPY_600 = "http://127.0.0.1:47000/assets/IBMPlexMono-SemiBold-7b1e.woff2";
+const FORCED_MONO = '400 16px "IBM Plex Mono"';
+const UNATTRIBUTED = "one is a face added from script or an unreadable stylesheet, so its source cannot be attributed to the package";
 const PKG_CSS = "http://127.0.0.1:47000/vendor/design-system/fonts.css";
 const OTHER_CSS = "http://127.0.0.1:47000/vendor/text-measure/fonts.css";
 
@@ -36,13 +45,16 @@ const judge: FontSourceJudge = (url, sheet) =>
   url.includes("/@fs/pkg/") || (url.includes("/assets/") && sheet === PKG_CSS) ? { ok: true, how: "the package's" } : { ok: false, how: "not the package's", path: url };
 
 const face = (weight: string, status = "loaded"): FaceStatus => ({ weight, style: "normal", status });
-const rule = (weight: string, urls: string[], opts: { local?: boolean; sheet?: string | null; src?: string } = {}) => ({
+/** An active @font-face rule; its src lists the url()s, then a local() when `local` is set. */
+const rule = (weight: string, urls: string[], opts: { local?: boolean; sheet?: string | null; src?: string; active?: boolean; unicodeRange?: string } = {}): FontReading["rules"][number] => ({
   weight,
   style: "normal",
-  src: opts.src ?? "",
+  src: opts.src ?? [...urls.map((url) => `url("${url}") format("woff2")`), ...(opts.local ? ['local("A Font")'] : [])].join(", "),
   urls,
   local: opts.local ?? false,
   sheet: opts.sheet ?? null,
+  active: opts.active ?? true,
+  ...(opts.unicodeRange === undefined ? {} : { unicodeRange: opts.unicodeRange }),
 });
 /** A reading where the check forced nothing: the faces after are the faces before. */
 function reading(rules: FontReading["rules"], before: FaceStatus[], over: Partial<FontReading> = {}): FontReading {
@@ -75,14 +87,214 @@ describe("fontAssertions", () => {
     expect(verdict(neverLoaded, ok([]))).toEqual(["fail", expect.stringMatching(/not rendered on this route, and its regular face did not load when the check forced 400 16px "IBM Plex Mono" \(400 normal error\)/)]);
   });
 
-  test("IBM Plex Mono rendered on the route without a loaded regular face fails, whatever a later load shows", () => {
-    const rules = [rule("400", [PKG_400])];
-    // A 500 face in use: the route renders Mono, its regular face was never loaded.
-    const medium = reading(rules, [face("400", "unloaded"), face("500")], { family: "IBM Plex Mono", after: [face("400"), face("500")] });
-    expect(verdict(medium, ok([PKG_400]))).toEqual(["fail", expect.stringMatching(/^regular face of IBM Plex Mono: none loaded by the page before the check \(400 normal unloaded\); IBM Plex Mono renders on this route \(faces 500 normal loaded\)/)]);
-    // A text probe's font-family computes to Mono: rendered, even with every face unloaded.
+  test("IBM Plex Mono rendered on the route without any loaded face, or with its regular face failed, fails, whatever a later load shows", () => {
+    const rules = [rule("400", [PKG_400]), rule("500", [MONO_500])];
+    // A text probe's font-family computes to Mono: rendered, even with every face unloaded (the text is in a fallback).
     const probed = reading(rules, [face("400", "unloaded")], { family: "IBM Plex Mono", probedBy: ["pre.code"], after: [face("400")] });
-    expect(verdict(probed, ok([PKG_400]))).toEqual(["fail", expect.stringMatching(/IBM Plex Mono renders on this route \(font-family of pre\.code\)/)]);
+    expect(verdict(probed, ok([PKG_400]))).toEqual(["fail", expect.stringMatching(/^regular face of IBM Plex Mono: none loaded by the page before the check \(400 normal unloaded\); IBM Plex Mono renders on this route \(font-family of pre\.code\)/)]);
+    // The page asked for the regular face and it failed: its text is in a fallback, a loaded 500 face does not help.
+    const erred = reading(rules, [face("400", "error"), face("500")], { family: "IBM Plex Mono", after: [face("400"), face("500")] });
+    expect(verdict(erred, ok([PKG_400, MONO_500]))).toEqual(["fail", expect.stringMatching(/^regular face of IBM Plex Mono: none loaded by the page before the check \(400 normal error\); IBM Plex Mono renders on this route \(faces 400 normal error, 500 normal loaded\)/)]);
+  });
+
+  describe("IBM Plex Mono rendered only in faces other than the regular one (simple-research-kernel: 500 and 600)", () => {
+    const pkgRules = (last600: FontReading["rules"][number] = rule("600", [MONO_600])) => [rule("400", [PKG_400]), rule("500", [MONO_500]), last600];
+    /** The page loaded `loaded` and never asked for the regular face; the check forced it and it ended `forcedStatus`. */
+    const otherFaces = (rules: FontReading["rules"], loaded = ["500", "600"], forcedStatus = "loaded", over: Partial<FontReading> = {}) =>
+      reading(rules, [face("400", "unloaded"), ...loaded.map((w) => face(w))], {
+        family: "IBM Plex Mono",
+        after: [face("400", forcedStatus), ...loaded.map((w) => face(w))],
+        forced: FORCED_MONO,
+        ...over,
+      });
+    const ONLY_OTHER = "IBM Plex Mono renders on this route only in faces other than the regular one (faces 500 normal loaded, 600 normal loaded)";
+
+    test("every rendered face and the forced regular face from the package: pass, each face judged on its own rule", () => {
+      const r = otherFaces(pkgRules());
+      const [a] = fontAssertions([r], ok([PKG_400, MONO_500, MONO_600]), judge);
+      expect([a!.status, a!.message]).toEqual(["pass", `renders only in faces 500 normal, 600 normal, each from the package; regular face loaded when the check forced it from ${PKG_400} (the package's)`]);
+      expect((a!.detail!.renderedFaces as Array<{ weight: string; rule: { urls: string[] }; fetched: string[] }>).map((f) => [f.weight, f.rule.urls, f.fetched])).toEqual([
+        ["500", [MONO_500], [MONO_500]],
+        ["600", [MONO_600], [MONO_600]],
+      ]);
+      expect((a!.detail!.rule as { urls: string[] }).urls).toEqual([PKG_400]);
+    });
+
+    test("a rendered face from elsewhere fails, naming the face: another package, a later rule that wins, a local() font, a copy outside the package's fonts.css", () => {
+      expect(verdict(otherFaces(pkgRules(rule("600", [OTHER_600]))), ok([PKG_400, MONO_500, OTHER_600]))).toEqual(["fail", `the 600 normal face loads from ${OTHER_600}: not the package's; ${ONLY_OTHER}`]);
+      // The package declares 600, a later sheet redeclares it: the last rule wins, as for the regular face.
+      const redeclared = otherFaces([...pkgRules(), rule("600", [OTHER_600])]);
+      expect(verdict(redeclared, ok([PKG_400, MONO_500, MONO_600, OTHER_600]))).toEqual(["fail", `the 600 normal face loads from ${OTHER_600}: not the package's; ${ONLY_OTHER}`]);
+      expect(verdict(otherFaces(pkgRules(rule("600", [], { local: true, src: 'local("IBM Plex Mono SemiBold")' }))), ok([PKG_400, MONO_500]))).toEqual([
+        "fail",
+        `the 600 normal face's @font-face lists only local() sources: a local font, not the package's web font; ${ONLY_OTHER}`,
+      ]);
+      const localFirst = rule("600", [MONO_600], { local: true, src: `local("IBM Plex Mono SemiBold"), url("${MONO_600}")` });
+      expect(verdict(otherFaces(pkgRules(localFirst)), ok([PKG_400, MONO_500, MONO_600]))).toEqual(["fail", expect.stringMatching(/^the 600 normal face's @font-face lists a local\(\) source before its url\(\)/)]);
+      // The same copied file: from the package's fonts.css it counts, from another package's it does not.
+      const copied = (sheet: string) => otherFaces(pkgRules(rule("600", [COPY_600], { sheet })));
+      expect(verdict(copied(OTHER_CSS), ok([PKG_400, MONO_500, COPY_600]))).toEqual(["fail", `the 600 normal face loads from ${COPY_600}: not the package's; ${ONLY_OTHER}`]);
+      expect(verdict(copied(PKG_CSS), ok([PKG_400, MONO_500, COPY_600]))[0]).toBe("pass");
+    });
+
+    test("a rendered face that never fetched its url(), failed to load, or has no readable rule fails", () => {
+      expect(verdict(otherFaces(pkgRules()), ok([PKG_400, MONO_500]))).toEqual(["fail", expect.stringMatching(/^the 600 normal face is loaded but none of its url\(\)s was fetched/)]);
+      const failed600 = reading(pkgRules(), [face("400", "unloaded"), face("500"), face("600", "error")], { family: "IBM Plex Mono", after: [face("400"), face("500"), face("600", "error")], forced: FORCED_MONO });
+      expect(verdict(failed600, ok([PKG_400, MONO_500]))).toEqual([
+        "fail",
+        "the 600 normal face did not load before the check (error): its text renders in a fallback font; IBM Plex Mono renders on this route only in faces other than the regular one (faces 500 normal loaded, 600 normal error)",
+      ]);
+      // A face added from script (no @font-face rule) proves nothing about the package's fonts.css.
+      expect(verdict(otherFaces([rule("400", [PKG_400]), rule("500", [MONO_500])]), ok([PKG_400, MONO_500]))).toEqual([
+        "fail",
+        `the 600 normal face of IBM Plex Mono has 1 FontFace object in document.fonts but 0 active readable @font-face rules: ${UNATTRIBUTED}; ${ONLY_OTHER}`,
+      ]);
+    });
+
+    test("the forced regular face must then load, from the package", () => {
+      const only600 = otherFaces(pkgRules(), ["600"], "error");
+      expect(verdict(only600, ok([MONO_600]))).toEqual([
+        "fail",
+        'IBM Plex Mono renders on this route only in faces other than the regular one (faces 600 normal loaded), and its regular face did not load when the check forced 400 16px "IBM Plex Mono" (400 normal error)',
+      ]);
+      // A reading the check did not force (after = before): the regular face is still unloaded.
+      const unforced = otherFaces(pkgRules(), ["600"], "unloaded", { forced: null });
+      expect(verdict(unforced, ok([MONO_600]))).toEqual(["fail", expect.stringMatching(/, and its regular face is not loaded, and the check forced nothing \(400 normal unloaded\)$/)]);
+      // Nothing forced, yet the regular face loaded (the page loaded it between the readings): the pass does not claim a forced load.
+      const loadedLater = otherFaces(pkgRules(), ["500", "600"], "loaded", { forced: null });
+      expect(verdict(loadedLater, ok([PKG_400, MONO_500, MONO_600]))).toEqual(["pass", `renders only in faces 500 normal, 600 normal, each from the package; regular face loaded from ${PKG_400} (the package's)`]);
+      const otherRegular = otherFaces([rule("400", [OTHER_400]), rule("500", [MONO_500]), rule("600", [MONO_600])]);
+      expect(verdict(otherRegular, ok([OTHER_400, MONO_500, MONO_600]))).toEqual(["fail", `the regular face loads from ${OTHER_400}: not the package's`]);
+    });
+
+    test("Inter keeps its rule: rendered only in its 500 face it fails, and the check never forces it", () => {
+      const inter = reading([rule("400", [PKG_400]), rule("500", [PKG_500])], [face("400", "unloaded"), face("500")]);
+      expect(verdict(inter, ok([PKG_500]))).toEqual(["fail", expect.stringMatching(/^regular face of Inter: none loaded by the page before the check \(400 normal unloaded\); the check never forces Inter/)]);
+      expect(forcedLoad("Inter", inter)).toBeNull();
+    });
+  });
+
+  describe("a judged face with more FontFace objects than readable rules cannot be attributed (fix round 1, Codex P0)", () => {
+    const mono = (rules: FontReading["rules"], before: FaceStatus[], after: FaceStatus[], forced: string | null = null) => reading(rules, before, { family: "IBM Plex Mono", after, forced });
+    const twoFaces = (weight: string, family: string, unreadable = "") =>
+      `the ${weight} normal face of ${family} has 2 FontFace objects in document.fonts but 1 active readable @font-face rule${unreadable}: ${UNATTRIBUTED}`;
+
+    test("Codex's shape: the package's 600 face unloaded, a script 600 face loaded, the package URL preloaded, the forced 400 from the package: fail", () => {
+      const r = mono([rule("400", [PKG_400]), rule("600", [MONO_600])], [face("400", "unloaded"), face("600", "unloaded"), face("600")], [face("400"), face("600", "unloaded"), face("600")], FORCED_MONO);
+      expect(verdict(r, ok([PKG_400, MONO_600]))).toEqual([
+        "fail",
+        `${twoFaces("600", "IBM Plex Mono")}; IBM Plex Mono renders on this route only in faces other than the regular one (faces 600 normal loaded)`,
+      ]);
+    });
+
+    test("the same for the regular face, in each branch and for Inter: the package's 400 unloaded, a script 400 loaded", () => {
+      const rules = [rule("400", [PKG_400])];
+      // Rendered in the regular face.
+      expect(verdict(mono(rules, [face("400", "unloaded"), face("400")], [face("400", "unloaded"), face("400")]), ok([PKG_400]))).toEqual(["fail", twoFaces("400", "IBM Plex Mono")]);
+      const inter = reading([...rules, rule("700", [PKG_700])], [face("400", "unloaded"), face("400"), face("700", "unloaded")]);
+      expect(verdict(inter, ok([PKG_400]))).toEqual(["fail", twoFaces("400", "Inter")]);
+      // Not rendered: the forced load loaded the script face.
+      const notRendered = mono(rules, [face("400", "unloaded"), face("400", "unloaded")], [face("400", "unloaded"), face("400")], FORCED_MONO);
+      expect(verdict(notRendered, ok([PKG_400]))).toEqual(["fail", twoFaces("400", "IBM Plex Mono")]);
+      // Rendered only in 500: the forced regular face is judged the same way.
+      const forced = mono([...rules, rule("500", [MONO_500])], [face("400", "unloaded"), face("400", "unloaded"), face("500")], [face("400", "unloaded"), face("400"), face("500")], FORCED_MONO);
+      expect(verdict(forced, ok([PKG_400, MONO_500]))).toEqual(["fail", twoFaces("400", "IBM Plex Mono")]);
+    });
+
+    test("a judged face with no readable rule while a stylesheet is unreadable fails; an unreadable sheet that declares no judged face does not", () => {
+      const crossOrigin = reading([rule("700", [PKG_700])], [face("400"), face("700", "unloaded")], { unreadableSheets: 1 });
+      expect(verdict(crossOrigin, ok([PKG_400]))).toEqual([
+        "fail",
+        `the 400 normal face of Inter has 1 FontFace object in document.fonts but 0 active readable @font-face rules (1 stylesheet unreadable): ${UNATTRIBUTED}`,
+      ]);
+      expect(verdict(reading([rule("400", [PKG_400])], [face("400")], { unreadableSheets: 2 }), ok([PKG_400]))[0]).toBe("pass");
+    });
+
+    test("no false failure: the package's fonts.css loaded twice, or a script face at a weight the check does not judge", () => {
+      expect(verdict(reading([rule("400", [PKG_400]), rule("400", [PKG_400])], [face("400", "unloaded"), face("400")]), ok([PKG_400]))[0]).toBe("pass");
+      expect(verdict(reading([rule("400", [PKG_400])], [face("400"), face("700", "unloaded")]), ok([PKG_400]))[0]).toBe("pass");
+    });
+  });
+
+  describe("fix round 2: inactive rules, faces leaving during the check, unicode-range", () => {
+    const LEFT = "a judged face left document.fonts during the check";
+
+    test("an inactive rule (@media print) does not count for attribution: Codex's round-2 mask fails, for 600 and for the regular face", () => {
+      const printed = rule("600", [MONO_600], { active: false });
+      const r = reading([rule("400", [PKG_400]), rule("600", [MONO_600]), printed], [face("400", "unloaded"), face("600", "unloaded"), face("600")], {
+        family: "IBM Plex Mono",
+        after: [face("400"), face("600", "unloaded"), face("600")],
+        forced: FORCED_MONO,
+      });
+      expect(verdict(r, ok([PKG_400, MONO_600]))).toEqual(["fail", expect.stringMatching(/^the 600 normal face of IBM Plex Mono has 2 FontFace objects in document\.fonts but 1 active readable @font-face rule: /)]);
+      const regular = reading([rule("400", [PKG_400]), rule("400", [PKG_400], { active: false })], [face("400"), face("400")], { family: "IBM Plex Mono" });
+      expect(verdict(regular, ok([PKG_400]))).toEqual(["fail", expect.stringMatching(/^the 400 normal face of IBM Plex Mono has 2 FontFace objects in document\.fonts but 1 active readable @font-face rule: /)]);
+    });
+
+    test("an inactive rule never wins: a print-only rule with another URL after the package's leaves the page passing (c9)", () => {
+      const r = reading([rule("400", [PKG_400]), rule("400", [OTHER_400], { active: false })], [face("400")]);
+      expect(verdict(r, ok([PKG_400]))).toEqual(["pass", `regular face loaded from ${PKG_400} (the package's)`]);
+      // Every rule inactive: nothing on the page declares the family.
+      expect(verdict(reading([rule("400", [PKG_400], { active: false })], [face("400")]), ok([PKG_400]))).toEqual([
+        "fail",
+        "faces are loaded but no readable @font-face declares Inter (1 rule inactive here: a non-matching @media, @supports or media list, or a disabled sheet)",
+      ]);
+    });
+
+    test("a loaded judged face that leaves document.fonts between the readings fails (a11), in each rendered branch", () => {
+      // The package's 400 never loads; a script 400 face is loaded, then deleted before the second reading.
+      const regular = reading([rule("400", [PKG_400])], [face("400", "unloaded"), face("400")], { family: "IBM Plex Mono", after: [face("400", "unloaded")] });
+      expect(verdict(regular, ok([PKG_400]))).toEqual([
+        "fail",
+        `the 400 normal face of IBM Plex Mono: ${LEFT} (1 loaded before, 0 after), so its source cannot be attributed to the package`,
+      ]);
+      const other = reading([rule("400", [PKG_400]), rule("600", [MONO_600])], [face("400", "unloaded"), face("600")], { family: "IBM Plex Mono", after: [face("400")], forced: FORCED_MONO });
+      expect(verdict(other, ok([PKG_400, MONO_600]))).toEqual(["fail", expect.stringContaining(`the 600 normal face of IBM Plex Mono: ${LEFT} (1 loaded before, 0 after)`)]);
+    });
+
+    test("a script face with another unicode-range is its own face: unloaded it fails nothing (c2), loaded it is judged and fails", () => {
+      const cjk = (status: string) => ({ ...face("400", status), unicodeRange: "U+3000-30FF" });
+      const page = (status: string) => reading([rule("400", [PKG_400])], [{ ...face("400"), unicodeRange: "U+0-10FFFF" }, cjk(status)]);
+      expect(verdict(page("unloaded"), ok([PKG_400]))).toEqual(["pass", `regular face loaded from ${PKG_400} (the package's)`]);
+      expect(verdict(page("loaded"), ok([PKG_400]))).toEqual([
+        "fail",
+        `the 400 normal (unicode-range U+3000-30FF) face of Inter has 1 FontFace object in document.fonts but 0 active readable @font-face rules: ${UNATTRIBUTED}`,
+      ]);
+      // The same descriptors as the package's face, never loaded: the faces are indistinguishable, so the page fails (c3).
+      expect(verdict(reading([rule("400", [PKG_400])], [face("400"), face("400", "unloaded")]), ok([PKG_400]))[0]).toBe("fail");
+    });
+
+    test.each([
+      [undefined, "0-10ffff"],
+      ["", "0-10ffff"],
+      ["U+0-10FFFF", "0-10ffff"],
+      ["u+0000-00ff, U+0131", "0-ff,131-131"],
+      ["U+0100-024F,U+0000-00FF", "0-24f"],
+      ["U+4??", "400-4ff"],
+      ["bogus", null],
+    ])("canonicalRange(%p) is %p", (descriptor, canonical) => {
+      expect(canonicalRange(descriptor)).toBe(canonical);
+    });
+  });
+
+  test("forcedLoad: IBM Plex Mono's regular face only when the route does not render it or renders it only in other faces", () => {
+    const seen = (before: FaceStatus[], probedBy: string[] = []) => ({ before, probedBy });
+    expect(forcedLoad("IBM Plex Mono", seen([face("400", "unloaded"), face("500", "unloaded")]))).toBe(FORCED_MONO);
+    expect(forcedLoad("IBM Plex Mono", seen([face("400", "unloaded"), face("500"), face("600")]))).toBe(FORCED_MONO);
+    expect(forcedLoad("IBM Plex Mono", seen([face("400"), face("500")]))).toBeNull();
+    // Rendered with no loaded face, or with a failed regular face: nothing to force, the check fails on what the page did.
+    expect(forcedLoad("IBM Plex Mono", seen([face("400", "unloaded")], ["pre.code"]))).toBeNull();
+    expect(forcedLoad("IBM Plex Mono", seen([face("400", "error"), face("500")]))).toBeNull();
+    expect(forcedLoad("IBM Plex Mono", seen([face("500")]))).toBeNull();
+    expect(forcedLoad("Inter", seen([face("400", "unloaded"), face("500", "unloaded")]))).toBeNull();
+  });
+
+  test("sameFace matches a rule to a face by weight range and style, unset style reading as normal", () => {
+    expect(sameFace({ weight: "600", style: "normal" }, { weight: "600", style: "" })).toBe(true);
+    expect(sameFace({ weight: "normal", style: "normal" }, { weight: "400", style: "normal" })).toBe(true);
+    expect(sameFace({ weight: "100 900", style: "normal" }, { weight: "100 900", style: "normal" })).toBe(true);
+    expect(sameFace({ weight: "600", style: "normal" }, { weight: "100 900", style: "normal" })).toBe(false);
+    expect(sameFace({ weight: "600", style: "italic" }, { weight: "600", style: "normal" })).toBe(false);
   });
 
   test("a local() source listed before the package url() fails even when the url() was fetched (a preload)", () => {

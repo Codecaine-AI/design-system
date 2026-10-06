@@ -1,0 +1,21 @@
+<!doctype html>
+<!-- verify:apps fixture (fix round 2, a3): the 600 mask from a <link media=print> sheet. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>a3</title>
+    <link rel="stylesheet" href="/ds/css/fonts.css" />
+    <link rel="preload" href="/ds/fonts/IBMPlexMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" media="print" href="/fonts-mask-print-link.css" />
+    <style>
+      body { margin: 0; font-family: Inter, sans-serif; font-weight: 400; }
+      code { font-family: "IBM Plex Mono", monospace; font-weight: 600; }
+    </style>
+    <script>
+      document.fonts.add(new FontFace("IBM Plex Mono", 'url("/copy/text-measure/fonts/IBMPlexMono-SemiBold.woff2") format("woff2")', { weight: "600" }));
+    </script>
+  </head>
+  <body>
+    <p>Text in Inter, <code>a mono label</code>.</p>
+  </body>
+</html>

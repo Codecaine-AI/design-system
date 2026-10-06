@@ -1,0 +1,19 @@
+<!doctype html>
+<!-- verify:apps fixture (fix round 2, c3): a script 400 face with the package's own 400 URL and the same descriptors as the package's rule; text at 400. Indistinguishable from the package's face, so it fails. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>c3</title>
+    <link rel="stylesheet" href="/ds/css/fonts.css" />
+    <style>
+      body { margin: 0; font-family: Inter, sans-serif; font-weight: 400; }
+      code { font-family: "IBM Plex Mono", monospace; font-weight: 400; }
+    </style>
+    <script>
+      document.fonts.add(new FontFace("IBM Plex Mono", 'url("/ds/fonts/IBMPlexMono-Regular.woff2") format("woff2")', { weight: "400" }));
+    </script>
+  </head>
+  <body>
+    <p>Text in Inter, <code>a mono label</code>.</p>
+  </body>
+</html>
