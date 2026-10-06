@@ -1,5 +1,5 @@
 /**
- * File-system helpers the checks share: workspace paths, the scan spec's source
+ * File-system helpers the checks share: workspace paths, the app's Tailwind configs, the scan spec's source
  * files, the scan-literals run, and Node-style package resolution with real paths.
  */
 
@@ -135,14 +135,47 @@ export interface SourceFile {
 }
 
 export interface ScanSetup {
-  /** scan-literals options for the existing scan paths; null when none exists or the spec is invalid. */
+  /** scan-literals options for the existing scan paths (plus the app's Tailwind configs); null when no scan path exists or the spec is invalid. */
   opts: Options | null;
   /** Scan paths that do not exist under the root, workspace-relative. */
   missing: string[];
   error?: string;
 }
 
-/** The scan spec as scan-literals options, built through its own argument parser so the counts match the CLI the audit used. */
+export const TW_CONFIGS = ["tailwind.config.js", "tailwind.config.cjs", "tailwind.config.mjs", "tailwind.config.ts", "tailwind.config.cts", "tailwind.config.mts"];
+
+/** The first tailwind.config.* in `start` or a directory above it, up to `stop`. */
+export function findTailwindConfig(start: string, stop: string): string | null {
+  let dir = start;
+  for (;;) {
+    for (const n of TW_CONFIGS) if (isFile(join(dir, n))) return join(dir, n);
+    if (dir === stop || !isInside(dir, stop)) return null;
+    const up = dirname(dir);
+    if (up === dir) return null;
+    dir = up;
+  }
+}
+
+/**
+ * The app's Tailwind configs: every tailwind.config.* in the app root and, for a Tailwind v3 app,
+ * the config the wiring check reads (the app root up to the repo root).
+ */
+export function tailwindConfigsOf(app: AppEntry, root: string): string[] {
+  const appRoot = resolvePath(root, app.root);
+  const out = TW_CONFIGS.map((n) => join(appRoot, n)).filter(isFile);
+  if ((app.stack?.tailwind ?? "none") === "v3") {
+    const repoRoot = resolvePath(root, app.repo);
+    const config = findTailwindConfig(appRoot, isInside(appRoot, repoRoot) ? repoRoot : appRoot);
+    if (config && !out.includes(config)) out.push(config);
+  }
+  return out;
+}
+
+/**
+ * The scan spec as scan-literals options, built through its own argument parser so the counts match
+ * the CLI the audit used. The app's Tailwind configs (tailwindConfigsOf) join as file roots when no
+ * scan path holds them: their literals count in the hard total, and the class checks read them as sources.
+ */
 export function scanSetup(app: AppEntry, root: string): ScanSetup {
   const existing: string[] = [];
   const missing: string[] = [];
@@ -152,6 +185,11 @@ export function scanSetup(app: AppEntry, root: string): ScanSetup {
     else missing.push(p);
   }
   if (!existing.length) return { opts: null, missing, error: app.scan?.paths?.length ? undefined : "apps.json gives no scan paths" };
+  // A config inside a scan dir is the scan's to take or exclude.
+  const scanDirs = existing.filter(isDir);
+  for (const config of app.root ? tailwindConfigsOf(app, root) : []) {
+    if (!existing.includes(config) && !scanDirs.some((d) => isInside(config, d))) existing.push(config);
+  }
   const argv = [...existing];
   for (const e of app.scan.exclude ?? []) argv.push("--exclude", e);
   if (app.scan.ext) argv.push("--ext", app.scan.ext);

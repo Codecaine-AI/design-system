@@ -1,9 +1,10 @@
 /**
- * Tailwind default-scale classes (AGENTS.md rule 3): the default palette, text
- * sizes, shadows, radius steps, font weights, line heights, tracking, blur, easing,
- * container sizes and animations. The design system's own utilities that share a
- * root (`text-ui-sm`, `rounded-pill`, `font-medium`, `tracking-normal`,
- * `ease-standard`, `bg-red-soft`, `max-w-lane-text`, `shadow-glass`) do not match.
+ * Tailwind default-scale classes (AGENTS.md rule 3): the default palette (Tailwind 4.3
+ * hues mauve, olive, mist and taupe included), text sizes, shadows, radius steps, font
+ * weights, line heights, tracking, blur, easing, container sizes and animations. The
+ * design system's own utilities that share a root (`text-ui-sm`, `rounded-pill`,
+ * `font-medium`, `tracking-normal`, `ease-standard`, `bg-red-soft`, `max-w-lane-text`,
+ * `shadow-glass`) do not match.
  *
  * Where a class can appear:
  * - JS/TS: inside string and template literals. `ease-in`/`ease-out` in a string that
@@ -16,9 +17,13 @@
  * contexts (class-context.ts). Bare `rounded` stays allowed: tailwind.css points
  * `--radius` at the design system's radius.
  *
- * Container sizes (`max-w-2xl`, `w-md`) and the default animations (`animate-spin`)
- * are on the list because tailwind-strict.css does not clear them: Tailwind compiles
- * them to its own values (42rem, `spin 1s linear infinite`), never to a token.
+ * Container sizes and the default animations (`animate-spin`) are on the list because
+ * tailwind-strict.css does not clear them: Tailwind compiles them to its own values
+ * (42rem, `spin 1s linear infinite`), never to a token. A container size is a step
+ * from 3xs to 7xl on `max-w`, `min-w`, `w`, `basis`, the logical `inline`, `min-inline`
+ * and `max-inline`, and `columns` (`max-w-2xl`, `inline-md`, `columns-3xs`; not
+ * `inline-flex` or `columns-3`), or a container query variant on one
+ * (`@md:`, `@max-2xl:`, `@min-lg:`, `@md/main:`; not `@container` or `@[500px]:`).
  */
 
 import { lexJs, stripCss, stripHtml, type FileKind } from "../../scan-literals";
@@ -28,11 +33,12 @@ const PRE = String.raw`(?<![\w\-/\[.$#@])!?`;
 const POST = String.raw`(?![\w-])`;
 
 const HUES =
-  "slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose";
+  "slate|gray|zinc|neutral|stone|mauve|olive|mist|taupe|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose";
 const COLOR_ROOTS =
   "bg|text|border(?:-[xytrblse])?|ring(?:-offset)?|outline|fill|stroke|from|via|to|decoration|divide|placeholder|" +
   "caret|accent|shadow|inset-shadow|inset-ring|text-shadow|drop-shadow";
 const CONTAINER_STEPS = "3xs|2xs|xs|sm|md|lg|xl|[2-7]xl";
+const CONTAINER_ROOTS = "max-w|min-w|w|basis|max-inline|min-inline|inline|columns";
 
 interface Scale {
   scale: string;
@@ -60,7 +66,10 @@ const SCALES: Scale[] = [
   { scale: "blur", re: new RegExp(`${PRE}((?:backdrop-)?blur-(?:xs|sm|md|lg|xl|2xl|3xl))${POST}`, "g") },
   { scale: "blur", re: new RegExp(`${PRE}((?:backdrop-)?blur)${POST}`, "g"), classOnly: true },
   { scale: "easing", re: new RegExp(`${PRE}(ease-(?:in-out|in|out))${POST}`, "g") },
-  { scale: "container size", re: new RegExp(`${PRE}((?:max-w|min-w|w|basis)-(?:${CONTAINER_STEPS}))${POST}`, "g") },
+  { scale: "container size", re: new RegExp(`${PRE}((?:${CONTAINER_ROOTS})-(?:${CONTAINER_STEPS}))${POST}`, "g") },
+  // Container query variants on the default sizes (@md:, @max-2xl:, @min-lg:, @md/main:): the @ is part of
+  // the match, so PRE checks the character before it. @container and @[500px]: do not match.
+  { scale: "container size", re: new RegExp(`${PRE}(@(?:min-|max-)?(?:${CONTAINER_STEPS})(?:/[\\w-]+)?:)`, "g") },
   { scale: "animation", re: new RegExp(`${PRE}(animate-(?:spin|ping|pulse|bounce))${POST}`, "g") },
 ];
 
