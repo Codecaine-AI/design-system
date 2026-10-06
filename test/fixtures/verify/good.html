@@ -18,6 +18,7 @@
       <button class="ds-sidebar-toggle" type="button">Toggle sidebar</button>
       <button class="theme-toggle" type="button" onclick="document.documentElement.dataset.theme = 'dark'">Dark mode</button>
       <div class="panel">Panel <code>mono</code></div>
+      <button class="reveal" type="button" onclick="this.insertAdjacentHTML('afterend', '<div class=&quot;revealed&quot;>revealed</div>')">Reveal</button>
     </div>
     <script>
       const shell = document.querySelector(".ds-shell");

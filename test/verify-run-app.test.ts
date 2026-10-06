@@ -73,6 +73,13 @@ describe.skipIf(Boolean(browserSkip))("inRunningApp", () => {
     expect(report.clock).toBe("fixed");
   }, 60_000);
 
+  test("a verify route whose waitFor appears only after its steps: steps first, then waitFor (capture's order)", async () => {
+    const app = runnableApp();
+    app.routes = [{ id: "home", path: "/", steps: [{ action: "click", target: ".reveal" }], waitFor: ".revealed" }];
+    const report = await verify(app, makeRoot());
+    expect(report.assertions.filter((a) => a.status !== "pass").map((a) => `${a.id}: ${a.message}`)).toEqual([]);
+  }, 60_000);
+
   test("a port the app binds after it is ready is read again before the report: it shows in startedPorts", async () => {
     const report = await verify(runnableApp(`/?bind=${LATE_PORT}`), makeRoot());
     expect(report.startedPorts).toContain(LATE_PORT);

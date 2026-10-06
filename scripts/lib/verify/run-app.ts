@@ -47,10 +47,14 @@ export function verifyRoute(app: AppEntry): RouteSpec | undefined {
   return id ? app.routes.find((route) => route.id === id) : app.routes[0];
 }
 
-function routePreparer(route: RouteSpec | undefined) {
+/**
+ * Brings a loaded page to the route's state, in capture's order: the steps first (open an editor from
+ * the gallery), then waitFor, which is the state they reach. Without steps, waitFor is the page being ready.
+ */
+export function routePreparer(route: RouteSpec | undefined) {
   return async (page: any) => {
-    if (route?.waitFor) await page.locator(route.waitFor).first().waitFor({ state: "visible", timeout: 30_000 });
     if (route?.steps?.length) await runSteps(page, route.steps);
+    if (route?.waitFor) await page.locator(route.waitFor).first().waitFor({ state: "visible", timeout: 30_000 });
   };
 }
 
