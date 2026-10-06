@@ -26,6 +26,7 @@ import {
   profileEnv,
   readyUrl,
   rootProc,
+  servedDiskPath,
   servedFromRoot,
   splitBlocked,
   startApp,
@@ -528,6 +529,42 @@ describe("servedFromRoot", () => {
       outsideFile,
     ]);
     expect(result.unresolved).toEqual([`http://127.0.0.1:46911/studio/src/gone.tsx -> ${join(root, "app/src/gone.tsx")}`]);
+  });
+
+  test("maps /@codecaine-ai/design-system/<package path> to the package the app resolves (decision 30), never outside it", () => {
+    const root = makeRoot();
+    const pkg = join(root, "app/node_modules/@codecaine-ai/design-system");
+    mkdirSync(join(pkg, "fonts"), { recursive: true });
+    writeFileSync(join(pkg, "package.json"), '{"name":"@codecaine-ai/design-system"}');
+    writeFileSync(join(pkg, "fonts/Inter-Regular.woff2"), "font");
+    writeFileSync(join(root, "app/secret.txt"), "not the package's");
+    const elsewhere = mkdtempSync(join(scratch, "elsewhere-"));
+    writeFileSync(join(elsewhere, "Inter-Regular.woff2"), "font");
+    symlinkSync(join(elsewhere, "Inter-Regular.woff2"), join(pkg, "fonts/linked.woff2"));
+    const running = { app: fixtureApp({ ui: 46911 }), root, serveRoot: join(root, "app/web"), baseUrl: "http://127.0.0.1:46911" } as RunningApp;
+
+    const font = "http://127.0.0.1:46911/@codecaine-ai/design-system/fonts/Inter-Regular.woff2";
+    expect(servedDiskPath(running, font)).toBe(join(pkg, "fonts/Inter-Regular.woff2"));
+    expect(servedDiskPath(running, "/@codecaine-ai/design-system/fonts/Inter-Regular.woff2?v=1")).toBe(join(pkg, "fonts/Inter-Regular.woff2"));
+    const gone = "http://127.0.0.1:46911/@codecaine-ai/design-system/fonts/gone.woff2";
+    expect(servedFromRoot(running, [font, gone])).toEqual({ ok: false, outside: [], unresolved: [`${gone} -> ${join(pkg, "fonts/gone.woff2")}`] });
+
+    for (const entry of [
+      "http://127.0.0.1:46911/@codecaine-ai/design-system/fonts%2F..%2F..%2F..%2F..%2Fsecret.txt",
+      "http://127.0.0.1:46911/@codecaine-ai/design-system/%252e%252e/%252e%252e/%252e%252e/secret.txt",
+      "/@codecaine-ai/design-system/../../../secret.txt",
+      "/@codecaine-ai/design-system/%2e%2e/%2e%2e/%2e%2e/secret.txt",
+      "/@codecaine-ai/design-system/fonts\\..\\..\\..\\secret.txt",
+      "http://127.0.0.1:46911/@codecaine-ai/design-system/fonts/linked.woff2",
+      "http://127.0.0.1:46911/@codecaine-ai/design-system/",
+      "/@codecaine-ai/design-systemx/fonts/Inter-Regular.woff2",
+      "/@vite/client",
+      "/@id/@codecaine-ai/design-system/fonts/Inter-Regular.woff2",
+    ])
+      expect([entry, servedDiskPath(running, entry)]).toEqual([entry, null]);
+    // No resolved package: the prefix maps to nothing.
+    rmSync(pkg, { recursive: true });
+    expect(servedDiskPath(running, font)).toBeNull();
   });
 });
 
