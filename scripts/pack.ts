@@ -10,14 +10,21 @@
  * the tgz back and verify it carries the CSS, the font files fonts.css names and every file package.json
  * exports, and nothing that must not ship (tgzProblems). Only a complete tgz is copied into the destination.
  *
- * A tgz of the same name already in the destination is never overwritten. The same bytes: it is left as
- * it is and the output says `unchanged`. Different bytes: exit 1, because an app's lockfile pins the old
+ * A tgz of the same name already in the destination is never overwritten. The same content (the same files
+ * with the same bytes once extracted; the gzip bytes may differ with another npm or zlib): it is left as it
+ * is and the output says `unchanged`. Different content: exit 1, because an app's lockfile pins the old
  * bytes by integrity. Every repack of a changed build bumps the patch version in package.json first.
+ *
+ * Destinations: a checkout outside the owner's tree (the rollout mirror) never writes into the owner's tree
+ * (`/Users/Ford/workspace`), directly or through a symlink. A checkout inside the owner's tree (the owner's
+ * own design-system after merge) may: `bun run pack --out ../<app>/vendor` is the vendoring flow there.
+ * Scratch folders (npm's staging folder, its HOME, cache and TMPDIR) go under safeTempBase(), never under
+ * the owner's tree, the home itself, ~/Library or a credential store, whatever TMPDIR says.
  *
  * On success it prints two lines, and a third when the tgz was already there:
  *   tgz: <absolute path>
  *   tokens.css sha256: <hex of the dist/css/tokens.css bytes inside the tgz>
- *   unchanged: the same bytes were already at this path
+ *   unchanged: a tgz with the same files and bytes was already at this path
  *
  * The conformance linter imports readTgz, tgzProblems and tokensCssSha256 to check a vendored copy.
  * Zero dependencies: gunzip from node:zlib and a small ustar reader (prefix field, pax and GNU long names).
@@ -27,10 +34,11 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { constants, copyFileSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { basename, join, posix, resolve } from "node:path";
+import { basename, join, posix } from "node:path";
 import { gunzipSync } from "node:zlib";
 import { ROOT, staleFiles, TokenError } from "./build.ts";
-import { safeOutputPath, UnsafePathError } from "./lib/safe-paths.ts";
+import { OWNER_TREE } from "./lib/owner.ts";
+import { isWithin, safeOutputPath, safeTempBase, UnsafePathError } from "./lib/safe-paths.ts";
 
 /** Every path in an npm-packed tgz starts with this folder. */
 export const TGZ_ROOT = "package/";
@@ -250,31 +258,50 @@ export function defaultOutDir(env: NodeJS.ProcessEnv = process.env): string {
 export interface PackOptions {
   /** Destination folder; created when missing. Default: defaultOutDir(). */
   out?: string;
+  /** The design-system checkout to pack. Default: the one this script runs from. */
+  root?: string;
+  /** The owner's tree; tests pass a temp dir. Default OWNER_TREE. */
+  ownerTree?: string;
+}
+
+/**
+ * The canonical destination for a pack. A checkout inside the owner's tree packs anywhere (the owner's own
+ * vendoring flow); a checkout outside it (the rollout mirror) is refused any destination in the owner's
+ * tree, directly or through a symlink, case variant or firmlink spelling. Throws UnsafePathError.
+ */
+export function packOutput(dest: string, opts: { root?: string; ownerTree?: string } = {}): string {
+  const ownerTree = opts.ownerTree ?? OWNER_TREE;
+  const ownerCheckout = isWithin(opts.root ?? ROOT, ownerTree);
+  return safeOutputPath(dest, { label: "pack --out", ownerTree, ...(ownerCheckout ? { root: ownerTree } : {}) });
 }
 
 /** Temp homes npmEnv made; removed when the process exits. */
 const npmHomes: string[] = [];
 
 /**
- * The only environment npm pack gets: PATH, LANG, TERM and TMPDIR from `from`, and a fresh temp HOME
- * (removed at exit) holding the XDG dirs, the npm cache and empty user and global npmrc files. So npm
- * never reads the owner's ~/.npmrc or tokens, never writes ~/.npm, and runs no lifecycle scripts.
+ * The only environment npm pack gets: PATH, LANG and TERM from `from`, and a fresh temp HOME under the
+ * validated temp base (removed at exit) holding the XDG dirs, the npm cache, npm's TMPDIR and empty user and
+ * global npmrc files. So npm never reads the owner's ~/.npmrc or tokens, never writes ~/.npm or the caller's
+ * TMPDIR, and runs no lifecycle scripts.
  */
-export function npmEnv(from: NodeJS.ProcessEnv = process.env): Record<string, string> {
-  const home = mkdtempSync(join(tmpdir(), "ds-pack-npm-"));
+export function npmEnv(from: NodeJS.ProcessEnv = process.env, base: string = safeTempBase()): Record<string, string> {
+  const home = mkdtempSync(join(base, "ds-pack-npm-"));
   if (!npmHomes.length) process.once("exit", () => npmHomes.forEach((dir) => rmSync(dir, { recursive: true, force: true })));
   npmHomes.push(home);
   const env: Record<string, string> = {};
-  for (const name of ["PATH", "LANG", "TERM", "TMPDIR"]) {
+  for (const name of ["PATH", "LANG", "TERM"]) {
     const value = from[name];
     if (value !== undefined) env[name] = value;
   }
   const userconfig = join(home, "npmrc");
   const globalconfig = join(home, "global-npmrc");
+  const tmp = join(home, "tmp");
   writeFileSync(userconfig, "");
   writeFileSync(globalconfig, "");
+  mkdirSync(tmp);
   return {
     ...env,
+    TMPDIR: tmp,
     HOME: home,
     XDG_CONFIG_HOME: join(home, ".config"),
     XDG_CACHE_HOME: join(home, ".cache"),
@@ -294,42 +321,45 @@ export interface PackResult {
   tgz: string;
   /** sha256 of the dist/css/tokens.css bytes inside the tgz. */
   tokensCssSha256: string;
-  /** The tgz was already there with exactly these bytes, so nothing was written. */
+  /** The tgz was already there with exactly these files and bytes (extracted), so nothing was written. */
   unchanged: boolean;
 }
 
 /**
  * Builds-checks, packs and verifies. Throws PackError when anything fails, and when `out` already holds a
- * tgz of the same name with different bytes. Nothing is written to `out` unless the tgz is complete and new.
- * Throws UnsafePathError before creating anything when the destination resolves into the owner's tree.
+ * tgz of the same name with different content. Nothing is written to `out` unless the tgz is complete and new.
+ * Throws UnsafePathError before creating anything when the destination (packOutput) or the temp base
+ * (safeTempBase: TMPDIR inside the owner's tree, the home itself, ~/Library or a credential store) is refused.
  */
 export async function pack(opts: PackOptions = {}): Promise<PackResult> {
+  const root = opts.root ?? ROOT;
   let stale: string[];
   try {
-    stale = staleFiles(ROOT);
+    stale = staleFiles(root);
   } catch (error) {
     if (error instanceof TokenError) throw new PackError("design-system: the tokens do not build; nothing packed:", error.problems);
     throw error;
   }
   if (stale.length) throw new PackError("design-system: build outputs are stale (run `bun run build`); nothing packed:", stale);
 
-  const out = safeOutputPath(opts.out ?? defaultOutDir(), { label: "pack --out" });
+  const out = packOutput(opts.out ?? defaultOutDir(), { root, ownerTree: opts.ownerTree });
+  const base = safeTempBase({ ownerTree: opts.ownerTree });
   mkdirSync(out, { recursive: true });
   // npm writes into a private folder, so a tgz already in `out` is never overwritten by npm itself.
-  const staging = mkdtempSync(join(tmpdir(), "ds-pack-"));
+  const staging = mkdtempSync(join(base, "ds-pack-"));
   try {
-    return place(npmPack(staging), out);
+    return place(npmPack(root, staging, base), out, root);
   } finally {
     rmSync(staging, { recursive: true, force: true });
   }
 }
 
 /** Runs `npm pack` from the package root into `dest`. Returns the path of the tgz it wrote. */
-function npmPack(dest: string): string {
+function npmPack(root: string, dest: string, base: string): string {
   const npm = spawnSync("npm", ["pack", "--ignore-scripts", "--pack-destination", dest, "--json"], {
-    cwd: ROOT,
+    cwd: root,
     encoding: "utf8",
-    env: npmEnv(),
+    env: npmEnv(process.env, base),
   });
   if (npm.error) throw new PackError(`design-system: could not run npm: ${npm.error.message}`);
   if (npm.status !== 0) throw new PackError(`design-system: npm pack exited ${npm.status}:\n${npm.stderr.trim()}`);
@@ -344,16 +374,30 @@ function npmPack(dest: string): string {
 }
 
 /**
- * Checks the staged tgz, then copies it into `out` under npm's name (codecaine-ai-design-system-<version>.tgz).
- * A file already there is never replaced: the same bytes leave it as it is (`unchanged`), different bytes
- * refuse, because an app's lockfile pins the old bytes by integrity (consume.md: repack after a token change).
+ * Whether two tgz file maps hold the same regular files with the same bytes. Compares what an install
+ * extracts, not the gzip stream, which another npm or zlib version compresses differently.
  */
-function place(staged: string, out: string): PackResult {
+export function sameEntries(a: Map<string, Uint8Array>, b: Map<string, Uint8Array>): boolean {
+  if (a.size !== b.size) return false;
+  for (const [name, bytes] of a) {
+    const other = b.get(name);
+    if (!other || !Buffer.from(other).equals(Buffer.from(bytes))) return false;
+  }
+  return true;
+}
+
+/**
+ * Checks the staged tgz, then copies it into `out` under npm's name (codecaine-ai-design-system-<version>.tgz).
+ * A file already there is never replaced: the same extracted content leaves it as it is (`unchanged`),
+ * different content (or a file that is no readable tgz) refuses, because an app's lockfile pins the old bytes
+ * by integrity (consume.md: repack after a token change).
+ */
+function place(staged: string, out: string, root: string): PackResult {
   const tgz = join(out, basename(staged));
   const files = readTgz(staged);
   const problems = tgzProblems(files);
   const packed = files.get(TOKENS_CSS_ENTRY);
-  if (packed && sha256(packed) !== sha256(readFileSync(join(ROOT, "dist/css/tokens.css")))) {
+  if (packed && sha256(packed) !== sha256(readFileSync(join(root, "dist/css/tokens.css")))) {
     problems.push(`${TOKENS_CSS_ENTRY} differs from dist/css/tokens.css (it changed while packing)`);
   }
   if (problems.length || !packed) throw new PackError(`design-system: the packed ${basename(tgz)} is incomplete; nothing written to ${out}:`, problems);
@@ -366,9 +410,15 @@ function place(staged: string, out: string): PackResult {
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw new PackError(`design-system: could not write ${tgz}: ${(error as Error).message}`);
   }
-  if (lstatSync(tgz).isFile() && readFileSync(tgz).equals(readFileSync(staged))) return { ...result, unchanged: true };
+  let existing: Map<string, Uint8Array> | null = null;
+  try {
+    if (lstatSync(tgz).isFile()) existing = readTgz(tgz);
+  } catch {
+    // not a readable tgz: different content
+  }
+  if (existing && sameEntries(existing, files)) return { ...result, unchanged: true };
   throw new PackError(
-    `design-system: ${tgz} already exists with different bytes; refusing to overwrite it (a lockfile pins the old bytes by integrity). ` +
+    `design-system: ${tgz} already exists with different content; refusing to overwrite it (a lockfile pins the old bytes by integrity). ` +
       "Bump the patch version in package.json (every repack does), run `bun run build`, then pack again. Nothing written.",
   );
 }
@@ -400,7 +450,7 @@ export async function cli(argv: string[] = process.argv.slice(2)): Promise<numbe
     const result = await pack(parseArgs(argv));
     console.log(`tgz: ${result.tgz}`);
     console.log(`tokens.css sha256: ${result.tokensCssSha256}`);
-    if (result.unchanged) console.log("unchanged: the same bytes were already at this path");
+    if (result.unchanged) console.log("unchanged: a tgz with the same files and bytes was already at this path");
     return 0;
   } catch (error) {
     if (error instanceof PackError) {

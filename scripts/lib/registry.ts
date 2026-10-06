@@ -131,6 +131,30 @@ export interface TestSpec {
   safe: Array<{ cmd: string; cwd: string }>;
   /** Commands that must not run, with the reason. */
   unsafe?: Array<{ cmd: string; reason: string }>;
+  /**
+   * What `bun run test:apps` recorded for each command, keyed by its label: "tests.safe[<i>]",
+   * "commands.typecheck", "commands.build". test:apps fails a later run on a failure the baseline does
+   * not list. Recorded only from a test:apps report by the managing agent, never by an app worker; a
+   * baseline that changes later needs a reason in `exceptions`.
+   */
+  baselines?: Record<string, TestBaseline>;
+}
+
+/** One command's recorded result (see TestSpec.baselines). */
+export interface TestBaseline {
+  /** The command's exit status. */
+  exit: number;
+  /** Test counts, when the output had a summary test:apps reads (bun test, vitest, unittest). */
+  pass?: number;
+  fail?: number;
+  /** Errors outside tests (bun "N errors", unittest ERROR entries count as failing instead). */
+  errors?: number;
+  /** Failing tests by name, or tsc errors as "<file>: <TScode>: <message>" (no line numbers), sorted. */
+  failing?: string[];
+  /** YYYY-MM-DD of the recorded run. */
+  date: string;
+  /** How it was recorded: test:apps, the root, sandboxed, and how many runs the failing list unites. */
+  method: string;
 }
 
 export interface Exception {
@@ -186,6 +210,13 @@ export interface AppEntry {
      * and templates without their own Tailwind build whose class strings their hosts compile.
      */
     utilityClasses?: boolean;
+    /**
+     * With `utilityClasses`: the Tailwind of the host that compiles this library's (or template's) class
+     * strings, which decides which class syntax and default scales apply: "v3" (Tailwind v3 with the
+     * design-system preset), "v4" (Tailwind v4 with tailwind-strict.css), "uno" (UnoCSS's Tailwind-compatible
+     * preset, as Slidev uses). Libraries with several hosts name the strictest one their code must suit.
+     */
+    hostTailwind?: "v3" | "v4" | "uno";
     packageManager: "bun" | "npm" | "none";
   };
   consume: { via: ConsumeVia; detail: string };

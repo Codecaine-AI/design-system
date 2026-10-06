@@ -155,18 +155,85 @@ describe("registry:check keeps runs off the owner's ports and .env files", () =>
     ["an owner port in a safe test command", safe("bun --no-env-file test --port=4840"), "tests.safe[0] names owner port 4840"],
     ["a bun test without --no-env-file", safe("bun test src"), "tests.safe[0] runs bun without --no-env-file"],
     ["a bun script without --no-env-file after a cd", safe("cd sub && exec bun run typecheck"), "runs bun without --no-env-file"],
-    ["utilityClasses on a Tailwind app", { stack: { summary: "", tailwind: "v4", packageManager: "bun", utilityClasses: true } }, "stack.utilityClasses is redundant"],
+    ["utilityClasses on a Tailwind app", { stack: { summary: "", tailwind: "v4", packageManager: "bun", utilityClasses: true, hostTailwind: "v4" } }, "stack.utilityClasses is redundant"],
+    ["a baseline for a command the entry lacks", { tests: { safe: [], baselines: { "tests.safe[0]": { exit: 1, date: "2026-10-05", method: "test:apps" } } } }, `tests.baselines["tests.safe[0]"] names no command`],
+    ["a baseline without a date", { tests: { safe: [{ cmd: "true", cwd: "app" }], baselines: { "tests.safe[0]": { exit: 1, method: "test:apps" } as never } } }, "needs a YYYY-MM-DD date"],
+    ["utilityClasses without the host's Tailwind", { stack: { summary: "", tailwind: "none", packageManager: "bun", utilityClasses: true } }, "stack.utilityClasses needs stack.hostTailwind"],
+    ["a hostTailwind that is no Tailwind", { stack: { summary: "", tailwind: "none", packageManager: "bun", utilityClasses: true, hostTailwind: "v2" as never } }, "stack.hostTailwind must be one of v3, v4, uno"],
+    ["a hostTailwind without utilityClasses", { stack: { summary: "", tailwind: "none", packageManager: "bun", hostTailwind: "v3" } }, "stack.hostTailwind is set without stack.utilityClasses"],
+    ["bunx without --no-env-file", safe("bunx --bun tsc"), "tests.safe[0] runs bun without --no-env-file"],
+    ["bun x without --no-env-file", safe("bun x --bun vite build"), "tests.safe[0] runs bun without --no-env-file"],
+    ["bun after a lone &", safe("true & bun run dev"), "runs bun without --no-env-file"],
+    ["bun in a subshell", safe("(bun run dev)"), "runs bun without --no-env-file"],
+    ["--no-env-file after the script", safe("bun run typecheck --no-env-file"), "tests.safe[0] puts --no-env-file after typecheck"],
+    ["--no-env-file after the file", safe("bun file.ts --no-env-file"), "tests.safe[0] puts --no-env-file after file.ts"],
+    ["an encoded owner port in a route path", { routes: [{ id: "home", path: "/?next=http%3A%2F%2Flocalhost%3A4840" }] }, "routes[0].path names owner port 4840"],
+    ["a loopback URL in a route's waitFor", { routes: [{ id: "home", path: "/", waitFor: 'iframe[src="http://localhost/app"]' }] }, "routes[0].waitFor names loopback URL http://localhost/app without an explicit port"],
+    [
+      "a loopback port in a route step's target",
+      { routes: [{ id: "home", path: "/", steps: [{ action: "click", target: 'a[href="http://127.0.0.1:47130"]' }] }] },
+      "routes[0].steps[0].target names port 47130 outside its block",
+    ],
+    ["an owner port in a route step's value", { routes: [{ id: "home", path: "/", steps: [{ action: "press", target: "#api", value: "localhost:5432" }] }] }, "routes[0].steps[0].value names owner port 5432"],
+    [
+      "a port in a storage darkSwitch value",
+      { verify: { probes: PROBES, darkSwitch: { kind: "storage", key: "api", value: '{"port":47130}' } } },
+      "verify.darkSwitch.value names port 47130 outside its block",
+    ],
+    [
+      "a loopback URL in a darkSwitch step",
+      { verify: { probes: PROBES, darkSwitch: { kind: "steps", steps: [{ action: "click", target: 'a[href="https://localhost"]' }] } } },
+      "verify.darkSwitch.steps[0].target names loopback URL https://localhost without an explicit port",
+    ],
   ])("reports %s", (_, over, message) => {
     const problems = check([entry(over)]);
     expect(problems.some((p) => p.includes(message))).toBe(true);
   });
 
-  test("accepts the app's own ports, placeholders, bun x and --no-env-file", () => {
+  const env = (value: string) => entry({ runProfile: profile({ env: { API: value } }) });
+  test.each([
+    "localhost.:47130",
+    "LOCALHOST:47130",
+    "127.0.1:47130",
+    "127.1%3A47130",
+    "[::ffff:127.0.0.1]:47130",
+    "[0:0:0:0:0:0:0:1]:47130",
+    "http://127.1:47130/api",
+    "http://[::ffff:7f00:1]:47130",
+    "http://0x7f.1:47130",
+  ])("reports the loopback port outside the block in %s", (value) => {
+    expect(check([env(value)]).some((p) => p.includes("runProfile.env.API names port 47130 outside its block 47000-47009"))).toBe(true);
+  });
+
+  test.each(["http://localhost/x", "https://127.0.0.1", "postgres://localhost/db", "redis://127.0.0.1", "ws://[::1]/", "postgres://u:p@localhost/db"])(
+    "reports the loopback URL %s, which has no explicit port",
+    (url) => {
+      expect(check([env(url)]).some((p) => p.includes(`runProfile.env.API names loopback URL ${url} without an explicit port`))).toBe(true);
+    },
+  );
+
+  test.each(["-p 47130", "-p47130", "-p=47130", "--port:47130", "--Port 47130", "-port 47130", "port=47130", "api_port:47130"])("reports the port option %s outside the block", (flag) => {
+    const problems = check([entry({ runProfile: profile({ flags: [flag] }) })]);
+    expect(problems.some((p) => p.includes("runProfile.flags names port 47130 outside its block"))).toBe(true);
+  });
+
+  test("accepts the app's own ports, placeholders, non-port options and bun runs that pass --no-env-file first", () => {
     const ok = entry({
-      run: { ...entry().run, start: "bun --no-env-file {ds}/apps/fixtures/demo/serve.ts --port {port:ui} && bun x --bun vite" },
-      runProfile: profile({ env: { KERNEL: "http://127.0.0.1:{port:ui}", OWN: "http://localhost:47009" }, flags: ["--api-port", "47001"], allowedLocalPorts: [47008] }),
-      tests: { safe: [{ cmd: "bunx --bun tsc && bun --no-env-file test ./src/a.test.ts", cwd: "app" }] },
-      stack: { summary: "", tailwind: "none", packageManager: "bun", utilityClasses: true },
+      run: { ...entry().run, start: "bun --no-env-file {ds}/apps/fixtures/demo/serve.ts --port {port:ui} -p {port:ui} --strictPort --host 127.0.0.1 && bun --no-env-file x --bun vite" },
+      commands: { cwd: "app", install: "bun install --frozen-lockfile", build: "bun x --no-env-file --bun vite build", typecheck: "bunx --no-env-file --bun tsc -p tsconfig.json" },
+      runProfile: profile({
+        env: { KERNEL: "http://127.0.0.1:{port:ui}", OWN: "http://localhost:47009", HOSTS: "file://localhost/etc/hosts" },
+        flags: ["--api-port", "47001", "--report", "x"],
+        allowedLocalPorts: [47008],
+      }),
+      tests: {
+        safe: [
+          { cmd: "export FOO=1 && bun --no-env-file run typecheck && bun run --no-env-file lint && mkdir -p {tmp}/x", cwd: "app" },
+          { cmd: "bun --no-env-file test src && bun test --no-env-file ./src/a.test.ts && bun --version", cwd: "app" },
+        ],
+      },
+      routes: [{ id: "home", path: "/?api=http://127.0.0.1:{port:ui}", waitFor: "main", steps: [{ action: "scroll", target: "main", value: 5173 }] }],
+      stack: { summary: "", tailwind: "none", packageManager: "bun", utilityClasses: true, hostTailwind: "uno" },
     });
     expect(check([ok])).toEqual([]);
   });

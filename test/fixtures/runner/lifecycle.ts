@@ -10,6 +10,8 @@
  *                 tick (like verify:apps when Ctrl-C closes the browser under a running check)
  *   before-ready  installs app-runner's handlers and starts an app whose ready line never matches, so a
  *                 signal lands while startApp waits for it (never prints READY)
+ *   plain         installs nothing itself (startApp's own handlers only) and waits to be signalled
+ *   stubborn      like plain, but the app ignores SIGTERM, so a graceful stop waits out its grace period
  * Usage: bun lifecycle.ts <mode> <root> <out-dir> <ui> <helper> [<ui2> <helper2>]
  */
 import { installSignalHandlers, startApp } from "../../../scripts/lib/app-runner.ts";
@@ -25,7 +27,7 @@ function app(id: string, uiPort: number, helperPort: number): AppEntry {
     run: {
       mode: "browser",
       cwd: "app",
-      start: "bun serve.ts",
+      start: mode === "stubborn" ? "trap '' TERM; bun serve.ts" : "bun serve.ts",
       readyPattern: mode === "before-ready" ? "never printed: (\\S+)" : "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)",
     },
     runProfile: {
