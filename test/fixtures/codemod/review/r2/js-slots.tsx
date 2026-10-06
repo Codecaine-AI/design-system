@@ -9,7 +9,7 @@ export const draw = (label: (t: string, c: string) => void) => label("FRONT", "#
 export const DEFAULT_SETTINGS = { snakeStartColor: "#e6e5e3" };
 export const Card = ({ on }: { on: boolean }) => <div style={{ background: on ? "#f2f2f1" : "#ffffff", fontSize: 13 }} />;
 export const panelStyle = { borderColor: "#e6e5e3" };
-export const box: CSSProperties = { color: "#ffffff" };
+export const box: CSSProperties = { background: "#0078df", color: "#ffffff" };
 export const paint = (el: HTMLElement) => {
   el.style.background = "#ffffff";
   el.style.setProperty("--chip", "#ebebe9");
@@ -19,7 +19,8 @@ export const Tag = () => <Badge color="#e6e5e3" />;
 declare const Badge: (p: { color: string }) => null;
 export const setAccent = (el: HTMLElement, name: string) => el.style.setProperty(name, "#0078df");
 export const Fade = () => <div style={{ maskImage: "linear-gradient(to bottom, rgb(0 0 0 / 0.55), transparent)" }} />;
-export const Spread = ({ on }: { on: boolean }) => <div style={{ margin: 0, ...(on ? { color: "#ffffff" } : {}) }} />;
+export const Spread = ({ on }: { on: boolean }) => <div style={{ margin: 0, ...(on ? { background: "#0078df", color: "#ffffff" } : {}) }} />;
 export const Label = () => <text fontSize={12}>x</text>;
 export const glow = (el: HTMLElement) => { el.style.filter = "drop-shadow(0 0 2px #ffffff)"; };
 export const Grain = () => <filter><feFlood floodColor="#808080" /><feDiffuseLighting lightingColor="#ffffff" /></filter>;
+export const Chip = () => <span style={{ background: "var(--chip)" }} />;

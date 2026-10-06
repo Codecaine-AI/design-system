@@ -1,0 +1,24 @@
+/* Codemod review fixture, round 3 (P1-4): a custom property takes the role its readers give it. */
+[data-operation-kind-badge="action"]{--op-kind:var(--docs-kind-action,#9d530d);--op-kind-soft:var(--docs-kind-action-soft,#faebdd)}
+[data-operation-kind-badge="event"]{--op-kind:var(--docs-kind-event,#6940a5);--op-kind-soft:var(--docs-kind-event-soft,#eae4f2)}
+[data-operation-kind-badge]{color:var(--op-kind);background:var(--op-kind-soft)}
+[data-docs-block-type="state-shape"]{--fl-muted:var(--docs-shape-muted,#d4d4d4);--fl-optional:var(--docs-shape-optional,#d4d4d4);--fl-type-punct:var(--fl-muted)}
+[data-field-token="optional"]{margin-left:2px;color:var(--fl-optional)}
+[data-type-sep]{color:var(--fl-type-punct)}
+[data-theme="dark"] { --unity-titlebar: #2f3236; }
+.unity-titlebar { background: var(--unity-titlebar); }
+[data-theme=dark]{color-scheme:dark;--hover:#454B4E}
+button:hover{background:var(--hover)}
+:root, [data-theme="light"] {
+  --color-pill-gray: rgba(155,154,151,0.4);
+  --color-bg-brown: #E9E5E3;
+  --color-text-orange: #D9730D;
+}
+.draft-editor-bar[data-tone="error"] { border-color: var(--color-text-orange); }
+.blog-style-panel label[data-changed] > span { color: var(--color-text-orange); }
+html.dark { --prism-comment: #4D4D4D; }
+:root { --fg: #2a2a2a; --wash: color-mix(in srgb, var(--fg) 7%, transparent); --chip-ink: #666562; }
+.note { color: var(--fg); background: var(--wash); }
+@theme inline { --color-brand: #0078df; }
+:root { --err-bg: #fdecec; --err: #a11d1d; }
+.err { background: var(--err-bg); color: var(--err); }

@@ -5,9 +5,10 @@
 
 import { readFileSync, statSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
-import { HARD, scan, type Hit, type Options } from "../../scan-literals.ts";
+import { collectFiles, HARD, scan, type Hit, type Options } from "../../scan-literals.ts";
 import { parseColor } from "./color.ts";
-import { pickColor } from "./color-role.ts";
+import { pickColor, type ConsumerIndex } from "./color-role.ts";
+import { buildConsumers } from "./consumers.ts";
 import { readContext, type Context } from "./context.ts";
 import { locate, type Span } from "./locate.ts";
 import { pickClass, pickFamily, pickFontSize, pickRadius, pickSpacing, type Pick, type TailwindTarget } from "./size-role.ts";
@@ -30,6 +31,8 @@ export interface ProposeOptions {
    * an UnoCSS host, which gets no class rewrites.
    */
   tailwind?: TailwindTarget;
+  /** Where each custom property is read (built from the scanned files when propose runs). */
+  consumers?: ConsumerIndex;
 }
 
 /**
@@ -75,7 +78,7 @@ function pickFor(data: TokenData, f: SourceFile, hit: Hit, span: Span | null, ct
     const [ls] = lineRange(f, hit.line);
     const before = span ? f.text.slice(ls, span.start) : "";
     const ringShadow = /(?:^|[\s:,"'`])0(?:px)?\s+0(?:px)?\s+0(?:px)?\s+\d*\.?\d+px\s*$/.test(before);
-    const pick: Pick = pickColor(data, color, ctx, { appId, file: f.rel, ringShadow });
+    const pick: Pick = pickColor(data, color, ctx, { appId, file: f.rel, ringShadow, consumers: opts.consumers });
     if (pick.path && pick.keepAlpha !== undefined) {
       pick.css = `color-mix(in srgb, ${cssVarRef(pick.path)} ${Math.round(pick.keepAlpha * 1000) / 10}%, transparent)`;
     }
@@ -144,12 +147,17 @@ function replacementFor(f: SourceFile, span: Span | null, pick: Pick, ctx: Conte
     if (slot && !slot.ok) return { text: null, why: slot.why };
     return pick.utility ? { text: pick.utility } : { text: null };
   }
-  if (!pick.path) return { text: null };
-  if (ctx.data) return { text: null, why: "sits in a data object (id/type keys), not a style: check before changing" };
-  if (span.slot === "canvas") return { text: null, why: "canvas 2D does not resolve var(): read the token with getComputedStyle, or keep it" };
-  const nonValue = jsNonValue(f, span) ?? typePosition(f, span);
-  if (nonValue) return { text: null, why: nonValue };
-  if (slot && !slot.ok) return { text: null, why: slot.why };
+  // Where the value goes is said even for a row without a token: a hand edit needs it too.
+  const placed = (): string | undefined => {
+    if (ctx.data) return "sits in a data object (id/type keys), not a style: check before changing";
+    if (span.slot === "canvas") return "canvas 2D does not resolve var(): read the token with getComputedStyle, or keep it";
+    const nonValue = jsNonValue(f, span) ?? typePosition(f, span);
+    if (nonValue) return nonValue;
+    if (slot && !slot.ok) return slot.why;
+    return undefined;
+  };
+  const refused = placed();
+  if (!pick.path || refused) return { text: null, why: refused };
   // A nearest pick is a guess; in JS it is proposed only where the slot names a CSS property.
   if (f.kind === "js" && pick.method === "nearest" && !cssRegionAt(f, span.start) && !(slot?.ok && slot.property)) {
     return { text: null, why: "a nearest-color pick in JS with no CSS property in its slot: edit by hand" };
@@ -264,13 +272,30 @@ export function propose(data: TokenData, input: ScanInput, opts: ProposeOptions)
   const dropped: Record<string, number> = {};
   const files: Record<string, string> = {};
   const done = new Set<string>();
+  const optionsFor = (abs: string): Options => ({
+    roots: [abs], json: true, top: 0, hits: true, excludes: input.exclude, exts: extSet(input.ext),
+    includeTests: false, includeSubmodules: false, keepComments: false, failAbove: null, verbose: false,
+  });
+  // Every scanned file, with literals or not, read once: a custom property's readers can sit in a file with no literal.
+  const sources = new Map<string, SourceFile>();
   for (const p of input.paths) {
     const abs = resolve(input.root, p);
-    const options: Options = {
-      roots: [abs], json: true, top: 0, hits: true, excludes: input.exclude, exts: extSet(input.ext),
-      includeTests: false, includeSubmodules: false, keepComments: false, failAbove: null, verbose: false,
-    };
-    const report = scan(options);
+    const stats = { dirs: 0, dotDirs: 0, submodules: 0, symlinks: 0, tests: 0, generated: 0, tooLarge: 0, excluded: 0, unreadable: 0 };
+    for (const file of collectFiles(abs, optionsFor(abs), stats)) {
+      const kind = kindOf(file);
+      if (!kind || sources.has(file)) continue;
+      try {
+        if (statSync(file).size > 2 * 1024 * 1024) continue;
+        sources.set(file, prepareSource(relative(input.root, file).split(sep).join("/"), readFileSync(file, "utf8"), kind));
+      } catch {
+        // Unreadable: scan-literals skips it too.
+      }
+    }
+  }
+  const consumers = opts.consumers ?? buildConsumers([...sources.values()]);
+  for (const p of input.paths) {
+    const abs = resolve(input.root, p);
+    const report = scan(optionsFor(abs));
     const single = statSync(abs).isFile();
     for (const fr of [...report.fileReports].sort((a, b) => a.path.localeCompare(b.path))) {
       const file = single ? abs : join(abs, fr.path);
@@ -280,7 +305,8 @@ export function propose(data: TokenData, input: ScanInput, opts: ProposeOptions)
       if (!kind || !fr.hits) continue;
       const rel = relative(input.root, file).split(sep).join("/");
       const src = readFileSync(file, "utf8");
-      const p = proposeFile(data, prepareSource(rel, src, kind), fr.hits, opts);
+      const prepared = sources.get(file)?.src === src ? sources.get(file)! : prepareSource(rel, src, kind);
+      const p = proposeFile(data, prepared, fr.hits, { ...opts, consumers });
       if (p.rows.length) files[rel] = fileSha(src);
       rows.push(...p.rows);
       for (const [c, n] of Object.entries(p.dropped)) dropped[c] = (dropped[c] ?? 0) + n;

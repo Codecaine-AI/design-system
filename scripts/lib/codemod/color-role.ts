@@ -10,8 +10,8 @@
  * keeps its alpha or stays unmapped.
  */
 
-import { chroma, composite, deltaE, rgbToOklab, type Rgba } from "./color.ts";
-import type { Context } from "./context.ts";
+import { chroma, composite, deltaE, rgbToOklab, toHex, type Rgba } from "./color.ts";
+import { branches, type Context, type Surface } from "./context.ts";
 import type { Theme, TokenData } from "./tokens.ts";
 
 export interface ColorPick {
@@ -51,7 +51,7 @@ const SAME_CHROMA_RATIO = 0.4;
 /** A literal this transparent paints nothing: no token is proposed. */
 const INVISIBLE_ALPHA = 0.02;
 
-type PropRole = "text" | "background" | "border" | "svgFill" | "svgStroke" | "shadow" | "accent" | null;
+export type PropRole = "text" | "background" | "border" | "svgFill" | "svgStroke" | "shadow" | "accent" | null;
 
 const HUES = ["gray", "blue", "teal", "green", "yellow", "orange", "red", "violet", "pink", "amber"];
 
@@ -64,7 +64,7 @@ export function words(s: string): string[] {
     .filter(Boolean);
 }
 
-function propRoleOf(property: string | null): PropRole {
+export function propRoleOf(property: string | null): PropRole {
   if (!property) return null;
   const p = property.replace(/^-webkit-/, "");
   if (/^(color|caret-?color|text-?decoration-?color|text-?fill-?color|text|decoration|caret|placeholder)$/i.test(p)) return "text";
@@ -99,7 +99,7 @@ function propRoleFromName(name: string): PropRole {
 }
 
 const STATUS: Array<[RegExp, string]> = [
-  [/\b(error|errors|danger|destructive|invalid|fail|failed|failure|reject|rejected|critical|delete|remove)\b/, "danger"],
+  [/\b(error|errors|err|danger|destructive|invalid|fail|failed|failure|reject|rejected|critical|delete|remove)\b/, "danger"],
   [/\b(warning|warn|caution|pending|stale|attention)\b/, "warning"],
   [/\b(success|ok|valid|done|pass|passed|accept|accepted|complete|completed|positive|ready)\b/, "success"],
   [/\b(info|notice|hint|tip)\b/, "info"],
@@ -130,8 +130,56 @@ function byPrefix(data: TokenData, ...prefixes: string[]): string[] {
 
 const coversRole = (role: PropRole) => role === "background" || role === "svgFill";
 
-function genericFamily(data: TokenData, role: PropRole): Family | null {
-  const text = byPrefix(data, "color.text").filter((p) => p !== "color.text.faint");
+/** Words that make a name, class or reference a solid fill (`--primary-foreground`, `.btn-solid`, `bg-accent`). */
+const SOLID_WORDS = new Set(["solid", "primary", "accent", "filled", "cta"]);
+/** ... unless a word says it is quiet (`bg-accent-soft`, `.ghost`, `text-primary-muted`). */
+const QUIET_WORDS = new Set(["soft", "wash", "subtle", "tint", "muted", "faint", "light", "ghost", "outline", "outlined"]);
+/** A background reference names a solid only by a solid or status word, and never a wash, text or line (`var(--ds-color-fill-accent)`). */
+const SURFACE_SOLID_WORDS = new Set([...SOLID_WORDS, "destructive", "danger", "error", "success", "warning", "info", "brand"]);
+const SURFACE_QUIET_WORDS = new Set([...QUIET_WORDS, "fill", "text", "foreground", "fg", "line", "border", "bg", "background", "surface", "panel", "page"]);
+
+/** Whether the literal's own background is a solid fill: a saturated mid-tone color, or a reference that names a solid. */
+function solidSurface(surface: Surface | null): boolean {
+  if (!surface) return false;
+  if (surface.color) {
+    if (surface.color.a < 0.9) return false;
+    const lab = rgbToOklab({ ...surface.color, a: 1 });
+    return Math.hypot(lab.a, lab.b) >= 0.1 && lab.L >= 0.3 && lab.L <= 0.75;
+  }
+  // One reference only (`var(--accent)`, `bg-primary`, `theme.accent`): a ternary or a fallback chain is solid only sometimes.
+  if (!/^(?:var\(\s*--[\w-]+\s*(?:,[^()]*)?\)|[\w$.[\]-]+)$/.test(surface.text.trim())) return false;
+  const w = words(surface.text.replace(/^bg-/, ""));
+  return w.some((x) => SURFACE_SOLID_WORDS.has(x)) && !w.some((x) => SURFACE_QUIET_WORDS.has(x));
+}
+
+/**
+ * Whether a glyph here sits on a solid fill, so color.text.on-solid fits: a solid, primary or
+ * accent word in its own names or classes, or a solid background on the same rule, style object or
+ * element. Without one, white text is light text on a fixed dark region, not on-solid (which turns
+ * near-black in dark).
+ */
+function onSolidHint(ctx: Context): boolean {
+  if (solidSurface(ctx.surface)) return true;
+  const solid = (text: string) =>
+    text.split(/[\s>+~]+/).some((token) => {
+      const w = words(token);
+      return w.some((x) => SOLID_WORDS.has(x)) && !w.some((x) => QUIET_WORDS.has(x));
+    });
+  return solid(ctx.ownHints) || ctx.chain.some((p) => branches(p).every(solid));
+}
+
+/**
+ * Whether the context says `re`: in the literal's own names, keys, classes or tag, or in a
+ * selector prelude whose every branch says it (`.error, .danger` is a danger rule; `.ring,
+ * .chip` is neither a ring nor a chip).
+ */
+function says(ctx: Context, re: RegExp, raw = false): boolean {
+  const norm = (x: string) => (raw ? x : plain(x));
+  return re.test(norm(ctx.ownHints)) || ctx.chain.some((p) => branches(p).every((b) => re.test(norm(b))));
+}
+
+function genericFamily(data: TokenData, role: PropRole, onSolid: boolean): Family | null {
+  const text = byPrefix(data, "color.text").filter((p) => p !== "color.text.faint" && (onSolid || p !== "color.text.on-solid"));
   switch (role) {
     case "text":
       return { paths: text, label: "text", strict: true };
@@ -162,14 +210,15 @@ function ownName(ctx: Context): string | null {
  * link needs an `a` element, `:link`/`:visited` or a name. Loose words in classes or text never do.
  */
 function structure(ctx: Context) {
-  const sel = ctx.inCss ? (ctx.selector ?? "") : "";
+  // A selector says it only when every branch of a prelude's list does (`.field:focus, .card`: no focus ring).
+  const sel = (re: RegExp) => ctx.inCss && ctx.chain.some((p) => branches(p).every((b) => re.test(b)));
   const v = ctx.variants;
   const name = words(ownName(ctx) ?? "");
   return {
-    focus: /:focus(?:-visible|-within)?(?![\w-])/i.test(sel) || v.some((x) => /^(?:group-|peer-)?focus(?:-visible|-within)?$/.test(x)) || name.includes("focus") || name.includes("ring"),
-    placeholder: /:(?::|-webkit-input-|-moz-)?placeholder/i.test(sel) || v.includes("placeholder") || ctx.property === "placeholder" || name.includes("placeholder"),
-    link: /^(?:a|Link|NavLink)$/.test(ctx.component ?? "") || /:(?:link|visited|any-link)(?![\w-])/i.test(sel) || name.includes("link"),
-    selection: /::?selection(?![\w-])/i.test(sel) || v.includes("selection"),
+    focus: sel(/:focus(?:-visible|-within)?(?![\w-])/i) || v.some((x) => /^(?:group-|peer-)?focus(?:-visible|-within)?$/.test(x)) || name.includes("focus") || name.includes("ring"),
+    placeholder: sel(/:(?::|-webkit-input-|-moz-)?placeholder/i) || v.includes("placeholder") || ctx.property === "placeholder" || name.includes("placeholder"),
+    link: /^(?:a|Link|NavLink)$/.test(ctx.component ?? "") || sel(/:(?:link|visited|any-link)(?![\w-])/i) || name.includes("link"),
+    selection: sel(/::?selection(?![\w-])/i) || v.includes("selection"),
   };
 }
 
@@ -211,11 +260,15 @@ function toneStatus(data: TokenData, ctx: Context, literal: Rgba, theme: Theme):
 
 /** Ordered families the context decides (each falls back to the next), or a reason it maps to nothing. */
 function decideFamily(data: TokenData, ctx: Context, role: PropRole, ringShadow: boolean, literal: Rgba): Family | { none: string } | null {
-  const h = plain(ctx.hints);
+  const h = (re: RegExp) => says(ctx, re);
   const s = structure(ctx);
   if (role === "shadow" && !ringShadow) return { none: "shadow color: replace the whole box-shadow with shadow.glass or shadow.dialog, or keep it" };
   if (role === "shadow") role = "border";
-  const generic = genericFamily(data, role);
+  const generic = genericFamily(data, role, onSolidHint(ctx));
+  const states = new Set(ctx.states);
+  const hover = states.has("group:hover") || ctx.variants.includes("hover");
+  const selected = states.has("group:selected");
+  const outlined = states.has("group:outline");
   const chain: Family[] = [];
   const one = (path: string, label: string): Family => ({ paths: [path], label, definitive: true });
   const narrow = (paths: string[], label: string, extra: Partial<Family> = {}) => chain.push({ paths, label, ...extra });
@@ -224,31 +277,31 @@ function decideFamily(data: TokenData, ctx: Context, role: PropRole, ringShadow:
   if (role === "accent") return generic;
   if (s.placeholder && role === "text") narrow(["color.text.faint"], "placeholder");
   if (s.focus && role === "border") narrow(["color.focus-ring"], "focus ring");
-  if (role === "background" && /\bselection\b/.test(h)) narrow(["color.selection"], "selection");
+  if (role === "background" && h(/\bselection\b/)) narrow(["color.selection"], "selection");
 
-  const chart = /\b(chart|charts|series|legend|legends|axis|axes|tick|ticks|gridline|gridlines|plot|sparkline|donut|pie)\b/.test(h);
+  const chart = h(/\b(chart|charts|series|legend|legends|axis|axes|tick|ticks|gridline|gridlines|plot|sparkline|donut|pie)\b/);
   if (chart && role !== "text") {
     // Labels, values and legends use text tokens; axes border.strong; gridlines border.subtle; marks
     // (fills, strokes, swatches) the series. The chart's own chrome (a card border) is not a mark.
-    const polarity = /\b(diverging|polarity|midpoint|baseline|zero|gain|gains|loss|losses|inflow|outflow|positive|negative|delta)\b/.test(h);
-    if (/\b(axis|axes|tick|ticks|domain)\b/.test(h) && role !== "background") narrow(["color.border.strong"], "chart axis");
-    else if (/\b(gridline|gridlines|grid)\b/.test(h)) narrow(["color.border.subtle"], "chart gridline");
-    else if (role !== "border" || /\b(series|legend|legends|swatch)\b/.test(h)) {
+    const polarity = h(/\b(diverging|polarity|midpoint|baseline|zero|gain|gains|loss|losses|inflow|outflow|positive|negative|delta)\b/);
+    if (h(/\b(axis|axes|tick|ticks|domain)\b/) && role !== "background") narrow(["color.border.strong"], "chart axis");
+    else if (h(/\b(gridline|gridlines|grid)\b/)) narrow(["color.border.subtle"], "chart gridline");
+    else if (role !== "border" || h(/\b(series|legend|legends|swatch)\b/)) {
       const diverging = byPrefix(data, "color.chart.diverging").filter((p) => polarity || !p.endsWith(".midpoint"));
       narrow([...byPrefix(data, "color.chart.series"), ...diverging], "chart series");
     }
   }
 
   // A category map (`TAG_CATEGORY_COLORS = { red: … }`) is categorical: its hues are not statuses.
-  const categorical = !chart && /\b(category|categories|categorical)\b/.test(h);
+  const categorical = !chart && h(/\b(category|categories|categorical)\b/);
   if (categorical) {
     narrow(byPrefix(data, ...HUES.map((x) => `color.${x}`), "color.category").filter((p) => !p.endsWith(".on-solid")), "categorical (hue tokens)");
   }
   const tone = categorical ? null : toneStatus(data, ctx, literal, ctx.theme);
   for (const [re, kind] of STATUS) {
-    if (!re.test(h) && tone !== kind) continue;
+    if (!h(re) && tone !== kind) continue;
     const st = `color.status.${kind}`;
-    const onSolid = role === "text" && /\b(foreground|fg|on solid)\b/.test(h) && /\b(destructive|danger|error|warning|success|info)\b/.test(plain(ctx.definition ?? ""));
+    const onSolid = role === "text" && h(/\b(foreground|fg|on solid)\b/) && /\b(destructive|danger|error|warning|success|info)\b/.test(plain(ctx.definition ?? ""));
     if (onSolid) narrow([`${st}.on-solid`], `${kind} glyph on solid`);
     else if (role === "text") narrow([`${st}.text`], `${kind} status text`);
     else if (role === "background") narrow([`${st}.soft`, `${st}.solid`], `${kind} status fill`);
@@ -257,12 +310,12 @@ function decideFamily(data: TokenData, ctx: Context, role: PropRole, ringShadow:
     else narrow(byPrefix(data, st), `${kind} status`);
     break;
   }
-  if (/\b(diff|added|inserted|insertion|removed|deleted|deletion|modified)\b/.test(h)) {
-    const kind = /\b(added|inserted|insertion|add|addition)\b/.test(h) ? "add" : /\b(removed|deleted|deletion|del)\b/.test(h) ? "del" : "mod";
+  if (h(/\b(diff|added|inserted|insertion|removed|deleted|deletion|modified)\b/)) {
+    const kind = h(/\b(added|inserted|insertion|add|addition)\b/) ? "add" : h(/\b(removed|deleted|deletion|del)\b/) ? "del" : "mod";
     narrow(role === "background" ? [`color.diff.${kind}-bg`] : [`color.diff.${kind}`], `diff ${kind}`);
   }
-  if (/\b(hljs|token|syntax|keyword|cm)\b/.test(h) && role === "text") narrow(byPrefix(data, "color.syntax"), "syntax");
-  if (/\b(code|pre|kbd|samp|mono|monospace|codeblock)\b/.test(h)) {
+  if (h(/\b(hljs|token|syntax|keyword|cm)\b/) && role === "text") narrow(byPrefix(data, "color.syntax"), "syntax");
+  if (h(/\b(code|pre|kbd|samp|mono|monospace|codeblock)\b/)) {
     if (role === "background") narrow(["color.code.bg", "color.code.gutter-bg", "color.fill.chip"], "code background");
     if (role === "border") narrow(["color.code.border"], "code border");
     if (role === "text") narrow(["color.code.chip.ink", "color.code.header-fg", "color.code.gutter-fg"], "code text");
@@ -270,22 +323,22 @@ function decideFamily(data: TokenData, ctx: Context, role: PropRole, ringShadow:
   if (role === "text" && s.link) narrow(["color.link"], "link");
   // A scrim stays translucent: no fallback to an opaque surface. An opaque fill under `.overlay`
   // (`.overlay .dialog`) is a surface, not the scrim.
-  if (role === "background" && /\b(backdrop|scrim|overlay)\b/.test(h) && literal.a < 0.99) narrow(["color.backdrop"], "backdrop", { terminal: true });
+  if (role === "background" && h(/\b(backdrop|scrim|overlay)\b/) && literal.a < 0.99) narrow(["color.backdrop"], "backdrop", { terminal: true });
   else {
-    if (/\bglass\b/.test(h) && (role === "background" || role === "border")) narrow(role === "background" ? ["color.glass.bg"] : ["color.glass.border", "color.glass.zone-border"], "glass");
+    if (h(/\bglass\b/) && (role === "background" || role === "border")) narrow(role === "background" ? ["color.glass.bg"] : ["color.glass.border", "color.glass.zone-border"], "glass");
     if (role === "background") {
-      if (/(?:^|\s)hover\b|:hover\b/.test(h) || ctx.variants.includes("hover")) narrow(["color.fill.hover"], "hover fill");
-      if (/\b(active|selected|current|checked|pressed)\b|aria (?:selected|current|pressed)|data state (?:active|on|checked|open)/.test(h)) narrow(["color.fill.active", "color.fill.accent"], "selected fill");
-      if (/\b(sidebar|aside|nav|navigation|rail)\b/.test(h) || ctx.component === "aside" || ctx.component === "nav") narrow(["color.surface.sidebar"], "sidebar surface");
-      if (/\b(panel|card|popover|menu|dialog|modal|dropdown|tooltip|sheet|inspector|popup)\b/.test(h) || ctx.component === "dialog") narrow(["color.surface.panel"], "panel surface");
-      if (/\b(inset|well|sunken|recessed|track)\b/.test(h)) narrow(["color.surface.sunken", "color.surface.inset"], "sunken surface");
-      if (/\b(chip|tag|badge|pill)\b/.test(h)) narrow(["color.fill.chip", "color.fill.active"], "chip fill");
+      if (hover) narrow(["color.fill.hover"], "hover fill");
+      if (selected) narrow(["color.fill.active", "color.fill.accent"], "selected fill");
+      if (h(/\b(sidebar|aside|nav|navigation|rail)\b/) || ctx.component === "aside" || ctx.component === "nav") narrow(["color.surface.sidebar"], "sidebar surface");
+      if (h(/\b(panel|card|popover|menu|dialog|modal|dropdown|tooltip|sheet|inspector|popup)\b/) || ctx.component === "dialog") narrow(["color.surface.panel"], "panel surface");
+      if (h(/\b(inset|well|sunken|recessed|track)\b/)) narrow(["color.surface.sunken", "color.surface.inset"], "sunken surface");
+      if (h(/\b(chip|tag|badge|pill)\b/)) narrow(["color.fill.chip", "color.fill.active"], "chip fill");
       // A definition under :root is named for its role; only its name can say "page".
-      const rootSelector = !ctx.definition && /(?:^|\s)(?::root|html|body)(?:\s|$)/.test(h);
-      const pageName = /\b(page|app|main|layout|paper)\b/.test(h) || /^(--|\$)(background|bg)$/.test(ctx.definition ?? "");
+      const rootSelector = !ctx.definition && h(/(?:^|\s)(?::root|html|body)(?:\s|$)/);
+      const pageName = (ctx.definition ? /\b(page|app|main|layout|paper)\b/.test(plain(ctx.definition)) : h(/\b(page|app|main|layout|paper)\b/)) || /^(--|\$)(background|bg)$/.test(ctx.definition ?? "");
       if (rootSelector || pageName || ctx.component === "body" || ctx.component === "html") narrow(["color.surface.page"], "page surface");
     }
-    if (role === "border" && /\b(active|selected|current|checked|dragging|drop|target)\b/.test(h)) narrow(["color.accent", "color.border.strong"], "selected outline");
+    if (role === "border" && outlined) narrow(["color.accent", "color.border.strong"], "selected outline");
     if (generic) chain.push(generic);
   }
   if (!chain.length) return null;
@@ -327,6 +380,30 @@ function compatible(literal: Rgba, token: Rgba, page: Rgba, de: number): boolean
 type Verdict = { ok: true; path: string; de: number; keepAlpha?: number; note: string } | { ok: false; reason: string };
 
 /**
+ * A translucent literal's token with its alpha kept, or null: a translucent token drawn the same
+ * way (text.secondary, selection, backdrop) within BASE_MATCH_DE, else an opaque token whose color
+ * matches the literal's opaque base within BASE_MATCH_DE, with the literal's alpha on it.
+ */
+function alphaKept(data: TokenData, literal: Rgba, theme: Theme, paths: string[]): Extract<Verdict, { ok: true }> | null {
+  const page = data.page[theme];
+  const same = nearestIn(data, literal, theme, paths.filter((p) => Math.abs(data.colors.get(p)![theme].a - literal.a) <= 0.02));
+  if (same && same.de <= BASE_MATCH_DE) return { ok: true, path: same.path, de: same.de, note: "" };
+  let base: { path: string; de: number } | null = null;
+  for (const path of paths) {
+    const token = data.colors.get(path)![theme];
+    if (token.a < 0.99) continue;
+    const opaque = { ...literal, a: 1 };
+    const de = deltaE(opaque, token, page);
+    if (!compatible(opaque, token, page, de)) continue;
+    if (!base || de < base.de) base = { path, de };
+  }
+  if (!base || base.de > BASE_MATCH_DE) return null;
+  const token = data.colors.get(base.path)![theme];
+  const de = deltaE(literal, { ...token, a: literal.a }, page);
+  return { ok: true, path: base.path, de, keepAlpha: literal.a, note: `; keeps alpha ${round2(literal.a)}` };
+}
+
+/**
  * The family's best token for the literal, or why none fits. A translucent literal whose base color
  * matches an opaque token keeps its alpha; on an area it never becomes an opaque token. Neutral and
  * hue compatibility hold in every family; a narrowed family caps at NARROW_MAX_DE, a generic one at
@@ -344,23 +421,8 @@ function evaluate(data: TokenData, literal: Rgba, theme: Theme, family: Family, 
     return { ok: true, path: best.path, de: best.de, note: `${big}${alpha}` };
   }
   if (literal.a < 0.99) {
-    // A translucent token drawn the same way (text.secondary, selection, backdrop) beats a kept alpha.
-    const same = nearestIn(data, literal, theme, paths.filter((p) => Math.abs(data.colors.get(p)![theme].a - literal.a) <= 0.02));
-    if (same && same.de <= BASE_MATCH_DE) return { ok: true, path: same.path, de: same.de, note: "" };
-    let base: { path: string; de: number } | null = null;
-    for (const path of paths) {
-      const token = data.colors.get(path)![theme];
-      if (token.a < 0.99) continue;
-      const opaque = { ...literal, a: 1 };
-      const de = deltaE(opaque, token, page);
-      if (!compatible(opaque, token, page, de)) continue;
-      if (!base || de < base.de) base = { path, de };
-    }
-    if (base && base.de <= BASE_MATCH_DE) {
-      const token = data.colors.get(base.path)![theme];
-      const de = deltaE(literal, { ...token, a: literal.a }, page);
-      return { ok: true, path: base.path, de, keepAlpha: literal.a, note: `; keeps alpha ${round2(literal.a)}` };
-    }
+    const kept = alphaKept(data, literal, theme, paths);
+    if (kept) return kept;
   }
   const fits = paths.filter((p) => {
     const token = data.colors.get(p)![theme];
@@ -400,45 +462,110 @@ export function tokenAllowed(path: string, where: Allow): boolean {
   return true;
 }
 
-/** The pool for a pure nearest match: semantic roles plus hue tokens (ranked behind). */
-function nearestPool(data: TokenData, where: Allow, role: PropRole): string[] {
+/**
+ * The pool for a pure nearest match: semantic roles plus hue tokens (ranked behind).
+ * color.text.on-solid only with a solid hint; color.backdrop only with a scrim, overlay, backdrop
+ * or modal hint (a faint white tint is not the 40% black scrim).
+ */
+function nearestPool(data: TokenData, where: Allow, role: PropRole, ctx: Context): string[] {
   const hues = HUES.map((x) => `color.${x}`);
+  const onSolid = onSolidHint(ctx);
   // Text never takes color.accent, not even as a hint.
-  if (role === "text") return [...byPrefix(data, "color.text", "color.link"), ...byPrefix(data, ...hues).filter((p) => p.endsWith(".text"))];
-  return byPrefix(data, "color.surface", "color.text", "color.border", "color.fill", "color.accent", "color.link", "color.backdrop", ...hues)
+  if (role === "text") return [...byPrefix(data, "color.text", "color.link"), ...byPrefix(data, ...hues).filter((p) => p.endsWith(".text"))].filter((p) => onSolid || p !== "color.text.on-solid");
+  const scrim = says(ctx, /\b(scrim|scrims|overlay|overlays|backdrop|backdrops|modal|modals)\b/);
+  return byPrefix(data, "color.surface", "color.text", "color.border", "color.fill", "color.accent", "color.link", ...(scrim ? ["color.backdrop"] : []), ...hues)
     .filter((p) => !p.endsWith(".on-solid") && tokenAllowed(p, where));
+}
+
+/**
+ * Why the literal sits in a fixed-color region, or null: its own rule, style object or class
+ * string paints a background of the other theme (a dark panel in a light app), so its colors are
+ * that panel's, not the theme's roles.
+ */
+function fixedRegion(data: TokenData, ctx: Context): string | null {
+  const s = ctx.surface;
+  if (!s?.color || s.color.a < 0.9) return null;
+  const L = rgbToOklab(composite(s.color, data.page[ctx.theme])).L;
+  const other = ctx.theme === "light" ? L < 0.45 : L > 0.8;
+  if (!other) return null;
+  const tone = ctx.theme === "light" ? "dark" : "light";
+  return `a fixed ${tone} region: ${s.source} is ${toHex(s.color)}, but this reads in the ${ctx.theme} theme; mark its theme (color-scheme or a ${tone} selector) or map it by hand`;
+}
+
+/** Where a custom property is read, for its role: what reads it as `prop: var(--x)` or a utility class. */
+export interface ConsumerIndex {
+  /** The roles its readers give (`text`, `background`, …, `other` for a reader with no color role). */
+  rolesOf(name: string): Set<string>;
+  /** One reader per role (`src/a.css:12`), for the row's reason. */
+  where?(name: string): Map<string, string>;
 }
 
 const isHue = (p: string) => HUES.some((x) => p.startsWith(`color.${x}.`));
 
-export function pickColor(data: TokenData, literal: Rgba, ctx: Context, opts: Allow & { ringShadow?: boolean }): ColorPick {
-  if (literal.a <= INVISIBLE_ALPHA) return { path: null, method: null, deltaE: null, why: `transparent (alpha ${round2(literal.a)}): keep \`transparent\`, or drop the declaration` };
+const none = (why: string): ColorPick => ({ path: null, method: null, deltaE: null, why });
+
+export function pickColor(data: TokenData, literal: Rgba, ctx: Context, opts: Allow & { ringShadow?: boolean; consumers?: ConsumerIndex }): ColorPick {
+  if (literal.a <= INVISIBLE_ALPHA) return none(`transparent (alpha ${round2(literal.a)}): keep \`transparent\`, or drop the declaration`);
   // A mask reads only alpha, and an SVG filter's flood or light color is filter input: neither is a color anyone sees as a role.
-  if (/^(?:-webkit-)?mask(?:-image|-border|-border-source)?$|^(?:Webkit)?[mM]ask(?:Image|Border|BorderSource)?$/.test(ctx.property ?? "")) return { path: null, method: null, deltaE: null, why: "a mask: only its alpha counts, so no color token; keep it" };
-  if (/^(?:flood|lighting)-?color$/i.test(ctx.property ?? "")) return { path: null, method: null, deltaE: null, why: "an SVG filter input (flood or lighting color): no color token; keep it" };
+  if (/^(?:-webkit-)?mask(?:-image|-border|-border-source)?$|^(?:Webkit)?[mM]ask(?:Image|Border|BorderSource)?$/.test(ctx.property ?? "")) return none("a mask: only its alpha counts, so no color token; keep it");
+  if (/^(?:flood|lighting)-?color$/i.test(ctx.property ?? "")) return none("an SVG filter input (flood or lighting color): no color token; keep it");
+  // Paint inside an SVG <mask>, <clipPath> or a pattern a mask uses is never seen as color: a token would only flip the mask in dark.
+  if (ctx.maskedBy) return none(`inside an SVG <${ctx.maskedBy}>: ${ctx.maskedBy === "clipPath" ? "only its shape counts" : "only its luminance and alpha count"}, so no color token; keep it`);
+  const fixed = fixedRegion(data, ctx);
+  if (fixed) return none(fixed);
   const theme = ctx.theme;
   const page = data.page[theme];
   let role = propRoleOf(ctx.property);
   const name = ctx.definition ?? (role === null ? ctx.property : null);
   if (name && (ctx.definition || role === null)) role = propRoleFromName(name) ?? role;
+  // A custom property takes the role its readers give it (`color: var(--fl-muted)` is text,
+  // whatever the name says); read nowhere, or read in more than one role, it gets no token.
+  const custom = name && /^--[\w-]+$/.test(name) ? name : null;
+  if (custom && opts.consumers) {
+    const read = opts.consumers.rolesOf(custom);
+    const only = read.size === 1 ? [...read][0] : null;
+    if (!only || only === "other") {
+      const byName = pickColor(data, literal, ctx, { ...opts, consumers: undefined });
+      const would = byName.path ? `; by its name alone it would be ${byName.path}` : "";
+      const at = opts.consumers.where?.(custom);
+      const mix = at?.get("color-mix");
+      if (read.size === 0 && mix) return none(`${custom} is read only inside color-mix() (${mix}): no role, so no token${would}`);
+      if (read.size === 0) return none(`${custom} is read nowhere in the scanned files (no \`prop: var(${custom})\`, no utility class): its role is unknown, so no token${would}`);
+      const roles = [...read].sort().map((r) => (at?.get(r) ? `${r} (${at.get(r)})` : r));
+      return none(`${custom} is read as ${roles.join(" and ")}: ${only ? "no color role" : "mixed roles"}, so no token${would}`);
+    }
+    role = only as PropRole;
+  }
   const decided = decideFamily(data, ctx, role, !!opts.ringShadow, literal);
   // A translucent literal on an area (a background, an SVG fill) never becomes an opaque token.
   const covers = coversRole(role);
-  if (decided && "none" in decided) return { path: null, method: null, deltaE: null, why: decided.none };
+  if (decided && "none" in decided) return none(decided.none);
 
-  const pool = nearestPool(data, opts, role).filter((p) => {
+  const rawPool = nearestPool(data, opts, role, ctx);
+  const pool = rawPool.filter((p) => {
     const token = data.colors.get(p)![theme];
     return compatible(literal, token, page, deltaE(literal, token, page));
   });
   const overall = nearestIn(data, literal, theme, pool, (p) => (isHue(p) ? HUE_PENALTY : 0));
   const hint = overall ? `closest compatible token: ${overall.path} (ΔE ${round(overall.de)})` : "no compatible token in the nearest pool";
+  const onSolid = data.colors.get("color.text.on-solid");
+  const solidNote =
+    onSolid && (role === "text" || role === "svgFill" || role === "svgStroke" || role === null) && !onSolidHint(ctx) && deltaE(literal, onSolid[theme], page) <= BASE_MATCH_DE
+      ? "; color.text.on-solid needs a solid fill under it (no solid, primary or accent word, and no solid background on its rule, style object or element)"
+      : "";
 
   if (!decided) {
-    if (overall && overall.de <= NEAREST_MAX_DE) {
-      const hue = isHue(overall.path) ? "; a hue token: keep it only if the color is categorical" : "";
-      return { path: overall.path, method: "nearest", deltaE: round(overall.de), why: `no role in context; nearest in ${theme}${hue}` };
+    const hue = (p: string) => (isHue(p) ? "; a hue token: keep it only if the color is categorical" : "");
+    // A translucent literal keeps its alpha on the token, or gets none: an opaque pick drops it.
+    if (literal.a < 0.99) {
+      const kept = alphaKept(data, literal, theme, rawPool);
+      if (kept && kept.de <= NEAREST_MAX_DE) return { path: kept.path, method: "nearest", deltaE: round(kept.de), why: `no role in context; nearest in ${theme}${kept.note}${hue(kept.path)}`, keepAlpha: kept.keepAlpha };
+      return none(`no role in context; alpha ${round2(literal.a)}: no token of that alpha and no token of its base color within ΔE ${BASE_MATCH_DE}, and an opaque token would drop the alpha; ${hint}`);
     }
-    return { path: null, method: null, deltaE: null, why: `no role in context and no token within ΔE ${NEAREST_MAX_DE}; ${hint}` };
+    if (overall && overall.de <= NEAREST_MAX_DE) {
+      return { path: overall.path, method: "nearest", deltaE: round(overall.de), why: `no role in context; nearest in ${theme}${hue(overall.path)}` };
+    }
+    return none(`no role in context and no token within ΔE ${NEAREST_MAX_DE}; ${hint}${solidNote}`);
   }
 
   let family: Family | undefined = decided;
@@ -454,5 +581,5 @@ export function pickColor(data: TokenData, literal: Rgba, ctx: Context, opts: Al
     family = family.fallback;
   }
   const saturated = chroma(literal) > 0.06 ? "; saturated: a hue token fits only categorical color" : "";
-  return { path: null, method: null, deltaE: null, why: `role ${decided.label} has no close token (${tried.join("; ")})${saturated}; ${hint}` };
+  return none(`role ${decided.label} has no close token (${tried.join("; ")})${saturated}; ${hint}${solidNote}`);
 }

@@ -4,9 +4,21 @@
  * component (an HTML/JSX element or a selector's element type), and the theme it renders in.
  */
 
+import { parseColor, type Rgba } from "./color.ts";
 import type { Span } from "./locate.ts";
 import { cssRegionAt, isCssAt, lineOf, lineRange, type SourceFile } from "./source.ts";
+import { TAILWIND_PALETTE } from "./tailwind-palette.ts";
 import type { Theme } from "./tokens.ts";
+
+/** The background the literal's own block, style object or class string paints. */
+export interface Surface {
+  /** Where it was read: `the rule's background`, `the style object's background`, `the class string`. */
+  source: string;
+  /** The value as written: `#1b1b1c`, `var(--accent)`, `bg-blue-600`. */
+  text: string;
+  /** The color when the value is one literal color (alpha kept), else null. */
+  color: Rgba | null;
+}
 
 export interface Context {
   /** CSS property, JS key or variable, Tailwind prefix (`bg`, `text`), or null. */
@@ -24,10 +36,24 @@ export interface Context {
   data: boolean;
   /** Every word that can hint a role: selector chain, role words of classes, tag attribute names, keys, names. Never comments, attribute values or prose. */
   hints: string;
+  /** The hints that are not the CSS selector chain: names, keys, classes, the tag. */
+  ownHints: string;
+  /** CSS selector chain, outermost prelude first ([] outside CSS): a word in it holds only when every branch of a prelude's list has it. */
+  chain: string[];
   /** The literal sits in CSS (a stylesheet, a <style> body, a CSS template): `selector` is a real selector chain. */
   inCss: boolean;
   /** JSX/HTML attribute the literal is the whole value of (`fill` in `fill="#fff"`), or null. */
   attribute: string | null;
+  /**
+   * States that hold where the literal paints (`selected`, `active`, `hover`, a data-state value):
+   * a state attribute counts only by its own static value (`aria-selected="true"`, not
+   * `aria-selected={x}`), and a selector list only when every branch has the state.
+   */
+  states: string[];
+  /** The background of the literal's own rule, style object or class string, if it names one. */
+  surface: Surface | null;
+  /** The SVG element whose paint is never seen that holds the literal: `mask`, `clipPath`, or a `pattern` a mask uses. */
+  maskedBy: string | null;
 }
 
 /** Selector or key text that puts a region in dark: `[data-theme="dark"]`, any `data-*="dark"`, `.dark`, the media query, a `dark:` JS key. */
@@ -67,7 +93,7 @@ function marksOf(branch: string): Mark[] {
 }
 
 /** Splits a selector list at top-level commas (not inside parentheses or brackets). */
-function branches(prelude: string): string[] {
+export function branches(prelude: string): string[] {
   const out: string[] = [];
   let depth = 0;
   let cur = "";
@@ -127,16 +153,107 @@ export function classHints(classes: string): string {
   return out.join(" ");
 }
 
-/** Attributes whose value is a state or variant keyword, not prose: their value is a hint too. */
-const ENUM_ATTRS = /^(?:variant|tone|intent|severity|status|data-(?:state|status|variant|tone|active|selected))$/;
+/** Attributes whose value is a variant keyword, not prose: their value is a hint too. */
+const ENUM_ATTRS = /^(?:variant|tone|intent|severity|status|data-(?:status|variant|tone))$/;
+
+/** State words a name, class or key may carry on its own (`tab-active`, `selectedBg`, `:hover`). */
+const FREE_STATES = new Set(["active", "selected", "current", "checked", "pressed", "dragging", "drop", "target", "hover"]);
+/**
+ * State groups a family reads: any member says the group (`.tab.active` and `.tab[aria-selected]`
+ * are both selected). A selector list holds a group when every branch has a member of it.
+ */
+export const STATE_GROUPS: Record<string, string[]> = {
+  selected: ["active", "selected", "current", "checked", "pressed", "on", "open"],
+  outline: ["active", "selected", "current", "checked", "dragging", "drop", "target"],
+  hover: ["hover"],
+};
+const groupsOf = (words: Set<string>) => Object.keys(STATE_GROUPS).filter((g) => STATE_GROUPS[g].some((w) => words.has(w)));
+/** Values of `data-state` that mean the element is on. */
+const DATA_STATES = new Set(["active", "on", "checked", "open", "selected", "current", "pressed"]);
+
+/**
+ * The state an attribute asserts with `value` (`true` for a bare attribute): a state word, null
+ * when it is a state attribute that is off (`aria-selected="false"`, `data-state="closed"`) or not
+ * known statically, undefined when the attribute names no state.
+ */
+export function attributeState(name: string, value: string | true | undefined): string | null | undefined {
+  const n = name.toLowerCase();
+  const on = (v: string | true | undefined) => v === true || (v !== undefined && !/^(?:false|0|off|no|mixed)?$/i.test(v.trim()));
+  const aria = n.match(/^aria-(selected|current|pressed|checked)$/);
+  if (aria) return on(value) ? aria[1] : null;
+  if (n === "data-state") return typeof value === "string" && DATA_STATES.has(value.trim().toLowerCase()) ? value.trim().toLowerCase() : null;
+  const flag = n.match(/^(?:data-)?(active|selected|current|checked|pressed)$/);
+  if (flag) return value === true || (typeof value === "string" && /^(?:|true)$/i.test(value.trim())) ? flag[1] : null;
+  return undefined;
+}
+
+/** A selector with its `:not(…)` groups (nested too) removed: what they name does not hold. */
+function withoutNot(sel: string): string {
+  let text = sel;
+  for (let i = text.search(/:not\(/i); i !== -1; i = text.search(/:not\(/i)) {
+    let depth = 0;
+    let k = i + 4;
+    for (; k < text.length; k++) {
+      if (text[k] === "(") depth++;
+      else if (text[k] === ")" && --depth === 0) break;
+    }
+    text = text.slice(0, i) + " " + text.slice(k + 1);
+  }
+  return text;
+}
+
+/** States one selector branch asserts: state attributes by their value, other words as written. */
+function branchStates(branch: string): Set<string> {
+  const out = new Set<string>();
+  const rest = withoutNot(branch).replace(/\[\s*([\w-]+)\s*(?:[~|^$*]?=\s*(?:"([^"]*)"|'([^']*)'|([^\]\s]*)))?\s*(?:[is]\s*)?\]/g, (m, name: string, v1?: string, v2?: string, v3?: string) => {
+    const value = m.includes("=") ? (v1 ?? v2 ?? v3 ?? "") : true;
+    const state = attributeState(name, value);
+    if (state === undefined) return ` ${name} `;
+    if (state) out.add(state);
+    return " ";
+  });
+  for (const w of nameWords(rest)) if (FREE_STATES.has(w)) out.add(w);
+  return out;
+}
+
+/**
+ * States a CSS selector chain asserts: a prelude counts when every branch of its list holds the
+ * state (`.tab.active, .tab:hover` asserts neither), and a chain holds what any of its levels does.
+ */
+function chainStates(chain: string[]): Set<string> {
+  const out = new Set<string>();
+  for (const prelude of chain) {
+    if (/^@/.test(prelude.trim())) continue;
+    const per = branches(prelude).map(branchStates);
+    for (const s of per[0] ?? []) if (per.every((x) => x.has(s))) out.add(s);
+    for (const g of Object.keys(STATE_GROUPS)) if (per.length && per.every((x) => groupsOf(x).includes(g))) out.add(`group:${g}`);
+  }
+  return out;
+}
+
+/** State words in names, keys, class words and variants (`data-[state=open]` gives its value). */
+function wordStates(parts: string[], variants: string[] = []): Set<string> {
+  const out = new Set<string>();
+  for (const w of nameWords(parts.join(" "))) if (FREE_STATES.has(w)) out.add(w);
+  for (const v of variants) {
+    const data = v.match(/^(?:group-|peer-)?data-\[\s*state\s*=\s*["']?(\w+)["']?\s*\]$/);
+    if (data && DATA_STATES.has(data[1].toLowerCase())) out.add(data[1].toLowerCase());
+    else if (!/^(?:group-|peer-)?(?:data|aria)-\[/.test(v)) for (const w of nameWords(v)) if (FREE_STATES.has(w)) out.add(w);
+  }
+  return out;
+}
 
 /**
  * Role words of a JSX/HTML tag: the tag name, the role words of its class string, and attribute
- * names (`aria-selected`). Attribute values (`title="Delete"`) and text are prose, not roles; only
- * state and variant attributes keep a one-word value (`variant="destructive"`).
+ * names. Attribute values (`title="Delete"`) and text are prose, not roles; only variant attributes
+ * keep a one-word value (`variant="destructive"`). A state attribute (`aria-selected`,
+ * `data-state`, `selected`) is never a word: it gives a state only by its own static value, so
+ * `data-state={x} onAnimationEnd` asserts nothing.
  */
-function tagHints(name: string, text: string): string {
+function tagHints(name: string, text: string): { hints: string; classes: string; states: string[] } {
   const out: string[] = [name];
+  const classes: string[] = [];
+  const states: string[] = [];
   const attrs = text.slice(1 + name.length);
   // A quoted value may run to the end: the tag text stops at the literal (`className="border bg-[#…`).
   const ATTR = /([A-Za-z_:@][-\w:.]*)(?:\s*=\s*(?:"([^"]*)"?|'([^']*)'?|`([^`]*)`?|\{|[^\s>]+))?/g;
@@ -164,18 +281,28 @@ function tagHints(name: string, text: string): string {
     m = ATTR.exec(attrs);
     if (!m || m.index !== i) continue;
     const attr = m[1];
-    const value = m[2] ?? m[3] ?? m[4];
+    let value: string | true | undefined = m[2] ?? m[3] ?? m[4];
+    // `aria-pressed={true}`: a literal in braces is static too; a bare attribute is true.
+    if (value === undefined && m[0].endsWith("{")) {
+      const lit = attrs.slice(m.index + m[0].length).match(/^\s*(?:(true|false)|(["'`])(\w*)\2)\s*\}/);
+      value = lit ? (lit[1] ?? lit[3]) : undefined;
+    } else if (value === undefined) value = m[0].includes("=") ? m[0].slice(m[0].indexOf("=") + 1).trim() : true;
+    const state = attributeState(attr, value);
     if (/^(?:className|class)$/.test(attr)) {
-      const cls = value ?? attrs.slice(i).match(/^[\w-]+\s*=\s*\{\s*(["'`])([^"'`]*)/)?.[2] ?? "";
-      out.push(classHints(cls));
+      const cls = typeof value === "string" ? value : (attrs.slice(i).match(/^[\w-]+\s*=\s*\{\s*(["'`])([^"'`]*)/)?.[2] ?? "");
+      const words = classHints(cls);
+      out.push(words);
+      classes.push(words);
+    } else if (state !== undefined) {
+      if (state) states.push(state);
     } else {
       out.push(attr);
-      if (value !== undefined && ENUM_ATTRS.test(attr) && /^[a-z][\w-]*$/i.test(value.trim())) out.push(value.trim());
+      if (typeof value === "string" && ENUM_ATTRS.test(attr) && /^[a-z][\w-]*$/i.test(value.trim())) out.push(value.trim());
     }
     if (m[0].endsWith("{")) depth++;
     i = m.index + m[0].length - 1;
   }
-  return out.join(" ").replace(/\s+/g, " ").slice(-300);
+  return { hints: out.join(" ").replace(/\s+/g, " ").slice(-300), classes: classes.join(" "), states };
 }
 
 /** Text from the innermost enclosing `;`, `{` or `}` up to `index` (one CSS declaration). */
@@ -192,12 +319,12 @@ function declarationBefore(text: string, index: number): { start: number; decl: 
   return { start: k + 1, decl: text.slice(k + 1, index) };
 }
 
-/** Preludes of every block enclosing `index`, innermost first. Inside a CSS region the walk stays in it. */
-function enclosingPreludes(f: SourceFile, index: number, limit = 8): string[] {
+/** Every block enclosing `index` (its prelude and its `{`), innermost first. Inside a CSS region the walk stays in it. */
+function enclosingBlocks(f: SourceFile, index: number, limit = 8): Array<{ prelude: string; open: number }> {
   const t = f.text;
   const region = f.kind === "js" || f.kind === "html" ? cssRegionAt(f, index) : null;
   const floor = region ? region[0] : 0;
-  const out: string[] = [];
+  const out: Array<{ prelude: string; open: number }> = [];
   let depth = 0;
   for (let k = index - 1; k >= floor && out.length < limit; k--) {
     if (f.inStr && f.inStr[k] === 1 && !region) continue;
@@ -211,10 +338,161 @@ function enclosingPreludes(f: SourceFile, index: number, limit = 8): string[] {
       let p = k - 1;
       while (p >= floor && !";{}".includes(t[p])) p--;
       const prelude = t.slice(p + 1, k).replace(/\s+/g, " ").trim();
-      out.push(prelude.length > 120 ? prelude.slice(-120) : prelude);
+      out.push({ prelude: prelude.length > 120 ? prelude.slice(-120) : prelude, open: k });
     }
   }
   return out;
+}
+
+/** Preludes of every block enclosing `index`, innermost first. */
+function enclosingPreludes(f: SourceFile, index: number, limit = 8): string[] {
+  return enclosingBlocks(f, index, limit).map((b) => b.prelude);
+}
+
+const declCache = new WeakMap<SourceFile, Map<number, Array<{ prop: string; value: string }>>>();
+
+/**
+ * The block's own declarations (`prop: value`), nested blocks skipped: a CSS block splits at `;`,
+ * a JS object at `,` (strings skipped, except in a CSS region, which is string text to the lexer).
+ */
+function ownDeclarations(f: SourceFile, open: number, js: boolean): Array<{ prop: string; value: string }> {
+  let cache = declCache.get(f);
+  if (!cache) declCache.set(f, (cache = new Map()));
+  const key = js ? -open - 1 : open;
+  const hit = cache.get(key);
+  if (hit) return hit;
+  const t = f.text;
+  const skipStrings = js && !cssRegionAt(f, open);
+  const out: Array<{ prop: string; value: string }> = [];
+  let depth = 0;
+  let start = open + 1;
+  const flush = (end: number) => {
+    const m = t.slice(start, end).match(/^\s*(["'`]?)(--[\w-]+|-?[A-Za-z_$][\w$-]*)\1\s*:(?!:)\s*([\s\S]*?)\s*$/);
+    if (m) out.push({ prop: m[2], value: m[3] });
+  };
+  for (let k = open + 1; k < t.length && k - open < 20000; k++) {
+    if (skipStrings && f.inStr && f.inStr[k] === 1) continue;
+    const ch = t[k];
+    if (ch === "{" || ch === "(" || ch === "[") depth++;
+    else if (ch === "}" || ch === ")" || ch === "]") {
+      if (depth === 0) {
+        flush(k);
+        break;
+      }
+      // A nested CSS rule ended: the next declaration starts after it.
+      if (--depth === 0 && ch === "}" && !js) start = k + 1;
+    } else if (depth === 0 && ch === (js ? "," : ";")) {
+      flush(k);
+      start = k + 1;
+    }
+  }
+  cache.set(key, out);
+  return out;
+}
+
+/** `color-scheme: dark` (or `only dark`) marks its block dark, `light` light; `light dark` and `normal` mark nothing. */
+function schemeOf(decls: Array<{ prop: string; value: string }>): Theme | null {
+  const d = [...decls].reverse().find((x) => x.prop.toLowerCase() === "color-scheme");
+  if (!d) return null;
+  const w = d.value.toLowerCase().split(/[\s!]+/);
+  const dark = w.includes("dark");
+  const light = w.includes("light");
+  return dark === light ? null : dark ? "dark" : "light";
+}
+
+const BG_PROP = /^(?:background|background-color|backgroundColor|bg)$/;
+/** A custom property that names the page's own background (`--background`, `--bg`, `--page-bg`), not a card's or an editor's. */
+const PAGE_BG_NAME = /^--(?:color-)?(?:(?:page|app|body|main)-)?(?:background|bg)(?:-(?:page|app|body|main|color))?$/;
+
+function surfaceFromDecls(decls: Array<{ prop: string; value: string }>, source: string): Surface | null {
+  const d = [...decls].reverse().find((x) => BG_PROP.test(x.prop)) ?? [...decls].reverse().find((x) => PAGE_BG_NAME.test(x.prop));
+  if (!d) return null;
+  const v = d.value.replace(/\s*!important\s*$/, "").trim().replace(/^(["'`])([\s\S]*)\1$/, "$2").trim();
+  return { source: `${source} ${d.prop}`, text: v, color: parseColor(v) };
+}
+
+/** A class split into variants and the class itself, at colons outside brackets (`dark:bg-[color:red]`). */
+function splitVariants(raw: string): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let cur = "";
+  for (const ch of raw) {
+    if (ch === "[" || ch === "(") depth++;
+    else if (ch === "]" || ch === ")") depth--;
+    if (ch === ":" && depth === 0) {
+      out.push(cur);
+      cur = "";
+    } else cur += ch;
+  }
+  out.push(cur);
+  return out;
+}
+
+/** The color a `bg-…` class paints (`bg-[#111]`, `bg-blue-600/50`, `bg-white`), or null. */
+function bgClassColor(value: string): Rgba | null {
+  const arb = value.match(/^\[(?:color:)?(.+)\](\/\d{1,3})?$/);
+  const pal = value.match(/^([a-z]+-(?:50|[1-9]00|950)|white|black)(\/\d{1,3})?$/);
+  const raw = arb ? arb[1].replace(/_/g, " ") : pal ? TAILWIND_PALETTE[pal[1]] : null;
+  const c = raw ? parseColor(raw) : null;
+  const mod = (arb ?? pal)?.[2];
+  return c ? { ...c, a: c.a * (mod ? Number(mod.slice(1)) / 100 : 1) } : null;
+}
+
+/** The background a class string paints in the literal's own theme variant: unprefixed `bg-*`, or `dark:bg-*` for a `dark:` class. */
+function surfaceFromClasses(classes: string, variants: string[]): Surface | null {
+  const dark = variants.includes("dark");
+  let found: Surface | null = null;
+  for (const raw of classes.split(/\s+/)) {
+    const parts = splitVariants(raw);
+    const cls = parts.pop()!.replace(/^!|!$/g, "");
+    if (parts.length !== (dark ? 1 : 0) || (dark && parts[0] !== "dark")) continue;
+    const m = cls.match(/^bg-(.+)$/);
+    if (m) found = { source: `the class string's ${cls}`, text: cls, color: bgClassColor(m[1]) };
+  }
+  return found;
+}
+
+const svgCache = new WeakMap<SourceFile, Array<{ at: number; name: string; close: boolean; attrs: string }>>();
+
+/** `<mask>`, `<clipPath>` and `<pattern>` tags of a markup or JSX file, in order. */
+function svgPaintTags(f: SourceFile) {
+  let tags = svgCache.get(f);
+  if (!tags) {
+    tags = [];
+    for (const m of f.text.matchAll(/<(\/?)(mask|clipPath|pattern)\b((?:[^>"'{}]|"[^"]*"|'[^']*'|\{[^{}]*\})*?)(\/?)>/g)) {
+      if (m[4] === "/") continue;
+      tags.push({ at: m.index!, name: m[2], close: m[1] === "/", attrs: m[3] });
+    }
+    svgCache.set(f, tags);
+  }
+  return tags;
+}
+
+/**
+ * The SVG element whose paint nobody sees that holds `index`: a `<mask>` (only its luminance and
+ * alpha count), a `<clipPath>` (only its geometry), or a `<pattern>` a mask in the file references.
+ */
+function maskedAt(f: SourceFile, index: number): string | null {
+  if (f.kind !== "js" && f.kind !== "html") return null;
+  const stack: Array<{ name: string; attrs: string }> = [];
+  for (const tag of svgPaintTags(f)) {
+    if (tag.at >= index) break;
+    if (!tag.close) stack.push({ name: tag.name, attrs: tag.attrs });
+    else {
+      const i = stack.map((s) => s.name).lastIndexOf(tag.name);
+      if (i >= 0) stack.splice(i);
+    }
+  }
+  for (let i = stack.length - 1; i >= 0; i--) {
+    const { name, attrs } = stack[i];
+    if (name !== "pattern") return name;
+    // A pattern counts when a mask in the file references its id (`url(#hatch)`, `url(#${hatchId})`).
+    const id = attrs.match(/\bid\s*=\s*(?:"([^"]+)"|'([^']+)'|\{\s*([\w$.]+)\s*\})/);
+    const ref = id?.[1] ?? id?.[2] ?? id?.[3];
+    if (!ref) continue;
+    for (const m of f.text.matchAll(/<mask\b[\s\S]*?<\/mask>/g)) if (m[0].includes(id![3] ? ref : `#${ref}`)) return "pattern";
+  }
+  return null;
 }
 
 /** The JSX/HTML tag the literal sits in (as an attribute), and the tag's text up to the literal. */
@@ -313,14 +591,23 @@ export function readContext(f: SourceFile, span: Span, opts: { defaultTheme: The
   const variants: string[] = [];
   let attribute: string | null = null;
   const hintParts: string[] = [];
+  /** CSS selector preludes, outermost first. */
+  const chainParts: string[] = [];
   /** Text that may name a theme region: CSS selector chains, JS keys, a Tailwind `dark:` variant. */
   const darkParts: string[] = [];
+  /** Names, keys, class words and the tag name: their state words hold as written. */
+  const stateWords: string[] = [];
+  const states = new Set<string>();
+  /** States only the selector chain gave: their groups come from the every-branch rule, not one by one. */
+  const chainOnly = new Set<string>();
+  let surface: Surface | null = null;
+  let maskedBy: string | null = null;
 
   if (span.slot === "class") {
     const cls = f.src.slice(span.start, span.end);
     let v = span.start;
     while (v > 0 && !/[\s"'`{(,]/.test(f.src[v - 1])) v--;
-    variants.push(...f.src.slice(v, span.start).split(":").filter(Boolean));
+    variants.push(...splitVariants(f.src.slice(v, span.start)).filter(Boolean));
     property = cls.match(TW_PREFIX)?.[1] ?? null;
     // The class string: siblings tell the role (a button's bg, an input's border).
     let a = span.start;
@@ -329,6 +616,9 @@ export function readContext(f: SourceFile, span: Span, opts: { defaultTheme: The
     while (b < f.src.length && !/["'`]/.test(f.src[b]) && b - span.end < 600) b++;
     selector = f.src.slice(a, b).replace(/\s+/g, " ").trim();
     hintParts.push(classHints(selector), variants.join(" "));
+    stateWords.push(classHints(selector));
+    for (const s of wordStates([], variants)) states.add(s);
+    surface = surfaceFromClasses(selector, variants);
   }
 
   if (css) {
@@ -336,35 +626,63 @@ export function readContext(f: SourceFile, span: Span, opts: { defaultTheme: The
     const m = decl.match(/^\s*([-\w$@]+)\s*:/);
     if (span.slot !== "class") property = m ? m[1] : property;
     if (m && /^(--|\$|@)/.test(m[1])) definition = m[1];
-    const chain = enclosingPreludes(f, start).reverse();
+    const blocks = enclosingBlocks(f, start).reverse();
+    const chain = blocks.map((b) => b.prelude);
     if (span.slot === "class") property = property ?? "@apply";
     selector = chain.join(" / ") || selector;
-    // The subject element: the last one in the innermost selector (`.nav li a` styles the `a`).
-    const inner = chain[chain.length - 1] ?? "";
-    component = [...inner.matchAll(new RegExp(ELEMENTS.source, "g"))].pop()?.[1] ?? null;
-    hintParts.push(...chain);
-    darkParts.push(...chain);
+    // The subject element: the last one in the innermost selector (`.nav li a` styles the `a`), the
+    // same in every branch of its list (`a, .chip` styles no one element).
+    const subjects = branches(chain[chain.length - 1] ?? "").map((b) => [...b.matchAll(new RegExp(ELEMENTS.source, "g"))].pop()?.[1] ?? null);
+    component = subjects.every((x) => x === subjects[0]) ? subjects[0] : null;
+    chainParts.push(...chain);
+    for (const s of chainStates(chain)) {
+      if (!states.has(s)) chainOnly.add(s);
+      states.add(s);
+    }
+    // `color-scheme: dark` in a block puts the block in dark, whatever its selector says.
+    blocks.forEach((b, i) => {
+      const scheme = schemeOf(ownDeclarations(f, b.open, false));
+      darkParts.push(scheme ? `.${scheme}` : chain[i]);
+    });
+    if (span.slot !== "class" && blocks.length) surface = surfaceFromDecls(ownDeclarations(f, blocks[blocks.length - 1].open, false), "the rule's");
   } else if (f.kind === "js" || f.kind === "html") {
     if (span.slot !== "class") property = ownerOnLine(f, span.start);
     if (property && /^(--|\$)/.test(property)) definition = property;
     const tag = enclosingTag(f, span.start);
     if (tag) {
       component = tag.name;
-      hintParts.push(tagHints(tag.name, tag.text));
+      const th = tagHints(tag.name, tag.text);
+      hintParts.push(th.hints);
+      stateWords.push(tag.name, th.classes);
+      for (const s of th.states) states.add(s);
       // An attribute value only at the tag's own level: `name = "…"` inside a `{…}` expression
       // (`onMouseEnter={() => { el.style.background = "#fff" }}`) is JS, not an attribute.
       if (span.slot !== "class" && braceDepth(f, span.start - tag.text.length, span.start) === 0) {
         attribute = tag.text.match(/(?:^|\s)([A-Za-z_:@][-\w:.]*)\s*=\s*$/)?.[1] ?? null;
       }
     }
+    const blocks = f.kind === "js" ? enclosingBlocks(f, span.start) : [];
     // Enclosing object keys and variable names (`palette / dark / bg`); raw code around them is noise.
-    const keys = (f.kind === "js" ? enclosingPreludes(f, span.start) : [])
-      .map((p) => p.match(/(?:([\w$-]+)['"]?\s*[:=]\s*(?:\([^)]*\)\s*=>\s*\(?)?|(?:const|let|var)\s+([\w$]+)[^=]*=\s*)$/))
+    const keys = blocks
+      .map((b) => b.prelude.match(/(?:([\w$-]+)['"]?\s*[:=]\s*(?:\([^)]*\)\s*=>\s*\(?)?|(?:const|let|var)\s+([\w$]+)[^=]*=\s*)$/))
       .map((m) => m?.[1] ?? m?.[2])
       .filter((k): k is string => !!k)
       .reverse();
     if (span.slot !== "class") selector = keys.length ? keys.join(" / ") : null;
     hintParts.push(...keys);
+    stateWords.push(...keys);
+    // The literal's own object (`{ background: "#111", color: "#fff" }`), not a function body.
+    const object = blocks[0];
+    if (span.slot !== "class" && object && /[{(:=,[?]$|\breturn$/.test(t.slice(Math.max(0, object.open - 8), object.open).trimEnd())) {
+      surface = surfaceFromDecls(ownDeclarations(f, object.open, true), "the style object's");
+    }
+    // A style attribute's element can paint its background with a class: `<div className="bg-blue-600" style={{ color: "#fff" }}>`.
+    if (span.slot !== "class" && !surface && tag) {
+      const cls = tag.text.match(/\bclass(?:Name)?\s*=\s*(?:"([^"]*)"|'([^']*)'|\{\s*(["'`])([^"'`]*)\3)/);
+      const list = cls?.[1] ?? cls?.[2] ?? cls?.[4];
+      if (list) surface = surfaceFromClasses(list, []);
+    }
+    maskedBy = maskedAt(f, span.start);
     if (span.slot !== "class") {
       // Keys outermost first, then the property: the innermost theme key wins. The literal's own
       // key never says light: `primary: { light: "#…" }` is a shade, not a theme.
@@ -380,11 +698,15 @@ export function readContext(f: SourceFile, span: Span, opts: { defaultTheme: The
   // The class's own dark: variant is the innermost mark.
   if (span.slot === "class" && variants.includes("dark")) darkParts.push(".dark");
 
-  const hints = [...hintParts, property ?? "", definition ?? ""].join(" ");
+  const own = [...hintParts, property ?? "", definition ?? ""];
+  const hints = [...hintParts, ...chainParts, property ?? "", definition ?? ""].join(" ");
+  for (const s of wordStates([...stateWords, property ?? "", definition ?? ""])) states.add(s);
+  // Words outside the selector chain hold as written: each says its groups.
+  for (const g of groupsOf(new Set([...states].filter((s) => !s.startsWith("group:") && !chainOnly.has(s))))) states.add(`group:${g}`);
   const data = isDataObject(f, span, property);
   const marked = themeOf(darkParts);
   const theme = marked ?? (/(?:^|[/._-])dark(?:[/._-]|$)/i.test(f.rel) ? "dark" : opts.defaultTheme);
-  return { property, selector, component, theme, variants, definition, data, hints, inCss: css, attribute };
+  return { property, selector, component, theme, variants, definition, data, hints, ownHints: own.join(" "), chain: chainParts, inCss: css, attribute, states: [...states], surface, maskedBy };
 }
 
 /** A JS object that reads as data: its own keys include id/type/geometry and nothing around it says style. */

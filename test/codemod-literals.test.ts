@@ -89,7 +89,6 @@ describe("propose: role first", () => {
     ["theme.css", 49, "13px", "font.size.code", "var(--ds-font-size-code)"], // 13px in pre code, not ui-sm
     ["widgets.tsx", 7, "13", "font.size.ui-sm", '"var(--ds-font-size-ui-sm)"'], // style={{ fontSize: 13 }}
     ["widgets.tsx", 7, '"10px"', "radius.base", '"var(--ds-radius-base)"'],
-    ["widgets.tsx", 7, '"white"', "color.text.on-solid", '"var(--ds-color-text-on-solid)"'],
     ["with-cssvar.tsx", 4, "12", "font.size.ui-xs", 'cssVar("font.size.ui-xs")'], // the file imports cssVar
     ["with-cssvar.tsx", 4, '"#ebebe9"', "color.fill.chip", 'cssVar("color.fill.chip")'],
     ["with-cssvar.tsx", 4, "#e6e5e3", "color.border.default", "var(--ds-color-border-default)"], // inside "1px solid #e6e5e3"
@@ -129,7 +128,8 @@ describe("propose: role first", () => {
     expect(row("widgets.tsx", 16, "#ffffff")).toMatchObject({ replacement: null });
     expect(row("widgets.tsx", 16, "#ffffff").why).toContain("canvas");
     // { id, type, color: "white" } is data, not a style.
-    expect(row("widgets.tsx", 19, '"white"')).toMatchObject({ proposed: "color.text.on-solid", replacement: null });
+    expect(row("widgets.tsx", 19, '"white"')).toMatchObject({ replacement: null });
+    expect(row("widgets.tsx", 19, '"white"').why).toContain("data object");
   });
 });
 
@@ -508,7 +508,7 @@ describe("propose: text, prose and code are never styles", () => {
     expect(rows.map((r) => [r.line, r.literal, r.replacement])).toEqual([
       [1, "#ffffff", null],
       [1, "#e6e5e3", null],
-      [2, "#ffffff", "var(--ds-color-text-on-solid)"],
+      [2, "#ffffff", "var(--ds-color-surface-page)"], // an SVG shape's fill: no solid under it, so not on-solid
     ]);
   });
 
@@ -586,7 +586,7 @@ describe("propose: second-pass review of the slot reading", () => {
     none(rows, 3, '"#ffffff"', "the color prop of <MyIcon>");
     none(rows, 4, '"#ffffff"', "<meshStandardMaterial> is not an SVG presentation attribute");
     none(rows, 5, '"#ffffff"', "<link> is not an SVG presentation attribute");
-    expect(r2(rows, 6, '"#ffffff"').replacement).toBe('"var(--ds-color-text-on-solid)"');
+    expect(r2(rows, 6, '"#ffffff"').replacement).toBe('"var(--ds-color-surface-page)"');
     const vue = r2Rows("guards.vue");
     none(vue, 2, "#ffffff", "<MyIcon> is not an SVG presentation attribute");
     expect(r2(vue, 3, "#e6e5e3").replacement).toBe("var(--ds-color-border-default)");
@@ -628,7 +628,7 @@ describe("propose: second-pass review of the slot reading", () => {
 
   test("styled templates with type arguments and interpolated functions are CSS; a typed class field is; a style-named object in canvas code is not", () => {
     const rows = r2Rows("styled.tsx");
-    expect(r2(rows, 5, "#ffffff").replacement).toBe("var(--ds-color-text-on-solid)");
+    expect(r2(rows, 5, "#666562").replacement).toBe("var(--ds-color-text-muted)");
     expect(r2(rows, 6, '"#ffffff"')).toMatchObject({ context: { property: "background" }, replacement: '"var(--ds-color-surface-page)"' });
     expect(r2(rows, 9, '"#ffffff"').replacement).toBe('"var(--ds-color-text-on-solid)"'); // private boxStyle: CSSProperties
     none(rows, 10, '"#ffffff"', "an object held by settings");
@@ -657,6 +657,130 @@ describe("propose: the Tailwind that compiles the classes", () => {
     }
   });
 });
+
+/** Rows for the round-3 fixtures (test/fixtures/codemod/review/r3), built from the rows the round-3 review cites. */
+function r3Rows(paths: string[], opts: { theme?: "light" | "dark" } = {}): Row[] {
+  return propose(loadTokens(), { root: FIXTURES, paths: paths.map((p) => `review/r3/${p}`), exclude: [] }, {
+    appId: "fixture", defaultTheme: opts.theme ?? "light", categories: new Set(DEFAULT_CATEGORIES),
+  }).rows;
+}
+
+function r3(list: Row[], file: string, line: number, literal: string): Row {
+  const found = list.find((r) => r.file === `review/r3/${file}` && r.line === line && r.literal === literal);
+  if (!found) throw new Error(`no row for ${file}:${line} ${literal}; rows on that line: ${list.filter((r) => r.line === line).map((r) => r.literal).join(", ")}`);
+  return found;
+}
+
+describe("propose: round-3 review of the role choices", () => {
+  test("P1-2: color.text.on-solid only on a solid fill; white text on a fixed dark region gets none", () => {
+    const rows = r3Rows(["on-solid.tsx"]);
+    const none: Array<[number, string]> = [
+      [4, '"#FFFFFF"'], // canvas-renderer 177: the search input's text, no fill under it
+      [5, '"#FFFFFF"'], // canvas-renderer 180: background is transparent or a 14% white hover
+      [6, "text-white"], // canvas-studio 2
+      [7, "text-white"], // canvas-studio 3 (a ghost button)
+      [8, "text-white/70"], // canvas-studio 8
+      [10, '"#ccc"'], // docs-workbench 23
+      [11, '"#FFFFFF"'], // canvas-renderer 251: solid only while active
+    ];
+    for (const [line, literal] of none) expect({ line, literal, ...pick(r3(rows, "on-solid.tsx", line, literal)) }).toEqual({ line, literal, proposed: null, replacement: null });
+    expect(r3(rows, "on-solid.tsx", 4, '"#FFFFFF"').why).toContain("color.text.on-solid needs a solid fill under it");
+    // A solid under it: the rule's own background, a solid class on the element, a primary word.
+    expect(r3(rows, "on-solid.tsx", 12, '"#ffffff"').replacement).toBe('"var(--ds-color-text-on-solid)"');
+    expect(r3(rows, "on-solid.tsx", 13, "text-white").replacement).toBe("text-on-solid");
+    expect(r3(rows, "on-solid.tsx", 14, '"#ffffff"').replacement).toBe('"var(--ds-color-text-on-solid)"');
+    // mainmenu 438 and 487: a dim gray in a dark app was on-solid at ΔE 19.8.
+    const dark = r3Rows(["on-solid-dark.tsx"], { theme: "dark" });
+    expect(pick(r3(dark, "on-solid-dark.tsx", 2, "text-gray-700"))).toEqual({ proposed: null, replacement: null });
+    expect(pick(r3(dark, "on-solid-dark.tsx", 3, "text-gray-700"))).toEqual({ proposed: null, replacement: null });
+  });
+
+  test("P1-3: color-scheme marks its block's theme; a block whose own background is of the other theme gets no tokens", () => {
+    const rows = r3Rows(["scheme.css"]);
+    // canvas-agent agent-theme.css: `:root { color-scheme: dark }` is dark, so its foreground is body text, not on-solid.
+    expect(r3(rows, "scheme.css", 5, "#d4d4d4")).toMatchObject({ proposed: "color.text.body", replacement: "var(--ds-color-text-body)", context: { theme: "dark" } });
+    expect(r3(rows, "scheme.css", 6, "#d4d4d4")).toMatchObject({ proposed: "color.text.body", context: { theme: "dark" } });
+    // observatory index.css: no color-scheme, a dark --background, read in light: a fixed region.
+    for (const [line, literal] of [[10, "#d4d4d4"], [11, "rgb(255 255 255 / 0.08)"], [12, "rgb(255 255 255 / 0.028)"]] as const) {
+      const r = r3(rows, "scheme.css", line, literal);
+      expect({ line, ...pick(r), fixed: r.why.includes("a fixed dark region") }).toEqual({ line, proposed: null, replacement: null, fixed: true });
+    }
+    // `color-scheme: light dark` names no theme.
+    expect(r3(rows, "scheme.css", 16, "#2a2a2a").context.theme).toBe("light");
+  });
+
+  test("P1-4: a custom property takes its readers' role; none or mixed readers get no token", () => {
+    const rows = r3Rows(["readers.css", "readers.tsx"]);
+    // docs-viewer 99, 107: --op-kind-soft is read as a background, not a border.
+    expect(r3(rows, "readers.css", 2, "#faebdd")).toMatchObject({ proposed: "color.fill.chip", why: "chip fill" });
+    expect(r3(rows, "readers.css", 3, "#eae4f2").proposed).toMatch(/^color\.fill\./);
+    // docs-viewer 325, 326: --fl-muted and --fl-optional are read as text (one through --fl-type-punct).
+    for (const col of [0, 1]) {
+      const r = rows.filter((x) => x.file === "review/r3/readers.css" && x.line === 5)[col];
+      expect({ col, ...pick(r), text: r.why.startsWith("role text") }).toEqual({ col, proposed: null, replacement: null, text: true });
+    }
+    // mainmenu 923 and agent-skills-manager 21: read as backgrounds, not borders.
+    expect(r3(rows, "readers.css", 8, "#2f3236").why).toMatch(/^background/);
+    expect(r3(rows, "readers.css", 10, "#454B4E").proposed).toMatch(/^color\.(?:fill|surface)\./);
+    // personal-site 55-67 and slidev 22: read nowhere, or as border and text.
+    expect(r3(rows, "readers.css", 13, "rgba(155,154,151,0.4)")).toMatchObject({ proposed: null, replacement: null });
+    expect(r3(rows, "readers.css", 14, "#E9E5E3").why).toContain("--color-bg-brown is read nowhere");
+    expect(r3(rows, "readers.css", 15, "#D9730D").why).toContain("is read as border (review/r3/readers.css:17) and text (review/r3/readers.css:18): mixed roles");
+    expect(r3(rows, "readers.css", 19, "#4D4D4D")).toMatchObject({ proposed: null, replacement: null });
+    // A color-mix() reader derives a wash; it gives no role. Utility classes read too.
+    expect(r3(rows, "readers.css", 20, "#2a2a2a").proposed).toBe("color.text.body");
+    expect(r3(rows, "readers.css", 20, "#666562").proposed).toBe("color.text.muted"); // text-[var(--chip-ink)]
+    expect(r3(rows, "readers.css", 22, "#0078df").proposed).toBe("color.accent"); // @theme --color-brand, read by bg-brand
+  });
+
+  test("P1-5: a nearest pick keeps the alpha or gets none, and the backdrop needs a scrim, overlay, backdrop or modal hint", () => {
+    const rows = r3Rows(["alpha.css"]);
+    // simple-research-kernel 107, gamecube 890: never the 40% black backdrop.
+    expect(r3(rows, "alpha.css", 3, "rgb(255 255 255 / 0.028)").proposed).not.toBe("color.backdrop");
+    // canvas-renderer 172: the 25% white thumb keeps its alpha.
+    expect(r3(rows, "alpha.css", 5, "rgba(255, 255, 255, 0.25)").replacement).toBe("color-mix(in srgb, var(--ds-color-surface-page) 25%, transparent)");
+    // canvas-agent 60 / observatory 101: an opaque border token would drop the 40%.
+    expect(pick(r3(rows, "alpha.css", 6, "rgb(168 168 168 / 0.4)"))).toEqual({ proposed: null, replacement: null });
+    expect(pick(r3(rows, "alpha.css", 7, "rgba(0, 0, 0, 0.4)"))).toEqual({ proposed: null, replacement: null });
+    expect(r3(rows, "alpha.css", 8, "rgba(0, 0, 0, 0.4)").proposed).toBe("color.backdrop"); // .modal
+  });
+
+  test("P1-6: paint inside a mask, a clipPath or a pattern a mask uses gets no token", () => {
+    const rows = r3Rows(["mask.tsx"]);
+    expect(r3(rows, "mask.tsx", 6, '"white"')).toMatchObject({ proposed: null, replacement: null, why: expect.stringContaining("inside an SVG <mask>") }); // canvas-renderer 167
+    expect(r3(rows, "mask.tsx", 8, '"#ffffff"').why).toContain("inside an SVG <clipPath>");
+    expect(r3(rows, "mask.tsx", 9, '"#000000"').why).toContain("inside an SVG <pattern>"); // used by mask#cut
+    expect(r3(rows, "mask.tsx", 10, '"#e6e5e3"').replacement).toBe('"var(--ds-color-border-default)"'); // a pattern no mask uses
+    expect(r3(rows, "mask.tsx", 13, '"white"').replacement).toBe('"var(--ds-color-surface-page)"');
+  });
+
+  test("P1-7: a state attribute counts only by its own value, and a word only when every branch of the list has it", () => {
+    const tsx = r3Rows(["states.tsx"]);
+    // canvas-renderer 192: `data-state={…}` then `onAnimationEnd` read as "data state on".
+    expect(r3(tsx, "states.tsx", 8, '"#FFFFFF"').proposed).toBe("color.surface.panel");
+    expect(r3(tsx, "states.tsx", 12, '"#ebebe9"').why).toBe("selected fill"); // aria-selected="true"
+    expect(r3(tsx, "states.tsx", 13, '"#ebebe9"').why).not.toContain("selected"); // aria-selected="false"
+    const css = r3Rows(["states.css"]);
+    // annotations 6, 9: selected and chip came from one branch of four.
+    expect(r3(css, "states.css", 6, "#ffffff")).toMatchObject({ proposed: "color.surface.page", why: expect.stringMatching(/^background/) });
+    expect(r3(css, "states.css", 7, "rgba(0, 0, 0, 0.15)").why).toMatch(/^border/);
+    expect(r3(css, "states.css", 10, "#ebebe9").why).toBe("selected fill"); // .tab.active, .tab[aria-selected="true"]
+    expect(r3(css, "states.css", 11, "#ebebe9").why).not.toContain("selected"); // :not(.active)
+    expect(r3(css, "states.css", 12, "#ebebe9").why).not.toContain("selected"); // [aria-selected="false"]
+  });
+
+  test("P2: `err` is a danger word; a negative arbitrary offset is a leading minus", () => {
+    const rows = r3Rows(["readers.css"]);
+    expect(r3(rows, "readers.css", 23, "#fdecec").proposed).toBe("color.status.danger.soft"); // pen-plotter 71
+    expect(r3(rows, "readers.css", 23, "#a11d1d").proposed).toBe("color.status.danger.text");
+    const spacing = r3Rows(["spacing.tsx"]).map((r) => [r.literal, r.replacement]);
+    expect(spacing).toEqual([["top-[-4px]", "-top-1"], ["mt-[-2px]", "-mt-0.5"], ["-mt-[8px]", "-mt-2"], ["-left-[-8px]", "left-2"]]);
+  });
+});
+
+function pick(r: Row) {
+  return { proposed: r.proposed, replacement: r.replacement };
+}
 
 describe("token guards", () => {
   test("Notion compat tokens stay in the docs-system repo", () => {
