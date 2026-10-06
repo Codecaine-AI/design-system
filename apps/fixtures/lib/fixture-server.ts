@@ -5,14 +5,20 @@
  * `fixtureArgs` enforces the write side: --tmp must be an absolute path outside every git
  * checkout, so nothing a run produces can land in a repo. Callers read only paths they build
  * from --root.
+ *
+ * Every check runs on real paths (symlinks resolved): a lexical check passes `/tmp/link` when
+ * the link points into a checkout, and a symlink inside --tmp or the site dir would redirect a
+ * write or a read out of it.
  */
-import { existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, extname, isAbsolute, join, normalize, resolve, sep } from "node:path";
+import { existsSync, mkdirSync, readFileSync, realpathSync, statSync } from "node:fs";
+import { dirname, extname, isAbsolute, join, resolve, sep } from "node:path";
+
+import { canonicalPath } from "../../../scripts/lib/safe-paths";
 
 export interface FixtureArgs {
   /** The workspace tree whose repo content the fixture reads (absolute). */
   root: string;
-  /** The run's temp dir; every write goes under it (absolute, outside any git checkout). */
+  /** The run's temp dir, canonical (symlinks resolved); every write goes under it, outside any git checkout. */
   tmp: string;
   /** Named ports from `--<name>-port <n>` or `--port <n>` (as "port"). */
   ports: Record<string, number>;
@@ -46,9 +52,10 @@ export function parseFixtureArgs(argv: string[], cwd: string = process.cwd()): F
   if (!flags.tmp) throw new Error("--tmp <dir> is required");
   const root = resolve(cwd, flags.root);
   if (!isAbsolute(flags.tmp)) throw new Error(`--tmp must be absolute, got "${flags.tmp}" (was {tmp} substituted?)`);
-  const tmp = normalize(flags.tmp);
+  // Canonical first: the checkout walk must follow the path a write would actually take.
+  const tmp = canonicalPath(flags.tmp);
   const checkout = gitCheckoutOf(tmp);
-  if (checkout) throw new Error(`--tmp ${tmp} is inside the git checkout ${checkout}; fixtures never write into a repo`);
+  if (checkout) throw new Error(`--tmp ${flags.tmp} (${tmp}) is inside the git checkout ${checkout}; fixtures never write into a repo`);
   const ports: Record<string, number> = {};
   for (const [key, value] of Object.entries(flags)) {
     if (key !== "port" && !key.endsWith("-port")) continue;
@@ -61,10 +68,16 @@ export function parseFixtureArgs(argv: string[], cwd: string = process.cwd()): F
   return { root, tmp, ports, flags };
 }
 
-/** Create `dir` (and parents); refuses any path outside `tmp`. */
+/** Whether canonical `path` is canonical `dir` or inside it. */
+function inside(path: string, dir: string): boolean {
+  return path === dir || path.startsWith(dir.endsWith(sep) ? dir : dir + sep);
+}
+
+/** Create `dir` (and parents) and return its canonical path; refuses any path that resolves outside `tmp`. */
 export function ensureTmpDir(tmp: string, dir: string): string {
-  const full = resolve(dir);
-  if (full !== tmp && !full.startsWith(tmp + sep)) throw new Error(`refusing to write ${full}: outside --tmp ${tmp}`);
+  const full = canonicalPath(dir);
+  const root = canonicalPath(tmp);
+  if (!inside(full, root)) throw new Error(`refusing to write ${dir} (${full}): outside --tmp ${root}`);
   mkdirSync(full, { recursive: true });
   return full;
 }
@@ -81,7 +94,7 @@ const TYPES: Record<string, string> = {
   ".png": "image/png",
 };
 
-/** Resolve a URL path inside `siteDir`; null when it escapes the dir or names no file. */
+/** Resolve a URL path to a real file inside `siteDir`; null when it escapes the dir (also through a symlink) or names no file. */
 export function siteFile(siteDir: string, urlPath: string): string | null {
   let rel: string;
   try {
@@ -93,7 +106,8 @@ export function siteFile(siteDir: string, urlPath: string): string | null {
   const full = resolve(siteDir, "." + (rel.startsWith("/") ? rel : `/${rel}`));
   if (full !== siteDir && !full.startsWith(siteDir + sep)) return null;
   if (!existsSync(full) || !statSync(full).isFile()) return null;
-  return full;
+  const real = realpathSync(full);
+  return inside(real, realpathSync(siteDir)) ? real : null;
 }
 
 /** Serve `siteDir` read-only on 127.0.0.1:port and print a vite-style ready line. */
