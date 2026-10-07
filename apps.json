@@ -694,7 +694,8 @@
           "themes": [
             "light"
           ],
-          "waitFor": "iframe[title=\"dark\"]"
+          "waitFor": "iframe[title=\"dark\"]",
+          "skipLightSteps": "the playground page has no Style rail and draws light and dark side by side itself"
         }
       ],
       "runProfile": {
@@ -781,10 +782,14 @@
           "steps": [
             {
               "action": "click",
-              "target": "nav[aria-label=\"Style sections\"] button:has(> span:text-is(\"Colors\"))"
+              "target": "button[aria-controls=\"ds-inspector\"][aria-expanded=\"false\"], nav[aria-label=\"Style sections\"] button:has(> span:text-is(\"Colors\")) >> nth=0"
             },
             {
               "action": "click",
+              "target": "nav[aria-label=\"Style sections\"] button:has(> span:text-is(\"Colors\"))"
+            },
+            {
+              "action": "check",
               "target": "label:has-text(\"Dark mode\") input.style-toggle"
             },
             {
@@ -793,6 +798,24 @@
             }
           ]
         },
+        "lightSteps": [
+          {
+            "action": "click",
+            "target": "button[aria-controls=\"ds-inspector\"][aria-expanded=\"false\"], nav[aria-label=\"Style sections\"] button:has(> span:text-is(\"Colors\")) >> nth=0"
+          },
+          {
+            "action": "click",
+            "target": "nav[aria-label=\"Style sections\"] button:has(> span:text-is(\"Colors\"))"
+          },
+          {
+            "action": "uncheck",
+            "target": "label:has-text(\"Dark mode\") input.style-toggle"
+          },
+          {
+            "action": "wait",
+            "target": "html[data-theme=\"light\"]"
+          }
+        ],
         "sidebar": {
           "toggle": ".ds-sidebar-toggle",
           "storageKey": "docs-workbench.sidebar"
