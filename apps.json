@@ -2694,24 +2694,24 @@
           "required": true
         },
         "verify": {
-          "required": false,
-          "reason": "run mode none: its views need kernel trace data; verified statically only"
+          "required": true
         },
         "snapshot": {
-          "required": false,
-          "reason": "run mode none: its views need kernel trace data; verified statically only"
+          "required": true
         },
         "pixelDiff": {
           "required": false,
-          "reason": "run mode none: its views need kernel trace data; verified statically only"
+          "reason": "no recorded set yet: the managing agent records a first model-nodes set from snapshot before pixelDiff can gate (see exceptions)"
         },
         "tests": {
           "required": true
         }
       },
       "run": {
-        "mode": "none",
-        "reason": "its trace, detail and prompt-lab views render only with kernel trace data; the only source is an agent-kernel API, which writes .agent-kernel/ into its repo and calls LLMs on run (simple-research-kernel's server.ts has no temp-dir flag). A fixture API serving canned traces is follow-up work"
+        "mode": "browser",
+        "cwd": "codecaine/core/agent-kernel/examples/simple-research-kernel",
+        "start": "bun --no-env-file {ds}/apps/fixtures/viewer-ui/serve.ts {flags}",
+        "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
       },
       "commands": {
         "cwd": "codecaine/core/agent-kernel",
@@ -2722,6 +2722,14 @@
           {
             "cmd": "bun --no-env-file test ./src/agent-viewer/catalog-client.test.ts ./src/agent-viewer/prompt-edit-client.test.ts ./src/agent-viewer/prompt-edit-loop.e2e.test.ts ./src/agent-viewer/prompt-edit-session-view.test.ts ./src/agent-viewer/prompt-lab-session-controller.test.ts ./src/agent-viewer/prompt-lab-session-mode.test.ts ./src/kernel-route-parity.test.ts ./src/trace-viewer/SpanCard/span-indent.test.tsx ./src/trace-viewer/detail-panel/DetailShell.test.tsx ./src/trace-viewer/detail-panel/DetailShellExtensions.test.tsx ./src/trace-viewer/detail-panel/DetailsView.test.tsx ./src/trace-viewer/detail-panel/blocks.test.tsx ./src/trace-viewer/detail-panel/contract-conformance.test.tsx ./src/trace-viewer/detail-panel/doc-figure/Clamped.test.tsx ./src/trace-viewer/detail-panel/doc-figure/DocFigure.test.tsx ./src/trace-viewer/detail-panel/doc-figure/rendered-height.test.ts ./src/trace-viewer/detail-panel/doc-figure/tokenize.test.ts ./src/trace-viewer/detail-panel/renderers/AggregateBodies.test.tsx ./src/trace-viewer/detail-panel/renderers/ContextBuildBody.test.tsx ./src/trace-viewer/detail-panel/renderers/FactCard.test.tsx ./src/trace-viewer/detail-panel/renderers/MessageBody.test.tsx ./src/trace-viewer/detail-panel/renderers/ToolBody.test.tsx ./src/trace-viewer/detail-panel/renderers/TurnBody.test.tsx ./src/trace-viewer/detail-panel/renderers/json-document.test.ts ./src/trace-viewer/detail-panel/renderers/real-snapshot-render.test.tsx ./src/trace-viewer/detail-panel/renderers/request-snapshot-api.test.tsx ./src/trace-viewer/detail-panel/renderers/snapshot-message-view.test.tsx ./src/trace-viewer/detail-panel/renderers/turn-sections.test.tsx ./src/trace-viewer/detail-panel/renderers/turn/ToolsSection.test.tsx ./src/trace-viewer/detail-panel/renderers/turn/turn-block-content.test.tsx ./src/trace-viewer/icons/span-icons.test.tsx ./src/trace-viewer/selection.test.tsx ./src/trace-viewer/trace-tree-utils.test.ts ./src/trace-viewer/usage-summary.test.ts",
             "cwd": "codecaine/core/agent-kernel/packages/viewer-ui"
+          },
+          {
+            "cmd": "bun --no-env-file test ./src/trace-viewer/SpanCard/node-display.test.ts ./src/trace-viewer/model-node-tree.test.tsx ./src/trace-viewer/model-node-component-paths.test.ts ./src/trace-viewer/detail-panel/renderers/_components/CallBody/utils.test.ts ./src/trace-viewer/detail-panel/renderers/_components/CallBody/index.test.tsx ./src/trace-viewer/detail-panel/renderers/_components/DecisionBody/utils.test.ts ./src/trace-viewer/detail-panel/renderers/_components/DecisionBody/index.test.tsx ./src/trace-viewer/detail-panel/renderers/_components/DecisionBody/_components/ProbabilityBars/utils.test.ts ./src/trace-viewer/detail-panel/renderers/_components/StepBody/utils.test.ts ./src/trace-viewer/detail-panel/renderers/_components/GateBody/utils.test.ts ./src/trace-viewer/detail-panel/renderers/_components/GateBody/index.test.tsx",
+            "cwd": "codecaine/core/agent-kernel/packages/viewer-ui"
+          },
+          {
+            "cmd": "bun --no-env-file test ./examples/simple-research-kernel/scripts/model-nodes-demo/shape.test.ts ./examples/simple-research-kernel/scripts/model-nodes-demo/generate-fixture.test.ts",
+            "cwd": "codecaine/core/agent-kernel"
           }
         ],
         "unsafe": [
@@ -2734,23 +2742,137 @@
           "tests.safe[0]": {
             "cmd": "bun --no-env-file test ./src/agent-viewer/catalog-client.test.ts ./src/agent-viewer/prompt-edit-client.test.ts ./src/agent-viewer/prompt-edit-loop.e2e.test.ts ./src/agent-viewer/prompt-edit-session-view.test.ts ./src/agent-viewer/prompt-lab-session-controller.test.ts ./src/agent-viewer/prompt-lab-session-mode.test.ts ./src/kernel-route-parity.test.ts ./src/trace-viewer/SpanCard/span-indent.test.tsx ./src/trace-viewer/detail-panel/DetailShell.test.tsx ./src/trace-viewer/detail-panel/DetailShellExtensions.test.tsx ./src/trace-viewer/detail-panel/DetailsView.test.tsx ./src/trace-viewer/detail-panel/blocks.test.tsx ./src/trace-viewer/detail-panel/contract-conformance.test.tsx ./src/trace-viewer/detail-panel/doc-figure/Clamped.test.tsx ./src/trace-viewer/detail-panel/doc-figure/DocFigure.test.tsx ./src/trace-viewer/detail-panel/doc-figure/rendered-height.test.ts ./src/trace-viewer/detail-panel/doc-figure/tokenize.test.ts ./src/trace-viewer/detail-panel/renderers/AggregateBodies.test.tsx ./src/trace-viewer/detail-panel/renderers/ContextBuildBody.test.tsx ./src/trace-viewer/detail-panel/renderers/FactCard.test.tsx ./src/trace-viewer/detail-panel/renderers/MessageBody.test.tsx ./src/trace-viewer/detail-panel/renderers/ToolBody.test.tsx ./src/trace-viewer/detail-panel/renderers/TurnBody.test.tsx ./src/trace-viewer/detail-panel/renderers/json-document.test.ts ./src/trace-viewer/detail-panel/renderers/real-snapshot-render.test.tsx ./src/trace-viewer/detail-panel/renderers/request-snapshot-api.test.tsx ./src/trace-viewer/detail-panel/renderers/snapshot-message-view.test.tsx ./src/trace-viewer/detail-panel/renderers/turn-sections.test.tsx ./src/trace-viewer/detail-panel/renderers/turn/ToolsSection.test.tsx ./src/trace-viewer/detail-panel/renderers/turn/turn-block-content.test.tsx ./src/trace-viewer/icons/span-icons.test.tsx ./src/trace-viewer/selection.test.tsx ./src/trace-viewer/trace-tree-utils.test.ts ./src/trace-viewer/usage-summary.test.ts",
             "exit": 0,
-            "pass": 318,
+            "pass": 330,
             "fail": 0,
             "errors": 0,
-            "date": "2026-10-05",
-            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 2 runs"
+            "date": "2026-10-07",
+            "method": "bun run test:apps --root /Users/Ford/workspace (sandbox-exec, profile env, write check), 2 runs"
+          },
+          "tests.safe[1]": {
+            "cmd": "bun --no-env-file test ./src/trace-viewer/SpanCard/node-display.test.ts ./src/trace-viewer/model-node-tree.test.tsx ./src/trace-viewer/model-node-component-paths.test.ts ./src/trace-viewer/detail-panel/renderers/_components/CallBody/utils.test.ts ./src/trace-viewer/detail-panel/renderers/_components/CallBody/index.test.tsx ./src/trace-viewer/detail-panel/renderers/_components/DecisionBody/utils.test.ts ./src/trace-viewer/detail-panel/renderers/_components/DecisionBody/index.test.tsx ./src/trace-viewer/detail-panel/renderers/_components/DecisionBody/_components/ProbabilityBars/utils.test.ts ./src/trace-viewer/detail-panel/renderers/_components/StepBody/utils.test.ts ./src/trace-viewer/detail-panel/renderers/_components/GateBody/utils.test.ts ./src/trace-viewer/detail-panel/renderers/_components/GateBody/index.test.tsx",
+            "exit": 0,
+            "pass": 50,
+            "fail": 0,
+            "errors": 0,
+            "date": "2026-10-07",
+            "method": "bun run test:apps --root /Users/Ford/workspace (sandbox-exec, profile env, write check), 2 runs"
+          },
+          "tests.safe[2]": {
+            "cmd": "bun --no-env-file test ./examples/simple-research-kernel/scripts/model-nodes-demo/shape.test.ts ./examples/simple-research-kernel/scripts/model-nodes-demo/generate-fixture.test.ts",
+            "exit": 0,
+            "pass": 6,
+            "fail": 0,
+            "errors": 0,
+            "date": "2026-10-07",
+            "method": "bun run test:apps --root /Users/Ford/workspace (sandbox-exec, profile env, write check), 2 runs"
           },
           "commands.typecheck": {
             "cmd": "bun --no-env-file run typecheck:viewer-ui",
             "exit": 0,
-            "date": "2026-10-05",
-            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
+            "date": "2026-10-07",
+            "method": "bun run test:apps --root /Users/Ford/workspace (sandbox-exec, profile env, write check), 2 runs"
           }
         }
       },
-      "routes": [],
+      "routes": [
+        {
+          "id": "mn-overview",
+          "path": "/traces?traceId=96b2847d-b394-5f9e-8539-e7bb0f730a16",
+          "waitFor": "[role=treeitem][data-span-id=\"pi:bdb9eaff-2f9f-6b09-6064-f427911ea561\"]"
+        },
+        {
+          "id": "mn-decision",
+          "path": "/traces?traceId=96b2847d-b394-5f9e-8539-e7bb0f730a16",
+          "steps": [
+            {
+              "action": "click",
+              "target": "[data-span-row=\"pi:f043aaeb-f070-1a1a-01fe-3f09bee6bea3\"]"
+            }
+          ],
+          "waitFor": "[data-detail-block=\"decision-bars\"]"
+        },
+        {
+          "id": "mn-choice",
+          "path": "/traces?traceId=96b2847d-b394-5f9e-8539-e7bb0f730a16",
+          "steps": [
+            {
+              "action": "click",
+              "target": "[data-span-row=\"pi:670eb4d1-9b4c-683a-3ddc-d6dbab03a36a\"]"
+            }
+          ],
+          "waitFor": "[data-detail-block=\"decision-bars\"]"
+        },
+        {
+          "id": "mn-abstain",
+          "path": "/traces?traceId=96b2847d-b394-5f9e-8539-e7bb0f730a16",
+          "steps": [
+            {
+              "action": "click",
+              "target": "[data-span-row=\"pi:a05f851e-7ef5-e78a-8f41-e77f93fd55de\"]"
+            }
+          ],
+          "waitFor": "[data-detail-block=\"decision-abstain\"]"
+        },
+        {
+          "id": "mn-call",
+          "path": "/traces?traceId=96b2847d-b394-5f9e-8539-e7bb0f730a16",
+          "steps": [
+            {
+              "action": "click",
+              "target": "[data-span-row=\"pi:bdb9eaff-2f9f-6b09-6064-f427911ea561\"]"
+            }
+          ],
+          "waitFor": "[data-detail-block=\"call-output\"]"
+        },
+        {
+          "id": "mn-call-error",
+          "path": "/traces?traceId=96b2847d-b394-5f9e-8539-e7bb0f730a16",
+          "steps": [
+            {
+              "action": "click",
+              "target": "[data-span-row=\"pi:ec0ec929-734a-a20c-50fa-9972a7af3019\"]"
+            }
+          ],
+          "waitFor": "[data-detail-block=\"call-error\"]"
+        },
+        {
+          "id": "mn-gate",
+          "path": "/traces?traceId=96b2847d-b394-5f9e-8539-e7bb0f730a16",
+          "steps": [
+            {
+              "action": "click",
+              "target": "[data-span-row=\"e02cbb14-67b6-8126-2c2b-167fa29b90e9\"]"
+            }
+          ],
+          "waitFor": "[data-detail-block=\"gate-checks\"]"
+        },
+        {
+          "id": "mn-nested",
+          "path": "/traces?traceId=96b2847d-b394-5f9e-8539-e7bb0f730a16",
+          "steps": [
+            {
+              "action": "click",
+              "target": "[data-span-row=\"354f2472-bab4-1732-e98c-0b8331b32b2f\"]"
+            }
+          ],
+          "waitFor": "[role=treeitem][data-span-id=\"309a8410-ade0-2295-7fc6-f3d9c8d44b1f\"]"
+        },
+        {
+          "id": "mn-retry",
+          "path": "/traces?traceId=96b2847d-b394-5f9e-8539-e7bb0f730a16",
+          "steps": [
+            {
+              "action": "click",
+              "target": "[data-span-row=\"pi:8134f162-fa96-131f-ced3-0b901de081b2\"]"
+            }
+          ],
+          "waitFor": "[role=treeitem][data-span-id=\"attempt:b069edde-61c5-c6dc-819a-e6d526e4a4a9\"]"
+        }
+      ],
       "runProfile": {
-        "env": {},
+        "env": {
+          "NO_COLOR": "1"
+        },
         "unsetEnv": [
           "DOCS_SHARED_API_URL",
           "DOCS_SHARED_API_TOKEN",
@@ -2760,18 +2882,35 @@
           "ANTHROPIC_API_KEY",
           "OPENAI_API_KEY",
           "GITHUB_TOKEN",
-          "GH_TOKEN"
+          "GH_TOKEN",
+          "SIMPLE_RESEARCH_KERNEL_PORT",
+          "PORT",
+          "AGENT_KERNEL_APP_BASE_URL",
+          "AGENT_KERNEL_RESEARCH_MODEL",
+          "AGENT_KERNEL_PI_AGENT_DIR"
         ],
         "tempHome": true,
-        "fixtures": [],
-        "flags": [],
+        "fixtures": [
+          "apps/fixtures/viewer-ui/model-nodes-demo.db"
+        ],
+        "flags": [
+          "--root",
+          "{root}",
+          "--tmp",
+          "{tmp}",
+          "--api-port",
+          "{port:api}",
+          "--ui-port",
+          "{port:ui}"
+        ],
         "ports": {
           "ui": 47100,
-          "deadApi": 47101
+          "api": 47101
         },
         "proof": {
-          "status": "unproven",
-          "method": ""
+          "status": "proven",
+          "method": "scripts/registry-prove.ts (design-system feat/viewer-ui-trace-fixture on 04115d6, agent-kernel b83f11d, fixture DB sha256 867a0e84; run 2026-10-07 14:48 CDT, proof JSON in /tmp/model-nodes-ui/20261007T144214/prove/tooling/registry/proofs/viewer-ui.json; first proven 13:47 CDT on 9efaab0): sandboxed (deny-by-default loopback: connect and listen only on its block 47100-47109, owner ports never; writes denied everywhere but the app's checkouts, the run's temp dir and device files; no .env reads), egress sampled from before spawn (44 lsof samples, 0 failed; 1095 sockets seen, 0 foreign), selectors only (each probe, step and waitFor selector matches one element; verify:apps compares the values). 18/18 route loads (9 routes, light and dark) rendered with 0 console errors; the guard blocked nothing; stopped clean. The launcher opens the copied fixture DB read-only and answers 405 to every method but GET and HEAD (test/fixture-viewer-ui.test.ts). Order: the entry carried status proven with a PENDING method while the first proof ran, because every tool's registry load (validateLoadedRegistry, registry-prove's too) refuses a browser profile that is not proven",
+          "date": "2026-10-07"
         }
       },
       "exceptions": [
@@ -2781,7 +2920,7 @@
         },
         {
           "what": "safe tests: explicit files",
-          "reason": "tests.safe lists the 34 test files that open no trace data; the 4 files that read canvas/.agent-kernel/trace.db are in tests.unsafe, so a new test file is not run until it is checked and listed"
+          "reason": "tests.safe[0] and tests.safe[1] list the viewer-ui test files that open no trace data (34, then the 11 model-node files M6-C added); the 4 files that read canvas/.agent-kernel/trace.db are in tests.unsafe, so a new test file is not run until it is checked and listed. tests.safe[2] runs the model-nodes demo's shape test and generator test from agent-kernel's root: they build the real-API trace and the fixture in temp dirs only (generate-fixture's --check never writes) and compare their span skeletons, so the fixture DB stays faithful to real emission"
         },
         {
           "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
@@ -2790,8 +2929,66 @@
         {
           "what": "test:apps re-run under the round-3 sandbox (R3-C, 2026-10-05)",
           "reason": "bun run test:apps --root /Users/Ford/workspace-ds --commands typecheck,build twice, under the round-3 sandbox (rollout-r3-a d24a159: writes only in the app's own checkouts, checkouts.ts appScope, and the run tmp; a suite connects only to its block and 49152-65535 on loopback, minus the listeners at start and the owner's ports; a named command gets no port; no .env reads) with the write check over the app's own checkouts (git status pinned to their git dirs, find -newer/-cnewer, .git entries): tests.safe[0]: run 1 exit 0, 318 pass, 0 fail in 5.9 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0, 318 pass, 0 fail in 5.7 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.typecheck: run 1 exit 0 in 6.2 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0 in 5.6 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.build: not set in apps.json (skipped). Every result matches tests.baselines (tests.safe[0], commands.typecheck: recorded by R2-C, cmd added in R3-C from the commands those runs executed, which equal the current ones). Reports in rollout/tooling/r3-c-runs/final-1 and final-2"
+        },
+        {
+          "what": "rendered through simple-research-kernel's frontend over a trace fixture",
+          "reason": "a library: its trace tree and detail panel render in that host (viewer-shell's KernelTraceWorkspace). The app's own API cannot run in a profile (server.ts creates .agent-kernel/ in the example folder, opens the DB read-write in WAL mode and serves write routes; POST /api/run calls an LLM), so apps/fixtures/viewer-ui/serve.ts serves the kernel's own read API (createContainerReadService + createKernelTraceReadApi from the root's agent-kernel) over the copied fixture DB opened read-only, plus GET /api/research (an empty harness) and GET /api/doctor (the trace doctor); every other method answers 405. Vite's /kernel and /api proxy points at it (API_TARGET)"
+        },
+        {
+          "what": "trace fixture model-nodes-demo.db",
+          "reason": "written by agent-kernel examples/simple-research-kernel/scripts/model-nodes-demo/generate-fixture.ts --db <this file> --journal-mode delete (a rollback-journal DB opens read-only without -wal/-shm); regenerate it only when the generator changes, and check routes.json beside the generator still names the route ids below"
+        },
+        {
+          "what": "route selectors are fixture ids",
+          "reason": "each step clicks one tree row's clickable element by data-span-row, and each waitFor names one tree item by data-span-id or one detail block by data-detail-block (node rows pi:<session>, attempt rows attempt:<run>, event spans their start event id). A step targets the row, not the treeitem: with the tree expanded the treeitem's centre lies on a child row. The ids are the generator's FIXTURE_IDS (routes.json routeTargets), unique in the span tree (viewer-core test 'route targets are unique in the demo fixture'), because several rows share a title (JudgeAdvisory:A1/A2, ExtractCheckpointKnowledge under R1 and R5, attempt rows)"
+        },
+        {
+          "what": "verify probes on the trace workspace",
+          "reason": "page and text read the engine root (.research-style-shell, colored by host-contract.css); panel and border read the trace detail container (section[data-trace-workspace=\"detail\"], bg-card and border-border), which renders only once the fixture trace loaded"
+        },
+        {
+          "what": "pixelDiff n/a",
+          "reason": "the profile is new: no recorded set exists to diff against until the managing agent records a first model-nodes set"
+        },
+        {
+          "what": "tests.safe and typecheck baselines re-recorded (model-nodes, 2026-10-07)",
+          "reason": "tests.safe[0] grew (M6-C changed its test files), tests.safe[1] (M6-C's model-node tests) and tests.safe[2] (M6-D's shape and generator tests) are new. bun run test:apps --root /Users/Ford/workspace --commands typecheck viewer-ui twice, under the sandbox with the write check over the agent-kernel checkout: tests.safe[0]: run 1 exit 0, 330 pass, 0 fail in 7.6 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0, 330 pass, 0 fail in 7.7 s, 0 unexpected writes, 0 cache writes, 0 strays; tests.safe[1]: run 1 exit 0, 50 pass, 0 fail in 5.5 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0, 50 pass, 0 fail in 5.7 s, 0 unexpected writes, 0 cache writes, 0 strays; tests.safe[2]: run 1 exit 0, 6 pass, 0 fail in 8.0 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0, 6 pass, 0 fail in 9.3 s, 0 unexpected writes, 0 cache writes, 0 strays; commands.typecheck: run 1 exit 0 in 8.1 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0 in 7.7 s, 0 unexpected writes, 0 cache writes, 0 strays. tests.baselines records the result; reports in /tmp/model-nodes-ui/20261007T144214/tests-1 and /tmp/model-nodes-ui/20261007T144214/tests-2"
         }
-      ]
+      ],
+      "verify": {
+        "route": "mn-overview",
+        "probes": [
+          {
+            "selector": ".research-style-shell",
+            "property": "background-color",
+            "token": "color.surface.page"
+          },
+          {
+            "selector": "section[data-trace-workspace=\"detail\"]",
+            "property": "background-color",
+            "token": "color.surface.panel"
+          },
+          {
+            "selector": ".research-style-shell",
+            "property": "color",
+            "token": "color.text.body"
+          },
+          {
+            "selector": "section[data-trace-workspace=\"detail\"]",
+            "property": "border-top-color",
+            "token": "color.border.default"
+          }
+        ],
+        "darkSwitch": {
+          "kind": "storage",
+          "key": "simpleResearchStyleSettings.v2",
+          "value": "{\"theme\":\"dark\"}"
+        },
+        "sidebar": {
+          "toggle": ".ds-sidebar-toggle",
+          "storageKey": "simple-research-kernel.sidebar"
+        }
+      }
     },
     {
       "id": "simple-research-kernel",
