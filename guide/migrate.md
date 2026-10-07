@@ -87,7 +87,7 @@ Run each gate the entry marks required. A gate marked n/a states its reason in t
 Then:
 
 1. Run `bun run use:app --app <id>`. It visits every route in each theme, runs the route steps and toggles the sidebar. It must exit 0.
-2. For passes 1 and 2, run `bun run snapshot:sheet --app <id> --a <before> --b <after>` and look at every route in both themes.
+2. For passes 1 and 2, capture an after set (`bun run snapshot --app <id> --set <after>`), then run `bun run snapshot:sheet --app <id> --a <before> --b <after>`, where `<before>` is a set from section 2, and look at every route in both themes.
 3. Commit the pass in the app's repo, following its commit conventions.
 
 Screenshots and results go to `--out-dir`, never into a git checkout.

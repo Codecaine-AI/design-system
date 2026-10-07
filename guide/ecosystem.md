@@ -15,7 +15,9 @@ Every app in scope has an entry in [`apps.json`](../apps.json), the app registry
 
 ## Consumers
 
-Every entry in `apps.json`. Paths are relative to the workspace root. Consume is the registry's `consume.via`. Shell is the registry's `shell`: the app renders the app shell from [layout.md](layout.md) (pass 2), or n/a.
+Every entry in `apps.json`. Paths are relative to the workspace root. Consume is the registry's `consume.via`, sometimes with a short note. Shell is the registry's `shell`: the app renders the app shell from [layout.md](layout.md) (pass 2), or n/a.
+
+Status as of 2026-10-07. For current status run `bun run progress`.
 
 | App | Path | Package | Consume | Status | Shell |
 | --- | --- | --- | --- | --- | --- |
@@ -84,7 +86,7 @@ Once kurate loads `tokens.css`, its scrollbars and form controls also follow the
 
 ## Rollout record
 
-The first rollout shipped on 2026-10-07. Each repo's `main` was fast-forwarded to the commit below.
+The first rollout shipped on 2026-10-07. Each repo's `origin/main` was fast-forwarded to the commit below (design-system has no remote: its local `main`).
 
 | Repo | Commit on `main` | Apps |
 | --- | --- | --- |
