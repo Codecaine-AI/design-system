@@ -3321,7 +3321,7 @@
         {
           "id": "tree",
           "path": "main",
-          "waitFor": ".sidebar"
+          "waitFor": "aside.ds-sidebar"
         }
       ],
       "runProfile": {
@@ -3363,24 +3363,24 @@
             "token": "color.surface.page"
           },
           {
-            "selector": ".sidebar",
-            "property": "background-color",
-            "token": "color.surface.sidebar"
-          },
-          {
             "selector": ".tree",
             "property": "color",
             "token": "color.text.body"
           },
           {
-            "selector": ".sidebar-title",
-            "property": "color",
-            "token": "color.text.ink"
+            "selector": "aside.ds-sidebar",
+            "property": "background-color",
+            "token": "color.surface.sidebar"
           },
           {
-            "selector": ".sidebar",
-            "property": "border-right-color",
+            "selector": "header.ds-topbar",
+            "property": "border-bottom-color",
             "token": "color.border.default"
+          },
+          {
+            "selector": "header.ds-topbar h1",
+            "property": "color",
+            "token": "color.text.ink"
           }
         ],
         "darkSwitch": {
