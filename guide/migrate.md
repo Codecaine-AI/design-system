@@ -27,7 +27,8 @@ The fields that decide what the tools check:
 | `theme.rule` | `light-dark`, or `dark-first` for a dark-by-default surface. |
 | `scan` | The paths the literal scanner reads, and what it excludes. |
 | `literalFloor` and `allowlist` | The floor is the hard literals allowed after pass 1: 0 plus the documented exceptions. Each kept literal has a row with its reason in `apps/allowlists/<id>.json`. |
-| `shell`, `folderStandard`, `passes`, `checks`, `gates` | Each item is `{ "required": true }` or `{ "required": false, "reason": "..." }`. A waived pass, check or gate always states its reason. |
+| `shell`, `folderStandard` | Booleans: whether the app takes the shell (layout.md) and the folder structure (code-structure.md). |
+| `passes`, `checks`, `gates` | Each item is `{ "required": true }` or `{ "required": false, "reason": "..." }`. A waived pass, check or gate always states its reason. |
 | `run` and `runProfile` | How the app starts (`mode` is `browser`, `electron`, `static` or `none`) and how it is isolated: env, removed env, fixtures, flags, ports. Ports sit in the app's block of ten in 47000-47999 and never on an owner port. |
 | `routes` | Every view to capture: `path`, `waitFor`, view-only `steps`, `masks`. A route that cannot be made stable sets `gating: false` with a `reason`. |
 | `verify` | `probes` cover the page, panel, text and border roles. A role the app has no element for goes in `waivedRoles` with a reason. `darkSwitch` says how to reach dark. A light-dark app that boots dark sets `lightSwitch` (a stored value). An app that saves its theme on a server sets `lightSteps` instead. |
@@ -39,13 +40,13 @@ The fields that decide what the tools check:
 Before any change to the app:
 
 1. Run `bun run lint:apps <app>`. Record the hard-literal count.
-2. Run `bun run test:apps <app>`. Record the result in `tests.baselines`. Failures that already exist are not regressions. The baseline changes later only with a reason in `exceptions`.
+2. Run `bun run test:apps <app>`. Record the result in `tests.baselines`. Failures that already exist are not regressions. The baseline changes later only through the managing agent, with a reason in `exceptions`.
 3. Unless the run mode is `none`, capture every route twice: `bun run snapshot --app <id> --set before`, then the same with another set name.
 4. Run `bun run snapshot:diff --app <id> --a <set> --b <set> --exact` on the two sets. A route whose captures differ gets a fixture or a mask, or becomes non-gating with a reason.
 
 ## 3. Pass 1: tokens
 
-1. Wire the package the way the entry's `consume` says ([consume.md](consume.md)). Load the CSS in order: fonts, tokens, host contract (agent-viewer hosts only), layout (shell apps only) ([consume.md §7](consume.md#7-load-order)).
+1. Wire the package the way the entry's `consume` says ([consume.md](consume.md)). Load the CSS in order: fonts, tokens, host contract (agent-viewer hosts only), layout (shell apps only) ([consume.md §7](consume.md#7-load-order)). A Tailwind app imports `tailwind-strict.css` before `tailwind.css`, so Tailwind's own scales do not generate.
 2. Run `bun run codemod:literals --app <id> propose`.
 3. Review the mapping by role against [tokens.md](tokens.md). Mark each row you accept `"approve": "yes"`. Rows the codemod flags have no ready replacement: decide each by role.
 4. Run `bun run codemod:literals --app <id> apply --table <mapping.json>`.
