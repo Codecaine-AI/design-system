@@ -3267,15 +3267,15 @@
         },
         "verify": {
           "required": false,
-          "reason": "run mode none: the app reaches the owner's docs service on a hard-coded :4820; verified statically only"
+          "reason": "run mode none: Electron runs are refused (decision 23); since 1e2f929 SYSTEM_VIEW_SERVICE_ORIGIN can point the app at a run-started docs-workbench, so the remaining blocker is the Electron rule, not the :4820 origin; verified statically (bridge contract, stubbed-preload render check)"
         },
         "snapshot": {
           "required": false,
-          "reason": "run mode none: the app reaches the owner's docs service on a hard-coded :4820; verified statically only"
+          "reason": "run mode none: Electron runs are refused (decision 23); since 1e2f929 SYSTEM_VIEW_SERVICE_ORIGIN can point the app at a run-started docs-workbench, so the remaining blocker is the Electron rule, not the :4820 origin; verified statically (bridge contract, stubbed-preload render check)"
         },
         "pixelDiff": {
           "required": false,
-          "reason": "run mode none: the app reaches the owner's docs service on a hard-coded :4820; verified statically only"
+          "reason": "run mode none: Electron runs are refused (decision 23); since 1e2f929 SYSTEM_VIEW_SERVICE_ORIGIN can point the app at a run-started docs-workbench, so the remaining blocker is the Electron rule, not the :4820 origin; verified statically (bridge contract, stubbed-preload render check)"
         },
         "tests": {
           "required": false,
