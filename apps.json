@@ -3219,8 +3219,8 @@
         "packageManager": "bun"
       },
       "consume": {
-        "via": "workspace",
-        "detail": "Single bun package: add \"workspaces\": [\"../design-system\"] to package.json and depend on `workspace:*` (a live symlink), then import the CSS in src/renderer/src/main.tsx; update THEME_TOKEN_NAMES when docs-workbench moves to --ds-*."
+        "via": "vendor-tgz",
+        "detail": "Packed copy through file:vendor/codecaine-ai-design-system-0.2.0.tgz that carries its fonts (OWNER_DECISIONS: apps outside Core take the vendored tgz), the same bytes personal-site and skitzo use; fonts.css, tokens.css and layout.css load in src/renderer/src/main.tsx; the main process pins native window colors through the JS tokens export. The theme bridge (THEME_TOKEN_NAMES in src/shared/ipc.ts) reads docs-workbench's shadcn names, --docs-sidebar-* knobs and the --ds-* names styles.css reads."
       },
       "entryStylesheet": "system-view/src/renderer/src/main.tsx",
       "theme": {
@@ -3284,7 +3284,7 @@
       },
       "run": {
         "mode": "none",
-        "reason": "the docs origin is hard-coded: `export const SERVICE_ORIGIN = 'http://127.0.0.1:4820'` (src/main/tree-model.ts:5), which src/main/docs-service.ts polls every 5 s (GET /api/projects, /projects/<id>/docs/api/tree), and the renderer builds viewer URLs from a literal http://127.0.0.1:4820 (src/renderer/src/App.tsx:114). SYSTEM_VIEW_OPEN_URL (src/main/dev-hooks.ts:8) only opens one URL at startup; polling still targets 4820. No env var, setting or flag redirects it, and a second instance hands focus to the owner's running app (single-instance lock). Runnable once SERVICE_ORIGIN and App.tsx:114 read one env var that a profile points at a run-started docs-workbench fixture",
+        "reason": "Electron runs are refused (decision 23), so the app is verified statically. Since system-view 1e2f929, SYSTEM_VIEW_SERVICE_ORIGIN (an http(s) origin; default http://127.0.0.1:4820 unchanged) redirects the docs polling and the renderer viewer URLs; a later profile can point it at a run-started docs-workbench with tempHome (the app restores the last stored URL on start).",
         "cwd": "system-view",
         "electron": {
           "build": "bun --no-env-file run build",
@@ -3399,7 +3399,7 @@
         },
         {
           "what": "native window colors in src/main/index.ts",
-          "reason": "outside the scan path (main process BrowserWindow backgroundColor); keep them in step with the tokens by hand"
+          "reason": "outside the scan path (main process BrowserWindow backgroundColor); keep them in step with the tokens by hand Since pass 1 they are pinned to the JS tokens export (src/main/native-theme.ts)."
         },
         {
           "what": "test:apps re-run under the round-3 sandbox (R3-C, 2026-10-05)",
