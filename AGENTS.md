@@ -9,6 +9,8 @@
 3. [guide/code-structure.md](guide/code-structure.md): how UI code is organized.
 4. [guide/consume.md](guide/consume.md): how an app depends on the package and the order it loads the CSS (fonts, tokens, layout).
 
+To move a new app onto the package, follow [guide/migrate.md](guide/migrate.md). Whether an app is in scope, and how each app consumes the package: [guide/ecosystem.md](guide/ecosystem.md).
+
 ## Rules
 
 1. Style only with tokens: `var(--ds-*)` in CSS, the utilities from `tailwind.css` (or the `tailwind-v3-preset` in a Tailwind v3 app), or `cssVar()` in JS. Charts use `color.chart.*`.

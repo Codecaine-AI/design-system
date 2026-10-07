@@ -43,7 +43,7 @@ css/fonts.css                     @font-face for Inter and IBM Plex Mono
 fonts/                            the woff2 files (byte-identical to @codecaine-ai/text-measure's) and their OFL licenses
 scripts/pack.ts                   `bun run pack`: a tgz for apps that vendor the package
 scripts/test-apps.ts              `bun run test:apps <app>`: an app's safe tests under its run profile and the sandbox
-guide/                            tokens.md, layout.md, consume.md, code-structure.md, audit.md, app-shell-demo.html
+guide/                            tokens.md, layout.md, consume.md, code-structure.md, ecosystem.md, migrate.md, audit.md, app-shell-demo.html
 templates/                        starter app shell
 skill/SKILL.md                    the design-system agent skill (source of truth; lascari-ai/agent-skills registers it)
 test/                             bun test
@@ -167,9 +167,6 @@ The build fails on an unresolved alias, an alias cycle, a missing `$type` or `$v
 
 ## Consumers
 
-| Consumer | Status |
-| --- | --- |
-| docs-system (`codecaine/core/docs-system`) | Migrated. docs-workbench depends on the package (`workspace:*`); `web/src/theme/tokens.css` imports `tokens.css`, the palette tier and the component stylesheets read `--ds-*`, and the style rail's stock values come from the token JS. Proven with 0 changed pixels in 30 screenshots (`verification/docs-system/diff-before-vs-after/report.json`; checks in `verification/docs-system/after-checks/`). |
-| Other apps | Audited in `guide/audit.md`. |
+Which apps consume the package, how, and their status: [guide/ecosystem.md](guide/ecosystem.md). To move a new app onto it: [guide/migrate.md](guide/migrate.md).
 
 Agents doing UI work: read [AGENTS.md](AGENTS.md).
