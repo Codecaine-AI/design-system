@@ -118,8 +118,8 @@ export function stepsProblems(steps: unknown, where: string): string[] {
  * renders without), which use:app reports under expectedFailedRequests instead of failing the run. A
  * request matches when it goes to the app's own origin (the URL the runner read from the server output),
  * its method is `method`, it failed with `status`, and `urlPattern` (a regular expression anchored at
- * the start of the path, "^/"; every alternative stays anchored, see expectedPattern) matches its path and
- * query. A pattern that matches "/" or a made-up path (CANARY_PATHS) is refused as a blanket. Its matching "Failed to load resource" console
+ * the start of the path with a literal first segment, no top-level "|", see patternShapeProblem) matches
+ * its path and query. A pattern that matches "/" or a made-up path (CANARY_PATHS) is refused as a blanket. Its matching "Failed to load resource" console
  * error is expected too. Only HTTP statuses 400-599; a request that never got a response is never expected.
  */
 export interface ExpectedFailure {
@@ -141,18 +141,10 @@ export function expectedFailuresProblems(list: unknown): string[] {
     if (typeof e.method !== "string" || !/^[A-Z]+$/.test(e.method)) problems.push(`${name}.method must be an upper-case HTTP method (GET, POST, ...)`);
     if (!Number.isInteger(e.status) || (e.status as number) < 400 || (e.status as number) > 599) problems.push(`${name}.status must be an HTTP error status, an integer 400-599`);
     if (typeof e.reason !== "string" || !e.reason.trim()) problems.push(`${name} has no reason`);
-    if (typeof e.urlPattern !== "string" || !e.urlPattern.startsWith("^/") || e.urlPattern.startsWith("^//")) {
-      problems.push(`${name}.urlPattern must be a regular expression anchored at the start of a path on the app's own origin ("^/api/..."): it is matched against the path and query only`);
-    } else {
-      let pattern: RegExp | undefined;
-      try {
-        pattern = expectedPattern(e.urlPattern);
-      } catch (error) {
-        problems.push(`${name}.urlPattern is not a valid regular expression: ${(error as Error).message}`);
-      }
-      const blanket = pattern ? CANARY_PATHS.filter((path) => pattern!.test(path)) : [];
-      if (blanket.length)
-        problems.push(`${name}.urlPattern ${JSON.stringify(e.urlPattern)} is a blanket pattern: it also matches ${blanket.join(" and ")}; name the one endpoint that fails by design`);
+    if (typeof e.urlPattern !== "string") problems.push(`${name}.urlPattern must be a string`);
+    else {
+      const shape = patternShapeProblem(e.urlPattern);
+      if (shape) problems.push(`${name}.urlPattern ${JSON.stringify(e.urlPattern)} ${shape}`);
     }
   });
   return problems;
@@ -164,13 +156,48 @@ export function expectedFailuresProblems(list: unknown): string[] {
  */
 export const CANARY_PATHS = ["/", "/__ds_canary__/x.js", "/__ds_canary__?x=1"] as const;
 
+/** A literal first path segment, then "/", an escaped "?" or the end: "^/api/...", "^/api\\?..." or "^/health$". */
+const LITERAL_FIRST_SEGMENT = /^\^\/[A-Za-z0-9._~%-]+(?:\/|\\\?|\$)/;
+
+/** Whether the pattern has a `|` outside every group and character class (escapes skipped). */
+function topLevelAlternation(pattern: string): boolean {
+  let depth = 0;
+  let inClass = false;
+  for (let i = 0; i < pattern.length; i++) {
+    const c = pattern[i];
+    if (c === "\\") i++;
+    else if (inClass) inClass = c !== "]";
+    else if (c === "[") inClass = true;
+    else if (c === "(") depth++;
+    else if (c === ")") depth--;
+    else if (c === "|" && depth === 0) return true;
+  }
+  return false;
+}
+
 /**
- * An expected failure's urlPattern as matched: "^/a|/b" becomes ^(?:/a|/b), so every alternative is
- * anchored at the start of the path (a bare top-level `|` cannot reach past the anchor). Throws on an
- * invalid pattern.
+ * Why an expectedFailures urlPattern is not a bounded endpoint pattern, or null. Required, all of:
+ * - it compiles as written (an unbalanced ")" that could close a wrapper is refused);
+ * - it starts with a literal first path segment (LITERAL_FIRST_SEGMENT), so it is anchored at one
+ *   top-level path and never names "every path" or "every .css file";
+ * - no `|` at the top level, outside a group (an alternative there would not be anchored);
+ * - it matches none of CANARY_PATHS.
+ * Matching (expectedFailure) uses the pattern as written and applies the same check, so a pattern that
+ * skipped validation excuses nothing.
  */
-export function expectedPattern(urlPattern: string): RegExp {
-  return new RegExp(`^(?:${urlPattern.slice(1)})`);
+export function patternShapeProblem(urlPattern: string): string | null {
+  let pattern: RegExp;
+  try {
+    pattern = new RegExp(urlPattern);
+  } catch (error) {
+    return `is not a valid regular expression: ${(error as Error).message}`;
+  }
+  if (!LITERAL_FIRST_SEGMENT.test(urlPattern))
+    return `must start with "^/" and a literal first path segment, then "/", "\\?" or "$" ("^/api/themes/global$"): it is matched against the path and query on the app's own origin`;
+  if (topLevelAlternation(urlPattern)) return `has a top-level "|": put alternatives inside a group after the literal first segment ("^/api/(?:a|b)$")`;
+  const blanket = CANARY_PATHS.filter((path) => pattern.test(path));
+  if (blanket.length) return `is a blanket pattern: it also matches ${blanket.join(" and ")}; name the one endpoint that fails by design`;
+  return null;
 }
 
 /**
@@ -191,15 +218,10 @@ export function expectedFailure(list: readonly ExpectedFailure[] | undefined, or
   return list.find((e) => (request.method === undefined || e.method === request.method) && e.status === request.status && safeTest(e.urlPattern, path));
 }
 
-/** Whether the urlPattern matches the path; a pattern validation would refuse (not "^/", blanket, invalid) never does. */
+/** Whether the urlPattern matches the path; a pattern validation would refuse (patternShapeProblem) never does. */
 function safeTest(urlPattern: string, path: string): boolean {
-  if (typeof urlPattern !== "string" || !urlPattern.startsWith("^/") || urlPattern.startsWith("^//")) return false;
-  try {
-    const pattern = expectedPattern(urlPattern);
-    return !CANARY_PATHS.some((canary) => pattern.test(canary)) && pattern.test(path);
-  } catch {
-    return false;
-  }
+  if (typeof urlPattern !== "string" || patternShapeProblem(urlPattern) !== null) return false;
+  return new RegExp(urlPattern).test(path);
 }
 
 export interface RunProfile {

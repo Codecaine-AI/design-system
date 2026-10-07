@@ -79,18 +79,31 @@ test("validation: step actions, check/uncheck targets, lightSteps and expectedFa
     ["lightSteps with a lightSwitch", entry({ lightSteps: uncheckLight, lightSwitch: { kind: "storage", key: "mode", value: "light" } }), /lightSteps and verify\.lightSwitch are both set/],
     ["lightSteps on a dark-first entry", entry({ lightSteps: uncheckLight }, { theme: { rule: "dark-first" } }), /lightSteps is set on a dark-first entry/],
     ["an expected failure without a reason", entry({ expectedFailures: [{ ...themeMissing, reason: " " }] }), /expectedFailures\[0\] has no reason/],
-    ["a full URL pattern", entry({ expectedFailures: [{ ...themeMissing, urlPattern: "^http://127.0.0.1:47021/api/theme$" }] }), /urlPattern must be a regular expression anchored at the start of a path/],
-    ["an unanchored pattern", entry({ expectedFailures: [{ ...themeMissing, urlPattern: "/api/theme" }] }), /urlPattern must be a regular expression anchored/],
-    ["a protocol-relative pattern", entry({ expectedFailures: [{ ...themeMissing, urlPattern: "^//evil.example/" }] }), /urlPattern must be a regular expression anchored/],
-    ["a bad regex", entry({ expectedFailures: [{ ...themeMissing, urlPattern: "^/api/(" }] }), /urlPattern is not a valid regular expression/],
-    // Blanket patterns: a top-level alternative past the anchor, or one that matches the root or a made-up path.
-    ...["^/x|", "^/x|/", "^/api/theme$|.*", "^/", "^/.*$", "^/(?:)|.", "^/[^]*", "^/__ds_canary__"].map(
-      (urlPattern): [string, AppEntry, RegExp] => [`blanket ${urlPattern}`, entry({ expectedFailures: [{ ...themeMissing, urlPattern }] }), /is a blanket pattern: it also matches/],
-    ),
+    ["a full URL pattern", entry({ expectedFailures: [{ ...themeMissing, urlPattern: "^http://127.0.0.1:47021/api/theme$" }] }), /must start with "\^\/" and a literal first path segment/],
+    ["an unanchored pattern", entry({ expectedFailures: [{ ...themeMissing, urlPattern: "/api/theme" }] }), /must start with "\^\/" and a literal first path segment/],
+    ["a protocol-relative pattern", entry({ expectedFailures: [{ ...themeMissing, urlPattern: "^//evil.example/" }] }), /must start with "\^\/" and a literal first path segment/],
+    ["a bad regex", entry({ expectedFailures: [{ ...themeMissing, urlPattern: "^/api/(" }] }), /urlPattern "\^\/api\/\(" is not a valid regular expression/],
+    // Every attack from both reviews (rounds 1 and 2), each refused for its structural reason.
+    ...([
+      ...["^/a)|(/api/.*", "^/a)|(.*\\.css$", "^/api/theme$)|unrelated(?:"].map((p) => [p, /is not a valid regular expression/] as const),
+      ...["^/[^_].*", "^/[a-z]", "^/.*\\.css$", "^/.+\\.(css|woff2)$", "^/(?!__ds_canary__).+$", "^/x|", "^/x|/", "^/", "^/.*$", "^/(?:)|.", "^/[^]*"].map(
+        (p) => [p, /must start with "\^\/" and a literal first path segment/] as const,
+      ),
+      ...["^/api/theme$|.*", "^/api/x|/", "^/api/(?:a)|.*"].map((p) => [p, /has a top-level "\|"/] as const),
+      ["^/__ds_canary__/", /is a blanket pattern: it also matches \/__ds_canary__\/x\.js/] as const,
+    ] as Array<readonly [string, RegExp]>).map(([urlPattern, message]): [string, AppEntry, RegExp] => [`refused ${urlPattern}`, entry({ expectedFailures: [{ ...themeMissing, urlPattern }] }), message]),
     ["a success status", entry({ expectedFailures: [{ ...themeMissing, status: 200 }] }), /status must be an HTTP error status/],
     ["a lower-case method", entry({ expectedFailures: [{ ...themeMissing, method: "get" }] }), /method must be an upper-case HTTP method/],
   ];
   for (const [name, app, message] of cases) expect([name, problemsOf(app).join("\n")]).toEqual([name, expect.stringMatching(message)]);
+});
+
+test("the two docs-workbench patterns, and grouped alternatives after a literal segment, are accepted", () => {
+  const ok = (urlPattern: string) => problemsOf(entry({ expectedFailures: [{ ...themeMissing, urlPattern }] }));
+  expect(ok("^/api/themes/global$")).toEqual([]);
+  expect(ok("^/api/sequence\\?src=10-system-design%2F[^&]*%2F40-sequence%2Fassets%2Fsequences%2Flogin-flow\\.sequence\\.json$")).toEqual([]);
+  expect(ok("^/api/(?:a|b)$")).toEqual([]);
+  expect(ok("^/api/[|]x$")).toEqual([]); // a "|" inside a character class is no alternative
 });
 
 test("expectedFailure: the app's own origin, the method, the status and the path pattern, nothing else", () => {
@@ -110,12 +123,12 @@ test("expectedFailure: the app's own origin, the method, the status and the path
   ] as const)
     expect([method, url, status, hit(method, url, status)]).toEqual([method, url, status, null]);
   expect(expectedFailure(list, undefined, { method: "GET", url: `${origin}/api/theme`, status: 404 })).toBeUndefined(); // no origin read: nothing is expected
-  // Every alternative is anchored: "^/a|/b" is ^(?:/a|/b), so /b matches only at the start of the path.
-  const both = [{ ...themeMissing, urlPattern: "^/api/theme$|/api/other$" }];
+  // Alternatives live in a group after the literal segment: anchored, and only under /api/.
+  const both = [{ ...themeMissing, urlPattern: "^/api/(?:theme|other)$" }];
   expect(expectedFailure(both, origin, { method: "GET", url: `${origin}/api/other`, status: 404 })?.reason).toBe(themeMissing.reason);
   expect(expectedFailure(both, origin, { method: "GET", url: `${origin}/assets/api/other`, status: 404 })).toBeUndefined();
   // A blanket pattern that got past validation (a hand-edited log, a direct call) still excuses nothing.
-  for (const urlPattern of ["^/api/theme$|", "^/x|/", "^/(?:)|.", "^/.*$", "^/"])
+  for (const urlPattern of ["^/api/theme$|", "^/x|/", "^/(?:)|.", "^/.*$", "^/", "^/a)|(/api/.*", "^/[a-z]", "^/api/theme$)|unrelated(?:", "^/.*\\.js$"])
     expect([urlPattern, expectedFailure([{ ...themeMissing, urlPattern }], origin, { method: "GET", url: `${origin}/assets/app.js`, status: 404 })]).toEqual([urlPattern, undefined]);
   // Without a method (a console message), the URL and status decide.
   expect(expectedFailure(list, origin, { url: `${origin}/api/theme`, status: 404 })?.reason).toBe(themeMissing.reason);

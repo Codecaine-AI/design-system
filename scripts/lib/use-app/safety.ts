@@ -12,6 +12,10 @@
  *   - its visible text names a write, where the text is the control's own short label (at most 3 words
  *     or 30 characters: "Sync now") or starts with the word ("Delete skill …"). A longer text is data
  *     (a list row whose status badge says "In sync") and is not read for words.
+ * The accessible name read is aria-label, title, aria-labelledby, the control's <label>s and a wrapping
+ * <label>. Known limits (the registry steps are reviewed by a person, so these are acceptable): a control
+ * beside an unassociated visual label (`<span>Delete account</span><input type="checkbox">`) is not
+ * refused for that text, and aria-describedby is not read.
  * Hovers go to visible, enabled buttons and links outside any form, in document order, at most
  * MAX_HOVERS per route and theme. A hover never activates anything, so a "Delete" button is hovered.
  */
