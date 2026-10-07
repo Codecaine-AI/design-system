@@ -40,7 +40,7 @@ import { cleanupRuns, guardedContext, installSignalHandlers, launchBrowser, star
 import { appScope, changedCheckouts, checkoutStates } from "./lib/checkouts";
 import { pinRepos } from "./lib/git";
 import { toolOutputDir } from "./lib/output-dir";
-import { DESIGN_SYSTEM_ROOT, getApp, lightSeed, loadRegistry, resolvePath, type AppEntry, type Registry, type RouteSpec } from "./lib/registry";
+import { DESIGN_SYSTEM_ROOT, getApp, lightSeed, lightSteps, loadRegistry, resolvePath, type AppEntry, type Registry, type RouteSpec } from "./lib/registry";
 import { safeChildPath } from "./lib/safe-paths";
 
 /** The connection classifier lives in scripts/lib/egress.ts (the runner samples with it). */
@@ -225,6 +225,13 @@ async function loadRoute(browser: any, running: RunningApp, route: RouteSpec, th
       await page.evaluate(([k, v]: string[]) => localStorage.setItem(k!, v!), [light.key, light.value]);
       await page.reload({ waitUntil: "load" });
     }
+    // An app whose theme outlives a visit: its lightSteps, before the route's steps, in every light load.
+    const toLight = theme === "light" ? lightSteps(app, route) : undefined;
+    if (toLight) {
+      // The saved theme arrives after load: wait for the network to go idle (as use:app does) before switching.
+      await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {});
+      for (const step of toLight) await runStep(page, step);
+    }
     for (const step of route.steps ?? []) await runStep(page, step);
     if (route.waitFor) await (await one(page, route.waitFor)).waitFor({ state: "visible", timeout: 30_000 });
     await page.waitForLoadState("networkidle", { timeout: 10_000 }).catch(() => {});
@@ -294,6 +301,9 @@ async function runStep(page: any, step: NonNullable<RouteSpec["steps"]>[number])
       return (await one(page, step.target!)).click({ timeout: 30_000 });
     case "hover":
       return (await one(page, step.target!)).hover({ timeout: 30_000 });
+    case "check":
+    case "uncheck":
+      return (await one(page, step.target!)).setChecked(step.action === "check", { timeout: 30_000 });
     case "press":
       return page.keyboard.press(String(step.value));
     case "wait":

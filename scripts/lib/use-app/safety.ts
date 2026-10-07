@@ -2,7 +2,7 @@
  * What `use:app` may click, and what it hovers (APP_BRIEF step 5: navigation and view controls only).
  *
  * use:app clicks only the registry's own navigation steps (a route's `steps`, a `click` or `steps`
- * darkSwitch) and the sidebar toggle. The managing agent reviews those steps; these rules are the second
+ * darkSwitch, verify.lightSteps) and the sidebar toggle. A `check` or `uncheck` step counts as a click. The managing agent reviews those steps; these rules are the second
  * line of defence. A key press is run only for Tab, Escape, the arrows, PageUp/PageDown and Home/End
  * (Shift allowed), or a plain Enter or Space. Before each click, and before each Enter or Space press,
  * the target is described in the page (describeElement) and the step is refused, never run, when:
@@ -12,6 +12,10 @@
  *   - its visible text names a write, where the text is the control's own short label (at most 3 words
  *     or 30 characters: "Sync now") or starts with the word ("Delete skill …"). A longer text is data
  *     (a list row whose status badge says "In sync") and is not read for words.
+ * The accessible name read is aria-label, title, aria-labelledby, the control's <label>s and a wrapping
+ * <label>. Known limits (the registry steps are reviewed by a person, so these are acceptable): a control
+ * beside an unassociated visual label (`<span>Delete account</span><input type="checkbox">`) is not
+ * refused for that text, and aria-describedby is not read.
  * Hovers go to visible, enabled buttons and links outside any form, in document order, at most
  * MAX_HOVERS per route and theme. A hover never activates anything, so a "Delete" button is hovered.
  */
@@ -39,7 +43,10 @@ export interface ElementInfo {
   submit: boolean;
   /** Inside a <form>, or owned by one through the form attribute. */
   inForm: boolean;
-  /** aria-label, title and value of the element and of the control it sits in: always read for write words. */
+  /**
+   * The accessible names of the element and of the control it sits in (aria-label, title, aria-labelledby,
+   * its <label>s, a wrapping <label>) and an input's value: always read for write words.
+   */
   names: string[];
   /** Visible text of the element and of the control it sits in (none for the page body): read when short or at its start. */
   texts: string[];
@@ -68,6 +75,15 @@ export function describeElement(el: any): ElementInfo {
   for (const node of control === el ? [el] : [el, control]) {
     push(names, node.getAttribute?.("aria-label"));
     push(names, node.getAttribute?.("title"));
+    // The accessible name a user reads: aria-labelledby, the native labels (<label for>, a wrapping
+    // <label>) and any wrapping <label> of a non-labelable element. A checkbox's own text is empty.
+    for (const id of String(node.getAttribute?.("aria-labelledby") ?? "").split(/\s+/).filter(Boolean)) {
+      const label = node.ownerDocument?.getElementById(id);
+      if (label) push(names, label.innerText ?? label.textContent);
+    }
+    for (const label of Array.from((node.labels ?? []) as Iterable<any>)) push(names, label.innerText ?? label.textContent);
+    const wrapping = node.closest?.("label");
+    if (wrapping) push(names, wrapping.innerText ?? wrapping.textContent);
     if (String(node.tagName).toLowerCase() === "input") push(names, node.value);
     if (!page(node)) push(texts, node.innerText ?? node.textContent);
   }
@@ -137,9 +153,12 @@ export function keyRefusal(step: Step): string | null {
   return `the key ${JSON.stringify(raw)} is not a view key (use:app presses only Tab, Escape, the arrows, PageUp/PageDown and Home/End, and a plain Enter or Space on a checked target)`;
 }
 
-/** Whether the step activates an element: a click, or a plain Enter or Space press. */
+/** A click, or a check or uncheck (which clicks when the control is not in that state yet). */
+const CLICKS = new Set(["click", "check", "uncheck"]);
+
+/** Whether the step activates an element: a click, a check or uncheck, or a plain Enter or Space press. */
 export function activates(step: Step): boolean {
-  if (step.action === "click") return true;
+  if (CLICKS.has(step.action)) return true;
   if (step.action !== "press") return false;
   const { modifiers, key } = splitKey(pressedKey(step));
   return ACTIVATE_KEYS.test(key) && modifiers.length === 0;
@@ -147,7 +166,7 @@ export function activates(step: Step): boolean {
 
 /** The selector of the element an activating step acts on; null for a key press on the focused element. */
 export function stepSelector(step: Step): string | null {
-  if (step.action === "click") return step.target ?? null;
+  if (CLICKS.has(step.action)) return step.target ?? null;
   return step.action === "press" && step.target && step.value !== undefined ? step.target : null;
 }
 

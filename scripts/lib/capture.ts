@@ -14,14 +14,15 @@
  * prefers-color-scheme always matches the theme. Without a darkSwitch, prefers-color-scheme is the
  * only switch. A light-dark app that boots dark names a storage `verify.lightSwitch`: every light shot
  * writes it into localStorage before the page loads (init script, so it holds across navigation-only
- * route steps).
+ * route steps). An app whose theme outlives a visit (saved on its server) names `verify.lightSteps`:
+ * every light shot runs them where a dark shot runs darkSwitch's steps (check/uncheck keep both idempotent).
  *
  * Time: every capture context gets a fixed clock (FIXED_TIME) before the page loads, so "5 minutes
  * ago" and today's date render the same in every run. Electron: each shot resets the window (storage
  * cleared, the route's URL, prefers-color-scheme of the shot's theme, the fixed clock) and reloads it,
  * so no shot inherits the previous one's theme or state.
  */
-import { type AppEntry, lightSeed, type RouteSpec } from "./registry";
+import { type AppEntry, lightSeed, lightSteps, type RouteSpec } from "./registry";
 import { guardedContext, splitBlocked, type RunningApp } from "./app-runner";
 import { safeSegment } from "./safe-paths";
 import type { Box, Theme } from "./snapshot-set";
@@ -334,6 +335,11 @@ async function runStep(page: any, step: Step, network: ReturnType<typeof trackNe
     case "hover":
       await page.locator(need()).hover({ timeout: 15_000 });
       break;
+    case "check":
+    case "uncheck":
+      // Playwright's setChecked: a no-op when the control is already in that state, else a click that must reach it.
+      await page.locator(need()).setChecked(step.action === "check", { timeout: 15_000 });
+      break;
     case "press":
       if (step.target && step.value !== undefined) await page.locator(step.target).press(String(step.value), { timeout: 15_000 });
       else await page.keyboard.press(String(step.value ?? step.target));
@@ -358,7 +364,7 @@ async function runStep(page: any, step: Step, network: ReturnType<typeof trackNe
 }
 
 /**
- * Runs registry route steps (navigation and view actions only: click, press, hover, scroll, wait) on a
+ * Runs registry route steps (navigation and view actions only: click, press, hover, scroll, wait, check, uncheck) on a
  * page, waiting for network quiet after each. Locators are strict: a target must match one element.
  * Pass `network` to reuse a tracker attached before the page loaded; otherwise one is attached now.
  */
@@ -440,10 +446,20 @@ interface ThemePlan {
  * How to put the app in `theme`. Only the non-default theme is switched; the default is left as the app
  * boots, except light on an entry with a lightSwitch (lightSeed), which every light shot writes.
  */
-export function themePlan(app: AppEntry, theme: Theme): ThemePlan {
+export function themePlan(app: AppEntry, theme: Theme, route?: Pick<RouteSpec, "skipLightSteps">): ThemePlan {
   const none: ThemePlan = { method: "default", url: (url) => url, afterLoad: async () => undefined, verify: async () => undefined };
   const light = theme === "light" ? lightSeed(app) : undefined;
   if (light) return { ...none, method: "storage", init: { storage: { [light.key]: light.value } } };
+  const toLight = theme === "light" ? lightSteps(app, route) : undefined;
+  if (toLight) {
+    return {
+      ...none,
+      method: "steps",
+      afterLoad: async (page, network) => {
+        for (const step of toLight) await runStep(page, step, network);
+      },
+    };
+  }
   if (theme === defaultTheme(app)) return none;
   const sw = app.verify?.darkSwitch;
   if (!sw) return { ...none, method: "prefers-color-scheme" };
@@ -488,6 +504,19 @@ export function themePlan(app: AppEntry, theme: Theme): ThemePlan {
   }
 }
 
+/**
+ * The registry steps a theme switch runs after the page loads, as use:app runs them one by one through its
+ * safety rules: verify.lightSteps for light (themePlan method "steps"), a click or steps darkSwitch for
+ * dark; empty for every other plan.
+ */
+export function switchSteps(app: AppEntry, theme: Theme, route?: Pick<RouteSpec, "skipLightSteps">): Step[] {
+  const plan = themePlan(app, theme, route);
+  if (plan.method !== "click" && plan.method !== "steps") return [];
+  if (theme === "light") return lightSteps(app, route) ?? [];
+  const sw = app.verify?.darkSwitch;
+  return sw?.kind === "click" ? [{ action: "click", target: sw.selector }] : sw?.kind === "steps" ? sw.steps : [];
+}
+
 function storageInitScript(entries: Record<string, string>) {
   try {
     for (const [key, value] of Object.entries(entries)) (globalThis as any).localStorage.setItem(key, value);
@@ -500,7 +529,7 @@ function storageInitScript(entries: Record<string, string>) {
 export async function captureRoute(browser: any, running: RunningApp, route: RouteSpec, theme: Theme): Promise<CaptureResult> {
   const started = Date.now();
   const viewport = route.viewport ?? DEFAULT_VIEWPORT;
-  const plan = themePlan(running.app, theme);
+  const plan = themePlan(running.app, theme, route);
   const consoleErrors: string[] = [];
   const watch = (page: any) => {
     page.on("console", (message: any) => {

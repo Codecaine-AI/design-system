@@ -1,0 +1,26 @@
+<!doctype html><html><head><title>persisted theme</title><style>
+  html, body { margin: 0; height: 100%; background: #fff; color: #888; }
+  html[data-theme="dark"] body { background: #000; }
+</style></head>
+<body style="padding-top: 40px">
+<button class="colors" type="button">Colors</button>
+<label class="row" hidden>Dark mode <input class="dark-toggle" type="checkbox" /></label>
+<p class="ready" hidden>ready</p>
+<script>
+  const toggle = document.querySelector(".dark-toggle");
+  const apply = (dark) => {
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+    toggle.checked = dark;
+  };
+  document.querySelector(".colors").addEventListener("click", () => (document.querySelector(".row").hidden = false));
+  toggle.addEventListener("change", () => {
+    apply(toggle.checked);
+    fetch("/api/theme", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ dark: toggle.checked }) });
+  });
+  fetch("/api/theme")
+    .then((response) => (response.ok ? response.json() : { dark: false }))
+    .then((theme) => {
+      apply(theme.dark);
+      document.querySelector(".ready").hidden = false;
+    });
+</script></body></html>

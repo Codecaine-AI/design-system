@@ -4,7 +4,8 @@
  *
  *   bun run registry:check [--root <dir>] [--registry <apps.json>]
  *
- * Runs validateRegistry (structure), then checks against the tree and this design-system checkout:
+ * Runs validateRegistry (structure: also every step's action, check/uncheck targets and verify.lightSteps),
+ * then checks against the tree and this design-system checkout:
  *   - every workspace-relative path exists under --root: repo, root, scan paths, entry stylesheet,
  *     command and run cwds, safe-test cwds;
  *   - every profile port is in 47000-47999, not an owner port, unique across apps, and inside the
@@ -12,8 +13,8 @@
  *   - every allowedLocalPorts entry is inside the app's block (never an owner port): a run may reach
  *     only processes it starts itself;
  *   - no port string (commands, flags, env values, every route's path, waitFor and string step
- *     target/value, and verify.darkSwitch's and verify.lightSwitch's target, selector, param, value, key
- *     and string step target/value) names
+ *     target/value, verify.darkSwitch's and verify.lightSwitch's target, selector, param, value, key
+ *     and string step target/value, and verify.lightSteps' string target/value) names
  *       - an owner port, as a bare 4-5 digit number (also right after a %XX escape);
  *       - a loopback `host:<port>` or `host%3A<port>` outside the app's block. Loopback hosts, any case:
  *         localhost and *.localhost (trailing dot allowed), 127.x in any dotted form (127.1, 127.0.1,
@@ -76,6 +77,7 @@ function routeTexts(app: AppEntry): Array<[label: string, text: string]> {
     for (const key of ["target", "selector", "param", "value", "key"]) out.push([`verify.${name}.${key}`, sw?.[key]]);
     if (Array.isArray(sw?.steps)) steps(`verify.${name}`, sw.steps as RouteSpec["steps"]);
   }
+  if (Array.isArray(app.verify?.lightSteps)) steps("verify.lightSteps", app.verify.lightSteps);
   return out.filter((e): e is [string, string] => typeof e[1] === "string" && e[1].length > 0);
 }
 

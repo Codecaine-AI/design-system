@@ -212,8 +212,12 @@ export function captureSha256(app: AppEntry): string {
     repo: app.repo,
     root: app.root,
     theme: { rule: app.theme?.rule ?? null },
-    // lightSwitch only when set, so the sha of every entry without one is unchanged.
-    verify: { darkSwitch: app.verify?.darkSwitch ?? null, ...(app.verify?.lightSwitch ? { lightSwitch: app.verify.lightSwitch } : {}) },
+    // lightSwitch and lightSteps only when set, so the sha of every entry without them is unchanged.
+    verify: {
+      darkSwitch: app.verify?.darkSwitch ?? null,
+      ...(app.verify?.lightSwitch ? { lightSwitch: app.verify.lightSwitch } : {}),
+      ...(app.verify?.lightSteps ? { lightSteps: app.verify.lightSteps } : {}),
+    },
     run: app.run ?? null,
     commands: { cwd: app.commands?.cwd ?? null, build: app.commands?.build ?? null },
     runProfile: {

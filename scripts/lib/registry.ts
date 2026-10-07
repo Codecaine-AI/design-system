@@ -65,8 +65,17 @@ export interface RouteSpec {
   viewport?: { width: number; height: number };
   /** CSS selector that must be visible before capture. */
   waitFor?: string;
-  /** Navigation/view-only steps to reach the state (click a tab, open a panel). Never submit, save, delete, sync or send. */
-  steps?: Array<{ action: "click" | "press" | "hover" | "scroll" | "wait"; target?: string; value?: string | number }>;
+  /**
+   * Navigation/view-only steps to reach the state (click a tab, open a panel). Never submit, save, delete, sync or send.
+   * `check` and `uncheck` set a checkbox or switch (an input, or an element with role checkbox or switch and
+   * aria-checked) to that state, the way Playwright's setChecked does: a no-op when it is already there.
+   */
+  steps?: Array<{ action: StepAction; target?: string; value?: string | number }>;
+  /**
+   * Why this route's light visits skip verify.lightSteps: a page without the theme control (a playground
+   * that draws both themes itself). Set only with verify.lightSteps.
+   */
+  skipLightSteps?: string;
   /** CSS selectors whose boxes are masked in diffs. */
   masks?: string[];
   /** false = captured but never fails a pixel gate. Requires a reason. */
@@ -77,6 +86,31 @@ export interface RouteSpec {
    * in the judged set (B) is byte-identical to its light shot. Otherwise identical shots are only a warning.
    */
   darkDiffers?: boolean;
+}
+
+/** The actions a registry step may take (STEP_ACTIONS). */
+export type StepAction = "click" | "press" | "hover" | "scroll" | "wait" | "check" | "uncheck";
+export const STEP_ACTIONS: readonly StepAction[] = ["click", "press", "hover", "scroll", "wait", "check", "uncheck"];
+/** Actions that act on one element and need its selector as `target`. */
+const TARGET_ACTIONS: readonly StepAction[] = ["click", "hover", "check", "uncheck"];
+
+/**
+ * A step list's problems, one message each: an object per step, an action from STEP_ACTIONS, a string
+ * `target` where the action needs one (click, hover, check, uncheck), a string or number `value`.
+ */
+export function stepsProblems(steps: unknown, where: string): string[] {
+  if (!Array.isArray(steps)) return [`${where} must be an array of steps`];
+  const problems: string[] = [];
+  steps.forEach((step, i) => {
+    const name = `${where}[${i}]`;
+    if (step === null || typeof step !== "object" || Array.isArray(step)) return void problems.push(`${name} must be an object { action, target?, value? }`);
+    const s = step as Record<string, unknown>;
+    if (!(STEP_ACTIONS as readonly unknown[]).includes(s.action)) problems.push(`${name}.action ${JSON.stringify(s.action)} is not one of ${STEP_ACTIONS.join(", ")}`);
+    else if (TARGET_ACTIONS.includes(s.action as StepAction) && (typeof s.target !== "string" || s.target.length === 0)) problems.push(`${name}: ${s.action} needs a target selector`);
+    if (s.target !== undefined && typeof s.target !== "string") problems.push(`${name}.target must be a string`);
+    if (s.value !== undefined && typeof s.value !== "string" && typeof s.value !== "number") problems.push(`${name}.value must be a string or a number`);
+  });
+  return problems;
 }
 
 export interface RunProfile {
@@ -180,6 +214,29 @@ export type ThemeSwitch =
   /** Navigation/view-only steps (for example open the style rail, click its dark-mode toggle). Writes may land only in the run's temp state. */
   | { kind: "steps"; steps: NonNullable<RouteSpec["steps"]> };
 
+/**
+ * verify.lightSteps' problems, one message each: a non-empty step list (stepsProblems), not on a
+ * dark-first entry (verify never reads light there) and not together with a lightSwitch (one way to light).
+ */
+export function lightStepsProblems(steps: unknown, rule: ThemeRule | undefined, lightSwitch: unknown): string[] {
+  const where = "verify.lightSteps";
+  const problems = stepsProblems(steps, where);
+  if (Array.isArray(steps) && steps.length === 0) problems.push(`${where} is empty (omit it when light needs no steps)`);
+  if (rule === "dark-first") problems.push(`${where} is set on a dark-first entry: verify never reads light there, so nothing would check it`);
+  if (lightSwitch !== undefined) problems.push(`${where} and verify.lightSwitch are both set: name one way to reach light`);
+  return problems;
+}
+
+/**
+ * The light steps the tools run on a route: the entry's verify.lightSteps, or undefined (none, empty, a
+ * dark-first entry, or a route with skipLightSteps).
+ */
+export function lightSteps(app: { theme?: { rule?: ThemeRule }; verify?: { lightSteps?: unknown } }, route?: Pick<RouteSpec, "skipLightSteps">): NonNullable<RouteSpec["steps"]> | undefined {
+  const steps = app.verify?.lightSteps;
+  if (app.theme?.rule === "dark-first" || !Array.isArray(steps) || steps.length === 0 || route?.skipLightSteps !== undefined) return undefined;
+  return steps as NonNullable<RouteSpec["steps"]>;
+}
+
 /** verify.lightSwitch: a stored value only (see VerifySpec.lightSwitch for why). */
 export type LightSwitch = { kind: "storage"; key: string; value: string };
 
@@ -245,6 +302,17 @@ export interface VerifySpec {
    * Omit it when the app boots light: then light is the app as it boots, as before.
    */
   lightSwitch?: LightSwitch;
+  /**
+   * Navigation/view-only steps that put the app in light, for an app whose theme state outlives a visit
+   * (it saves the choice on its server, so the previous visit's dark carries into the next load). Use
+   * `check`/`uncheck` steps so they hold whatever state the page loads in, for example open the colors
+   * pane, uncheck the dark-mode toggle, wait for html[data-theme="light"]; the darkSwitch then `check`s it.
+   * Every light visit runs them where a dark visit runs darkSwitch's steps: snapshot capture and use:app
+   * after the page loads (after waitFor when the route has no steps) and before the route's steps;
+   * registry:prove before the route's steps; verify after the route was prepared, before the light reads.
+   * Not with lightSwitch, not on dark-first entries. Omit it when a fresh load is light.
+   */
+  lightSteps?: NonNullable<RouteSpec["steps"]>;
   /** Shell apps: the sidebar toggle (default ".ds-sidebar-toggle") and the storage key (default "<app>.sidebar"). */
   sidebar?: { toggle?: string; storageKey?: string };
 }
@@ -333,6 +401,12 @@ export function probeRole(probe: VerifySpec["probes"][number]): ProbeRole | null
   if (token.startsWith("color.text.")) return "text";
   if (token.startsWith("color.border.")) return "border";
   return null;
+}
+
+/** The route verify:apps checks: verify.route, else the first route. */
+export function verifyRoute(app: { verify?: { route?: string }; routes?: RouteSpec[] }): RouteSpec | undefined {
+  const id = app.verify?.route;
+  return id ? app.routes?.find((route) => route.id === id) : app.routes?.[0];
 }
 
 /** The themes verify:apps checks an app in: dark only on a dark-first surface, else light then dark. */
@@ -481,6 +555,15 @@ export function validateRegistry(registry: Registry): string[] {
     if (runnable && app.gates?.verify?.required && !app.verify) problems.push(`${app.id}: gates.verify is required but verify is missing`);
     if (app.verify) for (const problem of verifySpecProblems(app.verify, app.theme?.rule)) problems.push(`${app.id}: ${problem}`);
     if (app.verify?.lightSwitch !== undefined) for (const problem of lightSwitchProblems(app.verify.lightSwitch, app.theme?.rule)) problems.push(`${app.id}: ${problem}`);
+    if (app.verify?.lightSteps !== undefined)
+      for (const problem of lightStepsProblems(app.verify.lightSteps, app.theme?.rule, app.verify.lightSwitch)) problems.push(`${app.id}: ${problem}`);
+    for (const r of app.routes ?? []) if (r.steps !== undefined) for (const problem of stepsProblems(r.steps, `routes.${r.id}.steps`)) problems.push(`${app.id}: ${problem}`);
+    for (const r of app.routes ?? []) {
+      if (r.skipLightSteps === undefined) continue;
+      if (typeof r.skipLightSteps !== "string" || !r.skipLightSteps.trim()) problems.push(`${app.id}: route ${r.id} skipLightSteps must be the reason, a non-empty string`);
+      if (app.verify?.lightSteps === undefined) problems.push(`${app.id}: route ${r.id} sets skipLightSteps, but the entry has no verify.lightSteps`);
+    }
+    if (app.verify?.darkSwitch?.kind === "steps") for (const problem of stepsProblems(app.verify.darkSwitch.steps, "verify.darkSwitch.steps")) problems.push(`${app.id}: ${problem}`);
     if (!runnable) {
       for (const g of ["verify", "snapshot"] as const)
         if (app.gates?.[g]?.required) problems.push(`${app.id}: gates.${g} is required but run mode is none`);
