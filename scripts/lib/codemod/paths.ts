@@ -2,12 +2,12 @@
  * Where the codemod may write. Tables go only under the output folder, never into the owner's
  * tree (the shared validator, scripts/lib/safe-paths.ts) or a git checkout (reports stay out of
  * checkouts); `apply` edits only files inside the root it was given, and never the owner's tree
- * unless `--root` names that tree.
+ * unless `--root` names an owner root (OWNER_ROOTS), nor its private dirs (OWNER_PRIVATE).
  */
 
 import { existsSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
-import { canonicalPath, isWithin, OWNER_TREE, safeAppId, safeOutputPath, sameDir, UnsafePathError } from "../safe-paths.ts";
+import { canonicalPath, isOwnerRoot, isWithin, ownerPrivateDirs, OWNER_TREE, safeAppId, safeOutputPath, UnsafePathError } from "../safe-paths.ts";
 
 /** The git checkout holding `path` (a directory with `.git`), or null. */
 function gitCheckoutOf(path: string): string | null {
@@ -30,17 +30,18 @@ export function tableDir(outDir: string, app: string, ownerTree: string = OWNER_
 
 /**
  * The canonical root `apply` may edit. A root in the owner's tree is refused unless `--root` named
- * the owner's tree itself (the owner applying a table after the merge); a root read from the
+ * an owner root (OWNER_ROOTS) (the owner applying a table after the merge); a root read from the
  * table's own `root` field never reaches it.
  */
 export function applyRoot(root: string, explicit: boolean, ownerTree: string = OWNER_TREE): string {
   if (!existsSync(root)) throw new UnsafePathError(`root ${root} does not exist`);
-  const ownerRun = explicit && sameDir(root, ownerTree);
+  const ownerRun = explicit && isOwnerRoot(root, ownerTree);
+  const ownerRoot = join(ownerTree, "codebases");
   if (!ownerRun && isWithin(root, ownerTree)) {
     throw new UnsafePathError(
       explicit
-        ? `--root ${root} is inside the owner's tree: only --root ${ownerTree} itself applies there`
-        : `the table's root ${root} is in the owner's tree: pass --root ${ownerTree} to apply there`,
+        ? `--root ${root} is inside the owner's tree: only --root ${ownerRoot} itself applies there`
+        : `the table's root ${root} is in the owner's tree: pass --root ${ownerRoot} to apply there`,
     );
   }
   return canonicalPath(root);
@@ -54,6 +55,8 @@ export function targetIn(root: string, file: string, ownerTree: string = OWNER_T
   if (!existsSync(abs)) return { refused: `file not found under ${root}` };
   const real = canonicalPath(abs);
   if (!isWithin(real, root)) return { refused: `${JSON.stringify(file)} is a link out of the root (${real})` };
-  if (!sameDir(root, ownerTree) && isWithin(real, ownerTree)) return { refused: `${JSON.stringify(file)} resolves into the owner's tree (${real})` };
+  if (!isOwnerRoot(root, ownerTree) && isWithin(real, ownerTree)) return { refused: `${JSON.stringify(file)} resolves into the owner's tree (${real})` };
+  const priv = ownerPrivateDirs(ownerTree).find((dir) => isWithin(real, dir));
+  if (priv) return { refused: `${JSON.stringify(file)} resolves into the owner's private dir ${priv} (${real})` };
   return { path: real };
 }

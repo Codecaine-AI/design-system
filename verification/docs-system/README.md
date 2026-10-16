@@ -5,7 +5,7 @@ This harness proves that the docs-system web UI renders pixel-identical after it
 ## Check the migration
 
 ```bash
-cd /Users/Ford/workspace/design-system/verification/docs-system
+cd /Users/Ford/workspace/codebases/design-system/verification/docs-system
 bun snapshot.ts --out after        # about 1.5 min; starts and stops its own servers
 bun diff.ts --a before --b after   # exit 0 = every shot identical
 ```
@@ -32,7 +32,7 @@ The manifest records:
 
 ## Server command
 
-`lib/server.ts` runs this from `/Users/Ford/workspace/codecaine/core/docs-system`, with `S=/tmp/ds-verify-docs-system`:
+`lib/server.ts` runs this from `/Users/Ford/workspace/codebases/codecaine/core/docs-system`, with `S=/tmp/ds-verify-docs-system`:
 
 ```bash
 CODECAINE_DOCS_STATE_DIR=$S/state \
@@ -163,7 +163,7 @@ There are no other masks. No relative times or random ids appear on screen. Date
 
 ## Gotchas for the migration
 
-- **Vite file access:** if docs-system imports CSS from `/Users/Ford/workspace/design-system`, vite dev will likely refuse to serve it. `server.fs.allow` in `web/vite.config.ts` (line 56) covers only `codecaine/core` and the text-measure fonts. Add the path, or link the package inside the workspace. Otherwise AFTER renders unstyled.
+- **Vite file access:** if docs-system imports CSS from `/Users/Ford/workspace/codebases/design-system`, vite dev will likely refuse to serve it. `server.fs.allow` in `web/vite.config.ts` (line 56) covers only `codecaine/core` and the text-measure fonts. Add the path, or link the package inside the workspace. Otherwise AFTER renders unstyled.
 - **Selectors:** when a step selector stops matching, the shot fails with a timeout rather than a wrong image. Steps use data attributes and ARIA labels, not CSS classes, so renaming classes does not break them.
 - **The baseline is not in git:** the repo `.gitignore` ignores `verification/**/*.png`. Because of this, `before*` sets refuse to be overwritten without `--force`. BEFORE was captured from docs-system HEAD `2efb0c1` with no changes under `packages/`.
 

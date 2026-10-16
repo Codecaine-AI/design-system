@@ -51,6 +51,21 @@ describe("safeOutputPath", () => {
     expect(() => safeOutputPath(join(owner, "out"), { ownerTree: owner, root: mirror })).toThrow(UnsafePathError);
   });
 
+  test("an owner run from the codebases root may write in the owner's tree, never in its private dirs", () => {
+    const codebases = join(owner, "codebases");
+    mkdirSync(join(owner, "knowledge-base"), { recursive: true });
+    mkdirSync(join(owner, "docs"), { recursive: true });
+    mkdirSync(codebases, { recursive: true });
+    expect(safeOutputPath(join(owner, "out"), { ownerTree: owner, root: codebases })).toBe(join(owner, "out"));
+    expect(safeChildPath({ base: join(codebases, "run"), ownerTree: owner, root: codebases }, "x")).toBe(join(codebases, "run", "x"));
+    for (const priv of ["knowledge-base", "docs"]) {
+      for (const root of [codebases, owner]) {
+        expect(() => safeOutputPath(join(owner, priv, "out"), { ownerTree: owner, root })).toThrow(/private dir/);
+      }
+    }
+    expect(() => safeOutputPath(join(codebases, "out"), { ownerTree: owner, root: join(codebases, "apps") })).toThrow(/owner's tree/);
+  });
+
   test("the default owner tree is refused by its firmlink spelling and in another case (metadata reads only)", () => {
     for (const dest of ["/Users/Ford/workspace/ds-out", "/System/Volumes/Data/Users/Ford/workspace/ds-out", "/users/ford/WORKSPACE/ds-out"]) {
       expect(() => safeOutputPath(dest, { root: mirror })).toThrow(/owner's tree/);

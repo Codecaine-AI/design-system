@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 export const HARNESS_DIR = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 /** The Core docs-system checkout whose UI is screenshotted. Read-only for the harness. */
-export const DOCS_SYSTEM_REPO = "/Users/Ford/workspace/codecaine/core/docs-system";
+export const DOCS_SYSTEM_REPO = "/Users/Ford/workspace/codebases/codecaine/core/docs-system";
 
 /** Frozen copy of the corpora + theme state the screenshots render (see fixtures/frozen-inputs.json). */
 export const FIXTURE_ARCHIVE = join(HARNESS_DIR, "fixtures", "frozen-inputs.tar.gz");

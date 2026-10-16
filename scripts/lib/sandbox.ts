@@ -10,7 +10,8 @@
  *   reads    nothing under the real home except the --root tree, the runtimes the apps start with
  *            (~/.bun, ~/.nvm) and the Playwright browser cache (plus stat of home and the dirs on the way to
  *            them, so realpath works); never a `.env*` file anywhere; never a credential store or the
- *            owner's tree (HOME_SECRETS, OWNER_TREE unless it is the --root), even inside a readable dir
+ *            owner's tree (HOME_SECRETS, OWNER_TREE unless the --root is an owner root, OWNER_PRIVATE always),
+ *            even inside a readable dir
  *   writes   nowhere (deny file-write* under "/") except the app's own checkouts (checkouts.ts appScope:
  *            decision 29), the run's temp dir and the device files runtimes open. Inside those, never a
  *            `.git` entry or anything under one, never a git dir inside --root, never another repository's
@@ -67,7 +68,7 @@ import { HOME_SECRETS, OWNER_PORTS, OWNER_TREE } from "./owner";
 import { toolPackageDirs } from "./playwright";
 import { SYSTEM_BIN } from "./system-bin";
 import { DESIGN_SYSTEM_ROOT } from "./registry";
-import { canonicalPath, realHome, safeTempBase, sameDir } from "./safe-paths";
+import { canonicalPath, isOwnerRoot, ownerPrivateDirs, realHome, safeTempBase } from "./safe-paths";
 
 export { realHome };
 
@@ -324,7 +325,8 @@ function toolDirsUnder(root: string, outDir: string, designSystems: string[]): s
  * The run policy: writes only in the given dirs (the app's own checkouts) and the run's temp dir, never a
  * `.git` entry there, never the tool's dirs (toolDirsUnder); reads under home only in `root`, the runtimes
  * and the browser cache; credential stores and the owner's tree hidden (the owner's tree is readable when
- * it is `root` itself; the design-system checkout stays readable inside a hidden owner tree); network only
+ * `root` is an owner root, except its private dirs; the design-system checkout stays readable inside a
+ * hidden owner tree); network only
  * to the app's own block and allowedLocalPorts; listening only on its block; owner ports never.
  */
 export function runPolicy(opts: RunPolicyOptions): SandboxPolicy {
@@ -335,9 +337,10 @@ export function runPolicy(opts: RunPolicyOptions): SandboxPolicy {
   // <root>/design-system is just as much the tool's (its apps.json, scripts, dist): read-only for runs too.
   const rootDesignSystem = join(opts.root, "design-system");
   const designSystems = [designSystem, ...(existsSync(rootDesignSystem) ? [rootDesignSystem] : [])];
-  const ownerRun = sameDir(opts.root, owner);
+  const ownerRun = isOwnerRoot(opts.root, owner);
   const hidden = HOME_SECRETS.map((rel) => join(home, rel));
-  if (!ownerRun) hidden.push(owner);
+  // An owner run (--root is an owner root) reads the owner's tree but never its private dirs.
+  hidden.push(...(ownerRun ? ownerPrivateDirs(owner) : [owner]));
   const block = opts.blockPorts ?? [];
   const denied = [...new Set([...(opts.deniedPorts ?? OWNER_PORTS), ...(opts.extraDeniedPorts ?? [])])];
   const writable = opts.writable ?? [];

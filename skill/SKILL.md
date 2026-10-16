@@ -7,7 +7,7 @@ metadata:
 
 # Design System
 
-`/Users/Ford/workspace/design-system` (`@codecaine-ai/design-system`) is the one source of truth for how every Codecaine and Lascari AI app looks and is laid out. Read its `AGENTS.md` before UI work.
+`/Users/Ford/workspace/codebases/design-system` (`@codecaine-ai/design-system`) is the one source of truth for how every Codecaine and Lascari AI app looks and is laid out. Read its `AGENTS.md` before UI work.
 
 ## Style UI
 
@@ -15,7 +15,7 @@ metadata:
 2. Use the semantic roles (surface, text, border, fill, accent, link, status). Use hue tokens only for categorical color. Text uses `link`, never `accent`. `guide/tokens.md` lists every token.
 3. Never hard-code a color, size, spacing, radius, font, shadow, duration or z-index. Never copy token values into an app. In Tailwind, never use Tailwind's own scales (`bg-red-500`, `text-sm`, `shadow-md`, `rounded-lg`). New apps import `tailwind-strict.css` before `tailwind.css`, so those utilities don't generate at all.
 4. Check light and dark: set `data-theme="dark"` on `<html>`.
-5. Scan the folders you touched with `bun /Users/Ford/workspace/design-system/scripts/scan-literals.ts <dir>`. A new hard-coded literal is a bug.
+5. Scan the folders you touched with `bun /Users/Ford/workspace/codebases/design-system/scripts/scan-literals.ts <dir>`. A new hard-coded literal is a bug.
 
 ## Build a New App or Screen
 
@@ -25,7 +25,7 @@ metadata:
 ## Change the Look
 
 1. Edit `tokens/`. Never edit `dist/`.
-2. In `/Users/Ford/workspace/design-system`, run `bun run build`, `bun run check` and `bun run test`.
+2. In `/Users/Ford/workspace/codebases/design-system`, run `bun run build`, `bun run check` and `bun run test`.
 3. Open `dist/guide/index.html` and check light and dark. Every connected app picks up the change.
 
 ## Connect an App
@@ -39,7 +39,7 @@ metadata:
 
 ## Check an App
 
-Run these in `/Users/Ford/workspace/design-system`. `--root` defaults to the workspace that holds it.
+Run these in `/Users/Ford/workspace/codebases/design-system`. `--root` defaults to the workspace that holds it.
 
 1. Find the app's entry in `apps.json`: repo, wiring, entry stylesheet, scan paths, literal floor, run profile and routes. After you change an entry, run `bun run registry:check`.
 2. Run `bun run lint:apps <app>` (add `--pass <n>` to check one migration pass). It prints one line per violation and exits 0 when the app is wired and conformant.

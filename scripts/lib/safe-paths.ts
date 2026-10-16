@@ -5,7 +5,8 @@
  *   canonicalPath(p)       realpath of the nearest existing ancestor, plus the part that does not exist yet
  *   isWithin(p, dir)       directory identity (device + inode) up the canonical path, so a case variant,
  *                          the firmlink spelling (/System/Volumes/Data/Users/...) or a symlink still counts
- *   safeOutputPath(p, o)   the canonical destination; refuses the owner's tree unless `root` is that tree
+ *   safeOutputPath(p, o)   the canonical destination; refuses the owner's tree unless `root` is an owner
+ *                          root (OWNER_ROOTS), and the owner's private dirs (OWNER_PRIVATE) always
  *   safeAppId(id)          an app id that is safe as one path segment (the registry id pattern)
  *   safeSegment(name)      any other user-supplied path segment (set names, route ids)
  *   safeChildPath(b, ...s) a nested destination under a validated base: every segment safe, no symlinked
@@ -20,10 +21,28 @@ import { existsSync, lstatSync, readlinkSync, realpathSync, statSync } from "nod
 import { tmpdir } from "node:os";
 import { basename, dirname, isAbsolute, join, resolve, sep } from "node:path";
 
-import { HOME_FORBIDDEN, OWNER_TREE } from "./owner";
+import { HOME_FORBIDDEN, OWNER_PRIVATE, OWNER_ROOTS, OWNER_TREE } from "./owner";
 import { SYSTEM_BIN, SYSTEM_PATH } from "./system-bin";
 
 export { OWNER_TREE };
+
+/** Whether `root` is one of the owner's roots (OWNER_ROOTS under `owner`): the run is the owner's own. */
+export function isOwnerRoot(root: string, owner: string = OWNER_TREE): boolean {
+  return OWNER_ROOTS.some((rel) => sameDir(root, rel ? join(owner, rel) : owner));
+}
+
+/** The owner's private dirs (OWNER_PRIVATE under `owner`): hidden from and unwritable by every run. */
+export function ownerPrivateDirs(owner: string = OWNER_TREE): string[] {
+  return OWNER_PRIVATE.map((rel) => join(owner, rel));
+}
+
+/** Why `path` may not be written for a run with `root` (undefined: not an owner run), or null. */
+function ownerRefusal(path: string, root: string | undefined, owner: string): string | null {
+  const ownerRun = root !== undefined && isOwnerRoot(root, owner);
+  if (!ownerRun) return isWithin(path, owner) ? "the owner's tree" : null;
+  const priv = ownerPrivateDirs(owner).find((dir) => isWithin(path, dir));
+  return priv ? `the owner's private dir ${priv}` : null;
+}
 
 export class UnsafePathError extends Error {
   override name = "UnsafePathError";
@@ -144,7 +163,7 @@ export function sameDir(a: string, b: string): boolean {
 }
 
 export interface SafeOutputOptions {
-  /** The run's --root. Writes inside the owner's tree are allowed only when root is that tree itself. */
+  /** The run's --root. Writes inside the owner's tree are allowed only when root is an owner root (OWNER_ROOTS). */
   root?: string;
   /** Names the destination in errors ("--out-dir", "pack --out"). */
   label?: string;
@@ -155,16 +174,15 @@ export interface SafeOutputOptions {
 /**
  * Validates a destination before anything is created there and returns its canonical path. Refuses
  * the owner's tree (directly, through a symlink, a case variant or the firmlink spelling) unless
- * `root` is the owner's tree itself.
+ * `root` is an owner root (OWNER_ROOTS), and the owner's private dirs (OWNER_PRIVATE) in every run.
  */
 export function safeOutputPath(dest: string, opts: SafeOutputOptions = {}): string {
   const owner = opts.ownerTree ?? OWNER_TREE;
   const label = opts.label ?? "output path";
   if (!dest) throw new UnsafePathError(`${label} is empty`);
   const canonical = canonicalPath(dest);
-  const ownerRun = opts.root !== undefined && sameDir(opts.root, owner);
-  if (!ownerRun && isWithin(canonical, owner))
-    throw new UnsafePathError(`${label} ${dest} resolves into the owner's tree (${canonical}); write into the mirror or a temp dir`);
+  const refused = ownerRefusal(canonical, opts.root, owner);
+  if (refused) throw new UnsafePathError(`${label} ${dest} resolves into ${refused} (${canonical}); write into the mirror or a temp dir`);
   return canonical;
 }
 
@@ -183,7 +201,7 @@ export function safeSegment(name: string, label = "name"): string {
 export interface SafeChildBase {
   /** The output dir the nested path lives under (validated with safeOutputPath here). */
   base: string;
-  /** The run's --root (as for safeOutputPath: the owner's tree is allowed only when root is that tree). */
+  /** The run's --root (as for safeOutputPath: the owner's tree is allowed only when root is an owner root). */
   root?: string;
   /** The owner's tree; tests pass a temp dir. Default OWNER_TREE. */
   ownerTree?: string;
@@ -226,8 +244,8 @@ export function safeChildPath(base: string | SafeChildBase, ...segments: string[
     if (found === "file" && i < segments.length - 1) throw new UnsafePathError(`${label}: ${current} is a file, not a directory`);
     if (found === "missing") missing = true;
   });
-  const ownerRun = opts.root !== undefined && sameDir(opts.root, owner);
-  if (!ownerRun && isWithin(current, owner)) throw new UnsafePathError(`${label} ${current} resolves into the owner's tree`);
+  const refused = ownerRefusal(current, opts.root, owner);
+  if (refused) throw new UnsafePathError(`${label} ${current} resolves into ${refused}`);
   return current;
 }
 

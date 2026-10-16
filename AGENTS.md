@@ -1,6 +1,6 @@
 # Design system rules for agents
 
-`/Users/Ford/workspace/design-system` (`@codecaine-ai/design-system`) is the styling source of truth for every app in the workspace. These rules apply to UI work anywhere in the workspace, not only in this folder.
+`/Users/Ford/workspace/codebases/design-system` (`@codecaine-ai/design-system`) is the styling source of truth for every app in the workspace. These rules apply to UI work anywhere in the workspace, not only in this folder.
 
 ## Read first
 
@@ -42,7 +42,7 @@ To move a new app onto the package, follow [guide/migrate.md](guide/migrate.md).
 
 ## Commands
 
-Run in `/Users/Ford/workspace/design-system`. `--root` is the workspace to check. It defaults to the folder that holds this checkout. `app...` defaults to every app in `apps.json` (`test:apps` needs at least one app).
+Run in `/Users/Ford/workspace/codebases/design-system`. `--root` is the workspace to check. It defaults to the folder that holds this checkout. `app...` defaults to every app in `apps.json` (`test:apps` needs at least one app).
 
 | Command | Use |
 | --- | --- |

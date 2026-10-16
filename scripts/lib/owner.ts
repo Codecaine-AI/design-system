@@ -4,8 +4,24 @@
  * hold credentials or app state. One list each, imported by every check.
  */
 
-/** The owner's workspace. Tools write here only when `--root` is this tree itself. */
+/**
+ * The owner's workspace. Rollout runs never read or write here unless `--root` is one of the owner's
+ * roots (OWNER_ROOTS); even then OWNER_PRIVATE stays off limits.
+ */
 export const OWNER_TREE = "/Users/Ford/workspace";
+
+/**
+ * The `--root` values (relative to OWNER_TREE) that make a run the owner's own run. "codebases" holds
+ * every repository since the workspace move (so it is the default root: the parent of this checkout);
+ * "" is the tree itself, the layout before the move.
+ */
+export const OWNER_ROOTS: readonly string[] = ["codebases", ""];
+
+/**
+ * Dirs under OWNER_TREE (relative to it) that stay hidden from every sandboxed run and that no tool
+ * writes, owner runs included: the knowledge base and the workspace docs corpus.
+ */
+export const OWNER_PRIVATE: readonly string[] = ["knowledge-base", "docs"];
 
 /**
  * The owner's ports. No run binds or contacts them, whatever its profile says. The sandbox denies every

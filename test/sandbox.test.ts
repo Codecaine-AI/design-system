@@ -402,6 +402,28 @@ describe.skipIf(Boolean(unavailable))("sandbox profile", () => {
     ).toEqual(["ok owner read", "ok owner app write", "denied owner elsewhere"]);
   });
 
+  test("a run whose --root is the owner's codebases tree may read the owner's tree, never its private dirs", () => {
+    const codebases = join(owner, "codebases");
+    const cbApp = join(codebases, "app");
+    mkdirSync(cbApp, { recursive: true });
+    writeFileSync(join(cbApp, "src.ts"), "// app source");
+    for (const priv of ["knowledge-base", "docs"]) {
+      mkdirSync(join(owner, priv), { recursive: true });
+      writeFileSync(join(owner, priv, "note.md"), "private");
+    }
+    expect(
+      verdicts(
+        [
+          ["app read", `cat '${join(cbApp, "src.ts")}'`],
+          ["app write", `echo x > '${join(cbApp, "written")}'`],
+          ["kb read", `cat '${join(owner, "knowledge-base", "note.md")}'`],
+          ["docs read", `cat '${join(owner, "docs", "note.md")}'`],
+        ],
+        policy({ root: codebases, writable: [cbApp] }),
+      ),
+    ).toEqual(["ok app read", "ok app write", "denied kb read", "denied docs read"]);
+  });
+
   test("a home given by a symlinked spelling (/var for /private/var) is still enforced", () => {
     const spelled = join(tmpdir(), basename(scratch), "home");
     expect(spelled).not.toBe(home); // tmpdir() is the /var/folders spelling on macOS

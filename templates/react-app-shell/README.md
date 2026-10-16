@@ -186,19 +186,19 @@ cat > tsconfig.tmp.json <<'EOF'
     "strict": true, "jsx": "react-jsx", "module": "ESNext", "moduleResolution": "Bundler",
     "target": "ES2022", "lib": ["DOM", "DOM.Iterable", "ES2022"], "noEmit": true,
     "skipLibCheck": true, "noUnusedLocals": true, "noUnusedParameters": true,
-    "typeRoots": ["/Users/Ford/workspace/codecaine/core/node_modules/@types"], "types": ["bun"],
+    "typeRoots": ["/Users/Ford/workspace/codebases/codecaine/core/node_modules/@types"], "types": ["bun"],
     "paths": {
-      "react": ["/Users/Ford/workspace/codecaine/core/node_modules/@types/react"],
-      "react/*": ["/Users/Ford/workspace/codecaine/core/node_modules/@types/react/*"],
-      "react-dom/*": ["/Users/Ford/workspace/codecaine/core/node_modules/@types/react-dom/*"]
+      "react": ["/Users/Ford/workspace/codebases/codecaine/core/node_modules/@types/react"],
+      "react/*": ["/Users/Ford/workspace/codebases/codecaine/core/node_modules/@types/react/*"],
+      "react-dom/*": ["/Users/Ford/workspace/codebases/codecaine/core/node_modules/@types/react-dom/*"]
     }
   },
   "include": ["src"]
 }
 EOF
-/Users/Ford/workspace/codecaine/core/node_modules/.bin/tsc -p tsconfig.tmp.json   # no errors
+/Users/Ford/workspace/codebases/codecaine/core/node_modules/.bin/tsc -p tsconfig.tmp.json   # no errors
 
-ln -s /Users/Ford/workspace/codecaine/core/node_modules node_modules
+ln -s /Users/Ford/workspace/codebases/codecaine/core/node_modules node_modules
 bun test                                                                         # 15 pass, 0 fail, 3 files
 
 rm node_modules tsconfig.tmp.json

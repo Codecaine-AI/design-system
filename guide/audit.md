@@ -767,7 +767,7 @@ Paths are relative to `/Users/Ford/workspace`. "Literals" lists the hard count f
 The scanner skips build output, vendored code, submodules, tests and generated files on its own. `--json` adds per-file counts, `--hits` adds `file:line` for every hit, and `--fail-above <n>` turns a run into a CI ratchet.
 
 ```sh
-cd /Users/Ford/workspace/design-system
+cd /Users/Ford/workspace/codebases/design-system
 W=/Users/Ford/workspace; C=$W/codecaine/core; A=$W/apps
 scan() { bun scripts/scan-literals.ts "$@"; }
 
