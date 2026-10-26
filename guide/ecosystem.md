@@ -36,7 +36,7 @@ Status as of 2026-10-07. For current status run `bun run progress`.
 | prompt-kit-ui | `codecaine/core/prompt-kit/packages/prompt-kit` | `@codecaine-ai/prompt-kit` | host-css library | Migrated: pass 1 (2, 3 n/a) | n/a |
 | system-view | `system-view` | `system-view` | vendor-tgz | Migrated: passes 1, 2, 3. Not under git, so not rolled out (see [Rollout record](#rollout-record)). | Shell |
 | agent-skills-manager | `lascari-ai/agent-skills/manager` | none (vanilla JS) | copy | Migrated: passes 1, 2 (3 n/a) | Shell |
-| skitzo | `apps/skitzo/apps/frontend` | `frontend` | vendor-tgz | Migrated: passes 1, 2, 3 | Shell |
+| skitzo | `experiments/skitzo/apps/frontend` | `frontend` | vendor-tgz | Migrated: passes 1, 2, 3 | Shell |
 | personal-site | `lascari-ai/personal-site` | `lascari-personal-site` | vendor-tgz | Excluded: out of scope. Its migration branch is not merged. | n/a |
 | annotations | `codecaine/core/annotations` | `@codecaine-ai/annotations` | host-css library | Pending: uncommitted `package.json` version line | n/a |
 | observatory | `codecaine/core/observatory` | `@codecaine-ai/observatory` | link | Pending: uncommitted `package.json`, 4 UI files and 3 untracked items | Shell |
@@ -98,7 +98,7 @@ The first rollout shipped on 2026-10-07. Each repo's `origin/main` was fast-forw
 | `codecaine/core/agent-kernel` | `96a37c2` | viewer-shell, viewer-ui, simple-research-kernel |
 | `codecaine/core/prompt-kit` | `5f447dd` | prompt-kit-ui |
 | `lascari-ai/agent-skills` | `3bf833a` | agent-skills-manager |
-| `apps/skitzo` | `a83c7d7` | skitzo |
+| `experiments/skitzo` | `a83c7d7` | skitzo |
 
 Not rolled out:
 

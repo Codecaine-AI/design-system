@@ -4143,11 +4143,11 @@
       "name": "skitzo",
       "wave": 3,
       "kind": "app",
-      "repo": "apps/skitzo",
-      "root": "apps/skitzo/apps/frontend",
+      "repo": "experiments/skitzo",
+      "root": "experiments/skitzo/apps/frontend",
       "scan": {
         "paths": [
-          "apps/skitzo/apps/frontend/src/app"
+          "experiments/skitzo/apps/frontend/src/app"
         ],
         "exclude": []
       },
@@ -4160,7 +4160,7 @@
         "via": "vendor-tgz",
         "detail": "Owner decision: a packed copy through file:vendor/<name>.tgz that carries its fonts; the Docker context is apps/frontend. Add a Clerk appearance bridge to the tokens."
       },
-      "entryStylesheet": "apps/skitzo/apps/frontend/src/app/layout.tsx",
+      "entryStylesheet": "experiments/skitzo/apps/frontend/src/app/layout.tsx",
       "theme": {
         "rule": "dark-first"
       },
@@ -4223,10 +4223,10 @@
       "run": {
         "mode": "none",
         "reason": "no screen renders without Clerk: src/middleware.ts runs clerkMiddleware on every route and calls auth.protect() on everything but /, /sign-in, /sign-up and /api/webhooks, and the landing ((guest)/page.tsx) calls auth(). Without keys Clerk's keyless mode calls Clerk's API and writes .clerk/ into the repo; with keys it needs the owner's credentials. Postgres: /templates, /templates/[id], /contexts, /interviews and /interview/* read or write through getAuthUser and src/db (their actions.ts); /dashboard is static but still behind auth.protect(). A profile needs a Clerk test stub (or a dev-only auth bypass) and a fixture database",
-        "cwd": "apps/skitzo/apps/frontend"
+        "cwd": "experiments/skitzo/apps/frontend"
       },
       "commands": {
-        "cwd": "apps/skitzo/apps/frontend",
+        "cwd": "experiments/skitzo/apps/frontend",
         "typecheck": "./node_modules/.bin/tsc --noEmit"
       },
       "tests": {
