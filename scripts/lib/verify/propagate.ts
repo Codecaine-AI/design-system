@@ -22,6 +22,7 @@ import { installSignalHandlers } from "../app-runner";
 import { OWNER_TREE } from "../owner";
 import { appState, describePasses, parseLedger, passCells } from "../progress/ledger";
 import type { AppEntry, ConsumeVia, Registry } from "../registry";
+import { designSystemIn } from "../registry";
 import { safeChildPath } from "../safe-paths";
 import { SYSTEM_BIN, SYSTEM_PATH } from "../system-bin";
 
@@ -150,7 +151,7 @@ export function checkPropagateRoot(root: string | undefined, flag = "--propagate
   const owner = real(OWNER_TREE);
   const rootReal = realpathSync(root);
   if (isInside(rootReal, owner)) throw new Refusal(`${flag} refuses the owner's tree (${rootReal}); pass the mirror or a scratch copy`);
-  const ds = join(rootReal, "design-system");
+  const ds = designSystemIn(rootReal);
   if (!existsSync(join(ds, THEMES_DIR))) throw new Refusal(`${flag}: no design-system with ${THEMES_DIR}/ under ${rootReal}`);
   if (isInside(realpathSync(ds), owner)) throw new Refusal(`${flag}: ${ds} resolves into the owner's tree (${realpathSync(ds)})`);
   return rootReal;

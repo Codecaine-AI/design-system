@@ -87,7 +87,7 @@ import { ALL_CATEGORIES, DEFAULT_CATEGORIES, propose, type ScanInput } from "./l
 import { droppedText, readTable, summarize, writeTable, type Table } from "./lib/codemod/table.ts";
 import { loadTokens, type Theme } from "./lib/codemod/tokens.ts";
 import type { TailwindTarget } from "./lib/codemod/size-role.ts";
-import { DESIGN_SYSTEM_ROOT, loadRegistry, type AppEntry } from "./lib/registry.ts";
+import { DESIGN_SYSTEM_ROOT, loadRegistry, type AppEntry, workspaceRoot } from "./lib/registry.ts";
 import { safeAppId } from "./lib/safe-paths.ts";
 import { SYSTEM_BIN, SYSTEM_PATH } from "./lib/system-bin.ts";
 
@@ -200,7 +200,7 @@ export function classTarget(app: AppEntry | null): { tailwind: TailwindTarget; f
 }
 
 function runPropose(args: Args): void {
-  const root = args.root ?? resolve(DESIGN_SYSTEM_ROOT, "..");
+  const root = args.root ?? workspaceRoot();
   const app = loadRegistry().apps.find((x) => x.id === args.app) ?? null;
   if (!app && !args.paths.length) throw new Error(`apps.json has no app "${args.app}": pass --paths for an app not in the registry yet`);
   const input: ScanInput = {

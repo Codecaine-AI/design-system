@@ -268,7 +268,7 @@ export function materialize(): Workspace {
 
   // Every app resolves the fake package through the workspace's hoisted node_modules.
   mkdirSync(join(root, "node_modules/@codecaine-ai"), { recursive: true });
-  symlinkSync("../../design-system", join(root, "node_modules/@codecaine-ai/design-system"));
+  symlinkSync("../../codecaine/core/design-system", join(root, "node_modules/@codecaine-ai/design-system"));
 
   // Line limit: exactly at it (connected passes) and one over it (an app fails, a library warns).
   write(join(root, "apps/connected/src/limit.ts"), linesOfCode(400));

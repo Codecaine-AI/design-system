@@ -67,7 +67,7 @@ import { basename, dirname, join } from "node:path";
 import { HOME_SECRETS, OWNER_PORTS, OWNER_TREE } from "./owner";
 import { toolPackageDirs } from "./playwright";
 import { SYSTEM_BIN } from "./system-bin";
-import { DESIGN_SYSTEM_ROOT } from "./registry";
+import { DESIGN_SYSTEM_ROOT, designSystemIn } from "./registry";
 import { canonicalPath, isOwnerRoot, ownerPrivateDirs, realHome, safeTempBase } from "./safe-paths";
 
 export { realHome };
@@ -277,7 +277,7 @@ export interface RunPolicyOptions {
   ownerTree?: string;
   /**
    * The design-system checkout the tool runs from: readable, never writable. Default DESIGN_SYSTEM_ROOT.
-   * `<root>/design-system`, when it exists, is read-only as well, whichever checkout the tool runs from.
+   * `<root>/codecaine/core/design-system`, when it exists, is read-only as well, whichever checkout the tool runs from.
    */
   designSystem?: string;
   /** The app's port block (registry: 47000 + 10 x index): connect and listen. */
@@ -334,8 +334,8 @@ export function runPolicy(opts: RunPolicyOptions): SandboxPolicy {
   const owner = opts.ownerTree ?? OWNER_TREE;
   const designSystem = opts.designSystem ?? DESIGN_SYSTEM_ROOT;
   // The design-system checkout the tool runs from may be a tooling worktree; the tree's own
-  // <root>/design-system is just as much the tool's (its apps.json, scripts, dist): read-only for runs too.
-  const rootDesignSystem = join(opts.root, "design-system");
+  // <root>/codecaine/core/design-system is just as much the tool's (its apps.json, scripts, dist): read-only for runs too.
+  const rootDesignSystem = designSystemIn(opts.root);
   const designSystems = [designSystem, ...(existsSync(rootDesignSystem) ? [rootDesignSystem] : [])];
   const ownerRun = isOwnerRoot(opts.root, owner);
   const hidden = HOME_SECRETS.map((rel) => join(home, rel));

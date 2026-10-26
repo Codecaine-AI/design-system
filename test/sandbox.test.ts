@@ -24,12 +24,13 @@ import {
   SandboxUnavailable,
   type SandboxPolicy,
 } from "../scripts/lib/sandbox.ts";
+import { designSystemIn } from "../scripts/lib/registry.ts";
 
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "ds-sandbox-")));
 const home = join(scratch, "home");
 const owner = join(home, "workspace");
 const root = join(home, "workspace-ds");
-const ds = join(root, "design-system"); // the real layout: the checkout the tool runs from sits inside --root
+const ds = designSystemIn(root); // the real layout: the checkout the tool runs from sits inside --root (codecaine/core/design-system)
 const out = join(root, "rollout"); // the run folder, which is also the tool's out dir
 const app = join(root, "app"); // the app's own checkout: the only dir under --root a run may write
 const vendor = join(app, "external", "vendor"); // another repository's checkout nested in the app's (read-only, appScope)

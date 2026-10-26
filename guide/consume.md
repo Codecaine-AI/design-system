@@ -6,7 +6,7 @@ How an app depends on `@codecaine-ai/design-system` and loads its CSS. Read it b
 
 | The app | Wiring | Apps from [audit.md](audit.md) |
 | --- | --- | --- |
-| Is a Codecaine Core workspace member | `"workspace:*"`. Core's root `workspaces` already lists `../../design-system`. | docs-workbench, sequence studio, canvas studio, canvas-agent viewer, simple-research-kernel |
+| Is a Codecaine Core workspace member | `"workspace:*"`. Core's root `workspaces` already lists `design-system` (the folder sits inside Core). | docs-workbench, sequence studio, canvas studio, canvas-agent viewer, simple-research-kernel |
 | Is in another bun repo | Add the design-system path to the repo's root `workspaces`, then `"workspace:*"`. | budget web, pen-plotter, gamecube, system-view |
 | Already takes Core packages through `link:` | `"link:@codecaine-ai/design-system"` (section 3) | observatory |
 | Uses npm and builds on this machine | `"file:<relative path to design-system>"`. npm symlinks a folder. | MainMenu |
@@ -18,7 +18,7 @@ How an app depends on `@codecaine-ai/design-system` and loads its CSS. Read it b
 
 ## 2. bun workspace member
 
-1. In the repo's root `package.json`, add the design-system folder to `workspaces`, relative to that file. Examples: `"../../design-system"` in `life/budget`, `apps/pen-plotter` and `harnesses/gamecube-decomp-harness`. `"../design-system"` in `system-view` (a single package: add a `workspaces` array to it).
+1. In the repo's root `package.json`, add the design-system folder to `workspaces`, relative to that file. Examples: `"../../codecaine/core/design-system"` in `life/budget`, `apps/pen-plotter` and `harnesses/gamecube-decomp-harness`. `"../codecaine/core/design-system"` in `system-view` (a single package: add a `workspaces` array to it).
 2. In the app's `package.json`, add `"@codecaine-ai/design-system": "workspace:*"`.
 3. Run `bun install` at the repo root.
 4. Check: `ls -l node_modules/@codecaine-ai/design-system` (in the root or the app folder) shows a symlink to the design-system folder.
@@ -34,7 +34,7 @@ Core members skip step 1.
 
 ## 4. npm `file:` to the folder
 
-1. In the app's `package.json`: `"@codecaine-ai/design-system": "file:<path>"`, relative to that file. MainMenu (`apps/MainMenu/apps/scene-engine`) uses `"file:../../../../design-system"`.
+1. In the app's `package.json`: `"@codecaine-ai/design-system": "file:<path>"`, relative to that file. MainMenu (`apps/MainMenu/apps/scene-engine`) uses `"file:../../../../codecaine/core/design-system"`.
 2. Run `npm install`.
 3. Check: `node_modules/@codecaine-ai/design-system` is a symlink. An `.npmrc` with `install-links=true` makes npm copy the folder instead. Remove that setting.
 

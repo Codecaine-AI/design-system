@@ -28,7 +28,7 @@ import { checkLintReport, fileSha256, type LintSource, readLintFile, runLinter }
 import { buildProgress, type ProgressModel } from "./lib/progress/model.ts";
 import { renderHtml } from "./lib/progress/render-html.ts";
 import { renderMarkdown } from "./lib/progress/render-md.ts";
-import { DESIGN_SYSTEM_ROOT, loadRegistry, REGISTRY_PATH } from "./lib/registry.ts";
+import { DESIGN_SYSTEM_ROOT, loadRegistry, REGISTRY_PATH, workspaceRoot } from "./lib/registry.ts";
 import { toolOutputDir } from "./lib/output-dir.ts";
 import { safeChildPath } from "./lib/safe-paths.ts";
 import { SYSTEM_BIN, SYSTEM_PATH } from "./lib/system-bin.ts";
@@ -64,7 +64,7 @@ export function parseArgs(argv: string[], env: Record<string, string | undefined
     if (value === undefined || value.startsWith("--")) throw new Error(`${flag} needs a value\n${USAGE}`);
     given[key] = resolve(value);
   }
-  const root = given.root ?? resolve(DESIGN_SYSTEM_ROOT, "..");
+  const root = given.root ?? workspaceRoot();
   return {
     root,
     outDir: given.outDir ?? (env.DS_RUN ? resolve(env.DS_RUN) : join(tmpdir(), "ds-rollout")),

@@ -36,7 +36,7 @@ import { cleanupRuns, installSignalHandlers, launchBrowser, refreshStartedPorts,
 import { CaptureError, captureRoute, routeThemes, shotKey, warmUp } from "./lib/capture";
 import { toolOutputDir } from "./lib/output-dir";
 import { playwrightVersion } from "./lib/playwright";
-import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, REGISTRY_PATH, resolvePath, type AppEntry, type Registry, type RouteSpec } from "./lib/registry";
+import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, REGISTRY_PATH, resolvePath, type AppEntry, type Registry, type RouteSpec, workspaceRoot, designSystemIn } from "./lib/registry";
 import { safeAppId, safeSegment } from "./lib/safe-paths";
 import {
   captureSha256,
@@ -81,7 +81,7 @@ const appId = flag("--app");
 const set = flag("--set");
 if (!appId || !set) fail("usage: bun run snapshot --app <id> --set <name> [--root <dir>] [--only <route>,...] [--out-dir <dir>] [--force] [--registry <apps.json>]");
 if (!SET_NAME.test(set)) fail(`--set must be a plain name (letters, digits, . _ -): ${set}`);
-const root = resolve(flag("--root") ?? resolve(DESIGN_SYSTEM_ROOT, ".."));
+const root = resolve(flag("--root") ?? workspaceRoot());
 // Shared destination check: never the owner's tree or a git checkout; ids that stay one segment.
 const outDir = orFail(() => {
   safeAppId(appId);
@@ -104,7 +104,7 @@ if (only) {
 const routes: RouteSpec[] = (app.routes ?? []).filter((route) => !only || only.includes(route.id));
 if (routes.length === 0) fail(`${app.id}: no routes selected${only ? ` (--only ${only.join(",")})` : ""}`);
 
-const blocker = propagateBlocker({ outDirs: [outDir, process.env.DS_RUN], dsDirs: [join(root, "design-system"), DESIGN_SYSTEM_ROOT] });
+const blocker = propagateBlocker({ outDirs: [outDir, process.env.DS_RUN], dsDirs: [designSystemIn(root), DESIGN_SYSTEM_ROOT] });
 if (blocker) fail(`refusing to capture: ${blocker}`);
 
 // Every shot the registry asks for, whatever --only selects. snapshot:diff --exact judges against the
@@ -174,7 +174,7 @@ function repoState(path: string) {
 function sha256(path: string): string | null {
   return existsSync(path) ? createHash("sha256").update(readFileSync(path)).digest("hex") : null;
 }
-const dsInRoot = join(root, "design-system");
+const dsInRoot = designSystemIn(root);
 // Every repository this capture reads, pinned before the app starts (startApp pins the app's checkouts too).
 const gitPins = orFail(() => pinRepos([resolvePath(root, app.repo), resolvePath(root, app.root), dsInRoot, DESIGN_SYSTEM_ROOT]));
 /** Problems reading the trees for provenance (a git failure): manifest warnings, never a crash. */

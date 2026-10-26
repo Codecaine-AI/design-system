@@ -127,10 +127,10 @@ Use `cssVar()` in inline styles. A raw value from `tokens` does not switch with 
 
 | Where | How |
 | --- | --- |
-| Inside Codecaine Core | Core's `workspaces` already lists this folder (`../../design-system`). Add `"@codecaine-ai/design-system": "workspace:*"` to the app, then run `bun install` at the Core root. |
+| Inside Codecaine Core | Core's `workspaces` already lists this folder (`design-system`: it sits inside Core). Add `"@codecaine-ai/design-system": "workspace:*"` to the app, then run `bun install` at the Core root. |
 | Another bun app | Add this folder's relative path to the root `workspaces` and depend on `"workspace:*"`, or run `bun link` here and `bun link @codecaine-ai/design-system` in the app. Both are live symlinks. |
 | An npm app | `"@codecaine-ai/design-system": "file:<relative path to this folder>"`. npm symlinks a `file:` folder, so it stays live. |
-| No package manager | Import by path: `@import "../../design-system/dist/css/tokens.css";` |
+| No package manager | Import by path, relative to the stylesheet. From `codebases/<group>/<app>/src/index.css`: `@import "../../../codecaine/core/design-system/dist/css/tokens.css";` |
 
 Do not use `file:` with bun. Bun snapshots the folder at install time (bun 1.4 links each file that exists then; older versions copy them), so a file added later, such as a new `dist/` output, is missing until `bun install` runs again.
 

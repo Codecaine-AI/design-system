@@ -82,7 +82,7 @@ import { OWNER_PORTS } from "./owner";
 import { designSystemUrlPath, DS_URL_PREFIX, findPackageDir } from "./lint/workspace";
 import { headlessShellPath, loadPlaywright, noteAppStarted, pinElectron, pinPlaywright, playwrightAnchor, playwrightDirs } from "./playwright";
 import { portProblems, PROFILE_PORTS } from "../registry-check";
-import { DESIGN_SYSTEM_ROOT, resolvePath, validateRegistry, type AppEntry, type Registry } from "./registry";
+import { DESIGN_SYSTEM_ROOT, resolvePath, validateRegistry, type AppEntry, type Registry, designSystemIn } from "./registry";
 import { safeAppId, safeOutputPath, safeTempBase } from "./safe-paths";
 import { SYSTEM_BIN, SYSTEM_PATH } from "./system-bin";
 import { BROWSER_PROFILE_PARAM, browserPolicy, runPolicy, SANDBOX_EXEC, sandboxCommand, sandboxProfile, sandboxUnavailable, writeProfileFile, type SandboxPolicy } from "./sandbox";
@@ -1018,7 +1018,7 @@ export async function startApp(app: AppEntry, opts: StartOptions): Promise<Runni
   // Decision 29: the run writes only the app's own checkouts (and its temp dir). Read before anything
   // starts, with the repositories every git call of this tool is pinned to and Playwright loaded and hashed.
   const scope = appScope(root, app);
-  pinRepos([...scope.checkouts, join(root, "design-system"), DESIGN_SYSTEM_ROOT]);
+  pinRepos([...scope.checkouts, designSystemIn(root), DESIGN_SYSTEM_ROOT]);
   // Each dir the run may write, as it is now (the dir itself and its `.git` entry): stop() compares, and a
   // change is a violation, so no later tool process pins a repository a run swapped in (Opus R4 P0-1).
   const scopeBefore = checkoutStates(scope.writable);

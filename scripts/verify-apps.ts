@@ -28,7 +28,7 @@ import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { GitPinError, pinFor, pinnedGit, pinRepos } from "./lib/git";
-import { type AppEntry, DESIGN_SYSTEM_ROOT, getApp, loadRegistry, type PassId, REGISTRY_PATH, type Registry, resolvePath } from "./lib/registry";
+import { type AppEntry, DESIGN_SYSTEM_ROOT, getApp, loadRegistry, type PassId, REGISTRY_PATH, type Registry, resolvePath, workspaceRoot, designSystemIn } from "./lib/registry";
 import { toolOutputDir } from "./lib/output-dir";
 import { safeAppId, safeChildPath, UnsafePathError } from "./lib/safe-paths";
 import { type Assertion, fail, na, pass } from "./lib/verify/assertions";
@@ -134,7 +134,7 @@ function git(dir: string, ...args: string[]): string | null {
 /** Pins every repository this run reads (git.ts) before the first app starts: the design-system checkouts and each app's. */
 function pinAppRepos(root: string, apps: AppEntry[]) {
   const dirs = apps.flatMap((app) => [app.repo, app.root, ...(app.scan?.paths ?? [])].filter((path): path is string => typeof path === "string").map((path) => resolvePath(root, path)));
-  pinRepos([DESIGN_SYSTEM_ROOT, join(root, "design-system"), ...dirs.filter((dir) => existsSync(dir))]);
+  pinRepos([DESIGN_SYSTEM_ROOT, designSystemIn(root), ...dirs.filter((dir) => existsSync(dir))]);
 }
 
 function designSystemMeta(values: BuildValues): AppResult["designSystem"] {
@@ -233,7 +233,7 @@ async function runtime(app: AppEntry, session: Session, check: Parameters<typeof
 
 /** The design-system checkouts whose fonts/ count for an app without a resolved package (host-css): the root's own. */
 function rootPackageDir(root: string): string | null {
-  const dir = join(root, "design-system");
+  const dir = designSystemIn(root);
   try {
     return JSON.parse(readFileSync(join(dir, "package.json"), "utf8")).name === PACKAGE ? realpathSync(dir) : null;
   } catch {
@@ -242,8 +242,8 @@ function rootPackageDir(root: string): string | null {
 }
 
 async function verifyMode(args: Args, registry: Registry): Promise<number> {
-  const root = realpathSync(resolve(args.root ?? join(DESIGN_SYSTEM_ROOT, "..")));
-  const blocker = propagateBlocker({ outDirs: [args.outDir, process.env.DS_RUN], dsDirs: [join(root, "design-system"), DESIGN_SYSTEM_ROOT] });
+  const root = realpathSync(resolve(args.root ?? workspaceRoot()));
+  const blocker = propagateBlocker({ outDirs: [args.outDir, process.env.DS_RUN], dsDirs: [designSystemIn(root), DESIGN_SYSTEM_ROOT] });
   if (blocker) throw new Refusal(`refusing to verify: ${blocker}`);
   // Processes a crashed earlier run left behind (the runner's records in <out-dir>/runs).
   const { cleanupRuns } = await import("./lib/app-runner");
@@ -313,7 +313,7 @@ async function verifyMode(args: Args, registry: Registry): Promise<number> {
 
 async function propagateMode(args: Args, registry: Registry): Promise<number> {
   const root = checkPropagateRoot(args.root);
-  const dsDir = join(root, "design-system");
+  const dsDir = designSystemIn(root);
   const journalDir = outPath(args, "propagate journal", "propagate-journal");
   const statePath = join(process.env.DS_RUN || args.outDir, "STATE.md");
   const eligibility = eligibleApps(registry, args.apps, existsSync(statePath) ? readFileSync(statePath, "utf8") : null);
@@ -382,7 +382,7 @@ function restoreMode(args: Args): number {
     console.error(`verify:apps --restore: no propagate journal at ${journalDir}; nothing restored`);
     return 1;
   }
-  const dsDir = realpathSync(join(root, "design-system"));
+  const dsDir = realpathSync(designSystemIn(root));
   if (manifest.dsDir !== dsDir) throw new Refusal(`--restore: the journal is for ${manifest.dsDir}, not ${dsDir}`);
   const result = restoreFromJournal(journalDir);
   // A build the crashed run left running is stopped before anything is restored.

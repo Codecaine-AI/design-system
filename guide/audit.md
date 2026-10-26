@@ -94,7 +94,7 @@ The skipped surfaces are listed in [Skip](#skip).
    - canvas: TS presets that need resolved hex for SVG and resvg, because they cannot read CSS variables
    - gamecube: effect engine
 3. **Core can reach the package; most other repos cannot yet.**
-   - Core is wired: `codecaine/core/package.json` lists `../../design-system` in its workspaces, so Core packages depend on it with `workspace:*`, a live symlink.
+   - Core is wired: `codecaine/core/package.json` lists `design-system` (the folder inside Core) in its workspaces, so Core packages depend on it with `workspace:*`, a live symlink.
    - Other bun repos need the same wiring: the design-system path in the root `workspaces` plus `workspace:*`, or `bun link`.
    - Do not use a bun `file:` dependency. bun materializes it at install time, so new or regenerated token files stay stale until `bun install` runs again. That breaks "change a token once". npm's `file:` for a directory is a symlink and stays live.
    - The package is `private`. Five apps build in Docker, Vercel or Railway contexts that cannot see a path outside the repo: personal-site, skitzo, CircleSnakesWeb, x-replier and x-writer.
@@ -136,7 +136,7 @@ A tokens-only pass through waves 0–3 is 227.5h. Changes from the brief:
 | 1 | Consumer recipe. Core already resolves the package (`workspace:*`). Document the wiring for other repos: bun = the design-system path in the root `workspaces` plus `workspace:*`, or `bun link`, never `file:`; npm = `file:` to the directory (a symlink). Add the Vite settings (`server.fs.allow`, `@source`, `optimizeDeps.exclude`). | A bun `file:` dependency goes stale; Vite blocks files outside the project root. | 0.5 | Waves 1, 2 |
 | 2 | Ship fonts and `color-scheme`: `@font-face` for Inter and IBM Plex Mono, sourced from `@codecaine-ai/text-measure` so canvas measurement does not drift. | [layout.md](layout.md) "Known gaps"; pen-plotter's CSP blocks remote fonts. | 1.5 | Wave 1 |
 | 3 | One alias sheet for the agent-viewer host contract (about 60 names: shadcn, `trace-*`, `status-*`, `agentprism-*`, `syntax-*`, `editor-*`) mapped to `--ds-*`. | It replaces hand-copied contracts in budget, gamecube and kurate. | 3 | Wave 1 |
-| 4 | Pack-and-vendor flow (`npm pack` to `vendor/*.tgz` plus a `file:` dep), the same as docs-publish. | Docker, Vercel and Railway builds cannot see `../design-system`. | 2 | Waves 2, 3 |
+| 4 | Pack-and-vendor flow (`npm pack` to `vendor/*.tgz` plus a `file:` dep), the same as docs-publish. | Docker, Vercel and Railway builds cannot see `../codecaine/core/design-system`. | 2 | Waves 2, 3 |
 | 5 | Tailwind v3 preset (decision 3). | Six v3 surfaces. | 3 | Waves 1, 2 |
 | 6 | Data-viz palette tokens. | ECharts in budget, token-burner charts. | 2 | Wave 2 |
 | 7 | Dark-first variant (decision 2). | Ten dark-only surfaces. | 4 | Wave 3 |
@@ -461,7 +461,7 @@ Paths are relative to `/Users/Ford/workspace`. "Literals" lists the hard count f
 | Literals | 37 hard (23 definitions) |
 | Shell | 1/3. A resizable tree sidebar (200–600px, width persisted). No collapse, rail or topbar. The right side is a native WebContentsView. |
 | Structure | 15 files. 2 over 400 lines: `App.tsx` 786 (7 inline icons), `lock-in.ts` 435. |
-| Consume via | It is a single bun package: add `"workspaces": ["../design-system"]` to its `package.json` and depend on `workspace:*` (a live symlink), or use `bun link`. Then import the CSS in `renderer/src/main.tsx`. Update `THEME_TOKEN_NAMES` when docs-workbench moves to `--ds-*`. |
+| Consume via | It is a single bun package: add `"workspaces": ["../codecaine/core/design-system"]` to its `package.json` and depend on `workspace:*` (a live symlink), or use `bun link`. Then import the CSS in `renderer/src/main.tsx`. Update `THEME_TOKEN_NAMES` when docs-workbench moves to `--ds-*`. |
 | Hours | Tokens 4 (includes `git init`). Shell 3. Slices 4. **11** |
 | Risks | No version control: the workspace repo ignores this folder. The bridge silently falls back when docs-workbench renames variables. `viewer.setBounds` clamps the sidebar to at least 200px. |
 | Wave | 1, right after docs-workbench's tokens |
@@ -503,7 +503,7 @@ Paths are relative to `/Users/Ford/workspace`. "Literals" lists the hard count f
 | Literals | 263 hard (162 definitions, which are the palette copy; 69 px font sizes; 18 radii) |
 | Shell | N/A (a site; [layout.md](layout.md) exempts it) |
 | Structure | Vanilla `_components` partials. No UI file over 400 lines. |
-| Consume via | Vendored tgz through `file:vendor/<name>.tgz` (prerequisite 4), the same as docs-publish. A tarball is a versioned snapshot on purpose: a token change needs a repack and a version bump. The Railway Docker context cannot see `../../design-system`. |
+| Consume via | Vendored tgz through `file:vendor/<name>.tgz` (prerequisite 4), the same as docs-publish. A tarball is a versioned snapshot on purpose: a token change needs a repack and a version bump. The Railway Docker context cannot see `../../codecaine/core/design-system`. |
 | Hours | Tokens 7.5. Slices 1. **8.5** (plus 1h to republish docs-publish) |
 | Risks | Blog styling only moves when docs-publish migrates. The palette copy drifts from docs-system today. |
 | Wave | 2 |
@@ -547,7 +547,7 @@ Paths are relative to `/Users/Ford/workspace`. "Literals" lists the hard count f
 | Literals | 1,757 hard: 1,008 inline colors (603 distinct hex), 516 px font sizes (24 sizes), 161 radii. [990 px spacing] |
 | Shell | 2/3, and the source of [layout.md](layout.md). It has the sidebar, the header toggle, a 68px rail and a sticky 72px topbar with the title and Refresh. Gaps: collapse is not persisted (`useState` at `AppLayout.tsx:29`); no inspector (`SidePeek.tsx` is unused and a modal opens instead); no lanes; `AppLayout` is tied to the budget domain; the same subnav rule is copied for 7 subnavs (accounts, activity, budget, classification, config, merchant, overview). |
 | Structure | `pages/<13 slices>/{page.tsx, _components/, model.ts, *.css}`. Folder-per-component only as `Named/Named.tsx` (13 folders), no `index.tsx`. 23 flat `_components`. 146 files. 2 over 400 lines: `TransactionLedger.tsx` 939, `transactions.css` 588. About 6 more are dense: `ReviewContent.tsx` is 205 lines and 18.5 KB. |
-| Consume via | Add `../../design-system` to the root `workspaces` in `life/budget/package.json` and depend on `workspace:*` from `apps/web`: a live symlink, the same wiring Core uses. `bun link` also works. If budget must build from a clean clone, use a 4th submodule at `packages/design-system` instead (pinned; bump it to pick up token changes). Not a bun `file:` dependency. `@import` in `src/styles.css`. |
+| Consume via | Add `../../codecaine/core/design-system` to the root `workspaces` in `life/budget/package.json` and depend on `workspace:*` from `apps/web`: a live symlink, the same wiring Core uses. `bun link` also works. If budget must build from a clean clone, use a 4th submodule at `packages/design-system` instead (pinned; bump it to pick up token changes). Not a bun `file:` dependency. `@import` in `src/styles.css`. |
 | Hours | Tokens 41: a 29h sweep, 6.5h QA (dark mode is new) and 4h for the v3 kernel view and ECharts. Shell 3: adopt `templates/react-app-shell` for persistence, the inspector and lanes. Slices 15 (+2.6 if `index.tsx` is mandatory). **59** |
 | Risks | 155 of 199 `src` files are untracked: commit first. Tests import deep paths, and 2 tests read source as text. The kernel view is pinned to budget's own agent-kernel submodule, 10 commits behind Core. ECharts needs JS tokens for dark mode. |
 | Wave | 2 |
@@ -562,7 +562,7 @@ Paths are relative to `/Users/Ford/workspace`. "Literals" lists the hard count f
 | Literals | 183 hard (109 inline colors, 36 px font sizes, 20 radii) |
 | Shell | 1/3. A 3-column grid: settings stack, preview, plot inspector. No topbar. |
 | Structure | 21 flat renderer files (20 in `src/` plus `index.html`). 6 over 400 lines; the UI ones are `styles.css` 963, `Preview.tsx` 754, `PlotPanel.tsx` 493, `DrawMode.tsx` 410. |
-| Consume via | Add `../../design-system` to the root `workspaces` in `apps/pen-plotter/package.json` and depend on `workspace:*` from `apps/desktop` (a live symlink), or use `bun link`. Not a bun `file:` dependency. Then `@import`. The CSP (`default-src 'self'`) needs local fonts (prerequisite 2). |
+| Consume via | Add `../../codecaine/core/design-system` to the root `workspaces` in `apps/pen-plotter/package.json` and depend on `workspace:*` from `apps/desktop` (a live symlink), or use `bun link`. Not a bun `file:` dependency. Then `@import`. The CSP (`default-src 'self'`) needs local fonts (prerequisite 2). |
 | Hours | Tokens 5.5. Shell 4. Slices 14. **23.5** |
 | Risks | The most active repo, with 10 open worktrees in `apps/pen-plotter-worktrees`. Canvas colors encode machine state. Run QA on the mock board, never during a live plot. |
 | Wave | 2, after the worktrees merge |
@@ -579,7 +579,7 @@ Paths are relative to `/Users/Ford/workspace`. "Literals" lists the hard count f
 | Literals | 779 hard (615 arbitrary values, 120 colors). [287 palette classes] |
 | Shell | 1/3. A fixed 236px sidebar and a 34px breadcrumb bar with no title or actions. `/editor` has its own grid: hierarchy, canvas, inspector. |
 | Structure | Flat `_components`, no `index.tsx`. 166 files, 39 components. 10 over 400 lines: `MainMenuConfigEditor.tsx` 2291, `ScreenWorkspace.tsx` 845, `extraction-helper.css` 776, `LayerForm.tsx` 602. |
-| Consume via | npm `file:../../../../design-system` (npm links a directory, so it stays live) plus `@import` in `globals.css`. The package CSS and fonts must survive `prepare-next-runtime.mjs` for Electron. |
+| Consume via | npm `file:../../../../codecaine/core/design-system` (npm links a directory, so it stays live) plus `@import` in `globals.css`. The package CSS and fonts must survive `prepare-next-runtime.mjs` for Electron. |
 | Hours | Tokens 22. Shell 5. Slices 24. **51** |
 | Risks | The arbitrary classes and the `!important` layer must go together. Editor work is uncommitted. `workspace.catalog.json` points at a stale codecaine-site path. |
 | Wave | 3 (dark-first variant) |
@@ -609,7 +609,7 @@ Paths are relative to `/Users/Ford/workspace`. "Literals" lists the hard count f
 | Literals | 1,087 hard. Colors: 203 definitions, 275 inline, 264 distinct hex. 408 arbitrary values, 153 px font sizes. |
 | Shell | 3/3, the best in the workspace. Header toggle, 52px icon rail, persisted. A right DetailsRail inspector (collapsible, resizable 400–860px, persisted). A PageHeader topbar, though some pages build their own. |
 | Structure | Mixed: 25 `index.tsx` folders and 15 flat files. 129 files. 7 over 400 lines: `styles.css` 1653, `sync/index.tsx` 657. The dense `knowledge/browser.tsx` is 128 lines and 29.8 KB. |
-| Consume via | Add `../../design-system` to the root `workspaces` and depend on `workspace:*` (a live symlink), or `link:@codecaine-ai/design-system` the way it takes prompt-kit. Not a bun `file:` dependency. Then `@import` and `@source`. |
+| Consume via | Add `../../codecaine/core/design-system` to the root `workspaces` and depend on `workspace:*` (a live symlink), or `link:@codecaine-ai/design-system` the way it takes prompt-kit. Not a bun `file:` dependency. Then `@import` and `@source`. |
 | Hours | Tokens 23. Shell 3. Slices 23. **49** |
 | Risks | Three dark palettes coexist. TX-02 is licensed and part of the app's identity. The table rhythm is a fixed 32/64px. bun link registrations are per machine. |
 | Wave | 3. Lift its rail and inspector persistence into the shell template sooner. |
@@ -641,7 +641,7 @@ Paths are relative to `/Users/Ford/workspace`. "Literals" lists the hard count f
 | Literals | 474 hard: 306 in TSX (301 arbitrary values, `text-[11px]` ×72) and 168 in the theme JSON (122 distinct hex). Inline colors: 0. |
 | Shell | 2/3. `components/layout/AppShell.tsx`: collapsible sidebar (`w-56` to `w-14`), icon rail, persisted (`spectre-sidebar-collapsed`). The toggle sits in its own row, not the header. The topbar only shows below `lg`; pages render their own h1 in 5 styles. No lanes, no inspector. |
 | Structure | Next-style route folders. 12 `_components` folders, all flat, no `index.tsx`. 273 files. 22 over 400 lines: `term-draw/draw-state.ts` 2569, `projects-api.ts` 1130, `ThemeEditorModal.tsx` 982, `DocsActionPane.tsx` 965, `DocsTab.tsx` 841. |
-| Consume via | Add the package as a submodule at `packages/design-system` plus a workspaces entry, then `workspace:*`. It is pinned like Spectre's Core submodules, and it builds in Docker. For local work, a `../../design-system` workspaces entry is the live alternative. `.dark` works, because the package supports `.dark`. |
+| Consume via | Add the package as a submodule at `packages/design-system` plus a workspaces entry, then `workspace:*`. It is pinned like Spectre's Core submodules, and it builds in Docker. For local work, a `../../codecaine/core/design-system` workspaces entry is the live alternative. `.dark` works, because the package supports `.dark`. |
 | Hours | Tokens 18.5 (option A). Shell 6. Slices 65. **89.5** |
 | Risks | The TX-02-to-Inter swap is the biggest visual change. The theme editor, FigJam theme and grain conflict with one look. Embedded Core UI repaints through Spectre's variables. |
 | Wave | Later, after decision 1. Option A tokens can follow wave 1. |
@@ -767,7 +767,7 @@ Paths are relative to `/Users/Ford/workspace`. "Literals" lists the hard count f
 The scanner skips build output, vendored code, submodules, tests and generated files on its own. `--json` adds per-file counts, `--hits` adds `file:line` for every hit, and `--fail-above <n>` turns a run into a CI ratchet.
 
 ```sh
-cd /Users/Ford/workspace/codebases/design-system
+cd /Users/Ford/workspace/codebases/codecaine/core/design-system
 W=/Users/Ford/workspace; C=$W/codecaine/core; A=$W/apps
 scan() { bun scripts/scan-literals.ts "$@"; }
 

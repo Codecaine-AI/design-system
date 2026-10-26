@@ -10,10 +10,10 @@ import { spawn, spawnSync } from "node:child_process";
 import { cpSync, existsSync, linkSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { connect } from "node:net";
 import { tmpdir } from "node:os";
-import { join, relative } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { CONTEXT_OPTIONS, LAUNCH_OPTIONS } from "../scripts/lib/capture.ts";
 import { loadPlaywright } from "../scripts/lib/playwright.ts";
-import { type AppEntry, DESIGN_SYSTEM_ROOT, type Registry } from "../scripts/lib/registry.ts";
+import { type AppEntry, DESIGN_SYSTEM_ROOT, designSystemIn, type Registry } from "../scripts/lib/registry.ts";
 import { sentinelAssertions } from "../scripts/lib/verify/page-checks.ts";
 import {
   buildHashes,
@@ -46,7 +46,7 @@ afterAll(async () => {
 
 /** A scratch workspace root (or `root`) whose design-system is a freshly built copy of this package. */
 function scratchRoot(root = mkdtempSync(join(scratch, "root-"))) {
-  const ds = join(root, "design-system");
+  const ds = designSystemIn(root);
   for (const path of ["package.json", "tokens", "scripts", "dist"]) cpSync(join(DESIGN_SYSTEM_ROOT, path), join(ds, path), { recursive: true });
   mkdirSync(join(ds, "guide"));
   cpSync(join(DESIGN_SYSTEM_ROOT, "guide/tokens.md"), join(ds, "guide/tokens.md"));
@@ -82,7 +82,7 @@ const THEME = `${JSON.stringify({ color: { surface: { page: { $value: "#ffffff" 
  */
 function miniDs(build = "cp tokens/themes/light.tokens.json dist/light.json") {
   const root = mkdtempSync(join(scratch, "mini-"));
-  const ds = join(root, "design-system");
+  const ds = designSystemIn(root);
   for (const dir of ["tokens/themes", "dist", "guide"]) mkdirSync(join(ds, dir), { recursive: true });
   writeFileSync(join(ds, "tokens/themes/light.tokens.json"), THEME);
   writeFileSync(join(ds, "dist/light.json"), THEME);
@@ -265,7 +265,8 @@ describe("refusals", () => {
   if (ownerExists) {
     symlinkSync(OWNER_TREE, ownerLink);
     mkdirSync(dsLinkRoot);
-    symlinkSync(join(OWNER_TREE, "design-system"), join(dsLinkRoot, "design-system"));
+    mkdirSync(dirname(designSystemIn(dsLinkRoot)), { recursive: true });
+    symlinkSync(designSystemIn(join(OWNER_TREE, "codebases")), designSystemIn(dsLinkRoot));
   }
 
   // No app ids and no STATE.md: even a broken refusal could not reach a rebuild.
@@ -455,7 +456,7 @@ describe("a build a crashed run left behind", () => {
   test("a journaled build records its own pid, start time and process group (not this process's) while it runs; the record is cleared when it returns", () => {
     // The toy build saves what the journal holds while it runs, and the identity of its parent (bun run).
     const { ds, journal } = miniDs(
-      "cp ../out/propagate-journal/build.json identity.json && cp ../out/propagate-journal/manifest.json manifest-during.json && echo $PPID > ppid && LC_ALL=C ps -o lstart= -p $PPID > ppid-started",
+      "cp ../../../out/propagate-journal/build.json identity.json && cp ../../../out/propagate-journal/manifest.json manifest-during.json && echo $PPID > ppid && LC_ALL=C ps -o lstart= -p $PPID > ppid-started",
     );
     writeJournal(ds, journal);
     const result = runPackageScript(ds, "build", journal);
@@ -547,7 +548,7 @@ describe("a build a crashed run left behind", () => {
 
 describe("what a propagate build runs", () => {
   test("the build's own shell records its identity with the system ps, rm and mv, never ones planted in PATH", () => {
-    const { ds, journal } = miniDs("cp ../out/propagate-journal/build.json identity.json && cp tokens/themes/light.tokens.json dist/light.json");
+    const { ds, journal } = miniDs("cp ../../../out/propagate-journal/build.json identity.json && cp tokens/themes/light.tokens.json dist/light.json");
     const planted = plantBin(mkdtempSync(join(scratch, "path-")));
     writeJournal(ds, journal);
     const path = process.env.PATH;

@@ -16,7 +16,7 @@ import { existsSync, lstatSync, readdirSync, readFileSync, readlinkSync } from "
 import { isAbsolute, join, relative } from "node:path";
 
 import { gitEntryState, GitPinError, pinFor, pinnedGit } from "./git";
-import { type AppEntry, resolvePath } from "./registry";
+import { type AppEntry, resolvePath, designSystemIn } from "./registry";
 import { canonicalPath } from "./safe-paths";
 
 /** Everything a shot's provenance records except the capture time. */
@@ -178,10 +178,10 @@ export function changedGitEntries(recorded: unknown): string[] {
     .map((repo) => `${repo.workTree}: its .git entry changed since the capture (${repo.entry.split("\n")[0]} -> ${gitEntryState(repo.workTree).split("\n")[0]}); refusing to run git there`);
 }
 
-/** The state of the app repo and of `<root>/design-system` right now. Problems reading them go to `warnings`. */
+/** The state of the app repo and of `<root>/codecaine/core/design-system` right now. Problems reading them go to `warnings`. */
 export function treeState(root: string, app: AppEntry, warnings: Set<string> = new Set()): TreeState {
   const repo = resolvePath(root, app.repo);
-  const dsDir = join(root, "design-system");
+  const dsDir = designSystemIn(root);
   const status = git(repo, ["status", "--porcelain"]);
   const tokensCss = join(dsDir, "dist/css/tokens.css");
   return {

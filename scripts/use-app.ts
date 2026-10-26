@@ -45,7 +45,7 @@ import {
 } from "./lib/app-runner";
 import { GitPinError, pinFor, pinnedGit, pinRepos } from "./lib/git";
 import { toolOutputDir } from "./lib/output-dir";
-import { type AppEntry, DESIGN_SYSTEM_ROOT, getApp, loadRegistry, REGISTRY_PATH, type Registry, resolvePath } from "./lib/registry";
+import { type AppEntry, DESIGN_SYSTEM_ROOT, getApp, loadRegistry, REGISTRY_PATH, type Registry, resolvePath, workspaceRoot, designSystemIn } from "./lib/registry";
 import { safeAppId, safeChildPath, UnsafePathError } from "./lib/safe-paths";
 import { checkoutChange, type Isolation, judge, type RepoState, stampOf, type Visit, visitPlan } from "./lib/use-app/log";
 import { visitRoute } from "./lib/use-app/visit";
@@ -98,7 +98,7 @@ const repoState = (dir: string): RepoState => {
 };
 
 async function useApp(app: AppEntry, registry: Registry, args: Args): Promise<number> {
-  const root = realpathSync(resolve(args.root ?? join(DESIGN_SYSTEM_ROOT, "..")));
+  const root = realpathSync(resolve(args.root ?? workspaceRoot()));
   const timestamp = new Date().toISOString();
   const stamp = stampOf(timestamp);
   const base = { base: args.outDir, root: args.root, label: "use:app output" };
@@ -107,7 +107,7 @@ async function useApp(app: AppEntry, registry: Registry, args: Args): Promise<nu
   mkdirSync(dirname(shotPath("x.png")), { recursive: true });
 
   // Every repository git reads, pinned before the app starts (git.ts); what the run used.
-  const dsInRoot = join(root, "design-system");
+  const dsInRoot = designSystemIn(root);
   const appRepo = resolvePath(root, app.repo);
   pinRepos([DESIGN_SYSTEM_ROOT, dsInRoot, appRepo, resolvePath(root, app.root)].filter((dir) => existsSync(dir)));
   const meta = {
@@ -217,7 +217,7 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
     console.error(`use:app: ${app.id}: Electron runs are refused: an Electron launch writes ~/Library/Preferences through cfprefsd, which the sandbox cannot stop; set ${ELECTRON_OPT_IN}=1 only where the owner allows it`);
     return 2;
   }
-  const blocker = propagateBlocker({ outDirs: [args.outDir, process.env.DS_RUN], dsDirs: [join(resolve(args.root ?? join(DESIGN_SYSTEM_ROOT, "..")), "design-system"), DESIGN_SYSTEM_ROOT] });
+  const blocker = propagateBlocker({ outDirs: [args.outDir, process.env.DS_RUN], dsDirs: [designSystemIn(resolve(args.root ?? workspaceRoot())), DESIGN_SYSTEM_ROOT] });
   if (blocker) {
     console.error(`use:app: refusing to run: ${blocker}`);
     return 1;

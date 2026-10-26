@@ -71,7 +71,7 @@ import { appScope, gitEntries, statusSnapshot, type WriteScope } from "./lib/che
 import { describeConnection, exposedListeners } from "./lib/egress";
 import { discoverRepo } from "./lib/git";
 import { OWNER_PORTS } from "./lib/owner";
-import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, REGISTRY_PATH, resolvePath, type AppEntry, type Registry, type TestBaseline } from "./lib/registry";
+import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, REGISTRY_PATH, resolvePath, type AppEntry, type Registry, type TestBaseline, workspaceRoot } from "./lib/registry";
 import { safeAppId, safeChildPath, safeOutputPath, safeTempBase } from "./lib/safe-paths";
 import { EPHEMERAL_PORTS, runPolicy, sandboxCommand, sandboxUnavailable, SANDBOX_EXEC, type SandboxPolicy } from "./lib/sandbox";
 import { SYSTEM_BIN, SYSTEM_PATH } from "./lib/system-bin";
@@ -695,7 +695,7 @@ export function defaultOutDir(env: NodeJS.ProcessEnv = process.env): string {
 export function parseArgs(argv: string[], env: NodeJS.ProcessEnv = process.env): CliOptions {
   const outDir = argv.includes("--out-dir") ? undefined : defaultOutDir(env);
   const opts: CliOptions = {
-    root: resolve(DESIGN_SYSTEM_ROOT, ".."),
+    root: workspaceRoot(),
     registry: REGISTRY_PATH,
     outDir: outDir ?? "",
     apps: [],

@@ -12,7 +12,7 @@ export const OWNER_TREE = "/Users/Ford/workspace";
 
 /**
  * The `--root` values (relative to OWNER_TREE) that make a run the owner's own run. "codebases" holds
- * every repository since the workspace move (so it is the default root: the parent of this checkout);
+ * every repository since the workspace move (so it is the default root: workspaceRoot(), three levels above this checkout);
  * "" is the tree itself, the layout before the move.
  */
 export const OWNER_ROOTS: readonly string[] = ["codebases", ""];
