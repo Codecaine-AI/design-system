@@ -1,35 +1,35 @@
 {
   "literals": [
     {
-      "file": "apps/skitzo/apps/frontend/src/app/(guest)/page.tsx",
+      "file": "experiments/skitzo/apps/frontend/src/app/(guest)/page.tsx",
       "reason": "owner decision and audit wave 3: skitzo migrates its app screens only; the landing (hero, serif display, brass accent) is brand and stays (142 hits; includes the landing-route scrollbar radius; includes the system sans stack the landing actually rendered in, since Outfit never applied on :root)"
     },
     {
-      "file": "apps/skitzo/apps/frontend/src/app/(app)/**",
+      "file": "experiments/skitzo/apps/frontend/src/app/(app)/**",
       "match": "^text-\\[1\\.5rem\\]$",
       "category": "twArbitrary",
       "reason": "page headings in the brand display face (Cormorant Garamond, font-display) at 24px (was text-2xl, written text-[1.5rem]/8 to keep its 32px line); no font-size token within 2px (reading 18px, title 36px): kept per decision 65a; heading-size token gap (3 hits: record titles kept as h2 in EditTemplateForm, EditContextForm and InterviewReport; page titles moved to the topbar in pass 2)"
     },
     {
-      "file": "apps/skitzo/apps/frontend/src/app/(app)/layout.tsx",
+      "file": "experiments/skitzo/apps/frontend/src/app/(app)/layout.tsx",
       "match": "^(text-\\[22px\\]|tracking-\\[0\\.3em\\])$",
       "category": "twArbitrary",
       "reason": "the SKITZO wordmark in the sidebar is brand art (decision 11 precedent: a brand face stays on the wordmark); its size and tracking stay, its color is text-ink (2 hits)"
     },
     {
-      "file": "apps/skitzo/apps/frontend/src/app/(guest)/sign-*/**",
+      "file": "experiments/skitzo/apps/frontend/src/app/(guest)/sign-*/**",
       "match": "^(text-\\[1\\.875rem\\]|tracking-\\[0\\.3em\\])$",
       "category": "twArbitrary",
       "reason": "the same wordmark above Clerk's sign-in and sign-up (was text-3xl, kept as text-[1.875rem]/9) (4 hits)"
     },
     {
-      "file": "apps/skitzo/apps/frontend/src/app/(app)/templates/**",
+      "file": "experiments/skitzo/apps/frontend/src/app/(app)/templates/**",
       "match": "^w-\\[(38|62)%\\]$",
       "category": "twArbitrary",
       "reason": "lg two-column split of the template editor and its loading skeleton; layout geometry with no token, kept (decision 43; pass 2 decides the layout) (4 hits)"
     },
     {
-      "file": "apps/skitzo/apps/frontend/src/app/(app)/interview/**",
+      "file": "experiments/skitzo/apps/frontend/src/app/(app)/interview/**",
       "match": "^max-w-\\[72%\\]$",
       "category": "twArbitrary",
       "reason": "chat bubble width cap (InterviewChat and its loading skeleton); layout geometry, kept (decision 43) (3 hits)"
@@ -37,17 +37,17 @@
   ],
   "twClasses": [
     {
-      "file": "apps/skitzo/apps/frontend/src/app/(guest)/page.tsx",
+      "file": "experiments/skitzo/apps/frontend/src/app/(guest)/page.tsx",
       "className": ".*",
       "reason": "the brand landing keeps its classes (owner decision: landing heroes stay)"
     },
     {
-      "file": "apps/skitzo/apps/frontend/src/app/(app)/**",
+      "file": "experiments/skitzo/apps/frontend/src/app/(app)/**",
       "className": "^animate-pulse$",
       "reason": "skeleton loaders and placeholders pulse (Tailwind 2 s pulse); no looping-motion token (canvas-studio precedent) (45 hits)"
     },
     {
-      "file": "apps/skitzo/apps/frontend/src/app/(app)/**",
+      "file": "experiments/skitzo/apps/frontend/src/app/(app)/**",
       "className": "^animate-spin$",
       "reason": "busy spinners on buttons; no looping-motion token (10 hits)"
     }

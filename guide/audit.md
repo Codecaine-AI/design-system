@@ -588,7 +588,7 @@ Paths are relative to `/Users/Ford/workspace`. "Literals" lists the hard count f
 
 | | |
 | --- | --- |
-| Path | `apps/skitzo/apps/frontend/src` (`app/`, `components/`) |
+| Path | `experiments/skitzo/apps/frontend/src` (`app/`, `components/`) |
 | Stack | Next 16.1 (Turbopack), React 19.2, Tailwind 4.1 (`@theme inline`), Clerk 6. npm and bun lockfiles. Docker. |
 | Theme | Dark-only. `globals.css` `@theme` holds 9 colors and 3 fonts, plus about 25 raw hex values. Outfit, IBM Plex Mono and Cormorant Garamond. 2–4px. Brass accent. |
 | Literals | 751 hard (643 arbitrary values such as `text-[#hex]`). [95 palette classes] |
@@ -635,7 +635,7 @@ Paths are relative to `/Users/Ford/workspace`. "Literals" lists the hard count f
 
 | | |
 | --- | --- |
-| Path | `codecaine/spectre/apps/frontend` (`src/`, `index.html`). Skip `packages/*` (submodule copies of Core), `.spectre/` and `.worktrees/`. |
+| Path | `experiments/spectre/apps/frontend` (`src/`, `index.html`). Skip `packages/*` (submodule copies of Core), `.spectre/` and `.worktrees/`. |
 | Stack | React 19.2, TanStack Router 1.139, React Query 5, Vite 7.3, Tailwind 4, shadcn new-york (10 primitives), bun (Spectre root workspace). |
 | Theme | A JSON engine: `src/theme/themes/{spectre-light, spectre-dark, spectre-figjam}.json` emit 233 variables. They are resolved in the browser and injected as `<style id="spectre-theme-vars">`. `ThemeEditorModal` saves overrides and a grain overlay. A guard test forbids literals outside the theme JSON. TX-02 body, Bank Gothic display, Inter only in the canvas. `rounded-md` 6px. |
 | Literals | 474 hard: 306 in TSX (301 arbitrary values, `text-[11px]` ×72) and 168 in the theme JSON (122 distinct hex). Inline colors: 0. |
@@ -678,7 +678,7 @@ Paths are relative to `/Users/Ford/workspace`. "Literals" lists the hard count f
 
 | | |
 | --- | --- |
-| Path | `apps/font-pipe/apps/web/src` |
+| Path | `experiments/font-pipe/apps/web/src` |
 | Stack | Next 15.5, React 19.2, Tailwind 3.4, bun workspace |
 | Theme | Broken: the body is hard-coded dark (`bg-neutral-950`) while components use light utilities. No palette file. |
 | Literals | 15 hard [136 palette classes] |
@@ -691,7 +691,7 @@ Paths are relative to `/Users/Ford/workspace`. "Literals" lists the hard count f
 
 | | |
 | --- | --- |
-| Path | `apps/font-pipe/apps/font-creation/font-effects/web` (`src/`, `index.html`, `composer/index.html`) |
+| Path | `experiments/font-pipe/apps/font-creation/font-effects/web` (`src/`, `index.html`, `composer/index.html`) |
 | Stack | Vanilla JS, Vite 5.4, Tailwind 4.2 (imported, mostly unused), plain CSS, npm inside a bun repo |
 | Theme | Light control panel beside a neutral gray stage (`#858384`). The stage is functional; keep it. Avenir Next. |
 | Literals | 159 hard (153 in `styles.css`) |
@@ -802,17 +802,17 @@ scan $A/pen-plotter/apps/desktop/src/renderer
 # Wave 3
 MM=$A/MainMenu/apps/scene-engine/app
 scan $MM/_components $MM/editor $MM/projects $MM/asset-library $MM/upload $MM/scenes $MM/page.tsx $MM/layout.tsx $MM/globals.css $MM/extraction-helper.css
-scan $A/skitzo/apps/frontend/src/app $A/skitzo/apps/frontend/src/components
+scan $W/experiments/skitzo/apps/frontend/src/app $W/experiments/skitzo/apps/frontend/src/components
 scan $W/harnesses/gamecube-decomp-harness/apps/frontend/src --exclude assets
 scan $A/circle-snakes/CircleSnakesWeb/src/ui $A/circle-snakes/CircleSnakesWeb/src/app --exclude landing --exclude logo-lab --exclude loading.css --exclude loading-screen.ts
 
 # Later
-scan $W/codecaine/spectre/apps/frontend/src $W/codecaine/spectre/apps/frontend/index.html
-scan $W/codecaine/spectre/apps/frontend/src/theme/themes --ext json
+scan $W/experiments/spectre/apps/frontend/src $W/experiments/spectre/apps/frontend/index.html
+scan $W/experiments/spectre/apps/frontend/src/theme/themes --ext json
 scan $A/x-replier/X-Replier-Frontend/app $A/x-replier/X-Replier-Frontend/components
 scan $A/x-writer-main/x-writer/X-Writer-Frontend/{app,components,lib}
-scan $A/font-pipe/apps/web/src
-scan $A/font-pipe/apps/font-creation/font-effects/web/src $A/font-pipe/apps/font-creation/font-effects/web/index.html $A/font-pipe/apps/font-creation/font-effects/web/composer/index.html
+scan $W/experiments/font-pipe/apps/web/src
+scan $W/experiments/font-pipe/apps/font-creation/font-effects/web/src $W/experiments/font-pipe/apps/font-creation/font-effects/web/index.html $W/experiments/font-pipe/apps/font-creation/font-effects/web/composer/index.html
 scan $W/codecaine/utilities/token-burner/src/web
 scan $W/experiments/ai-age/apps/frontend/{app,components,contexts,lib}
 scan $W/codecaine/utilities/sotto/scripts/archive
