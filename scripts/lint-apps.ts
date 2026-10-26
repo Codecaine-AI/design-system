@@ -62,7 +62,7 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { validateLoadedRegistry } from "./lib/app-runner";
-import { DESIGN_SYSTEM_ROOT, REGISTRY_PATH, loadRegistry } from "./lib/registry";
+import { REGISTRY_PATH, loadRegistry, workspaceRoot } from "./lib/registry";
 import { canonicalPath, safeAppId, safeChildPath, safeOutputPath } from "./lib/safe-paths";
 import { loadDesignSystem } from "./lib/lint/design-system";
 import { exitCode, formatText, lintApps, registryDirOf } from "./lib/lint/run";
@@ -71,7 +71,7 @@ import { realpathOrNull } from "./lib/lint/workspace";
 
 const USAGE = `Usage: bun run lint:apps [--root <dir>] [--pass <1|2|3>] [--json] [--out-dir <dir>] [--registry <apps.json>] [app...]
 
-  --root <dir>        workspace tree to check (default: ${resolve(DESIGN_SYSTEM_ROOT, "..")})
+  --root <dir>        workspace tree to check (default: ${workspaceRoot()})
   --pass <n>          1: resolution, wiring, literals, names; 2: + shell; 3: + structure
                       (default: every check the registry marks required)
   --json              print the JSON report
@@ -115,7 +115,7 @@ export function reportPath(outDir: string, root: string, stamp: string): string 
 }
 
 export function parseArgs(argv: string[]): Args {
-  const args: Args = { root: resolve(DESIGN_SYSTEM_ROOT, ".."), pass: null, json: false, outDir: null, registry: REGISTRY_PATH, apps: [] };
+  const args: Args = { root: workspaceRoot(), pass: null, json: false, outDir: null, registry: REGISTRY_PATH, apps: [] };
   const value = (i: number, flag: string) => {
     const v = argv[i + 1];
     if (v === undefined || v.startsWith("--")) throw new Error(`${flag} needs a value`);

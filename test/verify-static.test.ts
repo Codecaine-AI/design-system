@@ -10,7 +10,7 @@ import { afterAll, expect, test } from "bun:test";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { type AppEntry, DESIGN_SYSTEM_ROOT } from "../scripts/lib/registry.ts";
+import { type AppEntry, DESIGN_SYSTEM_ROOT, designSystemIn } from "../scripts/lib/registry.ts";
 import { packageCheck, staticCheck } from "../scripts/lib/verify/static-check.ts";
 import { loadBuildValues } from "../scripts/lib/verify/tokens.ts";
 import { fixtureApp } from "./verify-support.ts";
@@ -39,7 +39,7 @@ function rootWith(packageDir: (root: string) => string, css: string): string {
   writeFileSync(join(root, "app/src/index.css"), css);
   return root;
 }
-const inRoot = (root: string) => join(root, "design-system");
+const inRoot = (root: string) => designSystemIn(root);
 
 /** A complete registry entry (it passes registry:check's rules) for a library with no UI. */
 const app = fixtureApp({
@@ -89,7 +89,7 @@ test("an import inside a comment does not load the tokens; a stale tokens.css in
     expect.stringMatching(/does not load tokens\.css \(an import inside a comment does not count\)/),
   ]);
   const stale = rootWith(inRoot, IMPORT);
-  writeFileSync(join(stale, "design-system/dist/css/tokens.css"), `${readFileSync(join(DESIGN_SYSTEM_ROOT, "dist/css/tokens.css"), "utf8")}\n/* stale */\n`);
+  writeFileSync(join(designSystemIn(stale), "dist/css/tokens.css"), `${readFileSync(join(DESIGN_SYSTEM_ROOT, "dist/css/tokens.css"), "utf8")}\n/* stale */\n`);
   const found = statuses(stale);
   expect(found.package).toEqual(["fail", expect.stringMatching(/differs from the current build/)]);
   expect(found["entry-stylesheet"]).toEqual(["fail", expect.stringMatching(/differs from the current build's dist\/css\/tokens\.css/)]);
@@ -140,9 +140,9 @@ test("packageCheck, which every run mode applies: relative-import follows the st
   const root = rootWith(inRoot, IMPORT);
   const status = (over: Partial<AppEntry>) => packageCheck({ ...app, ...over } as AppEntry, root, values).assertions.map((a) => [a.id, a.status, a.message]);
 
-  writeFileSync(join(root, "app/src/relative.css"), '@import "../../design-system/dist/css/tokens.css";');
+  writeFileSync(join(root, "app/src/relative.css"), '@import "../../codecaine/core/design-system/dist/css/tokens.css";');
   const relative = packageCheck({ ...app, consume: { via: "relative-import", detail: "" }, entryStylesheet: "app/src/relative.css" } as AppEntry, root, values);
-  expect([relative.dir, relative.assertions[0]!.status]).toEqual([realpathSync(join(root, "design-system")), "pass"]);
+  expect([relative.dir, relative.assertions[0]!.status]).toEqual([realpathSync(designSystemIn(root)), "pass"]);
 
   mkdirSync(join(root, "app/vendor"));
   cpSync(join(DESIGN_SYSTEM_ROOT, "dist/css/tokens.css"), join(root, "app/vendor/tokens.css"));

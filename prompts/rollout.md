@@ -2,7 +2,7 @@
 This block holds the owner's choices for this run. Consult it whenever a phase needs a scope or policy choice. The owner edits it before sending; treat it as fixed during the run.
 
 - Scope
-    - Every surface in waves 1, 2 and 3 of `/Users/Ford/workspace/design-system/guide/audit.md`. The "Later" and "Skip" surfaces stay out of scope.
+    - Every surface in waves 1, 2 and 3 of `/Users/Ford/workspace/codebases/codecaine/core/design-system/guide/audit.md`. The "Later" and "Skip" surfaces stay out of scope.
 - Pilot
     - The sequence renderer, then sequence studio, before any other app starts. This overrides the audit's advice to migrate sequence studio together with canvas studio; canvas studio goes next. If a pilot app is blocked, the first unblocked app in the audit's wave order takes its place.
 - Pilot checkpoint
@@ -29,15 +29,15 @@ This block holds the owner's choices for this run. Consult it whenever a phase n
 This block holds facts about this machine that the repo docs do not cover. Consult it when you build the mirror, run apps, start reviewers or take screenshots.
 
 - Owner tree
-    - `/Users/Ford/workspace`. The owner keeps working there during the run, and their running apps render whatever `/Users/Ford/workspace/design-system` holds.
+    - `/Users/Ford/workspace`. The owner keeps working there during the run, and their running apps render whatever `/Users/Ford/workspace/codebases/codecaine/core/design-system` holds.
 - Mirror root
-    - `/Users/Ford/workspace-ds`. The run creates a worktree of every repo it changes or resolves through, each at its original relative path, so paths such as `../../design-system` resolve inside the mirror. The owner sees none of the run's changes until they merge.
+    - `/Users/Ford/workspace-ds`. The run creates a worktree of every repo it changes or resolves through, each at its original relative path, so paths such as `../../codecaine/core/design-system` resolve inside the mirror. The owner sees none of the run's changes until they merge.
 - Run folder
     - `/Users/Ford/workspace-ds/rollout/`, outside every repo. It holds the state, briefs, reports, findings and screenshots.
 - Run environment
     - `run.env` in the run folder sets `BUN_INSTALL_GLOBAL_DIR=/Users/Ford/workspace-ds/.bun-global`, so bun links never reach the owner's global registry. Every command the run executes sources it first: yours, and every worker's and reviewer's.
 - Core
-    - `codecaine/core` is a bun workspace whose members (docs-system, canvas, sequence, agent-kernel, prompt-kit, annotations) are separate git repos inside it. Its `workspaces` list `../../design-system`.
+    - `codecaine/core` is a bun workspace whose members (docs-system, canvas, sequence, agent-kernel, prompt-kit, annotations) are separate git repos inside it. Its `workspaces` list `design-system`, the folder inside it.
     - observatory sits inside Core too, but it is a separate repo with its own lockfile and `link:` registrations in a gitignored `.bun-links/`.
 - Work already done
     - Core's link to the package and docs-system's token pass are on the `design-system/foundation` branch of each repo.
@@ -48,7 +48,7 @@ This block holds facts about this machine that the repo docs do not cover. Consu
 - Global bun links
     - gamecube and observatory resolve Core libraries through bun's global link registry, which points at the owner's tree.
 - App state
-    - docs-cli without `--standalone` hands off to the owner's central docs service, which writes the live corpora and `~/.local/state/codecaine-docs`. The "State isolation" table in `/Users/Ford/workspace/design-system/verification/docs-system/README.md` shows how the docs-system harness avoids that.
+    - docs-cli without `--standalone` hands off to the owner's central docs service, which writes the live corpora and `~/.local/state/codecaine-docs`. The "State isolation" table in `/Users/Ford/workspace/codebases/codecaine/core/design-system/verification/docs-system/README.md` shows how the docs-system harness avoids that.
     - system-view embeds the docs app from the owner's docs service on port 4820.
     - budget runs a frontend, an API and a kernel against the owner's real financial data.
 - system-view

@@ -46,7 +46,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 
 import { OWNER_PORTS } from "./lib/owner";
-import { DESIGN_SYSTEM_ROOT, REGISTRY_PATH, loadRegistry, resolvePath, validateRegistry, type AppEntry, type Registry, type RouteSpec } from "./lib/registry";
+import { DESIGN_SYSTEM_ROOT, REGISTRY_PATH, loadRegistry, resolvePath, validateRegistry, type AppEntry, type Registry, type RouteSpec, workspaceRoot } from "./lib/registry";
 
 export const PROFILE_PORTS = { min: 47000, max: 47999, block: 10 } as const;
 
@@ -363,7 +363,7 @@ if (import.meta.main) {
     const i = argv.indexOf(name);
     return i >= 0 ? argv[i + 1] : undefined;
   };
-  const root = resolve(value("--root") ?? resolve(DESIGN_SYSTEM_ROOT, ".."));
+  const root = resolve(value("--root") ?? workspaceRoot());
   const registryPath = resolve(value("--registry") ?? REGISTRY_PATH);
   const registry = loadRegistry(registryPath);
   const problems = checkRegistry(registry, { root, dsRoot: DESIGN_SYSTEM_ROOT });

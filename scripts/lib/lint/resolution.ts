@@ -35,6 +35,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { SYSTEM_BIN, SYSTEM_PATH } from "../system-bin";
+import { designSystemIn } from "../registry";
 import { stripCss } from "../../scan-literals";
 import { buildFile, fileSha256, sha256, type DesignSystemBuild } from "./design-system";
 import { isDsLoad, type Load } from "./loads";
@@ -184,9 +185,9 @@ export function checkResolution(ctx: AppContext): CheckOutput {
   }
   const depLine = lineOf(pkgText, `"${PACKAGE_NAME}"`);
 
-  // Where a live link must lead: the root's design-system checkout when the root has one,
+  // Where a live link must lead: the root's design-system checkout (<root>/codecaine/core/design-system) when the root has one,
   // else any source checkout (a directory with tokens/), never a packed copy.
-  const rootCheckout = realpathOrNull(join(root, "design-system"));
+  const rootCheckout = realpathOrNull(designSystemIn(root));
   const canonical = rootCheckout && readJson(join(rootCheckout, "package.json"))?.name === PACKAGE_NAME ? rootCheckout : null;
   const notLive = (dir: string): string | null => {
     if (canonical) return dir === canonical ? null : `reaches ${ctx.rel(dir)}, not the root's design-system checkout (${ctx.rel(canonical)})`;

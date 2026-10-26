@@ -5,7 +5,7 @@ This harness proves that the docs-system web UI renders pixel-identical after it
 ## Check the migration
 
 ```bash
-cd /Users/Ford/workspace/codebases/design-system/verification/docs-system
+cd /Users/Ford/workspace/codebases/codecaine/core/design-system/verification/docs-system
 bun snapshot.ts --out after        # about 1.5 min; starts and stops its own servers
 bun diff.ts --a before --b after   # exit 0 = every shot identical
 ```

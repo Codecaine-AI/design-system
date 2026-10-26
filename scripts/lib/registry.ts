@@ -500,6 +500,22 @@ export function verifySpecProblems(verify: Pick<VerifySpec, "probes" | "waivedRo
 export const DESIGN_SYSTEM_ROOT = resolve(import.meta.dir, "..", "..");
 export const REGISTRY_PATH = join(DESIGN_SYSTEM_ROOT, "apps.json");
 
+/** Where the design-system checkout sits inside a workspace tree (codebases/codecaine/core/design-system). */
+export const DESIGN_SYSTEM_IN_TREE = join("codecaine", "core", "design-system");
+
+/**
+ * The workspace tree this checkout belongs to: three levels up from it (codecaine/core/design-system →
+ * codebases). Every tool's default `--root`; apps.json paths are relative to it.
+ */
+export function workspaceRoot(): string {
+  return resolve(DESIGN_SYSTEM_ROOT, "..", "..", "..");
+}
+
+/** The design-system checkout inside the workspace tree `root`: `<root>/codecaine/core/design-system`. */
+export function designSystemIn(root: string): string {
+  return join(root, DESIGN_SYSTEM_IN_TREE);
+}
+
 export function loadRegistry(path: string = REGISTRY_PATH): Registry {
   return JSON.parse(readFileSync(path, "utf8")) as Registry;
 }

@@ -36,7 +36,7 @@ import { validateLoadedRegistry } from "./lib/app-runner";
 import { toolOutputDir } from "./lib/output-dir";
 import { decodePng, encodePng } from "./lib/png";
 import { changedGitEntries, treeState } from "./lib/provenance";
-import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, REGISTRY_PATH, type AppEntry } from "./lib/registry";
+import { getApp, loadRegistry, REGISTRY_PATH, type AppEntry, workspaceRoot } from "./lib/registry";
 import { safeAppId, safeSegment } from "./lib/safe-paths";
 import { defaultOutDir, diffPath, diffSets, readManifest, SET_NAME, setPath, sha256Hex, sideBySide } from "./lib/snapshot-set";
 
@@ -82,7 +82,7 @@ rmSync(diffDir, { recursive: true, force: true });
 // The tree being gated: --root, else the root B was captured from, else the folder that holds this checkout.
 const bManifest = orFail(() => readManifest(setPath(outDir, app, b)));
 const bRoot = bManifest?.root;
-const root = resolve(flag("--root") ?? (typeof bRoot === "string" ? bRoot : resolve(DESIGN_SYSTEM_ROOT, "..")));
+const root = resolve(flag("--root") ?? (typeof bRoot === "string" ? bRoot : workspaceRoot()));
 // git reads the tree through pins (git.ts): never a repository whose `.git` entry changed since B's capture.
 const changedRepos = changedGitEntries(bManifest?.git);
 if (changedRepos.length) {

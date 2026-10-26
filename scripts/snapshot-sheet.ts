@@ -26,7 +26,7 @@ import { encodePng } from "./lib/png";
 import { installSignalHandlers, launchBrowser, validateLoadedRegistry } from "./lib/app-runner";
 import { toolOutputDir } from "./lib/output-dir";
 import { changedGitEntries, treeState } from "./lib/provenance";
-import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, REGISTRY_PATH, type AppEntry } from "./lib/registry";
+import { getApp, loadRegistry, REGISTRY_PATH, type AppEntry, workspaceRoot } from "./lib/registry";
 import { safeAppId, safeSegment } from "./lib/safe-paths";
 import { defaultOutDir, diffSets, readManifest, SET_NAME, setPath, sha256Hex, sheetPath, type SetDiff, type ShotDiff } from "./lib/snapshot-set";
 
@@ -42,7 +42,7 @@ if (!app || !a || !b || [a, b].some((set) => !SET_NAME.test(set))) {
   console.error("usage: bun run snapshot:sheet --app <id> --a <set> --b <set> [--only <route|key>,...] [--out-dir <dir>] [--root <dir>] [--registry <apps.json>]");
   process.exit(2);
 }
-const root = resolve(flag("--root") ?? resolve(DESIGN_SYSTEM_ROOT, ".."));
+const root = resolve(flag("--root") ?? workspaceRoot());
 
 /** The value, or exit 2 with the error's message. */
 function orFail<T>(make: () => T): T {

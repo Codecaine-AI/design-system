@@ -105,24 +105,24 @@ describe("resolution", () => {
       at("apps/stale-copy/src/index.css", 1, "is a copy of a design-system file (apps/stale-copy/ds/tokens.css); consume.via workspace loads it from the package"),
     ]);
     expect(check("nested-pkg", "resolution").violations).toEqual([
-      at("apps/nested-pkg/src/theme/ds.css", 1, "loads other-ds/dist/css/tokens.css, not the package the app resolves (design-system)"),
+      at("apps/nested-pkg/src/theme/ds.css", 1, "loads other-ds/dist/css/tokens.css, not the package the app resolves (codecaine/core/design-system)"),
     ]);
     expect(check("second-checkout", "resolution").violations).toEqual([
-      at("apps/second-checkout/package.json", 5, "reaches other-ds, not the root's design-system checkout (design-system)"),
+      at("apps/second-checkout/package.json", 5, "reaches other-ds, not the root's design-system checkout (codecaine/core/design-system)"),
     ]);
   });
 
   test("relative-import passes into the root's checkout and fails into a packed copy", () => {
     expect(check("relimp-ok", "resolution")).toMatchObject({ status: "pass", violations: [] });
     expect(check("relimp", "resolution").violations).toEqual([
-      at("apps/relimp/src/index.css", 1, "reaches packed-ds, not the root's design-system checkout (design-system)"),
+      at("apps/relimp/src/index.css", 1, "reaches packed-ds, not the root's design-system checkout (codecaine/core/design-system)"),
     ]);
   });
 
   test("a library's own copy of the package is a violation: a stale link, a stale packed copy, a dependency that does not resolve", () => {
     expectExactly(check("with-libs", "resolution").violations, [
-      at("apps/with-libs/package.json", 7, "library stale-lib resolves @codecaine-ai/design-system to packed-ds, the app to design-system"),
-      at("apps/with-libs/package.json", 7, "library stale-lib: its @codecaine-ai/design-system reaches packed-ds, not the root's design-system checkout (design-system)"),
+      at("apps/with-libs/package.json", 7, "library stale-lib resolves @codecaine-ai/design-system to packed-ds, the app to codecaine/core/design-system"),
+      at("apps/with-libs/package.json", 7, "library stale-lib: its @codecaine-ai/design-system reaches packed-ds, not the root's design-system checkout (codecaine/core/design-system)"),
       at("apps/with-libs/package.json", 8, "missing-lib (workspace:*) does not resolve"),
     ]);
     const stale = sha256(readFileSync(REAL_TOKENS_CSS, "utf8") + STALE_SUFFIX).slice(0, 12);
