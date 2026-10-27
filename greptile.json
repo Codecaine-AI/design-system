@@ -1,0 +1,14 @@
+{
+  "strictness": 2,
+  "commentTypes": [
+    "logic",
+    "syntax"
+  ],
+  "triggerOnDrafts": false,
+  "autoReview": [
+    "open",
+    "push"
+  ],
+  "ignorePatterns": "**/dist/**\n**/dist-static/**\n**/build/**\n**/coverage/**\nbun.lock\n**/package-lock.json\n**/__snapshots__/**\n**/*.snap\n**/__fixtures__/**\n**/fixtures/**\n**/*.log\nverification/**/manifest.json\nverification/**/report.json\nverification/**/scan-literals.json\nverification/**/*.txt\nverification/**/*.stderr\nfonts/**\nguide/screenshots/**",
+  "instructions": "Bun and TypeScript design-token package; token sources live in tokens/, the build, lint and verify tooling in scripts/, and dist/ is build output written by `bun run build`. Focus on correctness, types, error handling and missing tests. Skip style nits."
+}
