@@ -112,7 +112,6 @@ No existing token value changed in the rollout. It added `color.chart.*` and the
 
 canvas, agent-kernel and prompt-kit shipped before every app that depends on them was migrated. Until the pending apps below finish pass 1, these hold:
 
-1. observatory loads no design-system CSS. canvas-agent's viewer extension renders inside observatory with `var(--ds-*)` and no fallbacks, and so do viewer-ui and prompt-kit-ui. They render with unset variables until observatory pass 1 loads `tokens.css`.
-2. canvas-agent loads `tailwind-strict.css`, so it no longer generates the Tailwind default classes annotations uses on `/config`. An annotated prompt panel loses its 12px and 14px text sizes, its shadows and the white text of the destructive badge. This holds until annotations pass 1 maps those classes to tokens.
-3. budget keeps its `packages/agent-kernel` submodule at or before `081dfb6` until budget depends on the package and its kernel view loads `fonts.css`, `tokens.css` and `host-contract.css`. A later submodule fails budget's Tailwind build on the preset `require`, or renders the kernel view with unset variables.
-4. gamecube and kurate lose the values in [Hosts that link libraries live](#hosts-that-link-libraries-live) until they load `tokens.css`.
+1. canvas-agent loads `tailwind-strict.css`, so it no longer generates the Tailwind default classes annotations uses on `/config`. An annotated prompt panel loses its 12px and 14px text sizes, its shadows and the white text of the destructive badge. This holds until annotations pass 1 maps those classes to tokens.
+2. budget keeps its `packages/agent-kernel` submodule at or before `081dfb6` until budget depends on the package and its kernel view loads `fonts.css`, `tokens.css` and `host-contract.css`. A later submodule fails budget's Tailwind build on the preset `require`, or renders the kernel view with unset variables.
+3. gamecube and kurate lose the values in [Hosts that link libraries live](#hosts-that-link-libraries-live) until they load `tokens.css`.
