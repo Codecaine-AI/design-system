@@ -60,6 +60,8 @@
     "tokens",
     "templates",
     "guide/*.md",
+    "guide/app-shell-demo.html",
+    "guide/screenshots",
     "AGENTS.md",
     "README.md"
   ],
