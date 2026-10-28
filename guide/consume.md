@@ -230,7 +230,7 @@ design-system has no dependencies, so it never needs this. A linked library with
 Tailwind scans the Vite root for class names. It skips `node_modules` and files that `.gitignore` lists. design-system ships CSS, not class names, so it needs no `@source`. A linked library whose TS source uses Tailwind classes needs one line in the entry stylesheet, with the path relative to that stylesheet:
 
 ```css
-@source "../node_modules/@agent-kernel/viewer-ui/src"; /* from src/styles.css */
+@source "../node_modules/@codecaine-ai/agent-kernel-viewer-ui/src"; /* from src/styles.css */
 ```
 
 A package under `node_modules`, a symlink included, is scanned only through an explicit `@source`. An explicit `@source` follows the symlink.

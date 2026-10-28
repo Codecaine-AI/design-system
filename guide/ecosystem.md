@@ -30,9 +30,9 @@ Status as of 2026-10-07. For current status run `bun run progress`.
 | docs-mcp-home | `codecaine/core/docs-system/packages/docs-mcp` | `@codecaine-ai/docs-mcp` | workspace (files served at a URL prefix) | Migrated: pass 1 (2, 3 n/a) | n/a |
 | docs-viewer | `codecaine/core/docs-system/packages/docs-viewer` | `@codecaine-ai/docs-viewer` | host-css library | Migrated: pass 1 (2, 3 n/a) | n/a |
 | docs-publish | `codecaine/core/docs-system/packages/docs-publish` | `@codecaine-ai/docs-publish` | relative-import (build time) | Migrated: pass 1 (2, 3 n/a) | n/a |
-| viewer-shell | `codecaine/core/agent-kernel/packages/viewer-shell` | `@agent-kernel/viewer-shell` | host-css library | Migrated: pass 1 (2, 3 n/a) | n/a |
-| viewer-ui | `codecaine/core/agent-kernel/packages/viewer-ui` | `@agent-kernel/viewer-ui` | host-css library | Migrated: pass 1 (2, 3 n/a) | n/a |
-| simple-research-kernel | `codecaine/core/agent-kernel/examples/simple-research-kernel` | `@agent-kernel/example-simple-research-kernel` | workspace (Tailwind v3 preset) | Migrated: passes 1, 2, 3 | Shell |
+| viewer-shell | `codecaine/core/agent-kernel/packages/viewer-shell` | `@codecaine-ai/agent-kernel-viewer-shell` | host-css library | Migrated: pass 1 (2, 3 n/a) | n/a |
+| viewer-ui | `codecaine/core/agent-kernel/packages/viewer-ui` | `@codecaine-ai/agent-kernel-viewer-ui` | host-css library | Migrated: pass 1 (2, 3 n/a) | n/a |
+| simple-research-kernel | `codecaine/core/agent-kernel/examples/simple-research-kernel` | `@codecaine-ai/agent-kernel-example-simple-research-kernel` | workspace (Tailwind v3 preset) | Migrated: passes 1, 2, 3 | Shell |
 | prompt-kit-ui | `codecaine/core/prompt-kit/packages/prompt-kit` | `@codecaine-ai/prompt-kit` | host-css library | Migrated: pass 1 (2, 3 n/a) | n/a |
 | system-view | `system-view` | `system-view` | vendor-tgz | Migrated: passes 1, 2, 3. Not under git, so not rolled out (see [Rollout record](#rollout-record)). | Shell |
 | agent-skills-manager | `lascari-ai/agent-skills/manager` | none (vanilla JS) | copy | Migrated: passes 1, 2 (3 n/a) | Shell |
