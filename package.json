@@ -1,7 +1,11 @@
 {
   "name": "@codecaine-ai/design-system",
   "version": "0.2.0",
-  "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Codecaine-AI/design-system.git"
+  },
   "description": "One look for every Codecaine and Lascari AI app: design tokens (CSS, Tailwind v4, JS, JSON), layout CSS and the style guide.",
   "type": "module",
   "exports": {
@@ -56,6 +60,8 @@
     "tokens",
     "templates",
     "guide/*.md",
+    "guide/app-shell-demo.html",
+    "guide/screenshots",
     "AGENTS.md",
     "README.md"
   ],
@@ -73,6 +79,10 @@
     "progress": "bun scripts/progress.ts",
     "pack": "bun scripts/pack.ts",
     "test:apps": "bun scripts/test-apps.ts",
-    "use:app": "bun scripts/use-app.ts"
+    "use:app": "bun scripts/use-app.ts",
+    "prepack": "bun run build"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
