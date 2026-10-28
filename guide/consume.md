@@ -13,7 +13,8 @@ How an app depends on `@codecaine-ai/design-system` and loads its CSS. Read it b
 | Builds in Docker, Vercel or Railway | The vendored tgz (section 5) | personal-site, skitzo, CircleSnakesWeb |
 
 - **Never use a bun `file:` dependency on the folder.** bun snapshots the folder at install time, so a file the build adds or rewrites later stays missing or stale until the next `bun install`.
-- Libraries (docs-viewer, annotations, viewer-shell, viewer-ui, prompt-kit UI) take no dependency. They read `var(--ds-*)` with fallbacks, and the host app loads the CSS.
+- Libraries (docs-viewer, annotations, viewer-shell, viewer-ui, prompt-kit UI) take no dependency. The host app loads the CSS.
+- viewer-ui, prompt-kit UI and canvas-agent's viewer read `var(--ds-*)` with no fallback. A host that skips `tokens.css` renders them with unset values. An unset variable makes its whole `calc()` invalid, so prompt-kit's editor rows lose all their indent.
 - Every wiring except the tgz is a live symlink: `bun run build` in design-system reaches the app on its next reload or build.
 
 ## 2. bun workspace member
