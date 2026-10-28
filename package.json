@@ -1,6 +1,7 @@
 {
   "name": "@codecaine-ai/design-system",
-  "version": "0.1.0",
+  "version": "0.2.0",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Codecaine-AI/design-system.git"
