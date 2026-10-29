@@ -1,0 +1,585 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-262010247cd4351105c491a0a8194bbf",
+  "title": "Writing",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "intro",
+        "h-rules",
+        "r-lead",
+        "l1",
+        "l2",
+        "l3",
+        "h-labels",
+        "t-labels",
+        "h-errors",
+        "t-errors",
+        "h-guide",
+        "t-guide",
+        "h-strings",
+        "t-strings",
+        "w-next"
+      ]
+    },
+    "intro": {
+      "id": "intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Writing holds the 19 copy rules, such as verb-first buttons and error messages that say the fix. No check decides them yet, so this page lists rules only. The rules are in "
+        },
+        {
+          "insert": "design-score/rules/writing.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/writing.json"
+            }
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-rules": {
+      "id": "h-rules",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules"
+        }
+      ],
+      "children": []
+    },
+    "r-lead": {
+      "id": "r-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The 19 rules fall into four groups. They never change a score today, and every rule warns except "
+        },
+        {
+          "insert": "copy-type-to-confirm",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", which Ford decides. Each table names the cheapest layer that could decide each rule."
+        }
+      ],
+      "children": []
+    },
+    "l1": {
+      "id": "l1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Static text lint",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "l1a"
+      ]
+    },
+    "l1a": {
+      "id": "l1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A source scan for fixed words and code shapes, such as \"Click here\" or a string built with "
+        },
+        {
+          "insert": "+",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". It would run like the 5 static checks, in seconds and with no browser."
+        }
+      ],
+      "children": []
+    },
+    "l2": {
+      "id": "l2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Judge",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "l2a"
+      ]
+    },
+    "l2a": {
+      "id": "l2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The planned "
+        },
+        {
+          "insert": "Screenshot Judge",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "10-design-score/85-screenshot-judge"
+            }
+          }
+        },
+        {
+          "insert": " answers a yes or no question per rule. It covers rules that need the meaning of the text or the whole flow."
+        }
+      ],
+      "children": []
+    },
+    "l3": {
+      "id": "l3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Ford",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "l3a"
+      ]
+    },
+    "l3a": {
+      "id": "l3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A taste or product rule stays with a person."
+        }
+      ],
+      "children": []
+    },
+    "h-labels": {
+      "id": "h-labels",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Buttons, Links and Labels"
+        }
+      ],
+      "children": []
+    },
+    "t-labels": {
+      "id": "t-labels",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "What It Asks",
+          "Could Decide It"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "copy-verb-first-buttons",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Verb-first buttons",
+            "A button label starts with a verb, such as Delete project, never OK, Yes or No",
+            "Static text lint for OK, Yes and No. Judge for the verb."
+          ],
+          [
+            [
+              {
+                "insert": "copy-icon-name-is-action",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Names state the action",
+            "An icon control's name says the action, such as Copy link, not Chain icon or X",
+            "Static text lint"
+          ],
+          [
+            [
+              {
+                "insert": "copy-toggle-on-state",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Toggles name the on state",
+            "A toggle label never starts with Don't, Disable or Hide",
+            "Static text lint"
+          ],
+          [
+            [
+              {
+                "insert": "copy-descriptive-links",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Descriptive links",
+            "Link text makes sense alone, with no Click here",
+            "Static text lint"
+          ],
+          [
+            [
+              {
+                "insert": "copy-flow-vocabulary",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "One flow vocabulary",
+            "Every step of a flow uses one forward label, then Done",
+            "Judge"
+          ]
+        ],
+        "title": "Rules for control labels"
+      },
+      "children": []
+    },
+    "h-errors": {
+      "id": "h-errors",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Errors and Confirmations"
+        }
+      ],
+      "children": []
+    },
+    "t-errors": {
+      "id": "t-errors",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "What It Asks",
+          "Could Decide It"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "copy-error-says-fix",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Errors say the fix",
+            "An error says what failed and how to fix it, beside the field",
+            "Judge"
+          ],
+          [
+            [
+              {
+                "insert": "copy-no-oops",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No Oops",
+            "No blame, Oops, Something went wrong or exclamation marks in errors",
+            "Static text lint"
+          ],
+          [
+            [
+              {
+                "insert": "copy-confirm-dialog-shape",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Confirmation shape",
+            "A confirm title names the action and object, never Are you sure?",
+            "Static text lint"
+          ],
+          [
+            [
+              {
+                "insert": "copy-undo-or-confirm",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Undo or confirm",
+            "A frequent, reversible delete offers undo. An irreversible, shared or bulk one confirms first.",
+            "Judge"
+          ],
+          [
+            [
+              {
+                "insert": "copy-type-to-confirm",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Type to confirm",
+            "Deleting an account, workspace or repository asks for its name",
+            "Ford"
+          ]
+        ],
+        "title": "Rules for errors and destructive actions"
+      },
+      "children": []
+    },
+    "h-guide": {
+      "id": "h-guide",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Guidance Text and Tone"
+        }
+      ],
+      "children": []
+    },
+    "t-guide": {
+      "id": "t-guide",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "What It Asks",
+          "Could Decide It"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "copy-address-reader",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Address the reader",
+            "Write you, not the user, and no we in errors",
+            "Static text lint"
+          ],
+          [
+            [
+              {
+                "insert": "copy-no-successfully-please",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Cut successfully",
+            "No successfully and no routine Please",
+            "Static text lint"
+          ],
+          [
+            [
+              {
+                "insert": "copy-capitalization-policy",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "One capitalization policy",
+            "One case per element type, sentence case by default",
+            "Static text lint"
+          ],
+          [
+            [
+              {
+                "insert": "copy-placeholder-example",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Placeholder is an example",
+            "A placeholder shows a real example in the accepted format, not an instruction",
+            "Judge"
+          ],
+          [
+            [
+              {
+                "insert": "copy-empty-state-forward",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Empty states move forward",
+            "An empty state says what belongs there and offers one next action",
+            "Judge"
+          ],
+          [
+            [
+              {
+                "insert": "copy-link-to-setting",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Link to settings",
+            "Link to a setting instead of describing its path",
+            "Judge"
+          ]
+        ],
+        "title": "Rules for guidance text"
+      },
+      "children": []
+    },
+    "h-strings": {
+      "id": "h-strings",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Strings and Formatting"
+        }
+      ],
+      "children": []
+    },
+    "t-strings": {
+      "id": "t-strings",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "What It Asks",
+          "Could Decide It"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "copy-whole-strings",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Whole strings",
+            "No sentences built from fragments and no hand-rolled plurals. Use one ICU message.",
+            "Static text lint"
+          ],
+          [
+            [
+              {
+                "insert": "copy-intl-formatting",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Intl formatting",
+            "Numbers, dates, times, prices and lists go through Intl with the user's locale",
+            "Static text lint"
+          ],
+          [
+            [
+              {
+                "insert": "review-strings-in-catalog",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Strings in the catalogue",
+            "A new user-facing string has a catalogue entry, in apps that have a catalogue",
+            "Static text lint"
+          ]
+        ],
+        "title": "Rules for strings in code"
+      },
+      "children": []
+    },
+    "w-next": {
+      "id": "w-next",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A new check for any of these rules sets the rule's "
+        },
+        {
+          "insert": "check",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " field in "
+        },
+        {
+          "insert": "design-score/rules/writing.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/writing.json"
+            }
+          }
+        },
+        {
+          "insert": " to the new check id. Then every finding of that check carries the rule id."
+        }
+      ],
+      "children": []
+    }
+  }
+}

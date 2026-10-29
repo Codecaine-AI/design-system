@@ -1,0 +1,1175 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-b18924684102f78b08b9a51efbb60b3d",
+  "title": "M-reduced-motion: Reduced Motion",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b6",
+        "b8",
+        "b10",
+        "b13",
+        "b14",
+        "b15",
+        "b16",
+        "b17",
+        "b18",
+        "b19",
+        "b20",
+        "b21",
+        "b22",
+        "b23",
+        "b24",
+        "b25",
+        "b28",
+        "b30",
+        "b31",
+        "b32",
+        "b33",
+        "b34",
+        "b35",
+        "b36",
+        "b37",
+        "b38",
+        "b39",
+        "b40",
+        "b43",
+        "b46",
+        "b48",
+        "b49",
+        "b50",
+        "b51",
+        "b52",
+        "b53",
+        "b54"
+      ]
+    },
+    "b1": {
+      "id": "b1",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "M-reduced-motion",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " finds movement that still runs when the user asks the system for less motion. The run repeats the motion pass with "
+        },
+        {
+          "insert": "prefers-reduced-motion: reduce",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and reports each moving animation it sees. Every finding is a warning, because Ford decided that reduced-motion rules only warn."
+        }
+      ],
+      "children": []
+    },
+    "b2": {
+      "id": "b2",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "What It Catches"
+        }
+      ],
+      "children": []
+    },
+    "b3": {
+      "id": "b3",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check reports movement under reduce from three sources. A fade is the expected replacement, so it never reports one."
+        }
+      ],
+      "children": []
+    },
+    "b4": {
+      "id": "b4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Movement on a page state",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b5"
+      ]
+    },
+    "b5": {
+      "id": "b5",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A moving animation that runs while the page's actions run warns, such as a toast that slides in."
+        }
+      ],
+      "children": []
+    },
+    "b6": {
+      "id": "b6",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Movement on hover or press",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b7"
+      ]
+    },
+    "b7": {
+      "id": "b7",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A moving transition warns when the run hovers or presses a control, such as a button that lifts."
+        }
+      ],
+      "children": []
+    },
+    "b8": {
+      "id": "b8",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Loops",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b9"
+      ]
+    },
+    "b9": {
+      "id": "b9",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "An infinite rotation that starts during recording warns, and its finding says \"(infinite)\"."
+        }
+      ],
+      "children": []
+    },
+    "b10": {
+      "id": "b10",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Not reported",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b11",
+        "b12"
+      ]
+    },
+    "b11": {
+      "id": "b11",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Opacity, color, filter and other properties that do not move the element pass."
+        }
+      ],
+      "children": []
+    },
+    "b12": {
+      "id": "b12",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "An animation of 20ms or less passes, so the common "
+        },
+        {
+          "insert": "0.01ms",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " reset is never reported."
+        }
+      ],
+      "children": []
+    },
+    "b13": {
+      "id": "b13",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "How It Measures"
+        }
+      ],
+      "children": []
+    },
+    "b14": {
+      "id": "b14",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check reuses the recorder from "
+        },
+        {
+          "insert": "M-duration",
+          "attributes": {
+            "code": true,
+            "link": "10-design-score/50-motion/30-m-duration"
+          }
+        },
+        {
+          "insert": " in a second context. It takes these steps in order."
+        }
+      ],
+      "children": []
+    },
+    "b15": {
+      "id": "b15",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The motion pass",
+          "attributes": {
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/run.ts",
+              "symbol": "Motion"
+            }
+          }
+        },
+        {
+          "insert": " runs twice. The second browser context sets "
+        },
+        {
+          "insert": "reducedMotion: \"reduce\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b16": {
+      "id": "b16",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "installMotionRecorder",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/motion.ts",
+              "symbol": "installMotionRecorder"
+            }
+          }
+        },
+        {
+          "insert": " records during the page's actions. Then the run hovers and presses up to 12 controls, not 24."
+        }
+      ],
+      "children": []
+    },
+    "b17": {
+      "id": "b17",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The run",
+          "attributes": {
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/run.ts",
+              "symbol": "Motion"
+            }
+          }
+        },
+        {
+          "insert": " checks that "
+        },
+        {
+          "insert": "matchMedia(\"(prefers-reduced-motion: reduce)\")",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " matches in the page. Without a match, the check reports nothing and its note says so."
+        }
+      ],
+      "children": []
+    },
+    "b18": {
+      "id": "b18",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "analyzeReducedMotion",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/motion.ts",
+              "symbol": "analyzeReducedMotion"
+            }
+          }
+        },
+        {
+          "insert": " keeps each record with a property in "
+        },
+        {
+          "insert": "MOVING_PROP",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/motion.ts",
+              "symbol": "MOVING_PROP"
+            }
+          }
+        },
+        {
+          "insert": " and a duration over 20ms."
+        }
+      ],
+      "children": []
+    },
+    "b19": {
+      "id": "b19",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each selector and property list reports once. A keyframe animation counts as moving when any of its keyframes sets a moving property."
+        }
+      ],
+      "children": []
+    },
+    "b20": {
+      "id": "b20",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Thresholds"
+        }
+      ],
+      "children": []
+    },
+    "b21": {
+      "id": "b21",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check has one duration threshold and one severity."
+        }
+      ],
+      "children": []
+    },
+    "b22": {
+      "id": "b22",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Measure",
+          "Value"
+        ],
+        "rows": [
+          [
+            "Moving properties",
+            [
+              {
+                "insert": "transform",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "translate",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "scale",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "rotate",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "top",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "left",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "right",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "bottom",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "inset",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "offset",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "margin",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "width",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "height",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", grid tracks"
+              }
+            ]
+          ],
+          [
+            "Shortest duration reported",
+            "Over 20ms"
+          ],
+          [
+            "Controls hovered and pressed",
+            "Up to 12, one per class signature"
+          ],
+          [
+            "Severity",
+            "Warn"
+          ]
+        ],
+        "title": "M-reduced-motion thresholds"
+      },
+      "children": []
+    },
+    "b23": {
+      "id": "b23",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Example"
+        }
+      ],
+      "children": []
+    },
+    "b24": {
+      "id": "b24",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The fixture pair is "
+        },
+        {
+          "insert": "design-score/fixtures/M-reduced-motion/",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/fixtures/M-reduced-motion"
+            }
+          }
+        },
+        {
+          "insert": ". Both pages show a Profile form, and "
+        },
+        {
+          "insert": "fixture.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " clicks Save changes to show a Saved toast."
+        }
+      ],
+      "children": []
+    },
+    "b25": {
+      "id": "b25",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Good page",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b26",
+        "b27"
+      ]
+    },
+    "b26": {
+      "id": "b26",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "By default, the toast only fades in, and the button only changes its background."
+        }
+      ],
+      "children": []
+    },
+    "b27": {
+      "id": "b27",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Inside "
+        },
+        {
+          "insert": "@media (prefers-reduced-motion: no-preference)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", the toast also rises 16px and the button lifts 2px on hover."
+        }
+      ],
+      "children": []
+    },
+    "b28": {
+      "id": "b28",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Bad page",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b29"
+      ]
+    },
+    "b29": {
+      "id": "b29",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The toast rises and the button lifts in every case, so both warn under reduce."
+        }
+      ],
+      "children": []
+    },
+    "b30": {
+      "id": "b30",
+      "type": "image-grid",
+      "props": {
+        "columns": 2,
+        "images": [
+          {
+            "src": "./assets/images/good.png",
+            "heading": "Good: pass",
+            "alt": "The Profile form with the Saved toast shown. No boxes are drawn.",
+            "caption": "good.html, 0 findings"
+          },
+          {
+            "src": "./assets/images/bad.png",
+            "heading": "Bad: warn",
+            "alt": "The same form. Magenta boxes mark the Save changes button and the toast.",
+            "caption": "bad.html, 2 warn findings"
+          }
+        ]
+      },
+      "children": []
+    },
+    "b31": {
+      "id": "b31",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The screenshots come from the normal pass. The boxes mark the elements that moved in the reduced pass."
+        }
+      ],
+      "children": []
+    },
+    "b32": {
+      "id": "b32",
+      "type": "image-grid",
+      "props": {
+        "columns": 1,
+        "images": [
+          {
+            "src": "./assets/images/good-frames.png",
+            "heading": "Good frames, reduced motion",
+            "alt": "Five frames of the toast under reduced motion. The toast fades in at its final place.",
+            "caption": "Frames at 0, 65, 130, 195 and 260ms after the click, with reduce on."
+          },
+          {
+            "src": "./assets/images/bad-frames.png",
+            "heading": "Bad frames, reduced motion",
+            "alt": "The same five frames. The toast rises from below while it fades in, and the button moves up.",
+            "caption": "Frames at 0, 65, 130, 195 and 260ms after the click, with reduce on."
+          }
+        ]
+      },
+      "children": []
+    },
+    "b33": {
+      "id": "b33",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The frames show both pages with reduce on. The good toast stays in place and only fades. The bad toast rises 16px over 260ms, and the hovered button lifts 2px, though the user asked for less motion."
+        }
+      ],
+      "children": []
+    },
+    "b34": {
+      "id": "b34",
+      "type": "callout",
+      "props": {
+        "title": "How the frames are made",
+        "tone": "info"
+      },
+      "text": [
+        {
+          "insert": "bun scripts/design-score/frames.ts M-reduced-motion",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " writes these strips from the fixture's "
+        },
+        {
+          "insert": "frames.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", where "
+        },
+        {
+          "insert": "reduced",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is true. It stops the page's animation clock, clicks Save changes, and seeks every animation to each frame time."
+        }
+      ],
+      "children": []
+    },
+    "b35": {
+      "id": "b35",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules Behind It"
+        }
+      ],
+      "children": []
+    },
+    "b36": {
+      "id": "b36",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Three rules in "
+        },
+        {
+          "insert": "design-score/rules/motion.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/motion.json"
+            }
+          }
+        },
+        {
+          "insert": " name this check. Every finding carries their ids in "
+        },
+        {
+          "insert": "rules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b37": {
+      "id": "b37",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity",
+          "Measured"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "a11y-reduced-motion-gate",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Reduced-motion gate",
+            "Warn",
+            "Partly, by its result"
+          ],
+          [
+            [
+              {
+                "insert": "ui-reduced-motion-runtime",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Reduced motion keeps the fade",
+            "Warn",
+            "Partly, the movement only"
+          ],
+          [
+            [
+              {
+                "insert": "12-loader-linear-infinite",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Linear loaders",
+            "Warn",
+            "Partly, the stop only"
+          ]
+        ],
+        "title": "Rules decided by M-reduced-motion"
+      },
+      "children": []
+    },
+    "b38": {
+      "id": "b38",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check sees what moves under reduce, not how the code gates it, so it never reads a "
+        },
+        {
+          "insert": "MotionConfig",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". It does not check that a fade or a feedback cue stays. It does not read a loader's easing."
+        }
+      ],
+      "children": []
+    },
+    "b39": {
+      "id": "b39",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Known False Positives"
+        }
+      ],
+      "children": []
+    },
+    "b40": {
+      "id": "b40",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check reports every movement under reduce, and it misses movement that no animation records. A press scale under reduce is a true finding, because "
+        },
+        {
+          "insert": "ui-reduced-motion-runtime",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " drops the press scale and keeps the color change."
+        }
+      ],
+      "children": []
+    },
+    "b43": {
+      "id": "b43",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Motion it misses",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b44",
+        "b45"
+      ]
+    },
+    "b44": {
+      "id": "b44",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "An animation that starts before recording, such as a spinner that runs from page load, is not recorded."
+        }
+      ],
+      "children": []
+    },
+    "b45": {
+      "id": "b45",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A script that moves an element by writing its style on each frame creates no animation, so the recorder cannot see it."
+        }
+      ],
+      "children": []
+    },
+    "b46": {
+      "id": "b46",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix it in the source",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b47"
+      ]
+    },
+    "b47": {
+      "id": "b47",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Put movement inside "
+        },
+        {
+          "insert": "@media (prefers-reduced-motion: no-preference)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or Tailwind "
+        },
+        {
+          "insert": "motion-safe:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and keep a fade as the default."
+        }
+      ],
+      "children": []
+    },
+    "b48": {
+      "id": "b48",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Debug It"
+        }
+      ],
+      "children": []
+    },
+    "b49": {
+      "id": "b49",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Run these commands in the design-system checkout. Each run writes a folder under "
+        },
+        {
+          "insert": ".design-score/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and one crop per finding."
+        }
+      ],
+      "children": []
+    },
+    "b50": {
+      "id": "b50",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run the fixture pair. The command exits 0 only when the bad page warns and the good page passes."
+        }
+      ],
+      "children": []
+    },
+    "b51": {
+      "id": "b51",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --fixture M-reduced-motion"
+        }
+      ],
+      "children": []
+    },
+    "b52": {
+      "id": "b52",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Score one page of an app in one theme and one viewport."
+        }
+      ],
+      "children": []
+    },
+    "b53": {
+      "id": "b53",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --app knowledge-system --pages session --quick"
+        }
+      ],
+      "children": []
+    },
+    "b54": {
+      "id": "b54",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Read the check's "
+        },
+        {
+          "insert": "note",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". It gives the number of animations seen under reduce, and says when the media query did not match."
+        }
+      ],
+      "children": []
+    }
+  }
+}

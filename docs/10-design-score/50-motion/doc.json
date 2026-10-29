@@ -1,0 +1,1216 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-3ad32f3c9708e5543647cacc6cd0335a",
+  "title": "Motion",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7",
+        "b8",
+        "b9",
+        "b10",
+        "b12",
+        "b14",
+        "b16",
+        "b17",
+        "b18",
+        "b19",
+        "b20",
+        "b21",
+        "b22",
+        "b23",
+        "b24",
+        "b25",
+        "b26",
+        "b27"
+      ]
+    },
+    "b1": {
+      "id": "b1",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The motion checks read motion literals and "
+        },
+        {
+          "insert": "transition: all",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in the source, and record real animations while the run hovers and presses controls. The area has 2 static checks, 3 motion checks and 43 rules in "
+        },
+        {
+          "insert": "design-score/rules/motion.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/motion.json"
+            }
+          }
+        },
+        {
+          "insert": ". Each check page explains what the check measures and shows a good and a bad fixture with frame strips."
+        }
+      ],
+      "children": []
+    },
+    "b2": {
+      "id": "b2",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Checks"
+        }
+      ],
+      "children": []
+    },
+    "b3": {
+      "id": "b3",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The table lists the checks in page order. The Result column says whether a finding can fail the page, only warn, or both."
+        }
+      ],
+      "children": []
+    },
+    "b4": {
+      "id": "b4",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Check",
+          "Layer",
+          "Result",
+          "What It Finds"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "S-transition-all",
+                "attributes": {
+                  "link": "10-design-score/50-motion/10-s-transition-all",
+                  "code": true
+                }
+              }
+            ],
+            "static",
+            "Fail",
+            "A transition on all properties"
+          ],
+          [
+            [
+              {
+                "insert": "S-motion-literal",
+                "attributes": {
+                  "link": "10-design-score/50-motion/20-s-motion-literal",
+                  "code": true
+                }
+              }
+            ],
+            "static",
+            "Fail",
+            "A duration or easing literal instead of a motion token"
+          ],
+          [
+            [
+              {
+                "insert": "M-duration",
+                "attributes": {
+                  "link": "10-design-score/50-motion/30-m-duration",
+                  "code": true
+                }
+              }
+            ],
+            "motion",
+            "Fail",
+            "Motion longer than 200, 300 or 450ms"
+          ],
+          [
+            [
+              {
+                "insert": "M-layout-props",
+                "attributes": {
+                  "link": "10-design-score/50-motion/40-m-layout-props",
+                  "code": true
+                }
+              }
+            ],
+            "motion",
+            "Fail and warn",
+            "Animating width, height, margin or other layout properties"
+          ],
+          [
+            [
+              {
+                "insert": "M-reduced-motion",
+                "attributes": {
+                  "link": "10-design-score/50-motion/50-m-reduced-motion",
+                  "code": true
+                }
+              }
+            ],
+            "motion",
+            "Warn",
+            "Movement that runs under reduced motion"
+          ]
+        ],
+        "title": "Motion checks"
+      },
+      "children": []
+    },
+    "b5": {
+      "id": "b5",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The static checks read the app's source files once per run. The motion checks record animations in Chromium, in the first theme and viewport, and "
+        },
+        {
+          "insert": "M-reduced-motion",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " repeats that pass with reduced motion on."
+        }
+      ],
+      "children": []
+    },
+    "b6": {
+      "id": "b6",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Motion Tokens"
+        }
+      ],
+      "children": []
+    },
+    "b7": {
+      "id": "b7",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The motion tokens live in "
+        },
+        {
+          "insert": "tokens/base/motion.tokens.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "tokens/base/motion.tokens.json"
+            }
+          }
+        },
+        {
+          "insert": ", and every app reads them as "
+        },
+        {
+          "insert": "var(--ds-motion-*)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b8": {
+      "id": "b8",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Token",
+          "Value",
+          "Use"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "--ds-motion-duration-fast",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "100ms",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Hover fills, grip fade."
+          ],
+          [
+            [
+              {
+                "insert": "--ds-motion-duration-base",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "150ms",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Toggles, color changes."
+          ],
+          [
+            [
+              {
+                "insert": "--ds-motion-duration-slow",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "260ms",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Panel open, resize and tab slide (glass panel)."
+          ],
+          [
+            [
+              {
+                "insert": "--ds-motion-easing-standard",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "ease",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Default for small state changes."
+          ],
+          [
+            [
+              {
+                "insert": "--ds-motion-easing-emphasized",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "cubic-bezier(0.32, 0.72, 0, 1)",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Panels entering, resizing or sliding."
+          ],
+          [
+            [
+              {
+                "insert": "--ds-motion-easing-decelerate",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "ease-out",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Fades out of a highlight, hover hints appearing."
+          ],
+          [
+            [
+              {
+                "insert": "--ds-motion-scale-press",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "0.96",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Press feedback on :active, as a transform over duration.base"
+          ]
+        ],
+        "title": "Motion tokens"
+      },
+      "children": []
+    },
+    "b9": {
+      "id": "b9",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The checks compare against these tokens in three ways."
+        }
+      ],
+      "children": []
+    },
+    "b10": {
+      "id": "b10",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Source",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b11"
+      ]
+    },
+    "b11": {
+      "id": "b11",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "S-motion-literal",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " fails a literal duration or easing curve, so each timing must come from this table."
+        }
+      ],
+      "children": []
+    },
+    "b12": {
+      "id": "b12",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Runtime",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b13"
+      ]
+    },
+    "b13": {
+      "id": "b13",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "M-duration",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " limits are 200, 300 and 450ms, so every token duration passes. The longest token, "
+        },
+        {
+          "insert": "--ds-motion-duration-slow",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", is 260ms."
+        }
+      ],
+      "children": []
+    },
+    "b14": {
+      "id": "b14",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Press scale",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b15"
+      ]
+    },
+    "b15": {
+      "id": "b15",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "--ds-motion-scale-press",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is 0.96, inside the 0.95 to 0.98 band that "
+        },
+        {
+          "insert": "M-press-scale",
+          "attributes": {
+            "code": true,
+            "link": "10-design-score/60-interaction/50-m-press-scale"
+          }
+        },
+        {
+          "insert": " checks."
+        }
+      ],
+      "children": []
+    },
+    "b16": {
+      "id": "b16",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules"
+        }
+      ],
+      "children": []
+    },
+    "b17": {
+      "id": "b17",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each rule in "
+        },
+        {
+          "insert": "design-score/rules/motion.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/motion.json"
+            }
+          }
+        },
+        {
+          "insert": " names the check that decides it, or none. 15 rules have a check, and 28 have none yet."
+        }
+      ],
+      "children": []
+    },
+    "b18": {
+      "id": "b18",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Rules by Check"
+        }
+      ],
+      "children": []
+    },
+    "b19": {
+      "id": "b19",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each table lists the rules one check decides. The check page says which ones it measures in full."
+        }
+      ],
+      "children": []
+    },
+    "b20": {
+      "id": "b20",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "ui-no-transition-all",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No transition: all",
+            "Fail"
+          ]
+        ],
+        "title": "Rules decided by S-transition-all"
+      },
+      "children": []
+    },
+    "b21": {
+      "id": "b21",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "ks-motion-tokens",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Motion from tokens",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "ui-bounce-zero",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No bounce",
+            "Warn"
+          ]
+        ],
+        "title": "Rules decided by S-motion-literal"
+      },
+      "children": []
+    },
+    "b22": {
+      "id": "b22",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "ui-high-frequency-instant",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Frequent interactions are instant",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "13-no-open-animation-frequent-menus",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No open animation on frequent menus",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "13-no-animate-data-tab-swap",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No animated data swaps",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "17-duration-by-size",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Duration by size",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "17-easing-by-purpose",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Easing by purpose",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "ui-exit-subtle",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Exits shorter and smaller",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "ui-stagger-entrances",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Staggered entrances",
+            "Warn"
+          ]
+        ],
+        "title": "Rules decided by M-duration"
+      },
+      "children": []
+    },
+    "b23": {
+      "id": "b23",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "05-composite-only-animation",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Compositor-only animation",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "03-animate-gradient-cheaply",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Animate gradients cheaply",
+            "Warn"
+          ]
+        ],
+        "title": "Rules decided by M-layout-props"
+      },
+      "children": []
+    },
+    "b24": {
+      "id": "b24",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "a11y-reduced-motion-gate",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Reduced-motion gate",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "ui-reduced-motion-runtime",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Reduced motion keeps the fade",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "12-loader-linear-infinite",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Linear loaders",
+            "Warn"
+          ]
+        ],
+        "title": "Rules decided by M-reduced-motion"
+      },
+      "children": []
+    },
+    "b25": {
+      "id": "b25",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Rules No Check Decides"
+        }
+      ],
+      "children": []
+    },
+    "b26": {
+      "id": "b26",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "No check measures these rules yet. Human rules need a person to review the motion."
+        }
+      ],
+      "children": []
+    },
+    "b27": {
+      "id": "b27",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "ui-transitions-for-state",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Transitions for state",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "17-scale-inverse-to-size",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Scale inverse to size",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "17-transform-origin-trigger",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Scale from the trigger",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "17-movement-range",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Small travel",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "17-direction-from-source",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Direction from source",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "ui-motion-not-only-cue",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Motion is not the only cue",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "ui-no-state-animation-on-mount",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No animation on mount",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "ui-icon-crossfade-values",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Icon swap cross-fade",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "ui-theme-switch-no-transitions",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No transitions on theme switch",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "ui-will-change-scoped",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Scoped will-change",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "05-will-change-fix-jitter",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No jitter while animating",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "ui-animation-fill-mode",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Fill mode for hidden starts",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "04-shared-layoutid",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Shared element moves",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "04-layoutid-unique-per-state",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Unique layoutId",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "04-layoutid-outside-presence",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "layoutId outside AnimatePresence",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "04-presence-keyed-blur-fade",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Keyed presence fade",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "04-radius-via-animate",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Radius through animate",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "08-inview-blur-reveal",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Scroll reveal",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "11-fade-labels-with-resize",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Labels fade with resize",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "12-no-animate-height-auto",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No height: auto animation",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "12-height-animates-between-steps",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Height morphs between steps",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "12-measure-inner-wrapper",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Measure the inner wrapper",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "12-initial-height-no-zero-frame",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No zero-height first frame",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "12-step-crossfade-poplayout",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Step cross-fade",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "12-lazy-motion-bundle",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "LazyMotion",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "05-scroll-contents-hints",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Narrow will-change hints",
+            "Human"
+          ],
+          [
+            [
+              {
+                "insert": "08-slider-springs",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Slider springs",
+            "Human"
+          ],
+          [
+            [
+              {
+                "insert": "11-slow-motion-review",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Slow-motion review",
+            "Human"
+          ]
+        ],
+        "title": "Motion rules with no check"
+      },
+      "children": []
+    }
+  }
+}

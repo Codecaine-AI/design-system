@@ -1,0 +1,7 @@
+{
+  "step": { "click": ".btn" },
+  "times": [0],
+  "clip": ".panel, .menu",
+  "pad": 8,
+  "viewport": { "width": 800, "height": 360 }
+}

@@ -1,5 +1,9 @@
 {
   "id": "ent_01M4F6XQRN0FXMCDJB1N70FTJ9",
   "name": "Design System",
-  "kind": "core"
+  "kind": "core",
+  "docsRoot": "docs",
+  "products": [
+    "docs"
+  ]
 }

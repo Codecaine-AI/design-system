@@ -1,0 +1,2055 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-5f8a2f47bcac0f5564a6bafd69df2a88",
+  "title": "Run and Read a Score",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "intro",
+        "h-run",
+        "run-lead",
+        "run-code",
+        "run-flags",
+        "run-more",
+        "rm1",
+        "rm2",
+        "rm3",
+        "h-writes",
+        "w-lead",
+        "w-tree",
+        "w-prov",
+        "h-score",
+        "s-lead",
+        "s1",
+        "s2",
+        "s3",
+        "s4",
+        "s5",
+        "s-after",
+        "h-report",
+        "r-lead",
+        "r-img",
+        "r1",
+        "r2",
+        "r3",
+        "r4",
+        "r5",
+        "h-compare",
+        "c-lead",
+        "c-code",
+        "c-img",
+        "c1",
+        "c2",
+        "c3",
+        "h-climb",
+        "hc-lead",
+        "hc-code",
+        "hc1",
+        "hc2",
+        "hc3",
+        "hc4",
+        "hc5",
+        "h-app",
+        "a-lead",
+        "a-table",
+        "a-opt",
+        "h-pages",
+        "p-lead",
+        "p1",
+        "p2",
+        "p3",
+        "p4",
+        "p5",
+        "p-check"
+      ]
+    },
+    "intro": {
+      "id": "intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "This page shows how to run "
+        },
+        {
+          "insert": "design:score",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", what a run writes, and how the verifier computes the score. It then shows how to read "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and a compare page, how to raise a score one fix at a time, and how to add an app. Run every command in the design-system checkout."
+        }
+      ],
+      "children": []
+    },
+    "h-run": {
+      "id": "h-run",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Run a Score"
+        }
+      ],
+      "children": []
+    },
+    "run-lead": {
+      "id": "run-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The app must answer at its base URL before the run starts. The verifier starts the app itself only when the config names a "
+        },
+        {
+          "insert": "registryApp",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " from "
+        },
+        {
+          "insert": "apps.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "run-code": {
+      "id": "run-code",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --app knowledge-system --base-url http://127.0.0.1:4961 --label before"
+        }
+      ],
+      "children": []
+    },
+    "run-flags": {
+      "id": "run-flags",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Flag",
+          "What It Does"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "--app <id>",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Reads "
+              },
+              {
+                "insert": "design-score/apps/<id>.json",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". Required for a run."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "--base-url <url>",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Visits the app at this URL instead of the config's "
+              },
+              {
+                "insert": "baseUrl",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "--pages a,b,docs-*",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Scores only these page ids. A * matches any text. An unknown id exits 2."
+          ],
+          [
+            [
+              {
+                "insert": "--quick",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Scores the first theme at the first viewport only, in about a third of the time."
+          ],
+          [
+            [
+              {
+                "insert": "--list-pages",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Prints each page id and path, then exits."
+          ],
+          [
+            [
+              {
+                "insert": "--label <name>",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Adds the name to the run folder, so you can find the run later."
+          ],
+          [
+            [
+              {
+                "insert": "--compare <runA> <runB>",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Writes one HTML page with both runs side by side. Runs no browser."
+          ],
+          [
+            [
+              {
+                "insert": "--fixture <check-id>",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Runs one check on its good and bad fixture pages. Exits 1 unless bad fails and good passes."
+          ]
+        ],
+        "title": "design:score flags"
+      },
+      "children": []
+    },
+    "run-more": {
+      "id": "run-more",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Other flags narrow a run further."
+        }
+      ],
+      "children": []
+    },
+    "rm1": {
+      "id": "rm1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Scope flags",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "rm1a",
+        "rm1b"
+      ]
+    },
+    "rm1a": {
+      "id": "rm1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "--themes light,dark",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "--viewports 1440x900,1024x768",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " pick themes and viewports. "
+        },
+        {
+          "insert": "--jobs 2",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " sets how many pages run at once."
+        }
+      ],
+      "children": []
+    },
+    "rm1b": {
+      "id": "rm1b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "--no-motion",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "--no-focus",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "--no-static",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " turn a layer off. Its checks become n/a."
+        }
+      ],
+      "children": []
+    },
+    "rm2": {
+      "id": "rm2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Run references",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "rm2a"
+      ]
+    },
+    "rm2a": {
+      "id": "rm2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "--compare",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " takes a run folder, "
+        },
+        {
+          "insert": "<app>/<label>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "<app>/latest",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "<app>/previous",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "rm3": {
+      "id": "rm3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Exit codes",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "rm3a"
+      ]
+    },
+    "rm3a": {
+      "id": "rm3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The run exits 0 when it finished, whatever the score. It exits 1 when a page had an error, and 2 on bad arguments or an app that does not answer."
+        }
+      ],
+      "children": []
+    },
+    "h-writes": {
+      "id": "h-writes",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "What a Run Writes"
+        }
+      ],
+      "children": []
+    },
+    "w-lead": {
+      "id": "w-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each run writes one folder under "
+        },
+        {
+          "insert": ".design-score/<app>/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in the design-system checkout, and git ignores it. The folder name is the start time plus the label. The tree shows a real run."
+        }
+      ],
+      "children": []
+    },
+    "w-tree": {
+      "id": "w-tree",
+      "type": "file-tree",
+      "props": {
+        "entries": [
+          {
+            "path": ".design-score/knowledge-system/2026-10-29T10-20-05-after-rebase/",
+            "note": "one run: <timestamp>-<label>",
+            "color": "blue"
+          },
+          {
+            "path": ".design-score/knowledge-system/2026-10-29T10-20-05-after-rebase/scorecard.json",
+            "note": "scores, statuses, findings and provenance"
+          },
+          {
+            "path": ".design-score/knowledge-system/2026-10-29T10-20-05-after-rebase/report.html",
+            "note": "the page to read"
+          },
+          {
+            "path": ".design-score/knowledge-system/2026-10-29T10-20-05-after-rebase/shots/inbox__light__1440x900.png",
+            "note": "state screenshot per page, theme and viewport"
+          },
+          {
+            "path": ".design-score/knowledge-system/2026-10-29T10-20-05-after-rebase/shots/inbox__light__1440x900__motion.png",
+            "note": "after the motion pass, and __reduced-motion.png"
+          },
+          {
+            "path": ".design-score/knowledge-system/2026-10-29T10-20-05-after-rebase/crops/inbox/R-hit-target-light-1440x900-1.png",
+            "note": "one crop per kept finding, element boxed"
+          },
+          {
+            "path": ".design-score/knowledge-system/compare/",
+            "note": "compare pages, <runA>__vs__<runB>.html",
+            "color": "teal"
+          },
+          {
+            "path": ".design-score/fixture-R-align-near-miss/",
+            "note": "runs made by --fixture",
+            "color": "gray"
+          }
+        ]
+      },
+      "children": []
+    },
+    "w-prov": {
+      "id": "w-prov",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The "
+        },
+        {
+          "insert": "provenance",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " block in "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " says what the run measured. It holds the git head and changed-file count of the app and the design system. It also holds the Chromium build, the axe-core version and sha256, and up to 50 blocked requests and WebSockets."
+        }
+      ],
+      "children": []
+    },
+    "h-score": {
+      "id": "h-score",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "How the Score Is Computed"
+        }
+      ],
+      "children": []
+    },
+    "s-lead": {
+      "id": "s-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "scripts/design-score/score.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/score.ts"
+            }
+          }
+        },
+        {
+          "insert": " computes every number in the report. One formula runs at the page, area and app level."
+        }
+      ],
+      "children": []
+    },
+    "s1": {
+      "id": "s1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Check status on a page",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "s1a",
+        "s1b"
+      ]
+    },
+    "s1a": {
+      "id": "s1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A check fails when any finding is a fail in any theme or viewport. Else it warns when any finding warns, else it passes."
+        }
+      ],
+      "children": []
+    },
+    "s1b": {
+      "id": "s1b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A check that did not run, or that the page skips, is n/a and is left out."
+        }
+      ],
+      "children": []
+    },
+    "s2": {
+      "id": "s2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Page score",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "s2a",
+        "s2b"
+      ]
+    },
+    "s2a": {
+      "id": "s2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Pass counts 1, warn 0.5 and fail 0. The page score is the mean over the applicable checks, times 100."
+        }
+      ],
+      "children": []
+    },
+    "s2b": {
+      "id": "s2b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "For example, 20 applicable checks with 16 passes, 2 warns and 2 fails give (16 + 1) / 20 × 100 = 85."
+        }
+      ],
+      "children": []
+    },
+    "s3": {
+      "id": "s3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Area sub-scores",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "s3a"
+      ]
+    },
+    "s3a": {
+      "id": "s3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each of the 6 areas applies the page formula to its own checks. The app's area score is the mean of the page area scores where the area applies."
+        }
+      ],
+      "children": []
+    },
+    "s4": {
+      "id": "s4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "App score",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "s4a"
+      ]
+    },
+    "s4a": {
+      "id": "s4a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The app score is the mean of the page scores. A page with no score is left out of the mean."
+        }
+      ],
+      "children": []
+    },
+    "s5": {
+      "id": "s5",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Pages with no score",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "s5a"
+      ]
+    },
+    "s5a": {
+      "id": "s5a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A skipped optional page gets no score. A page where no browser check ran gets no score too, because the static checks alone would raise the app score."
+        }
+      ],
+      "children": []
+    },
+    "s-after": {
+      "id": "s-after",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The 5 static checks count once on every page. The run counts findings before it keeps 6 per check (the config's "
+        },
+        {
+          "insert": "cap",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "), so the cap never changes a score. A finding that matches "
+        },
+        {
+          "insert": "motionAllow",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " shows in the report and never counts."
+        }
+      ],
+      "children": []
+    },
+    "h-report": {
+      "id": "h-report",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Read "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "children": []
+    },
+    "r-lead": {
+      "id": "r-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Open "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " from the run folder in a browser. It reads top to bottom, from the app score down to single findings."
+        }
+      ],
+      "children": []
+    },
+    "r-img": {
+      "id": "r-img",
+      "type": "image",
+      "props": {
+        "alt": "The top of report.html for the after-rebase run. It shows the app score 85.3 and six area sub-scores, with interaction lowest at 57.7. A provenance line names the cached Chromium r1234. Below are the first rows of the Pages grid, with green, yellow and red cells.",
+        "caption": "report.html for run 2026-10-29T10-20-05-after-rebase, 59 pages",
+        "src": "./assets/images/report-top.png"
+      },
+      "children": []
+    },
+    "r1": {
+      "id": "r1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Header",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "r1a",
+        "r1b"
+      ]
+    },
+    "r1a": {
+      "id": "r1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The header shows the app score, the 6 area sub-scores, the formula and one provenance line."
+        }
+      ],
+      "children": []
+    },
+    "r1b": {
+      "id": "r1b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Read the Chromium version and any fallback note before you compare two runs."
+        }
+      ],
+      "children": []
+    },
+    "r2": {
+      "id": "r2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Pages grid",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "r2a",
+        "r2b"
+      ]
+    },
+    "r2a": {
+      "id": "r2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each row is one page with its score, its area scores and one cell per check. A green ✓ is a pass, and a dash is n/a."
+        }
+      ],
+      "children": []
+    },
+    "r2b": {
+      "id": "r2b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A yellow or red cell shows the page's fail plus warn finding count. Hover a cell to see the check's note and both counts."
+        }
+      ],
+      "children": []
+    },
+    "r3": {
+      "id": "r3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Checks table",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "r3a"
+      ]
+    },
+    "r3a": {
+      "id": "r3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each row counts the pages where the check passes, warns, fails or is n/a. It also lists the design rules that the check decides."
+        }
+      ],
+      "children": []
+    },
+    "r4": {
+      "id": "r4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Summary sections",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "r4a"
+      ]
+    },
+    "r4a": {
+      "id": "r4a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Hit Targets by Component groups R-hit-target findings by component. Allowed lists the findings that "
+        },
+        {
+          "insert": "motionAllow",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " matched, and Static Findings lists up to 25 source findings per check."
+        }
+      ],
+      "children": []
+    },
+    "r5": {
+      "id": "r5",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "One section per page",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "r5a",
+        "r5b"
+      ]
+    },
+    "r5a": {
+      "id": "r5a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A page section lists errors first, then findings with fails first. Each finding gives the selector and box, the measured and expected values, the rule ids and a crop."
+        }
+      ],
+      "children": []
+    },
+    "r5b": {
+      "id": "r5b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "In a crop, magenta boxes the element and cyan boxes the element it was compared with. The page's screenshots fold under "
+        },
+        {
+          "insert": "Screenshots",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-compare": {
+      "id": "h-compare",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Read a Compare Page"
+        }
+      ],
+      "children": []
+    },
+    "c-lead": {
+      "id": "c-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A compare page puts run A before run B. The command prints the two app scores and the page path."
+        }
+      ],
+      "children": []
+    },
+    "c-code": {
+      "id": "c-code",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --compare knowledge-system/main-0a3581e knowledge-system/after-rebase\n# knowledge-system: 78.6 → 85.3 (+6.7)"
+        }
+      ],
+      "children": []
+    },
+    "c-img": {
+      "id": "c-img",
+      "type": "image",
+      "props": {
+        "alt": "The top of a compare page, main-0a3581e to after-rebase. The score goes from 78.6 to 85.3, plus 6.7. The Areas table shows color from 50.9 to 100. The Checks table shows R-contrast from 1.7 to 100 and 638 fail findings to 0.",
+        "caption": "Compare page for main 0a3581e against the rebased branch",
+        "src": "./assets/images/compare-top.png"
+      },
+      "children": []
+    },
+    "c1": {
+      "id": "c1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Areas and Checks tables",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "c1a",
+        "c1b"
+      ]
+    },
+    "c1a": {
+      "id": "c1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each row gives A, B and the delta. A check's score here is the mean of its page statuses, with pass 1, warn 0.5 and fail 0."
+        }
+      ],
+      "children": []
+    },
+    "c1b": {
+      "id": "c1b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The last two columns count fail and warn findings. A score that holds while the findings fall is still progress."
+        }
+      ],
+      "children": []
+    },
+    "c2": {
+      "id": "c2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Pages table",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "c2a"
+      ]
+    },
+    "c2a": {
+      "id": "c2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each row names the checks whose status changed on that page, such as "
+        },
+        {
+          "insert": "R-contrast fail→pass",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "c3": {
+      "id": "c3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Screenshot pairs",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "c3a"
+      ]
+    },
+    "c3a": {
+      "id": "c3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each page shows the A and B state screenshots side by side, once per theme and viewport."
+        }
+      ],
+      "children": []
+    },
+    "h-climb": {
+      "id": "h-climb",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Raise a Score One Fix at a Time"
+        }
+      ],
+      "children": []
+    },
+    "hc-lead": {
+      "id": "hc-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The hill-climb loop raises the score in small steps, and each step proves itself. Start with a full baseline and a quick baseline, because a quick run sees fewer themes and viewports and scores higher."
+        }
+      ],
+      "children": []
+    },
+    "hc-code": {
+      "id": "hc-code",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --app knowledge-system --label base\nbun run design:score --app knowledge-system --quick --label base-quick"
+        }
+      ],
+      "children": []
+    },
+    "hc1": {
+      "id": "hc1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Pick the worst fail in the base report. That is the check with the most fail pages in the Checks table."
+        }
+      ],
+      "children": []
+    },
+    "hc2": {
+      "id": "hc2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Fix that one finding in the app."
+        }
+      ],
+      "children": []
+    },
+    "hc3": {
+      "id": "hc3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Rerun only the touched pages, such as "
+        },
+        {
+          "insert": "--quick --pages session,side-peek --label fix-1",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "hc4": {
+      "id": "hc4",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Compare those pages with "
+        },
+        {
+          "insert": "base-quick",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Keep the change only if the score rises and no other check fails, else revert it."
+        }
+      ],
+      "children": []
+    },
+    "hc5": {
+      "id": "hc5",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "After the last fix, run a full run and compare it with "
+        },
+        {
+          "insert": "base",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Only the full run counts."
+        }
+      ],
+      "children": []
+    },
+    "h-app": {
+      "id": "h-app",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Add an App Config"
+        }
+      ],
+      "children": []
+    },
+    "a-lead": {
+      "id": "a-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "An app config is one JSON file, "
+        },
+        {
+          "insert": "design-score/apps/<app>.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", with the shape "
+        },
+        {
+          "insert": "AppConfig",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/types.ts",
+              "symbol": "AppConfig"
+            }
+          }
+        },
+        {
+          "insert": ". Copy "
+        },
+        {
+          "insert": "knowledge-system.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/apps/knowledge-system.json"
+            }
+          }
+        },
+        {
+          "insert": " and change these fields."
+        }
+      ],
+      "children": []
+    },
+    "a-table": {
+      "id": "a-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Field",
+          "Holds",
+          "Knowledge System Value"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "app",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "The id, the same as the file name",
+            "knowledge-system"
+          ],
+          [
+            [
+              {
+                "insert": "repo",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "sourceDirs",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "The repo below the workspace root, and the folders the static checks read",
+            [
+              {
+                "insert": "lascari-ai/knowledge-system",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "app/src",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "baseUrl",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " or "
+              },
+              {
+                "insert": "registryApp",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "A running app, or the apps.json entry to start and stop",
+            [
+              {
+                "insert": "http://127.0.0.1:4961",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "themes",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Per theme, the localStorage entries, query, colorScheme and an assert selector",
+            [
+              {
+                "insert": "knowledge.theme",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " set to light or dark"
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "viewports",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Width and height of each viewport",
+            "1440x900 and 1024x768"
+          ],
+          [
+            [
+              {
+                "insert": "pages",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Each page state to score",
+            "59 pages"
+          ],
+          [
+            [
+              {
+                "insert": "motionAllow",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Layout animations to allow, each with name, selector, props and reason",
+            [
+              {
+                "insert": "ds-shell-sidebar",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " on "
+              },
+              {
+                "insert": "grid-template-columns",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ]
+        ],
+        "title": "App config fields"
+      },
+      "children": []
+    },
+    "a-opt": {
+      "id": "a-opt",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Optional fields tune the checks: "
+        },
+        {
+          "insert": "handles",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "ignore",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "settleMs",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "loading",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "cap",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "shift.open",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Browsing is read-only, and no config can turn that off. The run aborts every request other than GET, HEAD and OPTIONS. It closes every WebSocket before the socket reaches its server."
+        }
+      ],
+      "children": []
+    },
+    "h-pages": {
+      "id": "h-pages",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Page Fields"
+        }
+      ],
+      "children": []
+    },
+    "p-lead": {
+      "id": "p-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A page entry needs an "
+        },
+        {
+          "insert": "id",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and a "
+        },
+        {
+          "insert": "path",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The other fields put the page in the state you want to score."
+        }
+      ],
+      "children": []
+    },
+    "p1": {
+      "id": "p1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "waitFor",
+          "attributes": {
+            "bold": true,
+            "code": true
+          }
+        }
+      ],
+      "children": [
+        "p1a"
+      ]
+    },
+    "p1a": {
+      "id": "p1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The run waits up to 15 s for this selector to show after load. Then it waits until no "
+        },
+        {
+          "insert": "loading",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " text shows, for up to 20 s."
+        }
+      ],
+      "children": []
+    },
+    "p2": {
+      "id": "p2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "actions",
+          "attributes": {
+            "bold": true,
+            "code": true
+          }
+        }
+      ],
+      "children": [
+        "p2a",
+        "p2b",
+        "p2c"
+      ]
+    },
+    "p2a": {
+      "id": "p2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each step has one verb: "
+        },
+        {
+          "insert": "click",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "hover",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "press",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "focus",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "waitFor",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "wait",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "scrollTo",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "mouse",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "scroll",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "p2b": {
+      "id": "p2b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A step waits 5 s for its selector, and a "
+        },
+        {
+          "insert": "waitFor",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " step waits 10 s."
+        }
+      ],
+      "children": []
+    },
+    "p2c": {
+      "id": "p2c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A failed step errors the page unless the step sets "
+        },
+        {
+          "insert": "\"required\": false",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "p3": {
+      "id": "p3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "mock",
+          "attributes": {
+            "bold": true,
+            "code": true
+          }
+        }
+      ],
+      "children": [
+        "p3a",
+        "p3b"
+      ]
+    },
+    "p3a": {
+      "id": "p3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each entry changes one GET JSON response by URL path. "
+        },
+        {
+          "insert": "merge",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " sets top-level keys, and "
+        },
+        {
+          "insert": "append",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " adds items to top-level arrays."
+        }
+      ],
+      "children": []
+    },
+    "p3b": {
+      "id": "p3b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Use it for a state the sample data lacks. "
+        },
+        {
+          "insert": "session-active-thread",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " mocks a live Run, and "
+        },
+        {
+          "insert": "open-library",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " mocks a Session under a Topic."
+        }
+      ],
+      "children": []
+    },
+    "p4": {
+      "id": "p4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "shiftWatch",
+          "attributes": {
+            "bold": true,
+            "code": true
+          }
+        }
+      ],
+      "children": [
+        "p4a"
+      ]
+    },
+    "p4a": {
+      "id": "p4a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "R-state-shift fails when these elements move while the page's actions run. "
+        },
+        {
+          "insert": "prop-status-popover",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " watches "
+        },
+        {
+          "insert": ".properties-pinned-item",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "p5": {
+      "id": "p5",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "optional",
+          "attributes": {
+            "bold": true,
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "skip",
+          "attributes": {
+            "bold": true,
+            "code": true
+          }
+        }
+      ],
+      "children": [
+        "p5a",
+        "p5b"
+      ]
+    },
+    "p5a": {
+      "id": "p5a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "optional",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " holds a reason, and the run skips the page with that reason when the page cannot load or reach its state. A refused connection is never skipped."
+        }
+      ],
+      "children": []
+    },
+    "p5b": {
+      "id": "p5b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "skip",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " lists check ids that are n/a on this page, with the reason in "
+        },
+        {
+          "insert": "skipReason",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "p-check": {
+      "id": "p-check",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Prove a new config in three runs. Run "
+        },
+        {
+          "insert": "--list-pages",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", then "
+        },
+        {
+          "insert": "--quick",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", then a full run, and fix each page error before the next run."
+        }
+      ],
+      "children": []
+    }
+  }
+}

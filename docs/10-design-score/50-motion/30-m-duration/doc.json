@@ -1,0 +1,1325 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-d617c2dfba87ce758e65d47512dff9f9",
+  "title": "M-duration: Motion Durations",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b6",
+        "b8",
+        "b11",
+        "b14",
+        "b15",
+        "b16",
+        "b17",
+        "b18",
+        "b19",
+        "b20",
+        "b21",
+        "b22",
+        "b23",
+        "b24",
+        "b25",
+        "b26",
+        "b27",
+        "b28",
+        "b29",
+        "b30",
+        "b31",
+        "b32",
+        "b33",
+        "b34",
+        "b35",
+        "b36",
+        "b37",
+        "b38",
+        "b39",
+        "b41",
+        "b43",
+        "b46",
+        "b48",
+        "b49",
+        "b50",
+        "b51",
+        "b52",
+        "b53",
+        "b54"
+      ]
+    },
+    "b1": {
+      "id": "b1",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "M-duration",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " measures how long transitions and animations run when a person hovers or presses a control, or opens a menu, dialog or panel. It is a motion check, so it records real animations in Chromium, in the first theme and viewport. A duration over its limit fails the page."
+        }
+      ],
+      "children": []
+    },
+    "b2": {
+      "id": "b2",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "What It Catches"
+        }
+      ],
+      "children": []
+    },
+    "b3": {
+      "id": "b3",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check sorts each animation into a kind by where it runs, and each kind has its own limit."
+        }
+      ],
+      "children": []
+    },
+    "b4": {
+      "id": "b4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Control hover and press",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b5"
+      ]
+    },
+    "b5": {
+      "id": "b5",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A transition that starts while the run holds "
+        },
+        {
+          "insert": ":hover",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": ":hover:active",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on a control fails when it runs longer than 200ms."
+        }
+      ],
+      "children": []
+    },
+    "b6": {
+      "id": "b6",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Menus and popovers",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b7"
+      ]
+    },
+    "b7": {
+      "id": "b7",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "An animation inside a menu, listbox, tooltip, "
+        },
+        {
+          "insert": "[popover]",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or Radix popper fails over 300ms."
+        }
+      ],
+      "children": []
+    },
+    "b8": {
+      "id": "b8",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Dialogs and large panels",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b9",
+        "b10"
+      ]
+    },
+    "b9": {
+      "id": "b9",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "An animation inside a "
+        },
+        {
+          "insert": "dialog",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", a "
+        },
+        {
+          "insert": "role=\"dialog\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "role=\"alertdialog\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or "
+        },
+        {
+          "insert": "[aria-modal=\"true\"]",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " fails over 450ms."
+        }
+      ],
+      "children": []
+    },
+    "b10": {
+      "id": "b10",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "An element that covers 15% of the viewport or more counts as a panel, with the same 450ms limit."
+        }
+      ],
+      "children": []
+    },
+    "b11": {
+      "id": "b11",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Not judged",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b12",
+        "b13"
+      ]
+    },
+    "b12": {
+      "id": "b12",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "An infinite animation, such as a spinner, is skipped."
+        }
+      ],
+      "children": []
+    },
+    "b13": {
+      "id": "b13",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Any other element has no limit, such as a toast outside every control, menu and dialog."
+        }
+      ],
+      "children": []
+    },
+    "b14": {
+      "id": "b14",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "How It Measures"
+        }
+      ],
+      "children": []
+    },
+    "b15": {
+      "id": "b15",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The run records every animation the page starts, then compares each one with the limit for its kind. It takes these steps in order."
+        }
+      ],
+      "children": []
+    },
+    "b16": {
+      "id": "b16",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "scripts/design-score/run.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/run.ts",
+              "symbol": "Motion"
+            }
+          }
+        },
+        {
+          "insert": " opens each page in the first theme and viewport, with "
+        },
+        {
+          "insert": "installMotionRecorder",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/motion.ts",
+              "symbol": "installMotionRecorder"
+            }
+          }
+        },
+        {
+          "insert": " added before any page script."
+        }
+      ],
+      "children": []
+    },
+    "b17": {
+      "id": "b17",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The recorder polls "
+        },
+        {
+          "insert": "document.getAnimations()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on every frame. It keeps each new animation's duration, delay, iterations, easing, properties and target."
+        }
+      ],
+      "children": []
+    },
+    "b18": {
+      "id": "b18",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The run records while the page's actions run. Then "
+        },
+        {
+          "insert": "markMotionCandidates",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/probes.ts",
+              "symbol": "markMotionCandidates"
+            }
+          }
+        },
+        {
+          "insert": " marks up to 24 visible controls, one per class signature."
+        }
+      ],
+      "children": []
+    },
+    "b19": {
+      "id": "b19",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "For each control, "
+        },
+        {
+          "insert": "the hover pass",
+          "attributes": {
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/run.ts",
+              "symbol": "Motion"
+            }
+          }
+        },
+        {
+          "insert": " forces "
+        },
+        {
+          "insert": ":hover",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " through CDP "
+        },
+        {
+          "insert": "CSS.forcePseudoState",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " for 110ms, then "
+        },
+        {
+          "insert": ":hover:active",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " for 110ms. No click reaches the app."
+        }
+      ],
+      "children": []
+    },
+    "b20": {
+      "id": "b20",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "readMotion",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/motion.ts",
+              "symbol": "readMotion"
+            }
+          }
+        },
+        {
+          "insert": " gives each record a kind, and "
+        },
+        {
+          "insert": "analyzeMotion",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/motion.ts",
+              "symbol": "analyzeMotion"
+            }
+          }
+        },
+        {
+          "insert": " compares its duration with the kind's limit in "
+        },
+        {
+          "insert": "LIMITS",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/motion.ts",
+              "symbol": "LIMITS"
+            }
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b21": {
+      "id": "b21",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A record from a hover or press phase is always a control, whatever its size. The limit applies to the duration without the delay, and the finding shows the delay. Each selector, property list and kind reports once."
+        }
+      ],
+      "children": []
+    },
+    "b22": {
+      "id": "b22",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Thresholds"
+        }
+      ],
+      "children": []
+    },
+    "b23": {
+      "id": "b23",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each kind has one limit, and any record over it fails."
+        }
+      ],
+      "children": []
+    },
+    "b24": {
+      "id": "b24",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Kind",
+          "How the Check Finds It",
+          "Limit",
+          "Severity"
+        ],
+        "rows": [
+          [
+            "Control",
+            "A hover or press phase, or a target inside a button, link or other control",
+            "200ms",
+            "Fail"
+          ],
+          [
+            "Menu",
+            [
+              {
+                "insert": "Inside a menu, listbox, tooltip, "
+              },
+              {
+                "insert": "[popover]",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " or Radix popper"
+              }
+            ],
+            "300ms",
+            "Fail"
+          ],
+          [
+            "Dialog",
+            [
+              {
+                "insert": "Inside a dialog, an alertdialog or "
+              },
+              {
+                "insert": "[aria-modal=\"true\"]",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "450ms",
+            "Fail"
+          ],
+          [
+            "Panel",
+            "Covers 15% of the viewport or more",
+            "450ms",
+            "Fail"
+          ],
+          [
+            "Other",
+            "Any other element",
+            "None",
+            "Not judged"
+          ]
+        ],
+        "title": "M-duration limits"
+      },
+      "children": []
+    },
+    "b25": {
+      "id": "b25",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The motion tokens are 100, 150 and 260ms, so every token duration passes every limit. The rules ask for 150ms on small elements and 250ms on menus. A 280ms menu passes the check but breaks "
+        },
+        {
+          "insert": "17-duration-by-size",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b26": {
+      "id": "b26",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Example"
+        }
+      ],
+      "children": []
+    },
+    "b27": {
+      "id": "b27",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The fixture pair is "
+        },
+        {
+          "insert": "design-score/fixtures/M-duration/",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/fixtures/M-duration"
+            }
+          }
+        },
+        {
+          "insert": ". Both pages show a toolbar with a Sort menu, and "
+        },
+        {
+          "insert": "fixture.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " clicks Sort to open the menu. The good page uses "
+        },
+        {
+          "insert": "duration.fast",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " for the button hover and "
+        },
+        {
+          "insert": "duration.slow",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " for the menu. The bad page uses twice "
+        },
+        {
+          "insert": "duration.slow",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", 520ms, for both."
+        }
+      ],
+      "children": []
+    },
+    "b28": {
+      "id": "b28",
+      "type": "image-grid",
+      "props": {
+        "columns": 2,
+        "images": [
+          {
+            "src": "./assets/images/good.png",
+            "heading": "Good: pass",
+            "alt": "The Sort menu open under the toolbar, with no boxes drawn.",
+            "caption": "good.html, 0 findings"
+          },
+          {
+            "src": "./assets/images/bad.png",
+            "heading": "Bad: fail",
+            "alt": "The same open menu. Magenta boxes mark both buttons and the menu.",
+            "caption": "bad.html, 5 fail findings"
+          }
+        ]
+      },
+      "children": []
+    },
+    "b29": {
+      "id": "b29",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The bad page has 5 findings. The menu reports "
+        },
+        {
+          "insert": "opacity",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "transform",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "visibility",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " as 3 transitions over 300ms. The Sort and Filter buttons each report a 520ms "
+        },
+        {
+          "insert": "background-color",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " hover. The Sort hover starts during the click, so its finding says \"while reaching the page state\"."
+        }
+      ],
+      "children": []
+    },
+    "b30": {
+      "id": "b30",
+      "type": "image-grid",
+      "props": {
+        "columns": 1,
+        "images": [
+          {
+            "src": "./assets/images/good-frames.png",
+            "heading": "Good frames",
+            "alt": "Five frames of the menu opening. The menu is fully visible at 260ms.",
+            "caption": "Frames at 0, 130, 260, 390 and 520ms after the click."
+          },
+          {
+            "src": "./assets/images/bad-frames.png",
+            "heading": "Bad frames",
+            "alt": "The same five frames. The menu is still faint at 260ms and fully visible only at 520ms.",
+            "caption": "Frames at 0, 130, 260, 390 and 520ms after the click."
+          }
+        ]
+      },
+      "children": []
+    },
+    "b31": {
+      "id": "b31",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The frames show the cost of a slow open. The good menu is done at 260ms. At the same time, the bad menu is about half visible, so a person waits twice as long for each open."
+        }
+      ],
+      "children": []
+    },
+    "b32": {
+      "id": "b32",
+      "type": "callout",
+      "props": {
+        "title": "How the frames are made",
+        "tone": "info"
+      },
+      "text": [
+        {
+          "insert": "bun scripts/design-score/frames.ts M-duration",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " writes these strips from the fixture's "
+        },
+        {
+          "insert": "frames.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". It stops the page's animation clock, clicks Sort, and seeks every animation to each frame time."
+        }
+      ],
+      "children": []
+    },
+    "b33": {
+      "id": "b33",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules Behind It"
+        }
+      ],
+      "children": []
+    },
+    "b34": {
+      "id": "b34",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Seven rules in "
+        },
+        {
+          "insert": "design-score/rules/motion.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/motion.json"
+            }
+          }
+        },
+        {
+          "insert": " name this check. Every finding carries their ids in "
+        },
+        {
+          "insert": "rules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b35": {
+      "id": "b35",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity",
+          "Measured"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "ui-high-frequency-instant",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Frequent interactions are instant",
+            "Warn",
+            "Partly, at 200ms, not 150ms"
+          ],
+          [
+            [
+              {
+                "insert": "13-no-open-animation-frequent-menus",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No open animation on frequent menus",
+            "Warn",
+            "No"
+          ],
+          [
+            [
+              {
+                "insert": "13-no-animate-data-tab-swap",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No animated data swaps",
+            "Warn",
+            "No"
+          ],
+          [
+            [
+              {
+                "insert": "17-duration-by-size",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Duration by size",
+            "Warn",
+            "Partly, at 200, 300 and 450ms"
+          ],
+          [
+            [
+              {
+                "insert": "17-easing-by-purpose",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Easing by purpose",
+            "Warn",
+            "No"
+          ],
+          [
+            [
+              {
+                "insert": "ui-exit-subtle",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Exits shorter and smaller",
+            "Warn",
+            "No"
+          ],
+          [
+            [
+              {
+                "insert": "ui-stagger-entrances",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Staggered entrances",
+            "Warn",
+            "No"
+          ]
+        ],
+        "title": "Rules decided by M-duration"
+      },
+      "children": []
+    },
+    "b36": {
+      "id": "b36",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The seven rules are warnings, but an "
+        },
+        {
+          "insert": "M-duration",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " finding fails, at limits above the rule values. The recorder keeps each easing, but no limit reads it. The check also never compares an exit with its enter, or reads a stagger."
+        }
+      ],
+      "children": []
+    },
+    "b37": {
+      "id": "b37",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Known False Positives"
+        }
+      ],
+      "children": []
+    },
+    "b38": {
+      "id": "b38",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check sorts by where an element sits, so an element in the wrong kind gets the wrong limit."
+        }
+      ],
+      "children": []
+    },
+    "b39": {
+      "id": "b39",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Long animations inside a control",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b40"
+      ]
+    },
+    "b40": {
+      "id": "b40",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A 1s progress bar inside a Save button runs while the actions click it. The bar sits in a control, so it fails the 200ms limit."
+        }
+      ],
+      "children": []
+    },
+    "b41": {
+      "id": "b41",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Large decorative motion",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b42"
+      ]
+    },
+    "b42": {
+      "id": "b42",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A finite background sweep that covers 15% of the viewport counts as a panel, so it fails over 450ms."
+        }
+      ],
+      "children": []
+    },
+    "b43": {
+      "id": "b43",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Motion it misses",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b44",
+        "b45"
+      ]
+    },
+    "b44": {
+      "id": "b44",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A toast, a row or a card outside every control, menu and dialog has no limit."
+        }
+      ],
+      "children": []
+    },
+    "b45": {
+      "id": "b45",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "An animation that starts before recording starts is not recorded."
+        }
+      ],
+      "children": []
+    },
+    "b46": {
+      "id": "b46",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix it in the app config",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b47"
+      ]
+    },
+    "b47": {
+      "id": "b47",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Add a control's selector to "
+        },
+        {
+          "insert": "ignore",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "design-score/apps/<app>.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", so the run does not hover it. To skip the check on one page, use "
+        },
+        {
+          "insert": "skip",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "skipReason",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b48": {
+      "id": "b48",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Debug It"
+        }
+      ],
+      "children": []
+    },
+    "b49": {
+      "id": "b49",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Run these commands in the design-system checkout. Each run writes a folder under "
+        },
+        {
+          "insert": ".design-score/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and one crop per finding."
+        }
+      ],
+      "children": []
+    },
+    "b50": {
+      "id": "b50",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run the fixture pair. The command exits 1 unless the bad page fails and the good page passes."
+        }
+      ],
+      "children": []
+    },
+    "b51": {
+      "id": "b51",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --fixture M-duration"
+        }
+      ],
+      "children": []
+    },
+    "b52": {
+      "id": "b52",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Score one page of an app in one theme and one viewport."
+        }
+      ],
+      "children": []
+    },
+    "b53": {
+      "id": "b53",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --app knowledge-system --pages session --quick"
+        }
+      ],
+      "children": []
+    },
+    "b54": {
+      "id": "b54",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Read the check's "
+        },
+        {
+          "insert": "note",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". It gives the number of animations seen and of controls hovered and pressed."
+        }
+      ],
+      "children": []
+    }
+  }
+}

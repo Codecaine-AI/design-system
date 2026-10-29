@@ -1,0 +1,636 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-bcd485456044ce0ffd83a5fe74d23ff6",
+  "title": "Interaction",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "intro",
+        "h-checks",
+        "ia1",
+        "ia2",
+        "h-rules",
+        "ir1",
+        "ir2",
+        "ir3",
+        "ir4",
+        "ir5",
+        "ir6",
+        "ir7",
+        "ir8"
+      ]
+    },
+    "intro": {
+      "id": "intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The interaction checks cover hover, focus, press and hit targets. They test that a control reacts without moving the layout, and that it is large enough to hit. The area has 2 static checks, 2 runtime checks, 1 motion check and 28 rules in "
+        },
+        {
+          "insert": "design-score/rules/interaction.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/interaction.json"
+            }
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-checks": {
+      "id": "h-checks",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Checks"
+        }
+      ],
+      "children": []
+    },
+    "ia1": {
+      "id": "ia1",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each check has its own page with its thresholds, a good and bad fixture pair, and its known false positives. The static checks read source files, and the others run in a browser."
+        }
+      ],
+      "children": []
+    },
+    "ia2": {
+      "id": "ia2",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Check",
+          "Layer",
+          "Result",
+          "What It Finds"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "S-hover-unguarded",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/60-interaction/10-s-hover-unguarded"
+                }
+              }
+            ],
+            "static",
+            "Warn",
+            "A :hover rule outside @media (hover: hover)"
+          ],
+          [
+            [
+              {
+                "insert": "S-outline-none",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/60-interaction/20-s-outline-none"
+                }
+              }
+            ],
+            "static",
+            "Fail",
+            "An outline removed with no focus style in its place"
+          ],
+          [
+            [
+              {
+                "insert": "R-hit-target",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/60-interaction/30-r-hit-target"
+                }
+              }
+            ],
+            "runtime",
+            "Fail and warn",
+            "A control under 24px, or under 32px"
+          ],
+          [
+            [
+              {
+                "insert": "R-state-shift",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/60-interaction/40-r-state-shift"
+                }
+              }
+            ],
+            "runtime",
+            "Fail",
+            "Hover, focus, select or open that moves the layout"
+          ],
+          [
+            [
+              {
+                "insert": "M-press-scale",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/60-interaction/50-m-press-scale"
+                }
+              }
+            ],
+            "motion",
+            "Fail and warn",
+            "A press scale outside 0.95 to 0.98"
+          ]
+        ],
+        "title": "Interaction checks"
+      },
+      "children": []
+    },
+    "h-rules": {
+      "id": "h-rules",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules"
+        }
+      ],
+      "children": []
+    },
+    "ir1": {
+      "id": "ir1",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each rule in "
+        },
+        {
+          "insert": "design-score/rules/interaction.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/interaction.json"
+            }
+          }
+        },
+        {
+          "insert": " names the check that decides it, or no check. A check's page says which of its rules the check measures."
+        }
+      ],
+      "children": []
+    },
+    "ir2": {
+      "id": "ir2",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "ui-hover-capable-only",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Hover behind a media query",
+            "Warn"
+          ]
+        ],
+        "title": "Rules decided by S-hover-unguarded"
+      },
+      "children": []
+    },
+    "ir3": {
+      "id": "ir3",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "a11y-no-outline-none-without-replacement",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No outline removal without replacement",
+            "Fail"
+          ]
+        ],
+        "title": "Rules decided by S-outline-none"
+      },
+      "children": []
+    },
+    "ir4": {
+      "id": "ir4",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "a11y-hit-target",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Hit target size",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-hit-areas-no-overlap",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Hit areas never overlap",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "16-no-dead-zones",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No dead zones",
+            "Warn"
+          ]
+        ],
+        "title": "Rules decided by R-hit-target"
+      },
+      "children": []
+    },
+    "ir5": {
+      "id": "ir5",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "break-states",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Stable states",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "ks-no-state-shift",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "State changes never shift layout",
+            "Fail"
+          ]
+        ],
+        "title": "Rules decided by R-state-shift"
+      },
+      "children": []
+    },
+    "ir6": {
+      "id": "ir6",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "ui-press-scale",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Press scale",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "ui-press-scale-not-disabled",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Disabled never scales",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "08-tap-keyboard-parity",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Keyboard press feedback",
+            "Warn"
+          ]
+        ],
+        "title": "Rules decided by M-press-scale"
+      },
+      "children": []
+    },
+    "ir7": {
+      "id": "ir7",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The rules below name no check yet. 11 of the 18 need keyboard input, touch input or timing, which no check drives yet."
+        }
+      ],
+      "children": []
+    },
+    "ir8": {
+      "id": "ir8",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "16-shortcut-sequences",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Safe shortcuts",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "16-shortcuts-ignore-fields",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Shortcuts ignore fields",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "12-enter-advances-form",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Enter submits",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "12-focus-primary-when-no-input",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Focus the primary action",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "12-escape-steps-back",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Escape steps back",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "12-autofocus-next-input",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Autofocus the next input",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "09-shadow-hover-darker",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Darker shadow on hover",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "ui-overscroll-contain",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Contained overscroll",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "08-tap-cancels-on-move",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Tap cancels on move",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "08-drag-in-container",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Drag stays in its container",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "18-fast-action-feedback",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Fast action feedback",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "18-fast-page-load",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Fast page load",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "20-copy-feedback-keeps-width",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Copy feedback keeps width",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "20-tooltip-skip-delay",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Tooltip skip delay",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "iface-cover-all-states",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Every state renders",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "review-variant-states-complete",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Complete variant states",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "sm-loading-holds",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Loading holds still",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "td-zoom-keeps-edges-reachable",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Zoomed artwork reachable",
+            "Warn"
+          ]
+        ],
+        "title": "Rules no check decides yet"
+      },
+      "children": []
+    }
+  }
+}

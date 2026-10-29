@@ -1,0 +1,1697 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-1e30ed6661c19344a28fa09df3b28adc",
+  "title": "R-axe: Axe-Core",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "intro",
+        "h-catches",
+        "catches-lead",
+        "c1",
+        "c2",
+        "c3",
+        "c4",
+        "h-measures",
+        "m-lead",
+        "m1",
+        "m2",
+        "m3",
+        "m4",
+        "m5",
+        "m-after",
+        "h-thresholds",
+        "t-lead",
+        "t-table",
+        "t-after",
+        "h-example",
+        "e-lead",
+        "e-grid",
+        "e-key",
+        "e-placeholder",
+        "e-callout",
+        "h-rules",
+        "r-lead",
+        "r-table",
+        "r-gap",
+        "h-fp",
+        "fp-lead",
+        "fp1",
+        "fp2",
+        "fp3",
+        "h-debug",
+        "d-lead",
+        "d1",
+        "d1c",
+        "d2",
+        "d2c",
+        "d3"
+      ]
+    },
+    "intro": {
+      "id": "intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "R-axe",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " runs the axe-core accessibility engine on each page and reports its WCAG 2.2 AA violations. It is a runtime check in the accessibility area, so it runs in a browser on every page, theme and viewport. Every violation fails the page."
+        }
+      ],
+      "children": []
+    },
+    "h-catches": {
+      "id": "h-catches",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "What It Catches"
+        }
+      ],
+      "children": []
+    },
+    "catches-lead": {
+      "id": "catches-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check reports what the axe rules tagged for WCAG 2.0, 2.1 and 2.2, levels A and AA, find in the rendered page. These are the common kinds."
+        }
+      ],
+      "children": []
+    },
+    "c1": {
+      "id": "c1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Missing names",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "c1a"
+      ]
+    },
+    "c1a": {
+      "id": "c1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A button, a link, an input or a select with no accessible name fails "
+        },
+        {
+          "insert": "button-name",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "link-name",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "label",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "select-name",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "c2": {
+      "id": "c2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Missing text alternatives",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "c2a"
+      ]
+    },
+    "c2a": {
+      "id": "c2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "An "
+        },
+        {
+          "insert": "img",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with no "
+        },
+        {
+          "insert": "alt",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " fails "
+        },
+        {
+          "insert": "image-alt",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". An svg with "
+        },
+        {
+          "insert": "role=\"img\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and no name fails "
+        },
+        {
+          "insert": "svg-img-alt",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "c3": {
+      "id": "c3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Broken ARIA",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "c3a",
+        "c3b"
+      ]
+    },
+    "c3a": {
+      "id": "c3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "An "
+        },
+        {
+          "insert": "aria-labelledby",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " that points at no element, or an "
+        },
+        {
+          "insert": "aria-label",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on a generic "
+        },
+        {
+          "insert": "div",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", fails an ARIA rule."
+        }
+      ],
+      "children": []
+    },
+    "c3b": {
+      "id": "c3b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A focusable element inside "
+        },
+        {
+          "insert": "aria-hidden=\"true\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " fails "
+        },
+        {
+          "insert": "aria-hidden-focus",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "c4": {
+      "id": "c4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Page language",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "c4a"
+      ]
+    },
+    "c4a": {
+      "id": "c4a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A page with no valid "
+        },
+        {
+          "insert": "lang",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on "
+        },
+        {
+          "insert": "html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " fails "
+        },
+        {
+          "insert": "html-has-lang",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "html-lang-valid",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-measures": {
+      "id": "h-measures",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "How It Measures"
+        }
+      ],
+      "children": []
+    },
+    "m-lead": {
+      "id": "m-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The design system does not ship axe-core, so the run finds a copy first. It takes these steps in order."
+        }
+      ],
+      "children": []
+    },
+    "m1": {
+      "id": "m1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "findAxe",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/browser.ts",
+              "symbol": "findAxe"
+            }
+          }
+        },
+        {
+          "insert": " reads "
+        },
+        {
+          "insert": "axe.min.js",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " from "
+        },
+        {
+          "insert": "DS_AXE_PATH",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", else from Core's node_modules, else from a known copy in the workspace. With no copy, R-axe is n/a."
+        }
+      ],
+      "children": []
+    },
+    "m2": {
+      "id": "m2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "scripts/design-score/run.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/run.ts",
+              "symbol": "runScore"
+            }
+          }
+        },
+        {
+          "insert": " calls "
+        },
+        {
+          "insert": "runAxe",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " once per theme and viewport, after the probes."
+        }
+      ],
+      "children": []
+    },
+    "m3": {
+      "id": "m3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "runAxe",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/axe.ts",
+              "symbol": "runAxe"
+            }
+          }
+        },
+        {
+          "insert": " injects axe-core once per page and runs it on the document. It excludes the app config's "
+        },
+        {
+          "insert": "ignore",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " selectors."
+        }
+      ],
+      "children": []
+    },
+    "m4": {
+      "id": "m4",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The run uses only the rules with the "
+        },
+        {
+          "insert": "five WCAG tags",
+          "attributes": {
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/axe.ts",
+              "symbol": "TAGS"
+            }
+          }
+        },
+        {
+          "insert": ". It turns off "
+        },
+        {
+          "insert": "color-contrast",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "target-size",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", because R-contrast and R-hit-target own them."
+        }
+      ],
+      "children": []
+    },
+    "m5": {
+      "id": "m5",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Each violation node becomes a finding, up to 8 nodes per rule. axe's "
+        },
+        {
+          "insert": "incomplete",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " results are dropped."
+        }
+      ],
+      "children": []
+    },
+    "m-after": {
+      "id": "m-after",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A finding's "
+        },
+        {
+          "insert": "measured",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " holds the axe rule id, its impact and the first lines of axe's failure summary. Its "
+        },
+        {
+          "insert": "expected",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is the rule's help text."
+        }
+      ],
+      "children": []
+    },
+    "h-thresholds": {
+      "id": "h-thresholds",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Thresholds"
+        }
+      ],
+      "children": []
+    },
+    "t-lead": {
+      "id": "t-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check has no score threshold. One violation of any impact fails the page."
+        }
+      ],
+      "children": []
+    },
+    "t-table": {
+      "id": "t-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Setting",
+          "Value"
+        ],
+        "rows": [
+          [
+            "Tags",
+            [
+              {
+                "insert": "wcag2a",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "wcag2aa",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "wcag21a",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "wcag21aa",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "wcag22aa",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Rules turned off",
+            [
+              {
+                "insert": "color-contrast",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "target-size",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Results kept",
+            "Violations only"
+          ],
+          [
+            "Nodes per rule",
+            "8"
+          ],
+          [
+            "Severity",
+            "Fail, at every impact"
+          ]
+        ],
+        "title": "R-axe settings"
+      },
+      "children": []
+    },
+    "t-after": {
+      "id": "t-after",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A rule tagged "
+        },
+        {
+          "insert": "best-practice",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "experimental",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " does not run, even when it also has a WCAG tag."
+        }
+      ],
+      "children": []
+    },
+    "h-example": {
+      "id": "h-example",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Example"
+        }
+      ],
+      "children": []
+    },
+    "e-lead": {
+      "id": "e-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The fixture pair is "
+        },
+        {
+          "insert": "design-score/fixtures/R-axe/",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/fixtures/R-axe"
+            }
+          }
+        },
+        {
+          "insert": ". Both pages show the same header with an avatar, a search field and a menu button. The bad page drops the avatar's "
+        },
+        {
+          "insert": "alt",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", the field's "
+        },
+        {
+          "insert": "label",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and the button's "
+        },
+        {
+          "insert": "aria-label",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "e-grid": {
+      "id": "e-grid",
+      "type": "image-grid",
+      "props": {
+        "columns": 2,
+        "images": [
+          {
+            "src": "./assets/images/good.png",
+            "heading": "Good: pass",
+            "alt": "A header with a gray avatar, a labelled search field and a button with three dots. No boxes are drawn.",
+            "caption": "good.html, 0 findings"
+          },
+          {
+            "src": "./assets/images/bad.png",
+            "heading": "Bad: fail",
+            "alt": "The same header. Magenta boxes mark the avatar, the search field and the dots button.",
+            "caption": "bad.html, 3 fail findings"
+          }
+        ]
+      },
+      "children": []
+    },
+    "e-key": {
+      "id": "e-key",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The bad run reports "
+        },
+        {
+          "insert": "image-alt",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "label",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "button-name",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", each at critical impact. The two pages look the same, because each fix changes only the markup."
+        }
+      ],
+      "children": []
+    },
+    "e-placeholder": {
+      "id": "e-placeholder",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The search field has no placeholder on either page. axe accepts a placeholder as a name, so a field with only a placeholder passes "
+        },
+        {
+          "insert": "label",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "e-callout": {
+      "id": "e-callout",
+      "type": "callout",
+      "props": {
+        "title": "Screenshots, not live pages",
+        "tone": "info"
+      },
+      "text": [
+        {
+          "insert": "The docs hub has no app host, so an "
+        },
+        {
+          "insert": "app-embed",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " block shows \"App not available here\" in it. These images come from "
+        },
+        {
+          "insert": "bun run design:score --fixture R-axe",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", which writes them to the fixture's "
+        },
+        {
+          "insert": "shots/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " folder."
+        }
+      ],
+      "children": []
+    },
+    "h-rules": {
+      "id": "h-rules",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules Behind It"
+        }
+      ],
+      "children": []
+    },
+    "r-lead": {
+      "id": "r-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Seventeen rules in "
+        },
+        {
+          "insert": "design-score/rules/accessibility.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/accessibility.json"
+            }
+          }
+        },
+        {
+          "insert": " name this check. The axe Rule column names the axe rule that decides each one."
+        }
+      ],
+      "children": []
+    },
+    "r-table": {
+      "id": "r-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity",
+          "Measured",
+          "axe Rule"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "a11y-no-aria-label-on-generic",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No aria-label on generic elements",
+            "Fail",
+            "Yes",
+            [
+              {
+                "insert": "aria-prohibited-attr",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "a11y-aria-refs-resolve",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "ARIA references resolve",
+            "Fail",
+            "Yes",
+            [
+              {
+                "insert": "aria-valid-attr-value",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "a11y-input-has-label",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Inputs have labels",
+            "Fail",
+            "Yes",
+            [
+              {
+                "insert": "label",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "select-name",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "a11y-icon-button-name",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Every control has a name",
+            "Fail",
+            "Yes",
+            [
+              {
+                "insert": "button-name",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "link-name",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "a11y-aria-hidden-not-focusable",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "aria-hidden is not focusable",
+            "Fail",
+            "Yes",
+            [
+              {
+                "insert": "aria-hidden-focus",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "a11y-img-alt-present",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Images have alt",
+            "Fail",
+            "Yes",
+            [
+              {
+                "insert": "image-alt",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "a11y-autocomplete-tokens",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Autocomplete tokens",
+            "Warn",
+            "Yes",
+            [
+              {
+                "insert": "autocomplete-valid",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "a11y-svg-semantics",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "SVG semantics",
+            "Warn",
+            "Partly",
+            [
+              {
+                "insert": "svg-img-alt",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "a11y-skip-link",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Skip link",
+            "Warn",
+            "Partly",
+            [
+              {
+                "insert": "bypass",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "typo-lang-dir",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "lang and dir",
+            "Warn",
+            "Partly",
+            [
+              {
+                "insert": "html-has-lang",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "html-lang-valid",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "a11y-no-positive-tabindex",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No positive tabindex",
+            "Fail",
+            "No",
+            [
+              {
+                "insert": "tabindex",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "a11y-custom-dialog-semantics",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Dialog semantics",
+            "Fail",
+            "No",
+            [
+              {
+                "insert": "aria-dialog-name",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "a11y-no-redundant-role",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No redundant roles",
+            "Warn",
+            "No",
+            [
+              {
+                "insert": "aria-allowed-role",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "a11y-label-in-name",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Visible label in the name",
+            "Warn",
+            "No",
+            [
+              {
+                "insert": "label-content-name-mismatch",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "a11y-one-main",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "One main",
+            "Warn",
+            "No",
+            [
+              {
+                "insert": "landmark-one-main",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "a11y-heading-outline",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Heading outline",
+            "Warn",
+            "No",
+            [
+              {
+                "insert": "heading-order",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "a11y-landmarks-labelled",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Labelled landmarks",
+            "Warn",
+            "No",
+            [
+              {
+                "insert": "landmark-unique",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ]
+        ],
+        "title": "Rules decided by R-axe"
+      },
+      "children": []
+    },
+    "r-gap": {
+      "id": "r-gap",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Seven rules are not measured, because axe tags their rule "
+        },
+        {
+          "insert": "best-practice",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "experimental",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and the run selects only the WCAG tags. "
+        },
+        {
+          "insert": "svg-img-alt",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " checks only an svg with "
+        },
+        {
+          "insert": "role=\"img\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". No axe rule checks "
+        },
+        {
+          "insert": "dir",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-fp": {
+      "id": "h-fp",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Known False Positives"
+        }
+      ],
+      "children": []
+    },
+    "fp-lead": {
+      "id": "fp-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "axe reports few false violations, but a violation is not always the app's own."
+        }
+      ],
+      "children": []
+    },
+    "fp1": {
+      "id": "fp1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Third-party widgets",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "fp1a"
+      ]
+    },
+    "fp1a": {
+      "id": "fp1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "An embedded editor, map or chart brings its own markup and its own violations."
+        }
+      ],
+      "children": []
+    },
+    "fp2": {
+      "id": "fp2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Page state",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "fp2a"
+      ]
+    },
+    "fp2a": {
+      "id": "fp2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "axe runs on the state after the page's actions and settle time. A dialog that is still opening can fail a name or focus rule."
+        }
+      ],
+      "children": []
+    },
+    "fp3": {
+      "id": "fp3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix it in the app config",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "fp3a"
+      ]
+    },
+    "fp3a": {
+      "id": "fp3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Add the widget's selector to "
+        },
+        {
+          "insert": "ignore",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "design-score/apps/<app>.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". axe then excludes that subtree."
+        }
+      ],
+      "children": []
+    },
+    "h-debug": {
+      "id": "h-debug",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Debug It"
+        }
+      ],
+      "children": []
+    },
+    "d-lead": {
+      "id": "d-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Run these commands in the design-system checkout. Each run writes a folder under "
+        },
+        {
+          "insert": ".design-score/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and one crop per finding."
+        }
+      ],
+      "children": []
+    },
+    "d1": {
+      "id": "d1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run the fixture pair. The command exits 1 unless the bad page fails and the good page passes."
+        }
+      ],
+      "children": []
+    },
+    "d1c": {
+      "id": "d1c",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --fixture R-axe"
+        }
+      ],
+      "children": []
+    },
+    "d2": {
+      "id": "d2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "If the run logs that axe-core is not found, point "
+        },
+        {
+          "insert": "DS_AXE_PATH",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " at an "
+        },
+        {
+          "insert": "axe.min.js",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " file."
+        }
+      ],
+      "children": []
+    },
+    "d2c": {
+      "id": "d2c",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "DS_AXE_PATH=/path/to/axe-core/axe.min.js bun run design:score --app knowledge-system --pages session --quick"
+        }
+      ],
+      "children": []
+    },
+    "d3": {
+      "id": "d3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Read the axe rule id at the start of each finding's "
+        },
+        {
+          "insert": "measured",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Look the rule up in the axe-core rule list for the exact test."
+        }
+      ],
+      "children": []
+    }
+  }
+}

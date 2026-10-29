@@ -101,6 +101,9 @@ export const tokens = {
         "decelerate": "ease-out",
         "emphasized": "cubic-bezier(0.32, 0.72, 0, 1)",
         "standard": "ease"
+      },
+      "scale": {
+        "press": 0.96
       }
     },
     "radius": {
@@ -776,6 +779,7 @@ export const flat = {
     "motion.easing.decelerate": "ease-out",
     "motion.easing.emphasized": "cubic-bezier(0.32, 0.72, 0, 1)",
     "motion.easing.standard": "ease",
+    "motion.scale.press": 0.96,
     "radius.base": "2px",
     "radius.none": "0px",
     "radius.pill": "9999px",

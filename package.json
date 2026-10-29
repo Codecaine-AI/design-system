@@ -80,6 +80,7 @@
     "pack": "bun scripts/pack.ts",
     "test:apps": "bun scripts/test-apps.ts",
     "use:app": "bun scripts/use-app.ts",
+    "design:score": "bun scripts/design-score/cli.ts",
     "prepack": "bun run build"
   },
   "publishConfig": {

@@ -1,0 +1,1064 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-c848b2a71326d5b1db1a5bc54c628679",
+  "title": "M-press-scale: Press Scale",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "ps1",
+        "ps2",
+        "ps3",
+        "ps4",
+        "ps6",
+        "ps8",
+        "ps10",
+        "ps11",
+        "ps12",
+        "ps13",
+        "ps14",
+        "ps15",
+        "ps16",
+        "ps17",
+        "ps18",
+        "ps19",
+        "ps20",
+        "ps21",
+        "ps22",
+        "ps23",
+        "ps25",
+        "ps27",
+        "ps28",
+        "ps29",
+        "ps30",
+        "ps31",
+        "ps32",
+        "ps33",
+        "ps34",
+        "ps35",
+        "ps36",
+        "ps38",
+        "ps40",
+        "ps42",
+        "ps43",
+        "ps44",
+        "ps45",
+        "ps46",
+        "ps47",
+        "ps48"
+      ]
+    },
+    "ps1": {
+      "id": "ps1",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "M-press-scale",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " presses each kind of control and reads how far it scales on "
+        },
+        {
+          "insert": ":active",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". It is a motion check in the interaction area, so it runs in the motion pass, in the first theme and viewport. A scale below 0.95 fails, a scale over 0.98 and under 0.999 warns, and a control that scales to 0.999 or more is not judged."
+        }
+      ],
+      "children": []
+    },
+    "ps2": {
+      "id": "ps2",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "What It Catches"
+        }
+      ],
+      "children": []
+    },
+    "ps3": {
+      "id": "ps3",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A press scale tells the user that the click landed. The check reports two kinds of press scale outside the 0.95 to 0.98 band."
+        }
+      ],
+      "children": []
+    },
+    "ps4": {
+      "id": "ps4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A press that is too deep",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ps5"
+      ]
+    },
+    "ps5": {
+      "id": "ps5",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The control scales below 0.95 on "
+        },
+        {
+          "insert": ":active",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", so it looks like it drops away. This fails."
+        }
+      ],
+      "children": []
+    },
+    "ps6": {
+      "id": "ps6",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A press that is too small",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ps7"
+      ]
+    },
+    "ps7": {
+      "id": "ps7",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The control scales above 0.98 but stays under 0.999, so the press is too small to see. This warns."
+        }
+      ],
+      "children": []
+    },
+    "ps8": {
+      "id": "ps8",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Controls it does not judge",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ps9"
+      ]
+    },
+    "ps9": {
+      "id": "ps9",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A control that keeps its scale on "
+        },
+        {
+          "insert": ":active",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " has no press scale and gets no finding."
+        }
+      ],
+      "children": []
+    },
+    "ps10": {
+      "id": "ps10",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "How It Measures"
+        }
+      ],
+      "children": []
+    },
+    "ps11": {
+      "id": "ps11",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The motion pass presses controls through the Chrome DevTools Protocol, so no click reaches the app. It takes these steps in order."
+        }
+      ],
+      "children": []
+    },
+    "ps12": {
+      "id": "ps12",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "markMotionCandidates",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/probes.ts",
+              "symbol": "markMotionCandidates"
+            }
+          }
+        },
+        {
+          "insert": " picks up to 24 visible controls, one per tag and first 3 classes."
+        }
+      ],
+      "children": []
+    },
+    "ps13": {
+      "id": "ps13",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "readScale",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/motion.ts",
+              "symbol": "readScale"
+            }
+          }
+        },
+        {
+          "insert": " reads each control's scale at rest."
+        }
+      ],
+      "children": []
+    },
+    "ps14": {
+      "id": "ps14",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The press loop",
+          "attributes": {
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/run.ts",
+              "symbol": "Motion"
+            }
+          }
+        },
+        {
+          "insert": " forces "
+        },
+        {
+          "insert": ":hover",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", then "
+        },
+        {
+          "insert": ":hover:active",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", with "
+        },
+        {
+          "insert": "CSS.forcePseudoState",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". It waits 110ms after each one."
+        }
+      ],
+      "children": []
+    },
+    "ps15": {
+      "id": "ps15",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "readScale finishes the control's animations and reads the scale again. It multiplies the "
+        },
+        {
+          "insert": "scale",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " property by the scale in the "
+        },
+        {
+          "insert": "transform",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " matrix."
+        }
+      ],
+      "children": []
+    },
+    "ps16": {
+      "id": "ps16",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The scale pass",
+          "attributes": {
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/motion.ts",
+              "symbol": "analyzeMotion"
+            }
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "analyzeMotion",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " divides the pressed scale by the rest scale and puts the result in a band."
+        }
+      ],
+      "children": []
+    },
+    "ps17": {
+      "id": "ps17",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "readScale finishes the transition before it reads, so the press duration does not change the result. "
+        },
+        {
+          "insert": "M-duration",
+          "attributes": {
+            "code": true,
+            "link": "10-design-score/50-motion/30-m-duration"
+          }
+        },
+        {
+          "insert": " judges how long the press takes."
+        }
+      ],
+      "children": []
+    },
+    "ps18": {
+      "id": "ps18",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Thresholds"
+        }
+      ],
+      "children": []
+    },
+    "ps19": {
+      "id": "ps19",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The band comes from the rule "
+        },
+        {
+          "insert": "ui-press-scale",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The token "
+        },
+        {
+          "insert": "--ds-motion-scale-press",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is 0.96, inside the band."
+        }
+      ],
+      "children": []
+    },
+    "ps20": {
+      "id": "ps20",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Pressed Scale Over Rest Scale",
+          "Result"
+        ],
+        "rows": [
+          [
+            "Under 0.95",
+            "Fail"
+          ],
+          [
+            "0.95 to 0.98",
+            "Pass"
+          ],
+          [
+            "Over 0.98 and under 0.999",
+            "Warn"
+          ],
+          [
+            "0.999 or more",
+            "Not judged"
+          ]
+        ],
+        "title": "M-press-scale thresholds"
+      },
+      "children": []
+    },
+    "ps21": {
+      "id": "ps21",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Example"
+        }
+      ],
+      "children": []
+    },
+    "ps22": {
+      "id": "ps22",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The fixture pair is "
+        },
+        {
+          "insert": "design-score/fixtures/M-press-scale/",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/fixtures/M-press-scale"
+            }
+          }
+        },
+        {
+          "insert": ". Both pages show Save, Cancel and Details buttons with a 100ms transform transition. Details has no press scale on either page, so it is not judged."
+        }
+      ],
+      "children": []
+    },
+    "ps23": {
+      "id": "ps23",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "bad.html",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ps24"
+      ]
+    },
+    "ps24": {
+      "id": "ps24",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Save presses to 0.9, which fails. Cancel presses to 0.99, which warns."
+        }
+      ],
+      "children": []
+    },
+    "ps25": {
+      "id": "ps25",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "good.html",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ps26"
+      ]
+    },
+    "ps26": {
+      "id": "ps26",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Save and Cancel press to "
+        },
+        {
+          "insert": "scale(var(--ds-motion-scale-press))",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", which is 0.96."
+        }
+      ],
+      "children": []
+    },
+    "ps27": {
+      "id": "ps27",
+      "type": "image-grid",
+      "props": {
+        "columns": 2,
+        "images": [
+          {
+            "src": "./assets/images/good.png",
+            "heading": "Good at rest: pass",
+            "alt": "Save, Cancel and Details buttons at rest. No boxes are drawn.",
+            "caption": "good.html, 0 findings"
+          },
+          {
+            "src": "./assets/images/bad.png",
+            "heading": "Bad at rest: fail",
+            "alt": "The same buttons at rest. Magenta boxes mark Save and Cancel, the two buttons with a press scale outside the band.",
+            "caption": "bad.html, 1 fail and 1 warn finding"
+          },
+          {
+            "src": "./assets/images/good-press.png",
+            "heading": "Good pressed",
+            "alt": "Three frames of Save pressed at 0, 50 and 100ms. It shrinks a small amount to 0.96.",
+            "caption": "Save pressed on good.html"
+          },
+          {
+            "src": "./assets/images/bad-press.png",
+            "heading": "Bad pressed",
+            "alt": "Three frames of Save pressed at 0, 50 and 100ms. It shrinks to 0.9, so the gap around it grows.",
+            "caption": "Save pressed on bad.html"
+          }
+        ]
+      },
+      "children": []
+    },
+    "ps28": {
+      "id": "ps28",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The top row shows each page at rest, with a magenta box on each finding. The bottom row comes from "
+        },
+        {
+          "insert": "bun scripts/design-score/frames.ts M-press-scale",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". That command presses Save with the timeline stopped and shoots it at 0, 50 and 100ms."
+        }
+      ],
+      "children": []
+    },
+    "ps29": {
+      "id": "ps29",
+      "type": "callout",
+      "props": {
+        "title": "Screenshots, not live pages",
+        "tone": "info"
+      },
+      "text": [
+        {
+          "insert": "The rest shots come from "
+        },
+        {
+          "insert": "bun run design:score --fixture M-press-scale",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Both commands write to the fixture's "
+        },
+        {
+          "insert": "shots/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " folder."
+        }
+      ],
+      "children": []
+    },
+    "ps30": {
+      "id": "ps30",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules Behind It"
+        }
+      ],
+      "children": []
+    },
+    "ps31": {
+      "id": "ps31",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Three rules in "
+        },
+        {
+          "insert": "design-score/rules/interaction.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/interaction.json"
+            }
+          }
+        },
+        {
+          "insert": " name this check. Every finding carries their ids in "
+        },
+        {
+          "insert": "rules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "ps32": {
+      "id": "ps32",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity",
+          "Measured"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "ui-press-scale",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Press scale",
+            "Warn",
+            "Yes, the scale band"
+          ],
+          [
+            [
+              {
+                "insert": "ui-press-scale-not-disabled",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Disabled never scales",
+            "Fail",
+            "No"
+          ],
+          [
+            [
+              {
+                "insert": "08-tap-keyboard-parity",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Keyboard press feedback",
+            "Warn",
+            "No"
+          ]
+        ],
+        "title": "Rules decided by M-press-scale"
+      },
+      "children": []
+    },
+    "ps33": {
+      "id": "ps33",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check presses a disabled button like any other control, so a disabled button that scales is not failed. It never presses Enter or Space, so keyboard press feedback is not measured."
+        }
+      ],
+      "children": []
+    },
+    "ps34": {
+      "id": "ps34",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Known False Positives"
+        }
+      ],
+      "children": []
+    },
+    "ps35": {
+      "id": "ps35",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The band is the same for every control, whatever its size or role."
+        }
+      ],
+      "children": []
+    },
+    "ps36": {
+      "id": "ps36",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Large tiles",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ps37"
+      ]
+    },
+    "ps37": {
+      "id": "ps37",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A card or tile that presses to 0.93 so that the motion reads at its size fails."
+        }
+      ],
+      "children": []
+    },
+    "ps38": {
+      "id": "ps38",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Hover scale read as a press",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ps39"
+      ]
+    },
+    "ps39": {
+      "id": "ps39",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The rest scale is read before the hover. A control that shrinks to 0.9 on hover fails, even with no "
+        },
+        {
+          "insert": ":active",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " style."
+        }
+      ],
+      "children": []
+    },
+    "ps40": {
+      "id": "ps40",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix it in the app config",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ps41"
+      ]
+    },
+    "ps41": {
+      "id": "ps41",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Add the element's selector to "
+        },
+        {
+          "insert": "ignore",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "design-score/apps/<app>.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or skip the check on one page with "
+        },
+        {
+          "insert": "skip",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "skipReason",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "ps42": {
+      "id": "ps42",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Debug It"
+        }
+      ],
+      "children": []
+    },
+    "ps43": {
+      "id": "ps43",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Run these commands in the design-system checkout. Each run writes a folder under "
+        },
+        {
+          "insert": ".design-score/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and one crop per finding."
+        }
+      ],
+      "children": []
+    },
+    "ps44": {
+      "id": "ps44",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run the fixture pair. The command exits 1 unless the bad page fails and the good page passes."
+        }
+      ],
+      "children": []
+    },
+    "ps45": {
+      "id": "ps45",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --fixture M-press-scale"
+        }
+      ],
+      "children": []
+    },
+    "ps46": {
+      "id": "ps46",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Score one page of an app in one theme and one viewport. The motion pass is on unless you add "
+        },
+        {
+          "insert": "--no-motion",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "ps47": {
+      "id": "ps47",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --app knowledge-system --pages session --quick"
+        }
+      ],
+      "children": []
+    },
+    "ps48": {
+      "id": "ps48",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Read the check's note in "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". It counts how many of the pressed controls scale at all."
+        }
+      ],
+      "children": []
+    }
+  }
+}

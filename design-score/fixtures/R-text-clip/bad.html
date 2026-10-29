@@ -1,0 +1,26 @@
+<!doctype html>
+<!-- R-text-clip, bad: the long title is cut at the card's edge with no ellipsis, and the summary's third line is cut in half by a fixed height. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>R-text-clip: bad</title>
+<link rel="stylesheet" href="../../../css/fonts.css">
+<link rel="stylesheet" href="../../../dist/css/tokens.css">
+<style>
+  body { margin: 0; padding: var(--ds-space-6); background: var(--ds-color-surface-page); color: var(--ds-color-text-body); font-family: var(--ds-font-family-sans); font-size: var(--ds-font-size-ui-md); line-height: var(--ds-line-height-ui); }
+  h2 { margin: 0 0 var(--ds-space-2); font-size: var(--ds-font-size-ui-lg); font-weight: var(--ds-font-weight-semibold); color: var(--ds-color-text-ink); }
+  .card { width: calc(var(--ds-space-16) * 4); padding: var(--ds-space-3); border: 1px solid var(--ds-color-border-default); border-radius: var(--ds-radius-base); background: var(--ds-color-surface-panel); }
+  .title { overflow: hidden; white-space: nowrap; font-weight: var(--ds-font-weight-semibold); color: var(--ds-color-text-ink); }
+  .summary { margin: var(--ds-space-1) 0 0; overflow: hidden; font-size: var(--ds-font-size-ui-sm); line-height: var(--ds-line-height-ui); color: var(--ds-color-text-muted); }
+  /* No ellipsis and no line clamp: the reader cannot tell that text is missing. */
+  .summary { height: calc(var(--ds-font-size-ui-sm) * var(--ds-line-height-ui) * 2.5); }
+</style>
+</head>
+<body>
+  <h2>Pinned</h2>
+  <div class="card">
+    <div class="title">Move the release checklist into the docs hub</div>
+    <p class="summary">The checklist lives in three places today. Put one copy in the docs hub, link it from each repo, and delete the old copies after the next release.</p>
+  </div>
+</body>
+</html>

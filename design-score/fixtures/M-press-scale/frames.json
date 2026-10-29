@@ -1,0 +1,7 @@
+{
+  "step": { "press": ".save" },
+  "times": [0, 50, 100],
+  "clip": ".toolbar",
+  "pad": 8,
+  "viewport": { "width": 800, "height": 240 }
+}

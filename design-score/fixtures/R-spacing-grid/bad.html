@@ -1,0 +1,29 @@
+<!doctype html>
+<!-- R-spacing-grid, bad: the tags use em padding, 3.4px by 10.1px at 13.5px text, and the row gap is 10px. Neither is a multiple of 4px or a space token (warn). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>R-spacing-grid: bad</title>
+<link rel="stylesheet" href="../../../css/fonts.css">
+<link rel="stylesheet" href="../../../dist/css/tokens.css">
+<style>
+  body { margin: 0; padding: var(--ds-space-6); background: var(--ds-color-surface-page); color: var(--ds-color-text-body); font-family: var(--ds-font-family-sans); font-size: var(--ds-font-size-ui-md); line-height: var(--ds-line-height-ui); }
+  h2 { margin: 0 0 var(--ds-space-3); font-size: var(--ds-font-size-ui-lg); font-weight: var(--ds-font-weight-semibold); }
+  .tags { display: flex; flex-wrap: wrap; }
+  .tag { display: inline-flex; align-items: center; border-radius: var(--ds-radius-base); background: var(--ds-color-blue-soft); color: var(--ds-color-blue-text); }
+  /* A 1px border plus 7px of padding puts the text 8px in, which is on the grid. */
+  .search { display: block; margin-top: var(--ds-space-4); width: calc(var(--ds-space-16) * 5); padding: calc(var(--ds-space-2) - 1px); border: 1px solid var(--ds-color-border-default); border-radius: var(--ds-radius-base); background: var(--ds-color-surface-panel); color: var(--ds-color-text-ink); }
+  /* Miss 1: the gap is 8px + 2px = 10px. */
+  .tags { gap: calc(var(--ds-space-2) + var(--ds-space-0-5)); }
+  /* Miss 2: em padding scales with the font size and lands between grid steps. */
+  .tag { padding: 0.25em 0.75em; }
+</style>
+</head>
+<body>
+  <h2>Tags</h2>
+  <div class="tags">
+    <span class="tag">design</span><span class="tag">layout</span><span class="tag">spacing</span><span class="tag">tokens</span>
+  </div>
+  <div class="search">Filter tags</div>
+</body>
+</html>

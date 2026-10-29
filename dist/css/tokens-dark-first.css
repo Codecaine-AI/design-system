@@ -70,6 +70,7 @@
   --ds-motion-easing-decelerate: ease-out;
   --ds-motion-easing-emphasized: cubic-bezier(0.32, 0.72, 0, 1);
   --ds-motion-easing-standard: ease;
+  --ds-motion-scale-press: 0.96;
   --ds-radius-base: 2px;
   --ds-radius-none: 0px;
   --ds-radius-pill: 9999px;

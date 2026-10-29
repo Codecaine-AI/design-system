@@ -1,0 +1,699 @@
+{
+  "app": "knowledge-system",
+  "name": "Knowledge System",
+  "repo": "lascari-ai/knowledge-system",
+  "baseUrl": "http://127.0.0.1:4961",
+  "sourceDirs": [
+    "app/src"
+  ],
+  "themes": {
+    "light": {
+      "localStorage": {
+        "knowledge.theme": "light"
+      },
+      "colorScheme": "light",
+      "assert": "html[data-theme=\"light\"]"
+    },
+    "dark": {
+      "localStorage": {
+        "knowledge.theme": "dark"
+      },
+      "colorScheme": "dark",
+      "assert": "html[data-theme=\"dark\"]"
+    }
+  },
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "width": 1024,
+      "height": 768
+    }
+  ],
+  "handles": [
+    ".docs-drag-handle"
+  ],
+  "ignore": [
+    "iframe"
+  ],
+  "settleMs": 700,
+  "loading": [
+    "Loading page"
+  ],
+  "cap": 6,
+  "shift": {
+    "open": [
+      "button[aria-label^=\"Edit \"]"
+    ],
+    "max": 16
+  },
+  "motionAllow": [
+    {
+      "name": "ds-shell-sidebar",
+      "selector": ".ds-shell",
+      "props": [
+        "grid-template-columns"
+      ],
+      "reason": "The design-system app shell animates its sidebar column when it collapses (css/layout.css .ds-shell). The shell owns it; allowed by Ford."
+    }
+  ],
+  "pages": [
+    {
+      "id": "inbox",
+      "path": "/inbox",
+      "waitFor": ".ds-shell",
+      "note": "Home: / redirects here."
+    },
+    {
+      "id": "place-area",
+      "path": "/place/ent_01JB871HFE865V215DE1CTEWH0",
+      "waitFor": ".ds-shell",
+      "note": "An Area page (Making)."
+    },
+    {
+      "id": "session",
+      "path": "/session/task_01JBB2M6F1NY8QA3RX9SU6WP4D",
+      "waitFor": ".ds-shell",
+      "note": "A Session page (Ink Layering) on its default tab."
+    },
+    {
+      "id": "library-topic",
+      "path": "/library/topic/ent_01M4F7BTW84KJP7Q2FCXKH81F6",
+      "waitFor": ".ds-shell",
+      "note": "A Library Topic (Pen Plotting)."
+    },
+    {
+      "id": "codebase",
+      "path": "/codebase/ent_01M4F4HF3XJZE2E9QW5TYKBS2X",
+      "waitFor": ".ds-shell",
+      "note": "A Codebase page (Knowledge System)."
+    },
+    {
+      "id": "docs-editor-hover",
+      "path": "/session/task_01JBB2M6F1NY8QA3RX9SU6WP4D?tab=spec",
+      "waitFor": ".ProseMirror",
+      "actions": [
+        {
+          "hover": ".ProseMirror > p"
+        },
+        {
+          "waitFor": ".docs-drag-handle-visible"
+        }
+      ],
+      "note": "The Spec doc open in the docs editor, first paragraph hovered so the grab handle shows.",
+      "optional": "the docs editor needs the docs hub to know this knowledge root (only the registered sample-knowledge does)"
+    },
+    {
+      "id": "docs-editor-hover-heading",
+      "path": "/session/task_01JBB2M6F1NY8QA3RX9SU6WP4D?tab=spec",
+      "waitFor": ".ProseMirror",
+      "actions": [
+        {
+          "hover": ".ProseMirror > h2"
+        },
+        {
+          "waitFor": ".docs-drag-handle-visible"
+        }
+      ],
+      "note": "The same doc with a heading block hovered: the grab handle against a heading's first line.",
+      "optional": "the docs editor needs the docs hub to know this knowledge root (only the registered sample-knowledge does)"
+    },
+    {
+      "id": "side-peek",
+      "path": "/sessions?peek=task_01JBB2M6F1NY8QA3RX9SU6WP4D",
+      "waitFor": ".side-peek",
+      "note": "Sessions list with the side peek open on Ink Layering."
+    },
+    {
+      "id": "command-palette",
+      "path": "/areas",
+      "waitFor": ".ds-shell",
+      "actions": [
+        {
+          "press": "Meta+k"
+        },
+        {
+          "waitFor": "dialog[open]"
+        }
+      ],
+      "note": "The search palette open (Cmd+K)."
+    },
+    {
+      "id": "open",
+      "path": "/open",
+      "waitFor": ".ds-shell",
+      "note": "Open Work. (audit route open)"
+    },
+    {
+      "id": "areas",
+      "path": "/areas",
+      "waitFor": ".ds-shell",
+      "note": "The Areas list. (audit route areas)"
+    },
+    {
+      "id": "life",
+      "path": "/life",
+      "waitFor": ".ds-shell",
+      "note": "Life. (audit route life)"
+    },
+    {
+      "id": "infrastructure",
+      "path": "/infrastructure",
+      "waitFor": ".ds-shell",
+      "note": "Infrastructure. (audit route infrastructure)"
+    },
+    {
+      "id": "library",
+      "path": "/library",
+      "waitFor": ".ds-shell",
+      "note": "The Library. (audit route library)"
+    },
+    {
+      "id": "projects",
+      "path": "/projects",
+      "waitFor": ".ds-shell",
+      "note": "The Projects list. (audit route projects)"
+    },
+    {
+      "id": "sessions",
+      "path": "/sessions",
+      "waitFor": ".ds-shell",
+      "note": "The Sessions list. (audit route sessions)"
+    },
+    {
+      "id": "tasks",
+      "path": "/tasks",
+      "waitFor": ".ds-shell",
+      "note": "The Tasks list. (audit route tasks)"
+    },
+    {
+      "id": "references",
+      "path": "/inbox?tab=references",
+      "waitFor": ".inbox-view-switch",
+      "note": "The Inbox References tab on Needs Enrichment (old /references redirects here, PR #12)."
+    },
+    {
+      "id": "sources",
+      "path": "/sources",
+      "waitFor": ".ds-shell",
+      "note": "The Sources list. (audit route sources)"
+    },
+    {
+      "id": "issues",
+      "path": "/issues",
+      "waitFor": ".ds-shell",
+      "note": "Index issues. (audit route issues)"
+    },
+    {
+      "id": "kit",
+      "path": "/kit",
+      "waitFor": ".ds-shell",
+      "note": "The UI kit page. (audit route kit)"
+    },
+    {
+      "id": "area",
+      "path": "/place/ent_01M4KDB0D858X4AQ26SY1Y47HW",
+      "waitFor": ".ds-shell",
+      "note": "An Area page (Lascari AI). (audit route area)"
+    },
+    {
+      "id": "subarea",
+      "path": "/place/ent_01M5SAMPLE00000000000PP001",
+      "waitFor": ".ds-shell",
+      "note": "A sub-Area page. (audit route subarea)"
+    },
+    {
+      "id": "infra-place",
+      "path": "/place/ent_01JB9F1E7QK4M2ZV8N3HX6TA5R",
+      "waitFor": ".ds-shell",
+      "note": "An Infrastructure place. (audit route infraPlace)"
+    },
+    {
+      "id": "creator",
+      "path": "/library/creator/ent_01M5C8E4T0RSW1QJ9XKZ3V7B2N",
+      "waitFor": ".ds-shell",
+      "note": "A Library Creator. (audit route creator)"
+    },
+    {
+      "id": "source",
+      "path": "/source/src_01JBB6T5M5SC3VE7WB4YX1AT8H",
+      "waitFor": ".ds-shell",
+      "note": "A Source page. (audit route source)"
+    },
+    {
+      "id": "project",
+      "path": "/project/prj_01M4E59BRJ9YND1DCR1XJ4Z997",
+      "waitFor": ".ds-shell",
+      "note": "A Project page (record header with pinned properties). (audit route project)"
+    },
+    {
+      "id": "session-cybermystic",
+      "path": "/session/ses_01M5SAMPLECYBERMYST1CGARDN",
+      "waitFor": ".ds-shell",
+      "note": "A Session page (Cybermystic Garden, ses_ id). (audit route session)"
+    },
+    {
+      "id": "session-log",
+      "path": "/session/task_01JBB2M6F1NY8QA3RX9SU6WP4D?tab=log",
+      "waitFor": ".ds-shell",
+      "note": "A Session's Build Log tab. (audit route sessionLog)"
+    },
+    {
+      "id": "piece",
+      "path": "/piece/pce_01M5DQ7K3V9X2B4N6R8T0W1Y2Z",
+      "waitFor": ".ds-shell",
+      "note": "A Piece page. (audit route piece)"
+    },
+    {
+      "id": "task",
+      "path": "/task/task_01M473JMG04D0CKP3MM6NG595T",
+      "waitFor": ".ds-shell",
+      "note": "A Task page. (audit route task)"
+    },
+    {
+      "id": "note",
+      "path": "/note/note_01M4GYVR2098WS24CZRFVPQ2FZ",
+      "waitFor": ".ds-shell",
+      "note": "A Note page. (audit route note)"
+    },
+    {
+      "id": "reference",
+      "path": "/reference/ref_01M5C8K2T6VB9N3P5R7X1Z4D8G",
+      "waitFor": ".ds-shell",
+      "note": "A Reference page. (audit route reference)"
+    },
+    {
+      "id": "recipe",
+      "path": "/recipe/rcp_01M5R04W36SJG3H4DRBZ51BF0P",
+      "waitFor": ".ds-shell",
+      "note": "A Recipe page. (audit route recipe)"
+    },
+    {
+      "id": "codebase-views",
+      "path": "/codebase/ent_01M5F3JA2XZ9AXP45ZBFDHM989?tab=views",
+      "waitFor": ".ds-shell",
+      "note": "A Codebase's Views tab. (audit route codebaseViews)"
+    },
+    {
+      "id": "not-found",
+      "path": "/nope",
+      "waitFor": ".ds-shell",
+      "note": "The not-found page. (audit route notfound)"
+    },
+    {
+      "id": "sidebar-collapsed",
+      "path": "/project/prj_01M4E59BRJ9YND1DCR1XJ4Z997",
+      "waitFor": ".ds-shell",
+      "actions": [
+        {
+          "click": ".ds-sidebar-toggle"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "note": "Audit state sidebar-collapsed."
+    },
+    {
+      "id": "peek-open",
+      "path": "/project/prj_01M4E59BRJ9YND1DCR1XJ4Z997",
+      "waitFor": ".ds-shell",
+      "actions": [
+        {
+          "click": "button[aria-label=\"Properties\"]"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "note": "Audit state peek-open."
+    },
+    {
+      "id": "peek-task",
+      "path": "/tasks?peek=task_01M473JMG04D0CKP3MM6NG595T",
+      "waitFor": ".ds-shell",
+      "actions": [
+        {
+          "wait": 600
+        }
+      ],
+      "note": "Audit state peek-task."
+    },
+    {
+      "id": "prop-priority-popover",
+      "path": "/project/prj_01M4E59BRJ9YND1DCR1XJ4Z997",
+      "waitFor": ".ds-shell",
+      "actions": [
+        {
+          "click": "button[aria-label=\"Edit Priority\"]"
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "note": "Audit state prop-priority-popover."
+    },
+    {
+      "id": "prop-status-popover",
+      "path": "/project/prj_01M4E59BRJ9YND1DCR1XJ4Z997",
+      "waitFor": ".ds-shell",
+      "actions": [
+        {
+          "click": "button[aria-label=\"Edit Status\"]"
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "note": "Audit state prop-status-popover. The pinned property rows must not move when Status opens (audit F02: the column widened 21.5px).",
+      "shiftWatch": ".properties-pinned-item"
+    },
+    {
+      "id": "record-picker",
+      "path": "/project/prj_01M4E59BRJ9YND1DCR1XJ4Z997",
+      "waitFor": ".ds-shell",
+      "actions": [
+        {
+          "hover": ".properties-pinned-item:has(.record-picker)"
+        },
+        {
+          "click": ".record-picker-trigger"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "note": "Audit state record-picker: the trigger is invisible until hover; a plain click times out"
+    },
+    {
+      "id": "areas-marks-info",
+      "path": "/areas",
+      "waitFor": ".ds-shell",
+      "actions": [
+        {
+          "click": ".pt-info-btn"
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "note": "Audit state areas-marks-info."
+    },
+    {
+      "id": "style-sidebar",
+      "path": "/project/prj_01M4E59BRJ9YND1DCR1XJ4Z997",
+      "waitFor": ".ds-shell",
+      "actions": [
+        {
+          "click": "button[aria-label=\"Style\"]"
+        },
+        {
+          "wait": 500
+        }
+      ],
+      "note": "Audit state style-sidebar."
+    },
+    {
+      "id": "start-session-dialog",
+      "path": "/piece/pce_01M5DQ7K3V9X2B4N6R8T0W1Y2Z",
+      "waitFor": ".ds-shell",
+      "actions": [
+        {
+          "click": "button:has-text(\"Start session\")"
+        },
+        {
+          "wait": 500
+        },
+        {
+          "waitFor": "dialog[open]"
+        }
+      ],
+      "note": "Audit state start-session-dialog: never press the dialog's Start session button. Annotation overlays must be appended inside the <dialog> (top layer)."
+    },
+    {
+      "id": "connect-t3",
+      "path": "/inbox",
+      "waitFor": ".ds-shell",
+      "actions": [
+        {
+          "click": "button:has-text(\"Connect T3 Code\")"
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "note": "Audit state connect-t3: POST /api/t3/sign-in is aborted by the read-only guard"
+    },
+    {
+      "id": "inbox-list",
+      "path": "/inbox",
+      "waitFor": ".ds-shell",
+      "actions": [
+        {
+          "click": "button:has-text(\"Show all\")"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "note": "Audit state inbox-list."
+    },
+    {
+      "id": "tasks-by-phase",
+      "path": "/tasks",
+      "waitFor": ".ds-shell",
+      "actions": [
+        {
+          "click": "button:has-text(\"Phase\")"
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "note": "Audit state tasks-by-phase."
+    },
+    {
+      "id": "subarea-board",
+      "path": "/place/ent_01M5SAMPLE00000000000PP001",
+      "waitFor": ".ds-shell",
+      "actions": [
+        {
+          "click": "button:has-text(\"Board\")"
+        },
+        {
+          "wait": 400
+        },
+        {
+          "scroll": [
+            "#ds-main",
+            600
+          ]
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "note": "Audit state subarea-board."
+    },
+    {
+      "id": "project-spec-editor",
+      "path": "/project/prj_01M4E59BRJ9YND1DCR1XJ4Z997?tab=spec",
+      "waitFor": ".ProseMirror",
+      "actions": [
+        {
+          "wait": 600
+        }
+      ],
+      "note": "Audit state project-spec-editor.",
+      "optional": "the docs editor needs the docs hub to know this knowledge root (only the registered sample-knowledge does)"
+    },
+    {
+      "id": "codebase-view-open",
+      "path": "/codebase/ent_01M5F3JA2XZ9AXP45ZBFDHM989?tab=views",
+      "waitFor": ".ds-shell",
+      "actions": [
+        {
+          "click": ".app-view-card, a[href*='view=']"
+        },
+        {
+          "wait": 1500
+        }
+      ],
+      "note": "Audit state codebase-view-open.",
+      "optional": "needs a built Codebase app to open in a View"
+    },
+    {
+      "id": "topic-contents-file",
+      "path": "/library/topic/ent_01M4F7BTW84KJP7Q2FCXKH81F6",
+      "waitFor": ".ds-shell",
+      "actions": [
+        {
+          "waitFor": "text=entity.json >> visible=true"
+        },
+        {
+          "click": "text=entity.json >> visible=true >> nth=0"
+        },
+        {
+          "wait": 700
+        }
+      ],
+      "note": "Audit state topic-contents-file. At 1024px the tree pane collapses, so the click takes the visible entity.json (the file list row)."
+    },
+    {
+      "id": "library-unfold",
+      "path": "/library",
+      "waitFor": ".ds-shell",
+      "actions": [
+        {
+          "click": "button:has-text(\"Unfold all\")"
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "note": "Audit state library-unfold."
+    },
+    {
+      "id": "piece-editor-hover",
+      "path": "/piece/pce_01M5DQ7K3V9X2B4N6R8T0W1Y2Z",
+      "waitFor": ".ProseMirror",
+      "actions": [
+        {
+          "hover": ".doc-editor-host .ProseMirror > *"
+        },
+        {
+          "waitFor": ".docs-drag-handle-visible"
+        }
+      ],
+      "note": "Audit state editor-hover.",
+      "optional": "the docs editor needs the docs hub to know this knowledge root (only the registered sample-knowledge does)"
+    },
+    {
+      "id": "inbox-references-not-attached",
+      "path": "/inbox?tab=references&view=not-attached",
+      "waitFor": ".inbox-view-switch",
+      "note": "The Inbox References tab on its Not Attached view."
+    },
+    {
+      "id": "inbox-references-drawer",
+      "path": "/inbox?tab=references",
+      "waitFor": ".inbox-view-switch",
+      "actions": [
+        {
+          "click": ".inbox-header-toggle"
+        },
+        {
+          "waitFor": ".inbox-drawer[data-open=\"true\"]"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "note": "The References tab with its list drawer open (Show all)."
+    },
+    {
+      "id": "open-phase-hover",
+      "path": "/open",
+      "waitFor": ".owp-track",
+      "actions": [
+        {
+          "hover": ".owp-track .owp-step:not([data-state=\"now\"])"
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "note": "Open Work with a Session row's phase track hovered on a phase that is not its own, so that phase's label shows."
+    },
+    {
+      "id": "open-library",
+      "path": "/open",
+      "waitFor": ".ds-shell",
+      "mock": [
+        {
+          "path": "/api/views/sessions",
+          "append": {
+            "sessions": [
+              {
+                "lastUpdate": "2026-10-20T12:00:00Z",
+                "nextStep": "Draft the plan",
+                "who": "agent",
+                "id": "ses_01M5SCOREL1BRARYTOP1CSES01",
+                "kind": "session",
+                "title": "Plotter paper survey",
+                "path": "sessions/plotter-paper-survey",
+                "template": "experiment",
+                "phase": "plan",
+                "statusGroup": "active",
+                "effectivePriority": null,
+                "parent": "ent_01M4F7BTW84KJP7Q2FCXKH81F6",
+                "owner": [
+                  {
+                    "id": "ent_01M4F7BTW84KJP7Q2FCXKH81F6",
+                    "kind": "place",
+                    "title": "Pen Plotting",
+                    "path": "library/pen-plotting"
+                  }
+                ],
+                "created": "2026-10-19T12:00:00Z",
+                "blockedBy": [],
+                "blocks": [],
+                "waiting": {
+                  "blocked": false
+                },
+                "docUpdateRan": false,
+                "taskCount": 0,
+                "openTaskCount": 0,
+                "oneLiner": "Compare papers for two-ink plots."
+              }
+            ]
+          }
+        }
+      ],
+      "actions": [
+        {
+          "waitFor": "section.owp-section:has(h2:has-text(\"Library\"))"
+        },
+        {
+          "scrollTo": "section.owp-section:has(h2:has-text(\"Library\"))"
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "note": "Open Work's Library section. The sample data has no open Session under a Topic, so the Sessions view gets one mocked Session under the Pen Plotting Topic."
+    },
+    {
+      "id": "session-active-thread",
+      "path": "/session/task_01JBB2M6F1NY8QA3RX9SU6WP4D",
+      "waitFor": ".ds-shell",
+      "mock": [
+        {
+          "path": "/api/sessions/task_01JBB2M6F1NY8QA3RX9SU6WP4D",
+          "merge": {
+            "runs": [
+              {
+                "threadId": "8f2c6d1e-4b7a-4c2e-9a51-3d0f7e6b2a90",
+                "t3ProjectId": "proj-sample",
+                "started": "2026-10-28T09:00:00Z",
+                "origin": "app",
+                "status": "running",
+                "t3Status": "running",
+                "threadTitle": "Ink Layering: review the three-ink plots",
+                "lastActivity": "2026-10-28T09:40:00Z"
+              }
+            ]
+          }
+        }
+      ],
+      "actions": [
+        {
+          "waitFor": ".properties-pinned-item[data-property=\"thread\"] button"
+        }
+      ],
+      "note": "A Session page whose newest Run is live, so the pinned Active thread property shows its Open button. The sample data has no Run, so the Session response gets one mocked."
+    }
+  ]
+}

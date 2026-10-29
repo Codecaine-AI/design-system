@@ -1,0 +1,580 @@
+{
+  "area": "color",
+  "rules": [
+    {
+      "id": "a11y-focus-ring-contrast",
+      "area": "color",
+      "title": "Focus ring contrast",
+      "rule": "A focus ring reaches 3:1 against every adjacent color it crosses.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": {
+        "minRatio": 3
+      },
+      "sources": [
+        "a11y-focus-ring-contrast",
+        "16-focus-ring-contrast"
+      ],
+      "check": "R-contrast"
+    },
+    {
+      "id": "a11y-text-contrast",
+      "area": "color",
+      "title": "Text contrast",
+      "rule": "Text reaches 4.5:1 (large text, 24px+ or 18.67px+ bold, 3:1) against the background it actually renders on, in light and dark, including translucent surfaces.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": {
+        "normal": 4.5,
+        "large": 3,
+        "largePx": 24,
+        "largeBoldPx": 18.67
+      },
+      "sources": [
+        "a11y-text-contrast",
+        "15-contrast-aa",
+        "color-contrast-both-appearances",
+        "19-contrast-actual-backdrop",
+        "color-no-alpha-under-text",
+        "color-white-on-500"
+      ],
+      "check": "R-contrast"
+    },
+    {
+      "id": "a11y-non-text-contrast",
+      "area": "color",
+      "title": "Non-text contrast",
+      "rule": "Control boundaries, states and meaningful graphics reach 3:1 against adjacent colors.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": {
+        "minRatio": 3
+      },
+      "sources": [
+        "a11y-non-text-contrast"
+      ],
+      "check": "R-contrast"
+    },
+    {
+      "id": "color-apca-secondary",
+      "area": "color",
+      "title": "APCA report",
+      "rule": "Report APCA Lc alongside WCAG 2 (body Lc 75, labels 60, large 45, icons 30-45); gate on WCAG 2 only.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "bodyLc": 75,
+        "labelLc": 60,
+        "largeLc": 45,
+        "iconLc": [
+          30,
+          45
+        ]
+      },
+      "sources": [
+        "color-apca-secondary"
+      ],
+      "check": "R-contrast"
+    },
+    {
+      "id": "color-placeholder-disabled-legible",
+      "area": "color",
+      "title": "Legible placeholder and disabled text",
+      "rule": "Disabled and placeholder text aims for APCA Lc 30.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "minLc": 30
+      },
+      "sources": [
+        "color-placeholder-disabled-legible"
+      ],
+      "check": "R-contrast"
+    },
+    {
+      "id": "color-no-literals",
+      "area": "color",
+      "title": "No color literals",
+      "rule": "Components hold no hex, rgb(), hsl() or oklch() literals, and a change never swaps a token for a literal or a lighter token without remeasuring.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-no-literals",
+        "bd-no-arbitrary-values",
+        "review-token-not-swapped-for-literal"
+      ],
+      "check": "S-color-literal"
+    },
+    {
+      "id": "color-consistent-notation",
+      "area": "color",
+      "title": "One color notation",
+      "rule": "Write colors in the project's notation (DS: lowercase hex).",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-consistent-notation"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-no-primitives-in-components",
+      "area": "color",
+      "title": "Semantic tokens in components",
+      "rule": "Components use semantic role tokens; hue tokens only for categorical color.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-no-primitives-in-components",
+        "19-semantic-tokens-in-components"
+      ],
+      "notes": "Matches DS rule 4.",
+      "check": null
+    },
+    {
+      "id": "color-semantic-names-by-role",
+      "area": "color",
+      "title": "Token names by role",
+      "rule": "Semantic token names describe a role, never a hue, component or position.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-semantic-names-by-role",
+        "19-token-names-by-purpose"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-primary-reserved",
+      "area": "color",
+      "title": "Accent is the brand word",
+      "rule": "Call the brand color 'accent' so 'primary' never means two things.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-primary-reserved",
+        "19-accent-for-brand"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-token-in-role",
+      "area": "color",
+      "title": "Tokens in their role",
+      "rule": "Use a token only in its role: no border token in color:, no text token in background:, no accent on text.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-token-in-role"
+      ],
+      "notes": "DS rule 5: text uses color.link, never color.accent.",
+      "check": null
+    },
+    {
+      "id": "color-one-word-per-concept",
+      "area": "color",
+      "title": "One word per concept",
+      "rule": "Pick one word per concept (text, bg, border, accent) and never mix synonyms.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-one-word-per-concept"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-ramp-constant-hue",
+      "area": "color",
+      "title": "Ramps hold one hue",
+      "rule": "A ramp steps lightness at one perceived hue.",
+      "severity": "warn",
+      "layer": "static",
+      "values": {
+        "maxHueSpreadDeg": 8,
+        "minChroma": 0.03
+      },
+      "sources": [
+        "color-ramp-constant-hue",
+        "02-shades-by-lightness-only"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-ramp-light-end-fine",
+      "area": "color",
+      "title": "Fine light end",
+      "rule": "Light-end steps sit about 0.04-0.05 OKLCH L apart; mid-ramp 0.07-0.10.",
+      "severity": "warn",
+      "layer": "static",
+      "values": {
+        "lightStepL": [
+          0.04,
+          0.05
+        ],
+        "midStepL": [
+          0.07,
+          0.1
+        ]
+      },
+      "sources": [
+        "color-ramp-light-end-fine"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-ramp-adjacent-distinct",
+      "area": "color",
+      "title": "Distinct steps",
+      "rule": "No two adjacent ramp steps are within 0.03 OKLCH L.",
+      "severity": "warn",
+      "layer": "static",
+      "values": {
+        "minStepL": 0.03
+      },
+      "sources": [
+        "color-ramp-adjacent-distinct"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-ramp-chroma-peaks-mid",
+      "area": "color",
+      "title": "Chroma peaks mid-ramp",
+      "rule": "Vividness peaks mid-ramp and falls off at both ends.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-ramp-chroma-peaks-mid"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-ramp-ends-not-pure",
+      "area": "color",
+      "title": "Ramp ends not pure",
+      "rule": "Ramps stop short of pure black and white.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-ramp-ends-not-pure"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-ramps-match-across-hues",
+      "area": "color",
+      "title": "Sibling hues match",
+      "rule": "Sibling hues share OKLCH lightness and relative chroma so the same step reads equally bright.",
+      "severity": "warn",
+      "layer": "static",
+      "values": {
+        "maxLSpread": 0.05,
+        "maxCSpread": 0.04
+      },
+      "sources": [
+        "color-ramps-match-across-hues",
+        "02-equal-lightness-hue-family"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-status-hue-distance",
+      "area": "color",
+      "title": "Status hues apart from accent",
+      "rule": "Every status hue sits 15 degrees or more of OKLCH hue from the accent.",
+      "severity": "warn",
+      "layer": "static",
+      "values": {
+        "minDeg": 15
+      },
+      "sources": [
+        "color-status-hue-distance"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-one-meaning",
+      "area": "color",
+      "title": "One color, one meaning",
+      "rule": "A color (within 15 degrees of hue) has one purpose across the interface.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "hueWindowDeg": 15
+      },
+      "sources": [
+        "color-one-meaning"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-one-filled-action",
+      "area": "color",
+      "title": "One filled action",
+      "rule": "One primary action per view gets the filled accent; peers stay neutral.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "color-one-filled-action"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-no-unused-ramps",
+      "area": "color",
+      "title": "No unused steps",
+      "rule": "Every palette step has a purpose; remove ramps and steps nothing renders.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-no-unused-ramps",
+        "19-palette-steps-used"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-no-near-duplicates",
+      "area": "color",
+      "title": "No near-duplicate colors",
+      "rule": "Colors within 0.02 OKLab deltaE are one drifted color; collapse them.",
+      "severity": "warn",
+      "layer": "static",
+      "values": {
+        "maxDeltaE": 0.02
+      },
+      "sources": [
+        "color-no-near-duplicates"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-dark-not-reversed",
+      "area": "color",
+      "title": "Real dark palette",
+      "rule": "Dark tokens are a separate palette, not the light ramp reversed.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-dark-not-reversed",
+        "19-separate-dark-palette"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-one-theme-mechanism",
+      "area": "color",
+      "title": "One theme mechanism",
+      "rule": "Switch themes one way only.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-one-theme-mechanism",
+        "19-one-theme-mechanism"
+      ],
+      "notes": "DS uses data-theme=\"dark\" with .dark as an alias of the same selector; that counts as one mechanism.",
+      "check": null
+    },
+    {
+      "id": "color-dark-variant-coverage",
+      "area": "color",
+      "title": "Dark coverage",
+      "rule": "When dark ships, every custom color has a dark variant.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-dark-variant-coverage"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-prefers-contrast-per-appearance",
+      "area": "color",
+      "title": "prefers-contrast per appearance",
+      "rule": "prefers-contrast: more gets its own value per appearance, widening the gap by 0.15 L or more.",
+      "severity": "warn",
+      "layer": "static",
+      "values": {
+        "minDeltaL": 0.15
+      },
+      "sources": [
+        "color-prefers-contrast-per-appearance"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-gamut-safe",
+      "area": "color",
+      "title": "In-gamut colors",
+      "rule": "oklch() colors stay in the target gamut, with an sRGB value first and vivid values inside @media (color-gamut: p3).",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-gamut-fallback",
+        "02-no-out-of-gamut-chroma",
+        "02-oklch-supports-fallback"
+      ],
+      "notes": "DS colors are hex today, so this applies only to new oklch values.",
+      "check": null
+    },
+    {
+      "id": "color-neutral-tint-consistent",
+      "area": "color",
+      "title": "Consistent neutral tint",
+      "rule": "A neutral's tint is held across its ramp.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-neutral-tint-consistent"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-role-inventory",
+      "area": "color",
+      "title": "Full role inventory",
+      "rule": "The token set covers every role: surfaces, text levels, borders, focus, accent and shipped statuses.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-role-inventory"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-gradient-space",
+      "area": "color",
+      "title": "Gradient interpolation space",
+      "rule": "Multi-hue gradients declare their space: oklab by default, oklch only for vivid midpoints checked for detours; keep text off gradients.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-gradient-space",
+        "02-gradient-oklab-straight",
+        "03-gradient-interpolation-space"
+      ],
+      "notes": "Skill calls this taste; magazine states it. Kept as warn with oklab default.",
+      "check": null
+    },
+    {
+      "id": "03-radial-shape-explicit",
+      "area": "color",
+      "title": "Round glows are circles",
+      "rule": "Set circle explicitly when a radial glow must stay round.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "03-radial-shape-explicit"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-locale-meaning",
+      "area": "color",
+      "title": "Locale color meaning",
+      "rule": "Gain/loss colors that change meaning across locales are per-locale tokens.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "color-locale-meaning"
+      ],
+      "taste": true,
+      "check": null
+    },
+    {
+      "id": "03-gradient-techniques",
+      "area": "color",
+      "title": "Gradient techniques",
+      "rule": "Hard edges with same-position stops, textures with repeating gradients, midpoints with color hints, richness with a low-alpha blended layer.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "03-hard-stops",
+        "03-repeating-patterns",
+        "03-color-hints",
+        "03-layer-blend-modes"
+      ],
+      "taste": true,
+      "check": null
+    },
+    {
+      "id": "ui-shadow-ring-keeps-border",
+      "area": "color",
+      "title": "Shadow ring keeps a border",
+      "rule": "A box-shadow ring keeps border: 1px solid transparent for forced-colors mode.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "ui-shadow-ring-keeps-border"
+      ],
+      "check": null
+    },
+    {
+      "id": "ui-image-outline",
+      "area": "color",
+      "title": "Image outline",
+      "rule": "Content images get a 1px outline inset 1px in pure black at 10% (light) or pure white at 10% (dark).",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "widthPx": 1,
+        "offsetPx": -1,
+        "lightAlpha": 0.1,
+        "darkAlpha": 0.1
+      },
+      "sources": [
+        "ui-image-outline",
+        "09-image-outline"
+      ],
+      "notes": "Issue 19 says 8%; issues 09 and the skill say 10%. 10% wins. Needs a DS token (see token proposals).",
+      "check": null
+    },
+    {
+      "id": "ui-icon-currentcolor",
+      "area": "color",
+      "title": "Icons use currentColor",
+      "rule": "Icons use currentColor and get states from CSS color and opacity, never hardcoded fills.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "ui-icon-currentcolor"
+      ],
+      "check": "S-color-literal"
+    },
+    {
+      "id": "td-theme-before-first-paint",
+      "area": "color",
+      "title": "Theme before first paint",
+      "rule": "The resolved theme applies before first paint; the app follows the system with a Light, Dark and System choice.",
+      "severity": "fail",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "td-theme-before-first-paint"
+      ],
+      "check": null
+    }
+  ]
+}

@@ -1,0 +1,810 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-cce9cfbfd147a65f225f4866c4cd7394",
+  "title": "Layout",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "intro",
+        "h-checks",
+        "checks-lead",
+        "checks-table",
+        "h-rules",
+        "rules-lead",
+        "rules-R-align-near-miss",
+        "rules-R-concentric-radius",
+        "rules-R-h-scroll",
+        "rules-R-spacing-grid",
+        "rules-R-control-height",
+        "rules-none-lead",
+        "rules-none"
+      ]
+    },
+    "intro": {
+      "id": "intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The layout checks measure where boxes sit on the rendered page: edges, centers, radii, spacing and row heights. They run in a browser on every page, theme and viewport. The area has 5 runtime checks and 43 rules in "
+        },
+        {
+          "insert": "design-score/rules/layout.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/layout.json"
+            }
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-checks": {
+      "id": "h-checks",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Checks"
+        }
+      ],
+      "children": []
+    },
+    "checks-lead": {
+      "id": "checks-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each check has its own page with its thresholds, a good and bad fixture pair and its known false positives. All five are runtime checks."
+        }
+      ],
+      "children": []
+    },
+    "checks-table": {
+      "id": "checks-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Check",
+          "Result",
+          "What It Finds"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "R-align-near-miss",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/20-layout/10-r-align-near-miss"
+                }
+              }
+            ],
+            "Fail and warn",
+            "Edges or centers that miss by 1 to 3px, and handles off their first line"
+          ],
+          [
+            [
+              {
+                "insert": "R-concentric-radius",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/20-layout/20-r-concentric-radius"
+                }
+              }
+            ],
+            "Warn",
+            "A nested radius that is not the parent radius minus the inset"
+          ],
+          [
+            [
+              {
+                "insert": "R-h-scroll",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/20-layout/30-r-h-scroll"
+                }
+              }
+            ],
+            "Fail",
+            "A page or main area that scrolls sideways"
+          ],
+          [
+            [
+              {
+                "insert": "R-spacing-grid",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/20-layout/40-r-spacing-grid"
+                }
+              }
+            ],
+            "Warn",
+            "Padding or gap off the 4px grid"
+          ],
+          [
+            [
+              {
+                "insert": "R-control-height",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/20-layout/50-r-control-height"
+                }
+              }
+            ],
+            "Fail",
+            "Controls in one row with different heights"
+          ]
+        ],
+        "title": "Layout checks"
+      },
+      "children": []
+    },
+    "h-rules": {
+      "id": "h-rules",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules"
+        }
+      ],
+      "children": []
+    },
+    "rules-lead": {
+      "id": "rules-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each rule in "
+        },
+        {
+          "insert": "design-score/rules/layout.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/layout.json"
+            }
+          }
+        },
+        {
+          "insert": " names the check that decides it, or no check. A check's page says which of its rules the probe measures."
+        }
+      ],
+      "children": []
+    },
+    "rules-R-align-near-miss": {
+      "id": "rules-R-align-near-miss",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "layout-shared-edges",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Shared edges",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "ks-align-near-miss",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No near-miss alignment",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "ks-handle-first-line",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Handles center on the first line",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "ks-baseline-align",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Shared baselines",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "ks-icon-optical-center",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Icons centered in their box",
+            "Warn"
+          ]
+        ],
+        "title": "Rules decided by R-align-near-miss"
+      },
+      "children": []
+    },
+    "rules-R-concentric-radius": {
+      "id": "rules-R-concentric-radius",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "ui-concentric-radius",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Concentric radius",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "16-focus-ring-concentric",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Concentric focus ring",
+            "Warn"
+          ]
+        ],
+        "title": "Rules decided by R-concentric-radius"
+      },
+      "children": []
+    },
+    "rules-R-h-scroll": {
+      "id": "rules-R-h-scroll",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "layout-no-page-h-scroll",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No horizontal page scroll",
+            "Fail"
+          ]
+        ],
+        "title": "Rules decided by R-h-scroll"
+      },
+      "children": []
+    },
+    "rules-R-spacing-grid": {
+      "id": "rules-R-spacing-grid",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "layout-group-gap-ratio",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Groups by space",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "layout-control-clearance",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Control clearance",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "ui-optical-icon-padding",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Less padding on the icon side",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "ks-gap-grid",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Gaps on the 4px grid",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "ks-repeated-padding",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Same padding in repeated items",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "ks-indent-step",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "One indent step",
+            "Warn"
+          ]
+        ],
+        "title": "Rules decided by R-spacing-grid"
+      },
+      "children": []
+    },
+    "rules-R-control-height": {
+      "id": "rules-R-control-height",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "ks-row-control-height",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Equal control heights in a row",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "ks-control-height-scale",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Control heights from a scale",
+            "Warn"
+          ]
+        ],
+        "title": "Rules decided by R-control-height"
+      },
+      "children": []
+    },
+    "rules-none-lead": {
+      "id": "rules-none-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "27 rules name no check yet. No finding carries their ids, so a run never scores them."
+        }
+      ],
+      "children": []
+    },
+    "rules-none": {
+      "id": "rules-none",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "layout-controls-distinct",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Controls look like controls",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "layout-logical-properties",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Logical properties",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "layout-rtl-no-logical-form",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "RTL overrides",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "layout-dom-order-matches-visual",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "DOM order is visual order",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "layout-secondary-actions-in-menu",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "One primary, few secondaries",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "layout-hidden-content-cue",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Hidden content has a cue",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "layout-truncation-way-back",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Truncation has a way back",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "layout-disclosure-names-content",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Disclosures name content",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "layout-container-queries",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Container queries",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "layout-container-type-sized",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Container has a definite width",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "layout-critical-action-reachable",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Critical actions reachable",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "layout-breakpoints-from-content",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Breakpoints from content",
+            "Human"
+          ],
+          [
+            [
+              {
+                "insert": "ks-no-size-literals",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Sizes from tokens",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "ui-icon-stroke-matches-text",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Icon stroke matches text",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "ui-one-icon-library",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "One icon library",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "ui-icon-rtl-mirroring",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Icon mirroring",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "ui-icon-inline-size",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Inline icon size",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "ui-icons-svg-not-raster",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "SVG icons",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "ui-one-way-per-detail",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "One way per detail",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "06-cn-not-template-literals",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "cn for classes",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "12-tab-label-above-indicator",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Tab label above indicator",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "iface-project-idiom",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Project idiom",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "break-quantity",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Quantity",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "break-environment",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Environment",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "bd-no-figma-urls",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No Figma URLs",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "td-svg-self-contained",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Self-contained SVG",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "ks-icon-size-consistent",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "One icon size per role",
+            "Warn"
+          ]
+        ],
+        "title": "Rules no check decides yet"
+      },
+      "children": []
+    }
+  }
+}

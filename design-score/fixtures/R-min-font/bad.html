@@ -1,0 +1,30 @@
+<!doctype html>
+<!-- R-min-font, bad: the meta line is 11px (--ds-font-size-ui-2xs), and the uppercase status label is 10px (--ds-font-size-micro). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>R-min-font: bad</title>
+<link rel="stylesheet" href="../../../css/fonts.css">
+<link rel="stylesheet" href="../../../dist/css/tokens.css">
+<style>
+  body { margin: 0; padding: var(--ds-space-6); background: var(--ds-color-surface-page); color: var(--ds-color-text-body); font-family: var(--ds-font-family-sans); font-size: var(--ds-font-size-ui-md); line-height: var(--ds-line-height-ui); }
+  h2 { margin: 0 0 var(--ds-space-2); font-size: var(--ds-font-size-ui-lg); font-weight: var(--ds-font-weight-semibold); color: var(--ds-color-text-ink); }
+  ul { margin: 0; padding: 0; list-style: none; width: calc(var(--ds-space-16) * 6); border: 1px solid var(--ds-color-border-default); border-radius: var(--ds-radius-base); background: var(--ds-color-surface-panel); }
+  li { display: flex; align-items: center; justify-content: space-between; gap: var(--ds-space-3); padding: var(--ds-space-2) var(--ds-space-3); }
+  li + li { border-top: 1px solid var(--ds-color-border-subtle); }
+  .title { color: var(--ds-color-text-ink); }
+  .meta { color: var(--ds-color-text-muted); }
+  .label { text-transform: uppercase; letter-spacing: 0.04em; font-weight: var(--ds-font-weight-semibold); color: var(--ds-color-text-secondary); }
+  /* An 11px meta line fails. A 10px uppercase label warns. */
+  .meta { font-size: var(--ds-font-size-ui-2xs); }
+  .label { font-size: var(--ds-font-size-micro); }
+</style>
+</head>
+<body>
+  <h2>Deploys</h2>
+  <ul>
+    <li><div><div class="title">Docs hub</div><div class="meta">Pushed by Ford on Tuesday</div></div><span class="label">Live</span></li>
+    <li><div><div class="title">Knowledge</div><div class="meta">Pushed by Ford on Monday</div></div><span class="label">Queued</span></li>
+  </ul>
+</body>
+</html>

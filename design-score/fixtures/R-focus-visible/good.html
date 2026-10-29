@@ -1,0 +1,25 @@
+<!doctype html>
+<!-- R-focus-visible, good: every toolbar control draws the --ds-color-focus-ring outline on :focus-visible. The shot is taken after one Tab, so the first button shows its ring. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>R-focus-visible: good</title>
+<link rel="stylesheet" href="../../../css/fonts.css">
+<link rel="stylesheet" href="../../../dist/css/tokens.css">
+<style>
+  body { margin: 0; padding: var(--ds-space-6); background: var(--ds-color-surface-page); color: var(--ds-color-text-body); font-family: var(--ds-font-family-sans); }
+  .bar { display: flex; align-items: center; gap: var(--ds-space-2); width: max-content; padding: var(--ds-space-2); border: 1px solid var(--ds-color-border-default); border-radius: var(--ds-radius-base); background: var(--ds-color-surface-panel); }
+  button { height: var(--ds-space-8); padding: 0 var(--ds-space-3); border: 1px solid var(--ds-color-border-default); border-radius: var(--ds-radius-base); background: var(--ds-color-surface-page); color: var(--ds-color-text-body); font: inherit; font-size: var(--ds-font-size-ui-md); }
+  a { margin-left: var(--ds-space-2); font-size: var(--ds-font-size-ui-md); color: var(--ds-color-link); }
+  button:focus-visible, a:focus-visible { outline: var(--ds-border-width-focus) solid var(--ds-color-focus-ring); outline-offset: var(--ds-focus-ring-offset); }
+</style>
+</head>
+<body>
+  <div class="bar" role="toolbar" aria-label="Format">
+    <button type="button">Bold</button>
+    <button type="button">Italic</button>
+    <button type="button">Code</button>
+    <a href="#help">Shortcuts</a>
+  </div>
+</body>
+</html>

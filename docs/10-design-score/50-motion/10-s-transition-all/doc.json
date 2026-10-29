@@ -1,0 +1,1493 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-72489ca7c694d71266773a9de3e0da9b",
+  "title": "S-transition-all: Transition All",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b6",
+        "b8",
+        "b11",
+        "b13",
+        "b15",
+        "b16",
+        "b17",
+        "b18",
+        "b19",
+        "b20",
+        "b21",
+        "b22",
+        "b23",
+        "b24",
+        "b25",
+        "b26",
+        "b27",
+        "b28",
+        "b29",
+        "b30",
+        "b31",
+        "b32",
+        "b33",
+        "b34",
+        "b35",
+        "b36",
+        "b37",
+        "b38",
+        "b40",
+        "b42",
+        "b44",
+        "b45",
+        "b46",
+        "b47",
+        "b48",
+        "b49",
+        "b50"
+      ]
+    },
+    "b1": {
+      "id": "b1",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "S-transition-all",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " finds transitions that animate every property instead of the properties that change. It is a static check in the motion area, so it reads the app's source files with no browser. Every finding fails the check, and the result counts once on every page."
+        }
+      ],
+      "children": []
+    },
+    "b2": {
+      "id": "b2",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "What It Catches"
+        }
+      ],
+      "children": []
+    },
+    "b3": {
+      "id": "b3",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check reports five source patterns. Each one makes the browser animate any property that changes, such as an outline, a size or a theme color."
+        }
+      ],
+      "children": []
+    },
+    "b4": {
+      "id": "b4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "`transition: all`",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b5"
+      ]
+    },
+    "b5": {
+      "id": "b5",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A transition shorthand fails when any of its comma-separated segments names "
+        },
+        {
+          "insert": "all",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b6": {
+      "id": "b6",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "`transition-property: all`",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b7"
+      ]
+    },
+    "b7": {
+      "id": "b7",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The longhand fails when its list holds "
+        },
+        {
+          "insert": "all",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b8": {
+      "id": "b8",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A shorthand that names no property",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b9",
+        "b10"
+      ]
+    },
+    "b9": {
+      "id": "b9",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A segment such as "
+        },
+        {
+          "insert": "transition: var(--ds-motion-duration-base) ease",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " holds only timing, so the browser animates all properties. This fails too."
+        }
+      ],
+      "children": []
+    },
+    "b10": {
+      "id": "b10",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A "
+        },
+        {
+          "insert": "var()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " counts as timing when its name holds duration, delay, ease, easing, timing, speed or motion. The check skips a segment with any other "
+        },
+        {
+          "insert": "var()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", because that "
+        },
+        {
+          "insert": "var()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " can hold the property."
+        }
+      ],
+      "children": []
+    },
+    "b11": {
+      "id": "b11",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The Tailwind class `transition-all`",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b12"
+      ]
+    },
+    "b12": {
+      "id": "b12",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The class fails in a CSS "
+        },
+        {
+          "insert": "@apply",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and in any TS or JS string literal, with or without a variant such as "
+        },
+        {
+          "insert": "hover:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b13": {
+      "id": "b13",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Inline style objects",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b14"
+      ]
+    },
+    "b14": {
+      "id": "b14",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "In TS or JS, a "
+        },
+        {
+          "insert": "transition",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "transitionProperty",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " string that starts with "
+        },
+        {
+          "insert": "all",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " fails, as does a "
+        },
+        {
+          "insert": "transition",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " string that names no property."
+        }
+      ],
+      "children": []
+    },
+    "b15": {
+      "id": "b15",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "How It Measures"
+        }
+      ],
+      "children": []
+    },
+    "b16": {
+      "id": "b16",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check parses source text and reads no computed style. It takes these steps in order."
+        }
+      ],
+      "children": []
+    },
+    "b17": {
+      "id": "b17",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "scripts/design-score/run.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/run.ts",
+              "symbol": "Static checks"
+            }
+          }
+        },
+        {
+          "insert": " calls "
+        },
+        {
+          "insert": "runStaticChecks",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/static-checks.ts",
+              "symbol": "runStaticChecks"
+            }
+          }
+        },
+        {
+          "insert": " once per run, over the app config's "
+        },
+        {
+          "insert": "sourceDirs",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " minus its "
+        },
+        {
+          "insert": "excludes",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b18": {
+      "id": "b18",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "runStaticChecks",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " collects the files with the scan-literals rules, so it skips "
+        },
+        {
+          "insert": "node_modules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "dist",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", tests and generated files. It strips comments first, so line numbers match the source."
+        }
+      ],
+      "children": []
+    },
+    "b19": {
+      "id": "b19",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "cssFindings",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/static-checks.ts",
+              "symbol": "cssFindings"
+            }
+          }
+        },
+        {
+          "insert": " parses each CSS and SCSS file into rules and checks every "
+        },
+        {
+          "insert": "transition",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "transition-property",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "@apply",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " declaration. It skips rules inside "
+        },
+        {
+          "insert": "@theme",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b20": {
+      "id": "b20",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "segmentAnimatesAll",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/static-checks.ts",
+              "symbol": "segmentAnimatesAll"
+            }
+          }
+        },
+        {
+          "insert": " decides each shorthand segment. A segment animates all when it names "
+        },
+        {
+          "insert": "all",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or when every part is a time, an easing or a timing "
+        },
+        {
+          "insert": "var()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b21": {
+      "id": "b21",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "jsFindings",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/static-checks.ts",
+              "symbol": "jsFindings"
+            }
+          }
+        },
+        {
+          "insert": " reads the string literals and inline style objects of each TS and JS file."
+        }
+      ],
+      "children": []
+    },
+    "b22": {
+      "id": "b22",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Thresholds"
+        }
+      ],
+      "children": []
+    },
+    "b23": {
+      "id": "b23",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check has no numeric threshold. Any match fails, and the run keeps the first 25 findings."
+        }
+      ],
+      "children": []
+    },
+    "b24": {
+      "id": "b24",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Source",
+          "Pattern",
+          "Severity"
+        ],
+        "rows": [
+          [
+            "CSS declaration",
+            [
+              {
+                "insert": "transition-property",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " lists "
+              },
+              {
+                "insert": "all",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Fail"
+          ],
+          [
+            "CSS declaration",
+            [
+              {
+                "insert": "A "
+              },
+              {
+                "insert": "transition",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " segment names "
+              },
+              {
+                "insert": "all",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " or no property"
+              }
+            ],
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "CSS "
+              },
+              {
+                "insert": "@apply",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "transition-all",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Fail"
+          ],
+          [
+            "TS or JS string",
+            [
+              {
+                "insert": "transition-all",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", with any variant"
+              }
+            ],
+            "Fail"
+          ],
+          [
+            "TS or JS style object",
+            [
+              {
+                "insert": "transition",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " or "
+              },
+              {
+                "insert": "transitionProperty",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " names "
+              },
+              {
+                "insert": "all",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " or no property"
+              }
+            ],
+            "Fail"
+          ]
+        ],
+        "title": "S-transition-all patterns"
+      },
+      "children": []
+    },
+    "b25": {
+      "id": "b25",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check reads "
+        },
+        {
+          "insert": ".css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": ".scss",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": ".ts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": ".tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": ".js",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": ".jsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": ".mjs",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " files. A "
+        },
+        {
+          "insert": "<style>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " block in an HTML, Vue or Svelte file is not parsed."
+        }
+      ],
+      "children": []
+    },
+    "b26": {
+      "id": "b26",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Example"
+        }
+      ],
+      "children": []
+    },
+    "b27": {
+      "id": "b27",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The fixture pair is "
+        },
+        {
+          "insert": "design-score/fixtures/S-transition-all/",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/fixtures/S-transition-all"
+            }
+          }
+        },
+        {
+          "insert": ". Both pages show the same toolbar and cards, and each loads its own CSS file. Both CSS files give "
+        },
+        {
+          "insert": ".btn:focus-visible",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " the same 2px focus ring."
+        }
+      ],
+      "children": []
+    },
+    "b28": {
+      "id": "b28",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Line",
+          "Selector",
+          "Declaration"
+        ],
+        "rows": [
+          [
+            "13",
+            [
+              {
+                "insert": ".btn",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "transition: all var(--ds-motion-duration-fast) var(--ds-motion-easing-standard)",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "15",
+            [
+              {
+                "insert": ".card",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "transition-property: all",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "17",
+            [
+              {
+                "insert": ".meta",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "transition: var(--ds-motion-duration-base) var(--ds-motion-easing-standard)",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ]
+        ],
+        "title": "Findings on bad.css"
+      },
+      "children": []
+    },
+    "b29": {
+      "id": "b29",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "In "
+        },
+        {
+          "insert": "good.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": ".btn",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " transitions only "
+        },
+        {
+          "insert": "background-color",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and "
+        },
+        {
+          "insert": ".card",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " lists "
+        },
+        {
+          "insert": "border-color, box-shadow",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The good page gets 0 findings."
+        }
+      ],
+      "children": []
+    },
+    "b30": {
+      "id": "b30",
+      "type": "image-grid",
+      "props": {
+        "columns": 1,
+        "images": [
+          {
+            "src": "./assets/images/good-frames.png",
+            "heading": "Good: pass",
+            "alt": "Five frames of the New project button after it takes focus. The blue focus ring is at full strength in every frame.",
+            "caption": "good.css, 0 findings. Frames at 0, 25, 50, 75 and 100ms after focus."
+          },
+          {
+            "src": "./assets/images/bad-frames.png",
+            "heading": "Bad: fail",
+            "alt": "The same five frames. The ring starts thick and dark, then narrows and turns blue over 100ms.",
+            "caption": "bad.css, 3 fail findings. Frames at 0, 25, 50, 75 and 100ms after focus."
+          }
+        ]
+      },
+      "children": []
+    },
+    "b31": {
+      "id": "b31",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The frames show the cost of "
+        },
+        {
+          "insert": "all",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". In bad, "
+        },
+        {
+          "insert": "transition: all",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " also animates the outline, so the ring starts at the default 3px in the text color and needs 100ms to reach the 2px blue ring. In good, the outline is not in the transition list, so the ring is final in the first frame."
+        }
+      ],
+      "children": []
+    },
+    "b32": {
+      "id": "b32",
+      "type": "callout",
+      "props": {
+        "title": "Frames, not boxes",
+        "tone": "info"
+      },
+      "text": [
+        {
+          "insert": "A static finding has a file and a line but no box on the page, so the fixture's "
+        },
+        {
+          "insert": "good.png",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "bad.png",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " look the same. "
+        },
+        {
+          "insert": "bun scripts/design-score/frames.ts S-transition-all",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " writes these strips from the fixture's "
+        },
+        {
+          "insert": "frames.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". It stops the page's animation clock and seeks every animation to each frame time."
+        }
+      ],
+      "children": []
+    },
+    "b33": {
+      "id": "b33",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules Behind It"
+        }
+      ],
+      "children": []
+    },
+    "b34": {
+      "id": "b34",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "One rule in "
+        },
+        {
+          "insert": "design-score/rules/motion.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/motion.json"
+            }
+          }
+        },
+        {
+          "insert": " names this check. Every finding carries its id in "
+        },
+        {
+          "insert": "rules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b35": {
+      "id": "b35",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity",
+          "Measured"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "ui-no-transition-all",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No transition: all",
+            "Fail",
+            "Yes"
+          ]
+        ],
+        "title": "Rules decided by S-transition-all"
+      },
+      "children": []
+    },
+    "b36": {
+      "id": "b36",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Known False Positives"
+        }
+      ],
+      "children": []
+    },
+    "b37": {
+      "id": "b37",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check matches text, so it cannot see what a custom property or a string holds."
+        }
+      ],
+      "children": []
+    },
+    "b38": {
+      "id": "b38",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Property lists in a motion variable",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b39"
+      ]
+    },
+    "b39": {
+      "id": "b39",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "transition: var(--motion-props) var(--ds-motion-duration-base)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " fails when "
+        },
+        {
+          "insert": "--motion-props",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " holds "
+        },
+        {
+          "insert": "opacity, transform",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The name holds motion, so the check reads the "
+        },
+        {
+          "insert": "var()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " as timing."
+        }
+      ],
+      "children": []
+    },
+    "b40": {
+      "id": "b40",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Strings that name the class",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b41"
+      ]
+    },
+    "b41": {
+      "id": "b41",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Any TS or JS string with "
+        },
+        {
+          "insert": "transition-all",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " fails, such as a test name or an error message."
+        }
+      ],
+      "children": []
+    },
+    "b42": {
+      "id": "b42",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix it in the app config",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b43"
+      ]
+    },
+    "b43": {
+      "id": "b43",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Add the file to "
+        },
+        {
+          "insert": "excludes",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "design-score/apps/<app>.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Rename the variable to make a property list readable."
+        }
+      ],
+      "children": []
+    },
+    "b44": {
+      "id": "b44",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Debug It"
+        }
+      ],
+      "children": []
+    },
+    "b45": {
+      "id": "b45",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Run these commands in the design-system checkout. Each run writes a folder under "
+        },
+        {
+          "insert": ".design-score/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b46": {
+      "id": "b46",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run the fixture pair. The command exits 1 unless the bad page fails and the good page passes."
+        }
+      ],
+      "children": []
+    },
+    "b47": {
+      "id": "b47",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --fixture S-transition-all"
+        }
+      ],
+      "children": []
+    },
+    "b48": {
+      "id": "b48",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Score one page of an app in one theme and one viewport. The static checks still read every source folder."
+        }
+      ],
+      "children": []
+    },
+    "b49": {
+      "id": "b49",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --app knowledge-system --pages session --quick"
+        }
+      ],
+      "children": []
+    },
+    "b50": {
+      "id": "b50",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Open "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and read each finding's "
+        },
+        {
+          "insert": "file",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "line",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    }
+  }
+}

@@ -1,0 +1,418 @@
+{
+  "area": "interaction",
+  "rules": [
+    {
+      "id": "a11y-no-outline-none-without-replacement",
+      "area": "interaction",
+      "title": "No outline removal without replacement",
+      "rule": "Never remove the outline (outline: none, outline-none, outline-0) without a verified :focus-visible replacement.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-no-outline-none-without-replacement",
+        "16-focus-visible-indicator"
+      ],
+      "check": "S-outline-none"
+    },
+    {
+      "id": "a11y-hit-target",
+      "area": "interaction",
+      "title": "Hit target size",
+      "rule": "Every interactive target is at least 32x32 CSS px (fail under 24px, warn under 32px), extending a small visual with a pseudo-element hit area.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": {
+        "failBelowPx": 24,
+        "warnBelowPx": 32,
+        "pseudoInsetPx": -8
+      },
+      "sources": [
+        "a11y-target-size-24",
+        "a11y-target-size-44-40",
+        "16-hit-area-minimum"
+      ],
+      "notes": "Ford's decision. The 44px touch and 40px dense-desktop aims are dropped; the 24px WCAG spacing exception still applies to the fail tier.",
+      "check": "R-hit-target"
+    },
+    {
+      "id": "a11y-hit-areas-no-overlap",
+      "area": "interaction",
+      "title": "Hit areas never overlap",
+      "rule": "Extended hit areas of neighbouring controls never overlap.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-hit-areas-no-overlap",
+        "16-hit-areas-no-overlap"
+      ],
+      "check": "R-hit-target"
+    },
+    {
+      "id": "16-no-dead-zones",
+      "area": "interaction",
+      "title": "No dead zones",
+      "rule": "Adjacent list and menu items, and a checkbox or radio with its label, share hit area with no dead gap between them.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "exampleGapPx": 2
+      },
+      "sources": [
+        "16-no-dead-zones",
+        "a11y-label-shares-hit-target"
+      ],
+      "check": "R-hit-target"
+    },
+    {
+      "id": "16-shortcut-sequences",
+      "area": "interaction",
+      "title": "Safe shortcuts",
+      "rule": "Shortcuts use sequences (G then I) or modifiers, avoid browser-reserved combos, and never put a destructive action on one key.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "16-shortcut-sequences"
+      ],
+      "check": null
+    },
+    {
+      "id": "16-shortcuts-ignore-fields",
+      "area": "interaction",
+      "title": "Shortcuts ignore fields",
+      "rule": "Shortcuts ignore keystrokes in form fields, IME composition and key repeat.",
+      "severity": "fail",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "16-shortcuts-ignore-fields"
+      ],
+      "check": null
+    },
+    {
+      "id": "12-enter-advances-form",
+      "area": "interaction",
+      "title": "Enter submits",
+      "rule": "Fields and their submit button sit in a <form>, so Enter advances or submits each step.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "12-enter-advances-form",
+        "16-form-wraps-fields"
+      ],
+      "check": null
+    },
+    {
+      "id": "12-focus-primary-when-no-input",
+      "area": "interaction",
+      "title": "Focus the primary action",
+      "rule": "On a step with no input, focus moves to the primary button so Enter still works.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "12-focus-primary-when-no-input"
+      ],
+      "check": null
+    },
+    {
+      "id": "12-escape-steps-back",
+      "area": "interaction",
+      "title": "Escape steps back",
+      "rule": "In a multi-step dialog, Escape goes back one step and closes only from the first step.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "12-escape-steps-back"
+      ],
+      "check": null
+    },
+    {
+      "id": "12-autofocus-next-input",
+      "area": "interaction",
+      "title": "Autofocus the next input",
+      "rule": "Autofocus the next input the user must fill.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "12-autofocus-next-input"
+      ],
+      "check": null
+    },
+    {
+      "id": "09-shadow-hover-darker",
+      "area": "interaction",
+      "title": "Darker shadow on hover",
+      "rule": "On hover use the same shadow slightly darker and transition only box-shadow.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "lightAlphas": [
+          [
+            0.06,
+            0.06,
+            0.04
+          ],
+          [
+            0.08,
+            0.08,
+            0.06
+          ]
+        ],
+        "darkRing": [
+          0.08,
+          0.12
+        ]
+      },
+      "sources": [
+        "09-shadow-hover-darker"
+      ],
+      "check": null
+    },
+    {
+      "id": "ui-press-scale",
+      "area": "interaction",
+      "title": "Press scale",
+      "rule": "Buttons scale to 0.95-0.98 while pressed, over about 150ms ease-out, with an opt-out.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "min": 0.95,
+        "max": 0.98,
+        "durationMs": 150
+      },
+      "sources": [
+        "ui-press-scale-value",
+        "ui-press-scale-present",
+        "19-press-scale"
+      ],
+      "notes": "Ford's decision replaces the skill's exact 0.96. Duration: skill 150ms, issue 19 200ms; the shorter wins.",
+      "check": "M-press-scale"
+    },
+    {
+      "id": "ui-press-scale-not-disabled",
+      "area": "interaction",
+      "title": "Disabled never scales",
+      "rule": "A disabled button never scales on press.",
+      "severity": "fail",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "ui-press-scale-not-disabled"
+      ],
+      "check": "M-press-scale"
+    },
+    {
+      "id": "08-tap-keyboard-parity",
+      "area": "interaction",
+      "title": "Keyboard press feedback",
+      "rule": "Press feedback also fires on keyboard activation.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "08-tap-keyboard-parity"
+      ],
+      "check": "M-press-scale"
+    },
+    {
+      "id": "ui-hover-capable-only",
+      "area": "interaction",
+      "title": "Hover behind a media query",
+      "rule": "Hover-only styling sits behind @media (hover: hover) and (pointer: fine).",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "ui-hover-capable-only",
+        "20-hover-behind-media-query"
+      ],
+      "notes": "Desktop-only apps: kept as warn because touch screens on laptops still latch hover.",
+      "check": "S-hover-unguarded"
+    },
+    {
+      "id": "ui-overscroll-contain",
+      "area": "interaction",
+      "title": "Contained overscroll",
+      "rule": "Scrollable dialogs, drawers, menus and side panels use overscroll-behavior: contain.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "ui-overscroll-contain"
+      ],
+      "check": null
+    },
+    {
+      "id": "08-tap-cancels-on-move",
+      "area": "interaction",
+      "title": "Tap cancels on move",
+      "rule": "A tap cancels when the pointer moves more than 3px, so taps never fire during drags.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "maxMovePx": 3
+      },
+      "sources": [
+        "08-tap-cancels-on-move"
+      ],
+      "check": null
+    },
+    {
+      "id": "08-drag-in-container",
+      "area": "interaction",
+      "title": "Drag stays in its container",
+      "rule": "Free-drag elements are constrained to their container.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "08-drag-in-container"
+      ],
+      "check": null
+    },
+    {
+      "id": "18-fast-action-feedback",
+      "area": "interaction",
+      "title": "Fast action feedback",
+      "rule": "Common actions show their result fast, optimistically when the server is slow.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "18-fast-action-feedback"
+      ],
+      "check": null
+    },
+    {
+      "id": "18-fast-page-load",
+      "area": "interaction",
+      "title": "Fast page load",
+      "rule": "Entry pages load as fast as possible.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "18-fast-page-load"
+      ],
+      "check": null
+    },
+    {
+      "id": "20-copy-feedback-keeps-width",
+      "area": "interaction",
+      "title": "Copy feedback keeps width",
+      "rule": "Copy feedback swaps the icon and keeps the label so the button keeps its width.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "20-copy-feedback-keeps-width"
+      ],
+      "check": null
+    },
+    {
+      "id": "20-tooltip-skip-delay",
+      "area": "interaction",
+      "title": "Tooltip skip delay",
+      "rule": "Once a tooltip shows, neighbours show instantly for a short window, from one app-wide provider.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "20-tooltip-skip-delay"
+      ],
+      "check": null
+    },
+    {
+      "id": "iface-cover-all-states",
+      "area": "interaction",
+      "title": "Every state renders",
+      "rule": "Every surface renders its empty, loading, error and narrow states, and every reachable data state, with product-shaped mock data and real-use edge cases.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "iface-cover-all-states",
+        "sm-every-state-renders",
+        "18-real-use-edge-cases"
+      ],
+      "check": null
+    },
+    {
+      "id": "review-variant-states-complete",
+      "area": "interaction",
+      "title": "Complete variant states",
+      "rule": "A new variant, size or theme covers hover, focus, active, disabled, loading and selected.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "review-variant-states-complete"
+      ],
+      "check": null
+    },
+    {
+      "id": "break-states",
+      "area": "interaction",
+      "title": "Stable states",
+      "rule": "Loading, error and disabled states do not shift layout, rely on color alone or collapse contrast.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "break-states"
+      ],
+      "notes": "R-state-shift decides the layout-shift part for hover, focus, tab selection and opened popups; loading, error and disabled states are not exercised yet.",
+      "check": "R-state-shift"
+    },
+    {
+      "id": "sm-loading-holds",
+      "area": "interaction",
+      "title": "Loading holds still",
+      "rule": "Loading and pending states hold until switched, never resolving on a timeout.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "sm-loading-holds"
+      ],
+      "check": null
+    },
+    {
+      "id": "td-zoom-keeps-edges-reachable",
+      "area": "interaction",
+      "title": "Zoomed artwork reachable",
+      "rule": "Zoomed artwork stays in a scrollable viewport with every edge reachable.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "td-zoom-keeps-edges-reachable"
+      ],
+      "check": null
+    },
+    {
+      "id": "ks-no-state-shift",
+      "area": "interaction",
+      "title": "State changes never shift layout",
+      "rule": "Hover, selection, focus, loading and copied states never change an element's size or move its neighbours (no border added on hover, no bolder text that widens a tab).",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": {
+        "failAtPx": 1
+      },
+      "sources": [
+        "break-states",
+        "20-copy-feedback-keeps-width",
+        "05-will-change-fix-jitter"
+      ],
+      "notes": "R-state-shift: layout boxes before and after hover, focus, tab selection and opening a popup; a neighbour (or the control itself) moved or resized by 1px or more fails (Ford: >= 1px).",
+      "check": "R-state-shift"
+    }
+  ]
+}

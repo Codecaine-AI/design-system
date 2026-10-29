@@ -1,0 +1,23 @@
+<!doctype html>
+<!-- R-h-scroll, bad: the banner is width: 100vw inside a body with 24px of padding, so it runs 24px past the viewport and the page scrolls sideways (fail). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>R-h-scroll: bad</title>
+<link rel="stylesheet" href="../../../css/fonts.css">
+<link rel="stylesheet" href="../../../dist/css/tokens.css">
+<style>
+  body { margin: 0; padding: var(--ds-space-6); background: var(--ds-color-surface-page); color: var(--ds-color-text-body); font-family: var(--ds-font-family-sans); }
+  h2 { margin: 0 0 var(--ds-space-3); font-size: var(--ds-font-size-ui-lg); font-weight: var(--ds-font-weight-semibold); }
+  .banner { box-sizing: border-box; padding: var(--ds-space-3) var(--ds-space-4); border: 1px solid var(--ds-color-yellow-line); border-radius: var(--ds-radius-base); background: var(--ds-color-yellow-soft); font-size: var(--ds-font-size-ui-md); line-height: var(--ds-line-height-ui); }
+  p { margin: var(--ds-space-4) 0 0; font-size: var(--ds-font-size-ui-md); line-height: var(--ds-line-height-ui); max-width: calc(var(--ds-space-16) * 9); }
+  /* The miss: 100vw is the whole viewport, so the body's left padding pushes it out on the right. */
+  .banner { width: 100vw; }
+</style>
+</head>
+<body>
+  <h2>Workspace</h2>
+  <div class="banner">Sync is paused. Changes stay on this device until you sign in again.</div>
+  <p>Three files changed since the last sync. They upload as soon as the connection comes back.</p>
+</body>
+</html>

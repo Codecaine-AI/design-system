@@ -1,0 +1,29 @@
+<!doctype html>
+<!-- R-contrast, bad: the same rows. Meta lines use --ds-color-text-faint (under 4.5:1), and the Blocked badge puts --ds-color-text-on-solid on the yellow tile (fail in light). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>R-contrast: bad</title>
+<script src="../theme.js"></script>
+<link rel="stylesheet" href="../../../css/fonts.css">
+<link rel="stylesheet" href="../../../dist/css/tokens.css">
+<style>
+  body { margin: 0; padding: var(--ds-space-6); background: var(--ds-color-surface-page); color: var(--ds-color-text-body); font-family: var(--ds-font-family-sans); }
+  h2 { margin: 0 0 var(--ds-space-2); font-size: var(--ds-font-size-ui-lg); font-weight: var(--ds-font-weight-semibold); color: var(--ds-color-text-ink); }
+  ul { margin: 0; padding: 0; list-style: none; width: calc(var(--ds-space-16) * 6); border: 1px solid var(--ds-color-border-default); border-radius: var(--ds-radius-base); background: var(--ds-color-surface-panel); }
+  li { display: flex; align-items: center; justify-content: space-between; gap: var(--ds-space-2); padding: var(--ds-space-2) var(--ds-space-3); }
+  li + li { border-top: 1px solid var(--ds-color-border-subtle); }
+  .title { font-size: var(--ds-font-size-ui-md); }
+  .meta { font-size: var(--ds-font-size-ui-sm); color: var(--ds-color-text-faint); }
+  .badge { padding: var(--ds-space-0-5) var(--ds-space-2); border-radius: var(--ds-radius-pill); font-size: var(--ds-font-size-ui-sm); font-weight: var(--ds-font-weight-medium); background: var(--ds-color-yellow-solid); color: var(--ds-color-text-on-solid); }
+</style>
+</head>
+<body>
+  <h2>Releases</h2>
+  <ul>
+    <li><div><div class="title">Docs hub 2.4</div><div class="meta">Shipped Monday</div></div></li>
+    <li><div><div class="title">Design system 1.9</div><div class="meta">Waiting on review</div></div><span class="badge">Blocked</span></li>
+    <li><div><div class="title">Knowledge app 0.8</div><div class="meta">Draft</div></div></li>
+  </ul>
+</body>
+</html>

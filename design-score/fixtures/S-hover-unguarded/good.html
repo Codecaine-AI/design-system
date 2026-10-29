@@ -1,0 +1,30 @@
+<!doctype html>
+<!-- S-hover-unguarded, good: the same list. Every :hover rule sits inside @media (hover: hover), so a touch screen never gets a stuck hover. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>S-hover-unguarded: good</title>
+<link rel="stylesheet" href="../../../css/fonts.css">
+<link rel="stylesheet" href="../../../dist/css/tokens.css">
+<link rel="stylesheet" href="good.css">
+</head>
+<body>
+  <h2>Inbox</h2>
+  <ul class="list">
+    <li class="row"><span class="title">Reply to the design review</span><button class="btn" type="button">Done</button></li>
+    <li class="row"><span class="title">Book the venue</span><button class="btn" type="button">Done</button></li>
+  </ul>
+  <p class="label">good.css, the hover rules the check reads</p>
+  <pre class="source"></pre>
+  <script>
+    // Shows the stylesheet from its second comment on (the rules this fixture is about), with line numbers.
+    const pre = document.querySelector(".source");
+    fetch("good.css").then((r) => r.text()).then((t) => {
+      const lines = t.trimEnd().split("\n");
+      const from = Math.max(0, lines.findIndex((l, i) => i > 0 && l.startsWith("/*")));
+      pre.textContent = lines.slice(from).map((l, i) => String(from + i + 1).padStart(2) + "  " + l).join("\n");
+      pre.classList.add("loaded");
+    });
+  </script>
+</body>
+</html>

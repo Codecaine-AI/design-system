@@ -1,0 +1,1215 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-85d42ff5952388d98f6f659ace27344b",
+  "title": "S-color-literal: Color Literals",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "intro",
+        "h-catches",
+        "catches-lead",
+        "c1",
+        "c2",
+        "c3",
+        "c4",
+        "h-measures",
+        "m-lead",
+        "m1",
+        "m2",
+        "m3",
+        "m4",
+        "m5",
+        "m-after",
+        "h-thresholds",
+        "t-lead",
+        "t-table",
+        "h-example",
+        "e-lead",
+        "e-grid",
+        "e-key",
+        "e-table",
+        "e-after",
+        "e-callout",
+        "h-rules",
+        "r-lead",
+        "r-table",
+        "r-gap",
+        "h-fp",
+        "fp-lead",
+        "fp1",
+        "fp2",
+        "fp3",
+        "h-debug",
+        "d-lead",
+        "d1",
+        "d1c",
+        "d2",
+        "d2c",
+        "d3"
+      ]
+    },
+    "intro": {
+      "id": "intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "S-color-literal",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " finds hard-coded colors in an app's source files. It is a static check in the color area, so it reads files with no browser, and its result counts once on every page. An inline literal fails the page, and a literal in a custom-property definition warns."
+        }
+      ],
+      "children": []
+    },
+    "h-catches": {
+      "id": "h-catches",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "What It Catches"
+        }
+      ],
+      "children": []
+    },
+    "catches-lead": {
+      "id": "catches-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check sorts each color literal by where it sits. A literal behind a token is ignored, and some soft hits are not counted."
+        }
+      ],
+      "children": []
+    },
+    "c1": {
+      "id": "c1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Inline literals",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "c1a",
+        "c1b"
+      ]
+    },
+    "c1a": {
+      "id": "c1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A hex, "
+        },
+        {
+          "insert": "rgb()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "hsl()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "oklch()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or other color function in a declaration, a "
+        },
+        {
+          "insert": "style",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " attribute or a script fails."
+        }
+      ],
+      "children": []
+    },
+    "c1b": {
+      "id": "c1b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A Tailwind arbitrary value that holds a color, such as "
+        },
+        {
+          "insert": "bg-[#1f1f1d]",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", also fails."
+        }
+      ],
+      "children": []
+    },
+    "c2": {
+      "id": "c2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Palette definitions",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "c2a"
+      ]
+    },
+    "c2a": {
+      "id": "c2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A color literal in a custom property, a SCSS or LESS variable, or a JSON file warns. The fix is to alias a "
+        },
+        {
+          "insert": "--ds-color-*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " token."
+        }
+      ],
+      "children": []
+    },
+    "c3": {
+      "id": "c3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fallbacks",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "c3a"
+      ]
+    },
+    "c3a": {
+      "id": "c3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The "
+        },
+        {
+          "insert": "#6b6b68",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "var(--ds-color-text-muted, #6b6b68)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is ignored, because the token wins whenever it exists."
+        }
+      ],
+      "children": []
+    },
+    "c4": {
+      "id": "c4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Soft hits",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "c4a"
+      ]
+    },
+    "c4a": {
+      "id": "c4a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Named colors such as "
+        },
+        {
+          "insert": "white",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and Tailwind palette classes such as "
+        },
+        {
+          "insert": "bg-zinc-900",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " are soft hits in scan-literals. This check does not report them."
+        }
+      ],
+      "children": []
+    },
+    "h-measures": {
+      "id": "h-measures",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "How It Measures"
+        }
+      ],
+      "children": []
+    },
+    "m-lead": {
+      "id": "m-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check runs scan-literals over the app's source folders and keeps only its color hits. It takes these steps in order."
+        }
+      ],
+      "children": []
+    },
+    "m1": {
+      "id": "m1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "scripts/design-score/run.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/run.ts",
+              "symbol": "Static checks"
+            }
+          }
+        },
+        {
+          "insert": " calls "
+        },
+        {
+          "insert": "runStaticChecks",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " once per run, with the app config's "
+        },
+        {
+          "insert": "sourceDirs",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "excludes",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "m2": {
+      "id": "m2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "scan",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/scan-literals.ts",
+              "symbol": "scan"
+            }
+          }
+        },
+        {
+          "insert": " collects the css, scss, ts, tsx, js, jsx, mjs, html, vue and svelte files. It skips node_modules, build output, tests, generated files and files over 2 MB."
+        }
+      ],
+      "children": []
+    },
+    "m3": {
+      "id": "m3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "scan-literals strips comments and matches each color literal. It marks a literal in a definition ("
+        },
+        {
+          "insert": "inDefinition",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/scan-literals.ts",
+              "symbol": "inDefinition"
+            }
+          }
+        },
+        {
+          "insert": ") and a literal in a fallback ("
+        },
+        {
+          "insert": "varFallbackMask",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/scan-literals.ts",
+              "symbol": "varFallbackMask"
+            }
+          }
+        },
+        {
+          "insert": ")."
+        }
+      ],
+      "children": []
+    },
+    "m4": {
+      "id": "m4",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The S-color-literal pass",
+          "attributes": {
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/static-checks.ts",
+              "symbol": "S-color-literal"
+            }
+          }
+        },
+        {
+          "insert": " keeps the hits in "
+        },
+        {
+          "insert": "COLOR_CATEGORIES",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and the Tailwind arbitrary values that hold a color. It drops every fallback."
+        }
+      ],
+      "children": []
+    },
+    "m5": {
+      "id": "m5",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The pass sorts fails before warns and keeps the first 25 findings. The fail and warn counts still cover every hit."
+        }
+      ],
+      "children": []
+    },
+    "m-after": {
+      "id": "m-after",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each finding has the file and line, relative to the app's repo, and the literal in "
+        },
+        {
+          "insert": "measured",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-thresholds": {
+      "id": "h-thresholds",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Thresholds"
+        }
+      ],
+      "children": []
+    },
+    "t-lead": {
+      "id": "t-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check has no count threshold. One inline literal anywhere in the scanned files fails every page."
+        }
+      ],
+      "children": []
+    },
+    "t-table": {
+      "id": "t-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Literal",
+          "Example",
+          "Severity"
+        ],
+        "rows": [
+          [
+            "Inline color",
+            [
+              {
+                "insert": "color: #1f1f1d",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Fail"
+          ],
+          [
+            "Tailwind arbitrary color",
+            [
+              {
+                "insert": "bg-[#1f1f1d]",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Fail"
+          ],
+          [
+            "Custom-property definition",
+            [
+              {
+                "insert": "--badge-bg: #e3f1e6",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Warn"
+          ],
+          [
+            "Fallback in var()",
+            [
+              {
+                "insert": "var(--ds-color-text-muted, #6b6b68)",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Ignored"
+          ],
+          [
+            "Named color or palette class",
+            [
+              {
+                "insert": "white",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "bg-zinc-900",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Not reported"
+          ]
+        ],
+        "title": "S-color-literal severities"
+      },
+      "children": []
+    },
+    "h-example": {
+      "id": "h-example",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Example"
+        }
+      ],
+      "children": []
+    },
+    "e-lead": {
+      "id": "e-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The fixture pair is "
+        },
+        {
+          "insert": "design-score/fixtures/S-color-literal/",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/fixtures/S-color-literal"
+            }
+          }
+        },
+        {
+          "insert": ". Both pages show the same card, and each page links its own stylesheet. "
+        },
+        {
+          "insert": "good.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " uses tokens only. "
+        },
+        {
+          "insert": "bad.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " paints the card with four literals and one fallback."
+        }
+      ],
+      "children": []
+    },
+    "e-grid": {
+      "id": "e-grid",
+      "type": "image-grid",
+      "props": {
+        "columns": 2,
+        "images": [
+          {
+            "src": "./assets/images/good.png",
+            "heading": "Good: pass",
+            "alt": "A task card with a title, a green Done badge, a muted meta line and a blue link.",
+            "caption": "good.css, 0 findings"
+          },
+          {
+            "src": "./assets/images/bad.png",
+            "heading": "Bad: fail",
+            "alt": "The same card, and it looks the same. No boxes are drawn, because a static finding points at a file line.",
+            "caption": "bad.css, 3 fail and 1 warn findings"
+          }
+        ]
+      },
+      "children": []
+    },
+    "e-key": {
+      "id": "e-key",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The two screenshots look the same. A literal close to the token value passes a visual review, but it does not change with the theme. The bad run reports these lines."
+        }
+      ],
+      "children": []
+    },
+    "e-table": {
+      "id": "e-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Line",
+          "Literal",
+          "Severity"
+        ],
+        "rows": [
+          [
+            "4",
+            [
+              {
+                "insert": "rgb(224 224 222)",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Fail"
+          ],
+          [
+            "7",
+            [
+              {
+                "insert": "#1f1f1d",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Fail"
+          ],
+          [
+            "9",
+            [
+              {
+                "insert": "#e3f1e6",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " in "
+              },
+              {
+                "insert": "--badge-bg",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Warn"
+          ],
+          [
+            "13",
+            [
+              {
+                "insert": "hsl(212 80% 42%)",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Fail"
+          ]
+        ],
+        "title": "bad.css findings"
+      },
+      "children": []
+    },
+    "e-after": {
+      "id": "e-after",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The fallback on line 11 is not reported."
+        }
+      ],
+      "children": []
+    },
+    "e-callout": {
+      "id": "e-callout",
+      "type": "callout",
+      "props": {
+        "title": "Screenshots, not live pages",
+        "tone": "info"
+      },
+      "text": [
+        {
+          "insert": "The docs hub has no app host, so an "
+        },
+        {
+          "insert": "app-embed",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " block shows \"App not available here\" in it. These images come from "
+        },
+        {
+          "insert": "bun run design:score --fixture S-color-literal",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", which writes them to the fixture's "
+        },
+        {
+          "insert": "shots/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " folder."
+        }
+      ],
+      "children": []
+    },
+    "h-rules": {
+      "id": "h-rules",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules Behind It"
+        }
+      ],
+      "children": []
+    },
+    "r-lead": {
+      "id": "r-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Two rules in "
+        },
+        {
+          "insert": "design-score/rules/color.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/color.json"
+            }
+          }
+        },
+        {
+          "insert": " name this check. Every finding carries their ids in "
+        },
+        {
+          "insert": "rules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "r-table": {
+      "id": "r-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity",
+          "Measured"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "color-no-literals",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No color literals",
+            "Fail",
+            "Yes, except token swaps"
+          ],
+          [
+            [
+              {
+                "insert": "ui-icon-currentcolor",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Icons use currentColor",
+            "Warn",
+            "Partly"
+          ]
+        ],
+        "title": "Rules decided by S-color-literal"
+      },
+      "children": []
+    },
+    "r-gap": {
+      "id": "r-gap",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check does not see a swap from one token to a lighter token, the second half of "
+        },
+        {
+          "insert": "color-no-literals",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". For "
+        },
+        {
+          "insert": "ui-icon-currentcolor",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", it reports an icon with a literal "
+        },
+        {
+          "insert": "fill",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", but it does not prove that an icon uses "
+        },
+        {
+          "insert": "currentColor",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-fp": {
+      "id": "h-fp",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Known False Positives"
+        }
+      ],
+      "children": []
+    },
+    "fp-lead": {
+      "id": "fp-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check reads text only, so it cannot tell a UI color from a color that is data."
+        }
+      ],
+      "children": []
+    },
+    "fp1": {
+      "id": "fp1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Data colors",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "fp1a"
+      ]
+    },
+    "fp1a": {
+      "id": "fp1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A color picker's swatches, a user's label color or a chart palette in code are data. Each one fails as an inline literal."
+        }
+      ],
+      "children": []
+    },
+    "fp2": {
+      "id": "fp2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Vendored themes",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "fp2a"
+      ]
+    },
+    "fp2a": {
+      "id": "fp2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A copied editor or syntax theme inside a source folder adds one finding per color."
+        }
+      ],
+      "children": []
+    },
+    "fp3": {
+      "id": "fp3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix it in the app config",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "fp3a"
+      ]
+    },
+    "fp3a": {
+      "id": "fp3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Add the file or folder to "
+        },
+        {
+          "insert": "excludes",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "design-score/apps/<app>.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". A color that must stay can move into a definition, which warns instead of fails."
+        }
+      ],
+      "children": []
+    },
+    "h-debug": {
+      "id": "h-debug",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Debug It"
+        }
+      ],
+      "children": []
+    },
+    "d-lead": {
+      "id": "d-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Run these commands in the design-system checkout. Each run writes a folder under "
+        },
+        {
+          "insert": ".design-score/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "d1": {
+      "id": "d1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run the fixture pair. The command exits 1 unless the bad page fails and the good page passes."
+        }
+      ],
+      "children": []
+    },
+    "d1c": {
+      "id": "d1c",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --fixture S-color-literal"
+        }
+      ],
+      "children": []
+    },
+    "d2": {
+      "id": "d2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "List every literal in one folder, soft hits included. Point it at an app's source folder the same way."
+        }
+      ],
+      "children": []
+    },
+    "d2c": {
+      "id": "d2c",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun scripts/scan-literals.ts --hits design-score/fixtures/S-color-literal"
+        }
+      ],
+      "children": []
+    },
+    "d3": {
+      "id": "d3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Open "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and read the color-area findings. Each finding names its file and line."
+        }
+      ],
+      "children": []
+    }
+  }
+}

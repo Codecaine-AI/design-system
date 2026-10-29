@@ -59,6 +59,7 @@ export type BaseTokenPath =
   | "motion.easing.decelerate"
   | "motion.easing.emphasized"
   | "motion.easing.standard"
+  | "motion.scale.press"
   | "radius.base"
   | "radius.none"
   | "radius.pill"
@@ -388,6 +389,9 @@ export declare const tokens: {
         readonly "decelerate": "ease-out";
         readonly "emphasized": "cubic-bezier(0.32, 0.72, 0, 1)";
         readonly "standard": "ease";
+      };
+      readonly "scale": {
+        readonly "press": 0.96;
       };
     };
     readonly "radius": {
@@ -1063,6 +1067,7 @@ export declare const flat: {
     readonly "motion.easing.decelerate": "ease-out";
     readonly "motion.easing.emphasized": "cubic-bezier(0.32, 0.72, 0, 1)";
     readonly "motion.easing.standard": "ease";
+    readonly "motion.scale.press": 0.96;
     readonly "radius.base": "2px";
     readonly "radius.none": "0px";
     readonly "radius.pill": "9999px";

@@ -1,0 +1,23 @@
+<!doctype html>
+<!-- R-line-length, bad: the article fills the 752px content width, so each line holds about 115 characters. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>R-line-length: bad</title>
+<link rel="stylesheet" href="../../../css/fonts.css">
+<link rel="stylesheet" href="../../../dist/css/tokens.css">
+<style>
+  body { margin: 0; padding: var(--ds-space-6); background: var(--ds-color-surface-page); color: var(--ds-color-text-body); font-family: var(--ds-font-family-sans); font-size: var(--ds-font-size-ui-md); line-height: var(--ds-line-height-ui); }
+  h2 { margin: 0 0 var(--ds-space-2); font-size: var(--ds-font-size-ui-lg); font-weight: var(--ds-font-weight-semibold); color: var(--ds-color-text-ink); }
+  p { margin: 0 0 var(--ds-space-3); }
+  /* No max-width: the lines run the full width of the page. */
+</style>
+</head>
+<body>
+  <article>
+    <h2>Why the release checklist moved</h2>
+    <p>The release checklist used to live in three places: the repo wiki, a pinned note and the deploy script's comments. Each copy drifted, and two releases went out with a step that one copy had dropped. One page in the docs hub now holds the list, and each repo links to it.</p>
+    <p>Read the checklist before you tag a release. Each step names the command to run and the result to check, so a missed step shows up before the deploy and not after it.</p>
+  </article>
+</body>
+</html>

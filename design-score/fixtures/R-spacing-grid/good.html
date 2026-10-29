@@ -1,0 +1,27 @@
+<!doctype html>
+<!-- R-spacing-grid, good: every padding and gap is a space token: 4px, 8px and 12px. The search box has 7px of padding plus a 1px border, which counts as 8px. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>R-spacing-grid: good</title>
+<link rel="stylesheet" href="../../../css/fonts.css">
+<link rel="stylesheet" href="../../../dist/css/tokens.css">
+<style>
+  body { margin: 0; padding: var(--ds-space-6); background: var(--ds-color-surface-page); color: var(--ds-color-text-body); font-family: var(--ds-font-family-sans); font-size: var(--ds-font-size-ui-md); line-height: var(--ds-line-height-ui); }
+  h2 { margin: 0 0 var(--ds-space-3); font-size: var(--ds-font-size-ui-lg); font-weight: var(--ds-font-weight-semibold); }
+  .tags { display: flex; flex-wrap: wrap; }
+  .tag { display: inline-flex; align-items: center; border-radius: var(--ds-radius-base); background: var(--ds-color-blue-soft); color: var(--ds-color-blue-text); }
+  /* A 1px border plus 7px of padding puts the text 8px in, which is on the grid. */
+  .search { display: block; margin-top: var(--ds-space-4); width: calc(var(--ds-space-16) * 5); padding: calc(var(--ds-space-2) - 1px); border: 1px solid var(--ds-color-border-default); border-radius: var(--ds-radius-base); background: var(--ds-color-surface-panel); color: var(--ds-color-text-ink); }
+  .tags { gap: var(--ds-space-2); }
+  .tag { padding: var(--ds-space-1) var(--ds-space-3); }
+</style>
+</head>
+<body>
+  <h2>Tags</h2>
+  <div class="tags">
+    <span class="tag">design</span><span class="tag">layout</span><span class="tag">spacing</span><span class="tag">tokens</span>
+  </div>
+  <div class="search">Filter tags</div>
+</body>
+</html>

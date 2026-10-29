@@ -1,0 +1,1250 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-841a9c85129faf4b0ccbf6d8d9a48f61",
+  "title": "R-text-clip: Clipped Text",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b7",
+        "b10",
+        "b12",
+        "b13",
+        "b14",
+        "b15",
+        "b16",
+        "b17",
+        "b18",
+        "b19",
+        "b20",
+        "b21",
+        "b22",
+        "b23",
+        "b24",
+        "b25",
+        "b26",
+        "b27",
+        "b28",
+        "b29",
+        "b30",
+        "b31",
+        "b32",
+        "b33",
+        "b34",
+        "b35",
+        "b36",
+        "b37",
+        "b38",
+        "b40",
+        "b42",
+        "b44",
+        "b45",
+        "b46",
+        "b47",
+        "b48",
+        "b49",
+        "b50"
+      ]
+    },
+    "b1": {
+      "id": "b1",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "R-text-clip",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " finds text that a box cuts off with no sign that text is missing. It is a runtime check in the typography area, so it runs in a browser on every page, theme and viewport. Each finding fails the page."
+        }
+      ],
+      "children": []
+    },
+    "b2": {
+      "id": "b2",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "What It Catches"
+        }
+      ],
+      "children": []
+    },
+    "b3": {
+      "id": "b3",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check reports two kinds of cut. An ellipsis or a line clamp shows the reader that text is missing, so the check passes a cut that has one."
+        }
+      ],
+      "children": []
+    },
+    "b4": {
+      "id": "b4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Cut at the right edge",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b5",
+        "b6"
+      ]
+    },
+    "b5": {
+      "id": "b5",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A box with "
+        },
+        {
+          "insert": "overflow-x: hidden",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "clip",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " holds text that runs more than 1px past its right edge."
+        }
+      ],
+      "children": []
+    },
+    "b6": {
+      "id": "b6",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Neither the text nor the box sets "
+        },
+        {
+          "insert": "text-overflow: ellipsis",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b7": {
+      "id": "b7",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Cut at the bottom edge",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b8",
+        "b9"
+      ]
+    },
+    "b8": {
+      "id": "b8",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A box with "
+        },
+        {
+          "insert": "overflow-y: hidden",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "clip",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " holds text that runs more than 2px below its bottom edge."
+        }
+      ],
+      "children": []
+    },
+    "b9": {
+      "id": "b9",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The box sets no "
+        },
+        {
+          "insert": "-webkit-line-clamp",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and the text's first line starts inside the box."
+        }
+      ],
+      "children": []
+    },
+    "b10": {
+      "id": "b10",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Not reported",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b11"
+      ]
+    },
+    "b11": {
+      "id": "b11",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "input",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "textarea",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "select",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "option",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " scroll their own text, so the check skips them."
+        }
+      ],
+      "children": []
+    },
+    "b12": {
+      "id": "b12",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "How It Measures"
+        }
+      ],
+      "children": []
+    },
+    "b13": {
+      "id": "b13",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The probe measures text with "
+        },
+        {
+          "insert": "Range.getClientRects",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", which gives one rect per line of text. It takes these steps in order."
+        }
+      ],
+      "children": []
+    },
+    "b14": {
+      "id": "b14",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "scripts/design-score/run.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/run.ts",
+              "symbol": "runScore"
+            }
+          }
+        },
+        {
+          "insert": " calls "
+        },
+        {
+          "insert": "probePage",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " once per theme and viewport, after the page's actions and settle time."
+        }
+      ],
+      "children": []
+    },
+    "b15": {
+      "id": "b15",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "probePage",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/probes.ts",
+              "symbol": "textEls"
+            }
+          }
+        },
+        {
+          "insert": " collects each visible text element that has its own text node. It drops an element whose first line is more than half hidden by a clipping ancestor."
+        }
+      ],
+      "children": []
+    },
+    "b16": {
+      "id": "b16",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The clip pass",
+          "attributes": {
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/probes.ts",
+              "symbol": "R-text-clip"
+            }
+          }
+        },
+        {
+          "insert": " takes the right-most and bottom-most edges of the element's text rects."
+        }
+      ],
+      "children": []
+    },
+    "b17": {
+      "id": "b17",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The pass walks up from the element itself, at most 4 levels, and stops at the first box whose overflow is "
+        },
+        {
+          "insert": "hidden",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "clip",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b18": {
+      "id": "b18",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The pass compares the text edges with that box's edges inside its border. It reports a right cut first, and a bottom cut only when there is no right cut."
+        }
+      ],
+      "children": []
+    },
+    "b19": {
+      "id": "b19",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Only the first clipping box counts. A box 2px wide or tall, or less, is a screen-reader-only box, and the walk stops there without a finding."
+        }
+      ],
+      "children": []
+    },
+    "b20": {
+      "id": "b20",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each finding has a key made from the element's class signature, with "
+        },
+        {
+          "insert": "|y",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " added for a bottom cut. A component reports each kind of cut once."
+        }
+      ],
+      "children": []
+    },
+    "b21": {
+      "id": "b21",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Thresholds"
+        }
+      ],
+      "children": []
+    },
+    "b22": {
+      "id": "b22",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each edge has its own tolerance, so a subpixel overhang from font rounding never fails."
+        }
+      ],
+      "children": []
+    },
+    "b23": {
+      "id": "b23",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Measure",
+          "Clipping Box",
+          "Fails When",
+          "Passes With"
+        ],
+        "rows": [
+          [
+            "Right edge",
+            [
+              {
+                "insert": "overflow-x: hidden",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " or "
+              },
+              {
+                "insert": "clip",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Text ends more than 1px past the inner edge",
+            [
+              {
+                "insert": "text-overflow: ellipsis",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Bottom edge",
+            [
+              {
+                "insert": "overflow-y: hidden",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " or "
+              },
+              {
+                "insert": "clip",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Text ends more than 2px below the inner edge",
+            [
+              {
+                "insert": "-webkit-line-clamp",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Search depth",
+            "The element and 3 parents",
+            "Only the first clipping box is tested",
+            "None"
+          ]
+        ],
+        "title": "R-text-clip thresholds"
+      },
+      "children": []
+    },
+    "b24": {
+      "id": "b24",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Example"
+        }
+      ],
+      "children": []
+    },
+    "b25": {
+      "id": "b25",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The fixture pair is "
+        },
+        {
+          "insert": "design-score/fixtures/R-text-clip/",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/fixtures/R-text-clip"
+            }
+          }
+        },
+        {
+          "insert": ". Both pages show one pinned card with a long title and a 3-line summary."
+        }
+      ],
+      "children": []
+    },
+    "b26": {
+      "id": "b26",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The bad page cuts both texts. Its title has "
+        },
+        {
+          "insert": "overflow: hidden",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "white-space: nowrap",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " but no ellipsis. Its summary has "
+        },
+        {
+          "insert": "overflow: hidden",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and a fixed height of 2.5 lines."
+        }
+      ],
+      "children": []
+    },
+    "b27": {
+      "id": "b27",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The good page adds "
+        },
+        {
+          "insert": "text-overflow: ellipsis",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " to the title, and a 2-line "
+        },
+        {
+          "insert": "-webkit-line-clamp",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " to the summary."
+        }
+      ],
+      "children": []
+    },
+    "b28": {
+      "id": "b28",
+      "type": "image-grid",
+      "props": {
+        "columns": 2,
+        "images": [
+          {
+            "src": "./assets/images/good.png",
+            "heading": "Good: pass",
+            "alt": "A pinned card. The title ends in an ellipsis, and the summary stops after 2 lines with an ellipsis. No boxes are drawn.",
+            "caption": "good.html, 0 findings"
+          },
+          {
+            "src": "./assets/images/bad.png",
+            "heading": "Bad: fail",
+            "alt": "The same card. A magenta box marks the title, cut mid-word at the card's edge. A second box marks the summary, whose third line is cut in half.",
+            "caption": "bad.html, 2 fail findings"
+          }
+        ]
+      },
+      "children": []
+    },
+    "b29": {
+      "id": "b29",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Magenta boxes the first line of each cut text. The title runs 35.1px past its edge, and the summary runs 26.8px below its bottom. Each text is its own clipping box, so no cyan box is drawn."
+        }
+      ],
+      "children": []
+    },
+    "b30": {
+      "id": "b30",
+      "type": "callout",
+      "props": {
+        "title": "Screenshots, not live pages",
+        "tone": "info"
+      },
+      "text": [
+        {
+          "insert": "The docs hub has no app host, so an "
+        },
+        {
+          "insert": "app-embed",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " block shows \"App not available here\" in it. These images come from "
+        },
+        {
+          "insert": "bun run design:score --fixture R-text-clip",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", which writes them to the fixture's "
+        },
+        {
+          "insert": "shots/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " folder."
+        }
+      ],
+      "children": []
+    },
+    "b31": {
+      "id": "b31",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules Behind It"
+        }
+      ],
+      "children": []
+    },
+    "b32": {
+      "id": "b32",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Eight rules in "
+        },
+        {
+          "insert": "design-score/rules/typography.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/typography.json"
+            }
+          }
+        },
+        {
+          "insert": " name this check. Every finding carries their ids in "
+        },
+        {
+          "insert": "rules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b33": {
+      "id": "b33",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity",
+          "Measured"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "layout-min-height-not-height",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "min-height for text boxes",
+            "Warn",
+            "Yes, as a bottom cut"
+          ],
+          [
+            [
+              {
+                "insert": "layout-text-growth",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Text can grow",
+            "Warn",
+            "Partly, when a fixed width clips the text"
+          ],
+          [
+            [
+              {
+                "insert": "layout-minmax-0",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Tracks can shrink",
+            "Warn",
+            "Partly, when a box clips the overflow"
+          ],
+          [
+            [
+              {
+                "insert": "typo-break-long-strings",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Break long strings",
+            "Warn",
+            "Partly, when a box clips the string"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-text-resize-200",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "200% text resize",
+            "Warn",
+            "No"
+          ],
+          [
+            [
+              {
+                "insert": "break-content-length",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Content length",
+            "Warn",
+            "No"
+          ],
+          [
+            [
+              {
+                "insert": "break-container",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Container squeeze",
+            "Warn",
+            "No"
+          ],
+          [
+            [
+              {
+                "insert": "typo-nowrap-labels",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Labels do not wrap",
+            "Warn",
+            "No"
+          ]
+        ],
+        "title": "Rules decided by R-text-clip"
+      },
+      "children": []
+    },
+    "b34": {
+      "id": "b34",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each rule is a warn in its rule file, but each finding of this check is a fail. The probe sets the finding's severity, not the rule file."
+        }
+      ],
+      "children": []
+    },
+    "b35": {
+      "id": "b35",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check scores the page as it is. It never resizes the text to 200%, puts in longer strings or squeezes a container, so it cannot decide the resize and "
+        },
+        {
+          "insert": "break-*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " rules. "
+        },
+        {
+          "insert": "typo-nowrap-labels",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is about wrapping, and a wrap is never a cut."
+        }
+      ],
+      "children": []
+    },
+    "b36": {
+      "id": "b36",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Known False Positives"
+        }
+      ],
+      "children": []
+    },
+    "b37": {
+      "id": "b37",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check reads boxes and text rects, so it cannot tell a deliberate cut from a mistake."
+        }
+      ],
+      "children": []
+    },
+    "b38": {
+      "id": "b38",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fade-out masks",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b39"
+      ]
+    },
+    "b39": {
+      "id": "b39",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A box that fades its last line with a "
+        },
+        {
+          "insert": "mask-image",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " gradient shows the cut. The check still fails it, because it looks only for an ellipsis or a line clamp."
+        }
+      ],
+      "children": []
+    },
+    "b40": {
+      "id": "b40",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Reveal animations",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b41"
+      ]
+    },
+    "b41": {
+      "id": "b41",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Text that slides in from behind an "
+        },
+        {
+          "insert": "overflow: hidden",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " edge fails if the run measures it before the move ends."
+        }
+      ],
+      "children": []
+    },
+    "b42": {
+      "id": "b42",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix it in the app config",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b43"
+      ]
+    },
+    "b43": {
+      "id": "b43",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Add the element's selector to "
+        },
+        {
+          "insert": "ignore",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "design-score/apps/<app>.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or skip the check on one page with "
+        },
+        {
+          "insert": "skip",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "skipReason",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b44": {
+      "id": "b44",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Debug It"
+        }
+      ],
+      "children": []
+    },
+    "b45": {
+      "id": "b45",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Run these commands in the design-system checkout. Each run writes a folder under "
+        },
+        {
+          "insert": ".design-score/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and one crop per finding."
+        }
+      ],
+      "children": []
+    },
+    "b46": {
+      "id": "b46",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run the fixture pair. The command exits 1 unless the bad page gets its expected result and the good page passes."
+        }
+      ],
+      "children": []
+    },
+    "b47": {
+      "id": "b47",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --fixture R-text-clip"
+        }
+      ],
+      "children": []
+    },
+    "b48": {
+      "id": "b48",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Score one page of an app in one theme and one viewport."
+        }
+      ],
+      "children": []
+    },
+    "b49": {
+      "id": "b49",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --app knowledge-system --pages session --quick"
+        }
+      ],
+      "children": []
+    },
+    "b50": {
+      "id": "b50",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Open the crops in "
+        },
+        {
+          "insert": "crops/<page>/R-text-clip-*.png",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Each crop boxes the first line of the cut text, and boxes a clipping ancestor in cyan."
+        }
+      ],
+      "children": []
+    }
+  }
+}

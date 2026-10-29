@@ -4,3 +4,8 @@ node_modules/
 verification/**/*.png
 # Frozen copies of the docs corpora and theme state: large, and they hold private docs. Rebuild with verification/docs-system/freeze.ts.
 verification/**/fixtures/*.tar.gz
+# design:score runs: screenshots, crops and reports (bun run design:score).
+.design-score/
+# Docs system working state: the backlink index and the edit changesets.
+docs/.index/
+docs/.changesets/

@@ -1,0 +1,760 @@
+{
+  "area": "accessibility",
+  "rules": [
+    {
+      "id": "a11y-native-controls",
+      "area": "accessibility",
+      "title": "Native controls",
+      "rule": "Actions are <button>, navigation is <a href>; never a <div> or <span> with onClick.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-native-button-not-div",
+        "a11y-link-vs-button",
+        "16-native-elements-first"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-role-needs-keyboard",
+      "area": "accessibility",
+      "title": "Interactive roles need keyboard",
+      "rule": "An element with an interactive ARIA role implements that role's full keyboard model.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-role-needs-keyboard"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-no-redundant-role",
+      "area": "accessibility",
+      "title": "No redundant roles",
+      "rule": "Do not add a role that repeats native semantics (<button role=\"button\">).",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-no-redundant-role"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-no-aria-label-on-generic",
+      "area": "accessibility",
+      "title": "No aria-label on generic elements",
+      "rule": "Never put aria-label on a <div> or <span> with no role.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-no-aria-label-on-generic"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-aria-refs-resolve",
+      "area": "accessibility",
+      "title": "ARIA references resolve",
+      "rule": "aria-labelledby and aria-describedby point at IDs that exist.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-aria-refs-resolve"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-no-menu-role-on-nav",
+      "area": "accessibility",
+      "title": "Navigation is not a menu",
+      "rule": "Site navigation is <nav> with a list, never role=\"menu\".",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-no-menu-role-on-nav"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-disabled-not-both",
+      "area": "accessibility",
+      "title": "One disabled mechanism",
+      "rule": "Never set both disabled and aria-disabled; aria-disabled controls block activation in code.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-disabled-not-both"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-no-tooltip-on-disabled",
+      "area": "accessibility",
+      "title": "No tooltip on disabled controls",
+      "rule": "A natively disabled control carries no tooltip; show the reason as text or use aria-disabled.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-no-tooltip-on-disabled"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-focus-visible-selector",
+      "area": "accessibility",
+      "title": "Style :focus-visible",
+      "rule": "Style focus with :focus-visible, not bare :focus.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-focus-visible-selector"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-visible-focus-indicator",
+      "area": "accessibility",
+      "title": "Visible focus",
+      "rule": "Every keyboard-reachable control shows a visible focus indicator.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": {
+        "outlineWidthPx": 2,
+        "offsetPx": 2
+      },
+      "sources": [
+        "a11y-visible-focus-indicator",
+        "16-focus-visible-indicator"
+      ],
+      "notes": "DS tokens border.width.focus (2px) and focus.ring.offset (2px) already match the magazine's 2px/2px.",
+      "check": "R-focus-visible"
+    },
+    {
+      "id": "a11y-forced-colors-focus",
+      "area": "accessibility",
+      "title": "Forced-colors edges",
+      "rule": "Focus and control edges stay visible in forced-colors mode.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-forced-colors-focus"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-focus-not-obscured",
+      "area": "accessibility",
+      "title": "Focus not obscured",
+      "rule": "A focused element is never fully hidden behind sticky headers, footers or banners.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-focus-not-obscured"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-scroll-offset-sticky",
+      "area": "accessibility",
+      "title": "Sticky header offset",
+      "rule": "With a sticky header, anchors and focused elements land below it (scroll-padding-block-start or scroll-margin-block-start equal to its height).",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-scroll-margin-anchors",
+        "layout-scroll-padding-sticky",
+        "19-scroll-margin-top"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-keyboard-path-for-pointer",
+      "area": "accessibility",
+      "title": "Keyboard path for everything",
+      "rule": "Every pointer interaction has a keyboard path; the whole interface works from the keyboard.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-keyboard-path-for-pointer",
+        "16-keyboard-operable"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-escape-closes-overlays",
+      "area": "accessibility",
+      "title": "Escape closes overlays",
+      "rule": "Escape closes the most recently opened overlay (tooltip, then menu, then dialog).",
+      "severity": "fail",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "a11y-escape-closes-overlays"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-no-positive-tabindex",
+      "area": "accessibility",
+      "title": "No positive tabindex",
+      "rule": "Never use tabindex above 0.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-no-positive-tabindex",
+        "16-no-positive-tabindex"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-roving-tabindex",
+      "area": "accessibility",
+      "title": "Composite widgets are one Tab stop",
+      "rule": "Tabs, menus, toolbars and radio groups occupy one Tab stop.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-roving-tabindex"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-apg-arrow-keys",
+      "area": "accessibility",
+      "title": "APG key map",
+      "rule": "Custom composite widgets implement the APG keys: arrows move, Home/End jump, Enter/Space activate.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "a11y-apg-arrow-keys"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-dialog-focus-trap-restore",
+      "area": "accessibility",
+      "title": "Dialog focus",
+      "rule": "Dialogs make the background inert, move focus inside on open and return it to the trigger on close.",
+      "severity": "fail",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "a11y-dialog-focus-trap-restore"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-custom-dialog-semantics",
+      "area": "accessibility",
+      "title": "Dialog semantics",
+      "rule": "A custom overlay has role=dialog, aria-modal=true and a name, or is a native <dialog>.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-custom-dialog-semantics"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "12-headless-dialog-primitive",
+      "area": "accessibility",
+      "title": "Headless primitives for overlays",
+      "rule": "Build dialogs, selects and menus on a headless primitive (Base UI or Radix), not from scratch.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "12-headless-dialog-primitive"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-destructive-dialog-focus-safe",
+      "area": "accessibility",
+      "title": "Safe default focus",
+      "rule": "A destructive confirmation focuses the least destructive action on open.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "a11y-destructive-dialog-focus-safe"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-spa-route-focus-and-title",
+      "area": "accessibility",
+      "title": "Route change focus and title",
+      "rule": "On a client-side route change, update document.title and move focus to the new view's <h1> or <main>.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "a11y-spa-route-focus-and-title"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-title-specific-first",
+      "area": "accessibility",
+      "title": "Specific title first",
+      "rule": "<title> names the current context, most specific first (Billing · Settings · App).",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-title-specific-first"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-decorative-layers-pass-through",
+      "area": "accessibility",
+      "title": "Decorative layers pass clicks",
+      "rule": "Decorative overlays (glows, scrims, full-bleed ::after) have pointer-events: none.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-decorative-layers-pass-through"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-drag-alternative",
+      "area": "accessibility",
+      "title": "Drag has a single-pointer alternative",
+      "rule": "Every drag (block reorder, resize) has a click or keyboard alternative.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-drag-alternative"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-input-has-label",
+      "area": "accessibility",
+      "title": "Inputs have labels",
+      "rule": "Every input has a programmatic label; a placeholder never stands in for one.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-input-has-label",
+        "a11y-placeholder-not-label"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-autocomplete-tokens",
+      "area": "accessibility",
+      "title": "Autocomplete tokens",
+      "rule": "Fields about the user carry a valid autocomplete token.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-autocomplete-tokens"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-input-type",
+      "area": "accessibility",
+      "title": "Right input type",
+      "rule": "Inputs use the matching type, and spellcheck=false on emails, codes and usernames.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-input-type-inputmode"
+      ],
+      "notes": "The inputmode (mobile keyboard) half is dropped for desktop.",
+      "check": null
+    },
+    {
+      "id": "a11y-no-paste-block",
+      "area": "accessibility",
+      "title": "Never block paste",
+      "rule": "Never block paste into a field.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-no-paste-block"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-validate-on-submit",
+      "area": "accessibility",
+      "title": "Validate on submit",
+      "rule": "Validate on submit; never natively disable submit to gate validation (use aria-disabled plus a handler guard when a step needs input).",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-validate-on-submit",
+        "12-disable-until-input"
+      ],
+      "notes": "Conflict: issue 12 keeps Continue disabled until input. Resolved to the skill's stricter rule with aria-disabled.",
+      "check": null
+    },
+    {
+      "id": "a11y-errors-announce",
+      "area": "accessibility",
+      "title": "Errors are announced",
+      "rule": "Failing fields get aria-invalid=true and aria-describedby to inline error text, and focus moves to the first invalid field.",
+      "severity": "fail",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "a11y-errors-announce"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-no-input-filtering",
+      "area": "accessibility",
+      "title": "No keystroke filtering",
+      "rule": "Accept free text and validate after; never block or filter characters while typing.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "a11y-no-input-filtering"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-pending-submit",
+      "area": "accessibility",
+      "title": "Pending submit",
+      "rule": "While submitting, show a spinner beside the original label and mark the button aria-disabled.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "a11y-pending-submit"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-unsaved-changes-warning",
+      "area": "accessibility",
+      "title": "Unsaved changes",
+      "rule": "Warn on unsaved changes before navigation; re-renders never reset typed values or steal focus.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "a11y-unsaved-changes-warning"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-icon-button-name",
+      "area": "accessibility",
+      "title": "Every control has a name",
+      "rule": "Every interactive control, icon-only ones included, has an accessible name.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-icon-button-name",
+        "16-icon-button-name"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-label-in-name",
+      "area": "accessibility",
+      "title": "Visible label in the name",
+      "rule": "The visible label appears in the accessible name, ideally at its start; no aria-label where visible text already names the control.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-label-in-name",
+        "16-name-matches-visible"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-aria-hidden-not-focusable",
+      "area": "accessibility",
+      "title": "aria-hidden is not focusable",
+      "rule": "aria-hidden is never on or above a focusable element.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-aria-hidden-not-focusable"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-pause-moving-content",
+      "area": "accessibility",
+      "title": "Pause moving content",
+      "rule": "Anything moving or auto-updating for more than 5s has a visible pause control.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "maxSeconds": 5
+      },
+      "sources": [
+        "a11y-pause-moving-content"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-toasts-persist-when-actionable",
+      "area": "accessibility",
+      "title": "Toast timing",
+      "rule": "Toasts with an action or error stay until dismissed; timed toasts last 5s or more and pause on hover or focus.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "minSeconds": 5
+      },
+      "sources": [
+        "a11y-toasts-persist-when-actionable"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-live-region-status",
+      "area": "accessibility",
+      "title": "Polite status announcements",
+      "rule": "Status changes without a focus move (copied, saved) go through a polite live region rendered empty before the update.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-live-region-preexists",
+        "16-live-region-status"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-assertive-only-urgent",
+      "area": "accessibility",
+      "title": "Assertive only when urgent",
+      "rule": "role=alert or aria-live=assertive only for urgent errors; success and status use role=status.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-assertive-only-urgent",
+        "16-assertive-only-urgent"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-no-focus-to-toast",
+      "area": "accessibility",
+      "title": "Never focus a toast",
+      "rule": "Never move focus to a toast.",
+      "severity": "fail",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "a11y-no-focus-to-toast"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-img-alt-present",
+      "area": "accessibility",
+      "title": "Images have alt",
+      "rule": "Every <img> has an alt attribute.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-img-alt-present"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-svg-semantics",
+      "area": "accessibility",
+      "title": "SVG semantics",
+      "rule": "Decorative SVGs and icons inside labelled controls are aria-hidden; meaningful standalone SVGs have role=img and a name.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-svg-semantics",
+        "16-decorative-icons-hidden"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-media-captions-no-sound-autoplay",
+      "area": "accessibility",
+      "title": "Media captions",
+      "rule": "Prerecorded video has captions, audio a transcript, and nothing autoplays with sound.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-media-captions-no-sound-autoplay"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-one-main",
+      "area": "accessibility",
+      "title": "One main",
+      "rule": "Expose exactly one visible primary <main> landmark.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-one-main"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-skip-link",
+      "area": "accessibility",
+      "title": "Skip link",
+      "rule": "When repeated navigation precedes <main>, a skip link is the first focusable element.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-skip-link"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-heading-outline",
+      "area": "accessibility",
+      "title": "Heading outline",
+      "rule": "Headings describe their sections and form a coherent outline.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-heading-outline"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-landmarks-labelled",
+      "area": "accessibility",
+      "title": "Labelled landmarks",
+      "rule": "Several landmarks of one type carry distinguishing labels.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-landmarks-labelled"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-rem-media-queries",
+      "area": "accessibility",
+      "title": "rem media queries",
+      "rule": "Write media queries in rem or em.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-rem-media-queries"
+      ],
+      "check": null
+    },
+    {
+      "id": "12-toggle-pressed-state",
+      "area": "accessibility",
+      "title": "Toggle state exposed",
+      "rule": "Tab and toggle buttons expose aria-pressed or aria-selected; non-submit buttons have type=button.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "12-toggle-pressed-state"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-lang-dir",
+      "area": "accessibility",
+      "title": "lang and dir",
+      "rule": "Set lang on the document and dir wherever direction changes.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-lang-dir",
+        "15-lang-and-dir"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "iface-prefer-delete",
+      "area": "accessibility",
+      "title": "Prefer delete",
+      "rule": "When code adds what deletion would fix (redundant ARIA, a separator space would carry), that is a finding.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "iface-prefer-delete"
+      ],
+      "check": null
+    },
+    {
+      "id": "review-removed-signals",
+      "area": "accessibility",
+      "title": "No removed signals",
+      "rule": "A change never removes accessibility, motion, direction or typography signals.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "review-removed-signals"
+      ],
+      "check": null
+    },
+    {
+      "id": "18-accessibility-baseline",
+      "area": "accessibility",
+      "title": "Accessibility is release work",
+      "rule": "Accessibility issues are release work.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "18-accessibility-baseline"
+      ],
+      "taste": true,
+      "notes": "Process rule; the a11y rules above carry the checks.",
+      "check": null
+    }
+  ]
+}

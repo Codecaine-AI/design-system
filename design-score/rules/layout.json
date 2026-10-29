@@ -1,0 +1,666 @@
+{
+  "area": "layout",
+  "rules": [
+    {
+      "id": "layout-group-gap-ratio",
+      "area": "layout",
+      "title": "Groups by space",
+      "rule": "The gap between groups is at least 2x the gap within a group.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "minRatio": 2,
+        "exampleItemGapPx": 8,
+        "exampleGroupGapPx": 16
+      },
+      "sources": [
+        "layout-group-gap-ratio",
+        "19-group-spacing-2x"
+      ],
+      "check": "R-spacing-grid"
+    },
+    {
+      "id": "layout-controls-distinct",
+      "area": "layout",
+      "title": "Controls look like controls",
+      "rule": "Every interactive element has a shape, border, underline or consistent placement zone; a control never looks like static text.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "layout-controls-distinct"
+      ],
+      "check": null
+    },
+    {
+      "id": "layout-shared-edges",
+      "area": "layout",
+      "title": "Shared edges",
+      "rule": "Content aligns to a small set of shared edges, with one spacing step per nesting level.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "layout-shared-edges"
+      ],
+      "check": "R-align-near-miss"
+    },
+    {
+      "id": "layout-logical-properties",
+      "area": "layout",
+      "title": "Logical properties",
+      "rule": "Direction-dependent layout uses logical properties (margin-inline-start, text-align: start).",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "layout-logical-properties"
+      ],
+      "check": null
+    },
+    {
+      "id": "layout-rtl-no-logical-form",
+      "area": "layout",
+      "title": "RTL overrides",
+      "rule": "float uses inline-start; translateX and background-position on mirrored UI have a [dir=rtl] override.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "layout-rtl-no-logical-form"
+      ],
+      "notes": "Only when the app supports RTL.",
+      "check": null
+    },
+    {
+      "id": "layout-dom-order-matches-visual",
+      "area": "layout",
+      "title": "DOM order is visual order",
+      "rule": "Visual order matches DOM order; never reorder with order, row-reverse or grid placement.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "layout-dom-order-matches-visual"
+      ],
+      "check": null
+    },
+    {
+      "id": "layout-secondary-actions-in-menu",
+      "area": "layout",
+      "title": "One primary, few secondaries",
+      "rule": "Each view has one primary action; more than 3 secondary actions go behind a menu.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "maxSecondary": 3
+      },
+      "sources": [
+        "layout-secondary-actions-in-menu"
+      ],
+      "check": null
+    },
+    {
+      "id": "layout-hidden-content-cue",
+      "area": "layout",
+      "title": "Hidden content has a cue",
+      "rule": "Off-screen or collapsed content has a visible cue: a peeking item, scroll affordance or disclosure.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "layout-hidden-content-cue"
+      ],
+      "check": null
+    },
+    {
+      "id": "layout-truncation-way-back",
+      "area": "layout",
+      "title": "Truncation has a way back",
+      "rule": "Truncated text the user needs has a way to the full text (expand, detail view, keyboard-reachable tooltip); a hover-only title does not count.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "layout-truncation-way-back",
+        "15-truncation-has-full-text"
+      ],
+      "notes": "Skill is stricter than issue 15 (any tooltip); skill wins.",
+      "check": null
+    },
+    {
+      "id": "layout-disclosure-names-content",
+      "area": "layout",
+      "title": "Disclosures name content",
+      "rule": "Disclosure controls name what is hidden ('Show 12 more results', not 'More').",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "layout-disclosure-names-content"
+      ],
+      "check": null
+    },
+    {
+      "id": "layout-control-clearance",
+      "area": "layout",
+      "title": "Control clearance",
+      "rule": "Leave about 12px between bordered or filled controls and about 24px between borderless text or icon controls, unless an established density says otherwise.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "filledPx": 12,
+        "borderlessPx": 24
+      },
+      "sources": [
+        "layout-control-clearance"
+      ],
+      "check": "R-spacing-grid"
+    },
+    {
+      "id": "layout-no-page-h-scroll",
+      "area": "layout",
+      "title": "No horizontal page scroll",
+      "rule": "At every supported desktop window width the page never scrolls horizontally (width: 100%, never 100vw).",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "layout-no-100vw",
+        "18-responsive-layout"
+      ],
+      "notes": "Desktop widths only (Ford's decision).",
+      "check": "R-h-scroll"
+    },
+    {
+      "id": "layout-container-queries",
+      "area": "layout",
+      "title": "Container queries",
+      "rule": "Reusable components adapt with @container, not viewport @media.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "layout-container-queries"
+      ],
+      "check": null
+    },
+    {
+      "id": "layout-container-type-sized",
+      "area": "layout",
+      "title": "Container has a definite width",
+      "rule": "An element with container-type: inline-size has a definite width.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "layout-container-type-sized"
+      ],
+      "check": null
+    },
+    {
+      "id": "layout-critical-action-reachable",
+      "area": "layout",
+      "title": "Critical actions reachable",
+      "rule": "Critical actions never get clipped by resize, zoom or scroll; modals cap at the viewport height with actions outside the scroll area.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "layout-critical-action-reachable"
+      ],
+      "check": null
+    },
+    {
+      "id": "layout-breakpoints-from-content",
+      "area": "layout",
+      "title": "Breakpoints from content",
+      "rule": "Breakpoints come from where the layout stops fitting, not device presets.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "layout-breakpoints-from-content"
+      ],
+      "taste": true,
+      "check": null
+    },
+    {
+      "id": "ks-no-size-literals",
+      "area": "layout",
+      "title": "Sizes from tokens",
+      "rule": "Font sizes, spacing, radii, shadows and fonts come from design-system tokens; no arbitrary values (w-[343px], p-[13px]).",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "15-type-scale-tokens",
+        "bd-no-arbitrary-values"
+      ],
+      "notes": "Already gated by lint:apps (scan-literals). No design-score check id yet.",
+      "check": null
+    },
+    {
+      "id": "ui-concentric-radius",
+      "area": "layout",
+      "title": "Concentric radius",
+      "rule": "Nested rounded surfaces use outer radius = inner radius + padding (+ border width), up to a 24px inset.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "maxInsetPx": 24,
+        "example": "12 + 8 = 20"
+      },
+      "sources": [
+        "ui-concentric-radius",
+        "09-concentric-radius"
+      ],
+      "notes": "DS has one 2px radius. Skip pairs where both radii are radius.base; check when either radius is above 4px.",
+      "check": "R-concentric-radius"
+    },
+    {
+      "id": "16-focus-ring-concentric",
+      "area": "layout",
+      "title": "Concentric focus ring",
+      "rule": "An offset focus ring's radius equals the element radius plus the offset.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "example": "12 + 4 = 16"
+      },
+      "sources": [
+        "16-focus-ring-concentric"
+      ],
+      "check": "R-concentric-radius"
+    },
+    {
+      "id": "ui-optical-icon-padding",
+      "area": "layout",
+      "title": "Less padding on the icon side",
+      "rule": "A button with an icon and text takes 2-4px less padding on its icon side.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "iconSideLessPx": [
+          2,
+          4
+        ],
+        "example": "20px icon side, 24px text side"
+      },
+      "sources": [
+        "ui-optical-icon-padding",
+        "09-icon-side-padding"
+      ],
+      "notes": "Skill says about 2px; issue 09 shows 4px. Both pass.",
+      "check": "R-spacing-grid"
+    },
+    {
+      "id": "ui-icon-stroke-matches-text",
+      "area": "layout",
+      "title": "Icon stroke matches text",
+      "rule": "An icon's rendered stroke tracks the adjacent text weight: 1.5px at 400, 2px at 500-600, 2.5px at 700.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "w400": 1.5,
+        "w500_600": 2,
+        "w700": 2.5
+      },
+      "sources": [
+        "ui-icon-stroke-matches-text",
+        "19-icon-stroke-matches-text"
+      ],
+      "check": null
+    },
+    {
+      "id": "ui-one-icon-library",
+      "area": "layout",
+      "title": "One icon library",
+      "rule": "Use one icon library per surface.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "ui-one-icon-library"
+      ],
+      "check": null
+    },
+    {
+      "id": "ui-icon-rtl-mirroring",
+      "area": "layout",
+      "title": "Icon mirroring",
+      "rule": "Under dir=rtl mirror only icons whose meaning follows reading direction.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "ui-icon-rtl-mirroring"
+      ],
+      "notes": "Only when the app supports RTL.",
+      "check": null
+    },
+    {
+      "id": "ui-icon-inline-size",
+      "area": "layout",
+      "title": "Inline icon size",
+      "rule": "Inline icons are 1em-1.25em of the adjacent font size.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "em": [
+          1,
+          1.25
+        ]
+      },
+      "sources": [
+        "ui-icon-inline-size"
+      ],
+      "check": null
+    },
+    {
+      "id": "ui-icons-svg-not-raster",
+      "area": "layout",
+      "title": "SVG icons",
+      "rule": "Icons are SVG, never raster, on the grid that matches their render size.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "ui-icons-svg-not-raster"
+      ],
+      "notes": "Knowledge System's Better Creating icons are 96x96 PNG masks; each warns until they move to SVG or Ford accepts them.",
+      "check": null
+    },
+    {
+      "id": "ui-one-way-per-detail",
+      "area": "layout",
+      "title": "One way per detail",
+      "rule": "The same detail (radius, shadow, motion curve) is done one way across the project.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "ui-one-way-per-detail"
+      ],
+      "check": null
+    },
+    {
+      "id": "06-cn-not-template-literals",
+      "area": "layout",
+      "title": "cn for classes",
+      "rule": "Compose class names with a cn utility, not template literals.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "06-cn-not-template-literals"
+      ],
+      "check": null
+    },
+    {
+      "id": "12-tab-label-above-indicator",
+      "area": "layout",
+      "title": "Tab label above indicator",
+      "rule": "Tab labels sit above the moving active indicator so it never covers them.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "12-tab-label-above-indicator"
+      ],
+      "check": null
+    },
+    {
+      "id": "iface-project-idiom",
+      "area": "layout",
+      "title": "Project idiom",
+      "rule": "Fixes use the project's own styling system and components (the design system), never a second one.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "iface-project-idiom"
+      ],
+      "check": null
+    },
+    {
+      "id": "break-quantity",
+      "area": "layout",
+      "title": "Quantity",
+      "rule": "Repeating components handle zero, one, the realistic count and ten times it.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "multiplier": 10
+      },
+      "sources": [
+        "break-quantity"
+      ],
+      "check": null
+    },
+    {
+      "id": "break-environment",
+      "area": "layout",
+      "title": "Environment",
+      "rule": "Components hold in dark mode, browser zoom and reduced motion.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "break-environment"
+      ],
+      "check": null
+    },
+    {
+      "id": "bd-no-figma-urls",
+      "area": "layout",
+      "title": "No Figma URLs",
+      "rule": "No Figma asset URL remains in code.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "bd-no-figma-urls"
+      ],
+      "check": null
+    },
+    {
+      "id": "td-svg-self-contained",
+      "area": "layout",
+      "title": "Self-contained SVG",
+      "rule": "SVG assets parse as XML with no duplicate IDs, unresolved url(#...) or external assets.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "td-svg-self-contained"
+      ],
+      "check": null
+    },
+    {
+      "id": "ks-align-near-miss",
+      "area": "layout",
+      "title": "No near-miss alignment",
+      "rule": "Related elements (a row's items, stacked labels and fields, a column of cards) share edges and centers exactly; an offset of 1-3px between them fails.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": {
+        "nearMissPx": [
+          1,
+          3
+        ],
+        "tolerancePx": 0.5
+      },
+      "sources": [
+        "layout-shared-edges",
+        "bd-rounding-threshold"
+      ],
+      "notes": "Offsets above 3px are treated as deliberate. Implied by shared edges and the 2px rounding threshold.",
+      "check": "R-align-near-miss"
+    },
+    {
+      "id": "ks-handle-first-line",
+      "area": "layout",
+      "title": "Handles center on the first line",
+      "rule": "Drag handles, row icons, checkboxes, bullets and toggles beside text are vertically centered on the first line box of that text, not on the whole block.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": {
+        "tolerancePx": 1
+      },
+      "sources": [
+        "layout-shared-edges",
+        "ui-optical-asymmetric-glyphs",
+        "ui-icon-inline-size"
+      ],
+      "notes": "Ford's docs-editor complaint: the block grab bar does not line up with the block text.",
+      "check": "R-align-near-miss"
+    },
+    {
+      "id": "ks-baseline-align",
+      "area": "layout",
+      "title": "Shared baselines",
+      "rule": "Text in one row (label and value, tabs, adjacent buttons, inline chips) shares one baseline.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": {
+        "tolerancePx": 1
+      },
+      "sources": [
+        "layout-shared-edges",
+        "typo-text-box-trim"
+      ],
+      "check": "R-align-near-miss"
+    },
+    {
+      "id": "ks-icon-optical-center",
+      "area": "layout",
+      "title": "Icons centered in their box",
+      "rule": "An icon in an icon button or beside a label is centered in its box within 0.5px, on the label's cap-height middle, after optical correction for asymmetric glyphs.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "tolerancePx": 0.5
+      },
+      "sources": [
+        "ui-optical-asymmetric-glyphs",
+        "09-optical-align-icons",
+        "typo-text-box-trim",
+        "ui-icon-inline-size"
+      ],
+      "check": "R-align-near-miss"
+    },
+    {
+      "id": "ks-row-control-height",
+      "area": "layout",
+      "title": "Equal control heights in a row",
+      "rule": "Buttons, inputs, selects, segmented controls and control chips in one row have the same height.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": {
+        "tolerancePx": 0.5
+      },
+      "sources": [
+        "ui-one-way-per-detail",
+        "layout-controls-distinct"
+      ],
+      "check": "R-control-height"
+    },
+    {
+      "id": "ks-control-height-scale",
+      "area": "layout",
+      "title": "Control heights from a scale",
+      "rule": "Control heights across the app come from a small token set on the 4px grid (for example 24, 28, 32px).",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "gridPx": 4,
+        "maxDistinctHeights": 4
+      },
+      "sources": [
+        "ui-one-way-per-detail",
+        "typo-small-type-scale"
+      ],
+      "notes": "No control-height tokens exist yet; see token proposals.",
+      "check": "R-control-height"
+    },
+    {
+      "id": "ks-gap-grid",
+      "area": "layout",
+      "title": "Gaps on the 4px grid",
+      "rule": "Rendered gaps, padding and margins are values from the DS space scale (4px grid with 2px and 6px half steps).",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "allowedPx": [
+          0,
+          2,
+          4,
+          6,
+          8,
+          12,
+          16,
+          20,
+          24,
+          28,
+          32,
+          40,
+          48,
+          64
+        ],
+        "tolerancePx": 0.5
+      },
+      "sources": [
+        "layout-group-gap-ratio",
+        "layout-shared-edges",
+        "bd-no-arbitrary-values"
+      ],
+      "check": "R-spacing-grid"
+    },
+    {
+      "id": "ks-repeated-padding",
+      "area": "layout",
+      "title": "Same padding in repeated items",
+      "rule": "Repeated rows, cards, list and menu items of one kind have identical padding and inner gaps.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": {
+        "tolerancePx": 0.5
+      },
+      "sources": [
+        "ui-one-way-per-detail",
+        "layout-shared-edges"
+      ],
+      "check": "R-spacing-grid"
+    },
+    {
+      "id": "ks-indent-step",
+      "area": "layout",
+      "title": "One indent step",
+      "rule": "Nested tree and outline levels indent by one constant step per level.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "stepToken": "space.4 (16px)"
+      },
+      "sources": [
+        "layout-shared-edges"
+      ],
+      "check": "R-spacing-grid"
+    },
+    {
+      "id": "ks-icon-size-consistent",
+      "area": "layout",
+      "title": "One icon size per role",
+      "rule": "Icons of one role on a surface (row icons, toolbar icons) render at one size.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "ui-one-way-per-detail",
+        "ui-icon-inline-size"
+      ],
+      "check": null
+    }
+  ]
+}

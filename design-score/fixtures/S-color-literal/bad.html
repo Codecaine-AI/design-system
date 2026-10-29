@@ -1,0 +1,18 @@
+<!doctype html>
+<!-- S-color-literal, bad: the same card, but bad.css paints it with literals. Three inline literals fail, and the --badge-bg definition warns. The var() fallback is ignored. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>S-color-literal: bad</title>
+<link rel="stylesheet" href="../../../css/fonts.css">
+<link rel="stylesheet" href="../../../dist/css/tokens.css">
+<link rel="stylesheet" href="bad.css">
+</head>
+<body>
+  <div class="card">
+    <div class="head"><span class="title">Deploy the docs hub</span><span class="badge">Done</span></div>
+    <p class="meta">Finished 2 hours ago by the release agent.</p>
+    <a class="link" href="#log">Open the log</a>
+  </div>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "step": { "click": ".toggle" },
+  "times": [0, 20, 40, 70, 260],
+  "clip": ".view",
+  "pad": 4,
+  "viewport": { "width": 560, "height": 300 }
+}

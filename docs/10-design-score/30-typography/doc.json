@@ -1,0 +1,830 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-d2956c7cc6160a31ec9dac4a5e9e55c9",
+  "title": "Typography",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "intro",
+        "h-checks",
+        "chk-b1",
+        "chk-b2",
+        "h-rules",
+        "rul-b101",
+        "rul-b102",
+        "rul-b103",
+        "rul-b104",
+        "rul-b105",
+        "rul-b106",
+        "rul-b107"
+      ]
+    },
+    "intro": {
+      "id": "intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The typography checks measure rendered text: number alignment, clipped text, font size and line length. They run in a browser on every page, theme and viewport. The area has 4 runtime checks and 44 rules in "
+        },
+        {
+          "insert": "design-score/rules/typography.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/typography.json"
+            }
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-checks": {
+      "id": "h-checks",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Checks"
+        }
+      ],
+      "children": []
+    },
+    "chk-b1": {
+      "id": "chk-b1",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each check has a page with a good and a bad fixture. The Result column says whether a finding can fail the page, only warn, or both."
+        }
+      ],
+      "children": []
+    },
+    "chk-b2": {
+      "id": "chk-b2",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Check",
+          "Result",
+          "Rules",
+          "What It Finds"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "R-tabular-nums",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/30-typography/10-r-tabular-nums"
+                }
+              }
+            ],
+            "Warn",
+            "2",
+            "Numbers without tabular-nums"
+          ],
+          [
+            [
+              {
+                "insert": "R-text-clip",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/30-typography/20-r-text-clip"
+                }
+              }
+            ],
+            "Fail",
+            "8",
+            "Text cut off without an ellipsis or line clamp"
+          ],
+          [
+            [
+              {
+                "insert": "R-min-font",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/30-typography/30-r-min-font"
+                }
+              }
+            ],
+            "Fail and warn",
+            "2",
+            "Text under 12px"
+          ],
+          [
+            [
+              {
+                "insert": "R-line-length",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/30-typography/40-r-line-length"
+                }
+              }
+            ],
+            "Warn",
+            "1",
+            "Prose lines over 80 characters"
+          ]
+        ],
+        "title": "Typography checks"
+      },
+      "children": []
+    },
+    "h-rules": {
+      "id": "h-rules",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules"
+        }
+      ],
+      "children": []
+    },
+    "rul-b101": {
+      "id": "rul-b101",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The rules come from "
+        },
+        {
+          "insert": "design-score/rules/typography.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/typography.json"
+            }
+          }
+        },
+        {
+          "insert": ". Each rule names the check that decides it, and each check finding carries those rule ids. 13 rules have a check, and 31 have none yet."
+        }
+      ],
+      "children": []
+    },
+    "rul-b102": {
+      "id": "rul-b102",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "layout-numbers-align-end",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Numbers align end",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "typo-tabular-nums",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Tabular numbers",
+            "Warn"
+          ]
+        ],
+        "title": "Rules decided by R-tabular-nums"
+      },
+      "children": []
+    },
+    "rul-b103": {
+      "id": "rul-b103",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "a11y-text-resize-200",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "200% text resize",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "layout-min-height-not-height",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "min-height for text boxes",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "layout-minmax-0",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Tracks can shrink",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "layout-text-growth",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Text can grow",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "typo-break-long-strings",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Break long strings",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "typo-nowrap-labels",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Labels do not wrap",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "break-content-length",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Content length",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "break-container",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Container squeeze",
+            "Warn"
+          ]
+        ],
+        "title": "Rules decided by R-text-clip"
+      },
+      "children": []
+    },
+    "rul-b104": {
+      "id": "rul-b104",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "typo-weight-floor",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Weight floor",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "typo-size-floors",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Font size floors",
+            "Warn"
+          ]
+        ],
+        "title": "Rules decided by R-min-font"
+      },
+      "children": []
+    },
+    "rul-b105": {
+      "id": "rul-b105",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "typo-measure",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Line length",
+            "Warn"
+          ]
+        ],
+        "title": "Rules decided by R-line-length"
+      },
+      "children": []
+    },
+    "rul-b106": {
+      "id": "rul-b106",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "No check decides the rules below yet. The Layer column says where a future check would get its evidence. A human rule needs a person or the screenshot judge."
+        }
+      ],
+      "children": []
+    },
+    "rul-b107": {
+      "id": "rul-b107",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity",
+          "Layer"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "typo-few-fonts",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Three font families at most",
+            "Warn",
+            "Runtime"
+          ],
+          [
+            [
+              {
+                "insert": "typo-load-used-faces",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No synthesized faces",
+            "Fail",
+            "Runtime"
+          ],
+          [
+            [
+              {
+                "insert": "typo-no-global-synthesis-none",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No global font-synthesis: none",
+            "Warn",
+            "Static"
+          ],
+          [
+            [
+              {
+                "insert": "typo-properties-over-raw-tags",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Properties over feature tags",
+            "Warn",
+            "Static"
+          ],
+          [
+            [
+              {
+                "insert": "typo-small-type-scale",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Small type scale",
+            "Warn",
+            "Runtime"
+          ],
+          [
+            [
+              {
+                "insert": "typo-heading-sizes-descend",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Headings descend",
+            "Warn",
+            "Runtime"
+          ],
+          [
+            [
+              {
+                "insert": "typo-unitless-line-height",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Unitless line-height",
+            "Warn",
+            "Static"
+          ],
+          [
+            [
+              {
+                "insert": "typo-line-height-by-role",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Line height by role",
+            "Warn",
+            "Runtime"
+          ],
+          [
+            [
+              {
+                "insert": "typo-wrapping-text-leading",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Wrapping text leading",
+            "Warn",
+            "Runtime"
+          ],
+          [
+            [
+              {
+                "insert": "typo-letter-spacing-by-size",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Letter spacing by size",
+            "Warn",
+            "Runtime"
+          ],
+          [
+            [
+              {
+                "insert": "typo-letter-spacing-em",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Letter spacing in em",
+            "Warn",
+            "Static"
+          ],
+          [
+            [
+              {
+                "insert": "typo-no-kerning-off",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Kerning on",
+            "Fail",
+            "Static"
+          ],
+          [
+            [
+              {
+                "insert": "typo-balance-headings",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Balance headings",
+            "Warn",
+            "Runtime"
+          ],
+          [
+            [
+              {
+                "insert": "typo-no-balance-on-paragraphs",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No balance on paragraphs",
+            "Warn",
+            "Runtime"
+          ],
+          [
+            [
+              {
+                "insert": "typo-pretty-body",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Pretty paragraphs",
+            "Warn",
+            "Runtime"
+          ],
+          [
+            [
+              {
+                "insert": "typo-no-justify",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No justify",
+            "Warn",
+            "Runtime"
+          ],
+          [
+            [
+              {
+                "insert": "typo-line-clamp-complete",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Complete line clamp",
+            "Fail",
+            "Static"
+          ],
+          [
+            [
+              {
+                "insert": "typo-natural-case",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Natural case",
+            "Warn",
+            "Static"
+          ],
+          [
+            [
+              {
+                "insert": "typo-smart-punctuation",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Typographic punctuation",
+            "Warn",
+            "Runtime"
+          ],
+          [
+            [
+              {
+                "insert": "typo-underline-from-font",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Tuned underlines",
+            "Warn",
+            "Runtime"
+          ],
+          [
+            [
+              {
+                "insert": "typo-no-skip-ink-none",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Skip-ink on",
+            "Fail",
+            "Static"
+          ],
+          [
+            [
+              {
+                "insert": "typo-rem-font-size",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "rem font sizes",
+            "Warn",
+            "Static"
+          ],
+          [
+            [
+              {
+                "insert": "typo-font-smoothing-root",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Smoothing on the root",
+            "Warn",
+            "Runtime"
+          ],
+          [
+            [
+              {
+                "insert": "typo-text-box-trim",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Trim text boxes",
+            "Warn",
+            "Static"
+          ],
+          [
+            [
+              {
+                "insert": "typo-selectable-text",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Content selectable, chrome not",
+            "Warn",
+            "Runtime"
+          ],
+          [
+            [
+              {
+                "insert": "typo-woff2",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "woff2 fonts",
+            "Warn",
+            "Runtime"
+          ],
+          [
+            [
+              {
+                "insert": "14-self-host-fonts",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Self-host fonts",
+            "Warn",
+            "Runtime"
+          ],
+          [
+            [
+              {
+                "insert": "14-font-display-swap",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "font-display swap",
+            "Warn",
+            "Static"
+          ],
+          [
+            [
+              {
+                "insert": "15-selection-styled-readable",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Readable selection",
+            "Warn",
+            "Runtime"
+          ],
+          [
+            [
+              {
+                "insert": "typo-display-text-cuts",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Display and Text cuts",
+            "Human",
+            "Human"
+          ],
+          [
+            [
+              {
+                "insert": "typo-emphasis-weight-step",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Emphasis is one weight step",
+            "Human",
+            "Human"
+          ]
+        ],
+        "title": "Typography rules with no check"
+      },
+      "children": []
+    }
+  }
+}
