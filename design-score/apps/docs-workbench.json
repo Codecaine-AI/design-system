@@ -1,0 +1,227 @@
+{
+  "app": "docs-workbench",
+  "name": "Docs workbench",
+  "repo": "codecaine/core/docs-system",
+  "baseUrl": "http://127.0.0.1:47520",
+  "sourceDirs": [
+    "packages/docs-workbench/web/src"
+  ],
+  "themes": {
+    "light": {
+      "localStorage": {
+        "docs-global:docs-viewer-theme": "light"
+      },
+      "colorScheme": "light",
+      "assert": "html[data-theme=\"light\"]"
+    },
+    "dark": {
+      "localStorage": {
+        "docs-global:docs-viewer-theme": "dark"
+      },
+      "query": {
+        "ds-theme": "dark"
+      },
+      "colorScheme": "dark",
+      "assert": "html[data-theme=\"dark\"]"
+    }
+  },
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "width": 1024,
+      "height": 768
+    }
+  ],
+  "handles": [
+    ".docs-drag-handle"
+  ],
+  "ignore": [
+    "iframe"
+  ],
+  "settleMs": 700,
+  "loading": [
+    "Loading docs…",
+    "Loading tree...",
+    "Loading canvas...",
+    "Loading sequence..."
+  ],
+  "cap": 6,
+  "motionAllow": [
+    {
+      "name": "ds-shell-sidebar",
+      "selector": ".ds-shell",
+      "props": [
+        "grid-template-columns"
+      ],
+      "reason": "The design-system app shell animates its sidebar column when it collapses (css/layout.css .ds-shell). The shell owns it; the same allowance as knowledge-system."
+    }
+  ],
+  "pages": [
+    {
+      "id": "home",
+      "path": "/",
+      "waitFor": "[data-docs-page-transition=\"idle\"][aria-busy=\"false\"]",
+      "note": "Home: / opens the first doc (Foundation), Style inspector open as at every width of 1024 or more."
+    },
+    {
+      "id": "doc-callout",
+      "path": "/#/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout",
+      "waitFor": "[data-docs-page-transition=\"idle\"][aria-busy=\"false\"]",
+      "note": "A rich-text doc with every callout tone (registry route doc-callout)."
+    },
+    {
+      "id": "doc-visual-system-themes",
+      "path": "/#/10-system-design/50-editor-design/40-visual-system/30-themes",
+      "waitFor": "[data-docs-page-transition=\"idle\"][aria-busy=\"false\"]",
+      "actions": [
+        {
+          "scroll": [
+            "[data-docs-scroller]",
+            250
+          ]
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "note": "The Themes doc, scrolled 250px (registry route doc-visual-system-themes)."
+    },
+    {
+      "id": "doc-code-block",
+      "path": "/#/10-system-design/40-block-vocabulary/20-code/10-code-block",
+      "waitFor": "[data-docs-page-transition=\"idle\"][aria-busy=\"false\"]",
+      "note": "The Code Block doc: dark code panels."
+    },
+    {
+      "id": "doc-file-tree",
+      "path": "/#/10-system-design/40-block-vocabulary/30-trees-and-paths/10-file-tree",
+      "waitFor": "[data-docs-page-transition=\"idle\"][aria-busy=\"false\"]",
+      "note": "The File Tree doc."
+    },
+    {
+      "id": "doc-structured-table",
+      "path": "/#/10-system-design/40-block-vocabulary/40-structured-reference/30-structured-table",
+      "waitFor": "[data-docs-page-transition=\"idle\"][aria-busy=\"false\"]",
+      "note": "The Structured Table doc."
+    },
+    {
+      "id": "doc-process-outline",
+      "path": "/#/10-system-design/40-block-vocabulary/50-flow-and-diagrams/10-process-outline",
+      "waitFor": "[data-docs-page-transition=\"idle\"][aria-busy=\"false\"]",
+      "note": "The Process Outline doc."
+    },
+    {
+      "id": "doc-canvas-embed",
+      "path": "/#/10-system-design/40-block-vocabulary/50-flow-and-diagrams/50-canvas",
+      "waitFor": "[data-canvas-frame]",
+      "actions": [
+        {
+          "scroll": [
+            "[data-docs-scroller]",
+            700
+          ]
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "note": "The Canvas doc scrolled to its embedded canvas (registry route doc-canvas-embed)."
+    },
+    {
+      "id": "doc-sequence-embed",
+      "path": "/#/10-system-design/40-block-vocabulary/50-flow-and-diagrams/40-sequence",
+      "waitFor": "[data-docs-block-type=\"sequence\"]",
+      "actions": [
+        {
+          "scroll": [
+            "[data-docs-scroller]",
+            600
+          ]
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "note": "The Sequence doc scrolled to its embedded diagram (registry route doc-sequence-embed)."
+    },
+    {
+      "id": "style-closed",
+      "path": "/#/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout",
+      "waitFor": "[data-docs-page-transition=\"idle\"][aria-busy=\"false\"]",
+      "actions": [
+        {
+          "click": "button[aria-controls=\"ds-inspector\"][aria-expanded=\"true\"]"
+        },
+        {
+          "wait": 500
+        }
+      ],
+      "note": "The callout doc with the Style inspector closed: the plain reading view."
+    },
+    {
+      "id": "style-colors",
+      "path": "/#/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout",
+      "waitFor": "[data-docs-page-transition=\"idle\"][aria-busy=\"false\"]",
+      "actions": [
+        {
+          "click": "nav[aria-label=\"Style sections\"] button:has(> span:text-is(\"Colors\"))"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "note": "The Style inspector on its Colors section."
+    },
+    {
+      "id": "sidebar-collapsed",
+      "path": "/#/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout",
+      "waitFor": "[data-docs-page-transition=\"idle\"][aria-busy=\"false\"]",
+      "actions": [
+        {
+          "click": ".ds-sidebar-toggle"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "note": "The callout doc with the docs tree sidebar collapsed."
+    },
+    {
+      "id": "export-dialog",
+      "path": "/#/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout",
+      "waitFor": "[data-docs-page-transition=\"idle\"][aria-busy=\"false\"]",
+      "actions": [
+        {
+          "click": "button:text-is(\"Export\")"
+        },
+        {
+          "waitFor": "dialog[open]"
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "note": "The Export dialog open (registry route export-dialog). Never press its export button."
+    },
+    {
+      "id": "lab-annotate",
+      "path": "/#/10-system-design/40-block-vocabulary/10-text-and-media/10-rich-text/14-callout",
+      "waitFor": "[data-docs-page-transition=\"idle\"][aria-busy=\"false\"]",
+      "actions": [
+        {
+          "click": "button[data-docs-lab-toggle]"
+        },
+        {
+          "waitFor": "[data-lab-dock][data-lab-annotate-panel]"
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "note": "The AI panel (lab dock) open on its annotate panel (registry route lab-annotate). The docs kernel is a dead port, so it shows its disconnected state."
+    }
+  ]
+}
