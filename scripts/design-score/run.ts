@@ -191,13 +191,10 @@ export async function runScore(opts: RunOptions): Promise<{ dir: string; scoreca
       }, theme.localStorage);
     }
     if (recorder) await ctx.addInitScript(installMotionRecorder);
-    const allowed = config.allowWritePaths ?? [];
     await ctx.route("**/*", (route: any) => {
       const req = route.request();
       const method = req.method();
-      if (config.allowWrites || method === "GET" || method === "HEAD" || method === "OPTIONS") return route.continue();
-      const path = new URL(req.url()).pathname;
-      if (allowed.some((p) => path.startsWith(p))) return route.continue();
+      if (method === "GET" || method === "HEAD" || method === "OPTIONS") return route.continue();
       blockedAll.push(`${method} ${req.url()}`);
       return route.abort("blockedbyclient");
     });

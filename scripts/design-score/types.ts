@@ -105,10 +105,6 @@ export interface AppConfig {
   loading?: string[];
   /** Max findings kept per check per page variant. */
   cap?: number;
-  /** Allow non-GET requests (default false: every POST/PUT/PATCH/DELETE is aborted, so browsing never writes). */
-  allowWrites?: boolean;
-  /** Same-origin paths a non-GET may still use (e.g. a read-only POST search). */
-  allowWritePaths?: string[];
   /** R-state-shift: extra selectors whose click opens something (besides [aria-haspopup]); max controls per page (default 16). */
   shift?: { open?: string[]; max?: number };
   /** M-layout-props allowlist. */

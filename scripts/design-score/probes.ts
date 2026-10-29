@@ -141,8 +141,9 @@ export function probePage(o: ProbeOptions): { findings: ProbeFinding[]; stats: R
   const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
   const colorCache = new Map<string, [number, number, number, number]>();
   const rgba = (css: string): [number, number, number, number] => {
+    // Callers adjust the alpha, so hand out a copy: the cached tuple must stay as parsed.
     let c = colorCache.get(css);
-    if (c) return c;
+    if (c) return [...c];
     ctx.clearRect(0, 0, 1, 1);
     ctx.fillStyle = "#000";
     ctx.fillStyle = css;
@@ -150,7 +151,7 @@ export function probePage(o: ProbeOptions): { findings: ProbeFinding[]; stats: R
     const d = ctx.getImageData(0, 0, 1, 1).data;
     c = [d[0]!, d[1]!, d[2]!, d[3]! / 255];
     colorCache.set(css, c);
-    return c;
+    return [...c];
   };
   const over = (top: [number, number, number, number], under: [number, number, number]): [number, number, number] => [
     top[0] * top[3] + under[0] * (1 - top[3]),

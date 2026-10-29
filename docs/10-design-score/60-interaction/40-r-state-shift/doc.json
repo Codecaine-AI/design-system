@@ -518,8 +518,8 @@
             "Fail"
           ],
           [
-            "The control's own size",
-            "Width or height changes by 1px or more",
+            "The control's own box",
+            "Its layout position, width or height changes by 1px or more",
             "Fail"
           ],
           [

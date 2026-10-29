@@ -12,7 +12,7 @@
  * offset-chain box (layout only, so transforms and scrolling never count). A neighbour moved or resized
  * only when both differ by 1px or more. Elements that were not visible before or after (a menu that
  * appears) and elements that move on their own (measured once per page, 300ms apart) are left out.
- * The control's own layout size counts too (a bolder tab that widens). Transitions are off for the pass.
+ * The control's own layout box counts too (a bolder tab that widens, a link that nudges on hover). Transitions are off for the pass.
  *
  * A page can also name `shiftWatch`: elements whose boxes must not change while the page's own actions
  * run (the audit's "opening Status widens the column").
@@ -375,7 +375,8 @@ async function measure(page: any, pick: string, ignore: string[], act: () => Pro
   const gutterDelta = before.gutters.map((g: number, i: number) => (after.gutters[i] ?? g) - g);
   const { kept: moves, dropped } = dropScrollbarMoves(diffShift(before.boxes, after.boxes), gutterDelta);
   if (dropped) stats.scrollbar++;
-  const own = before.control && after.control ? Math.max(Math.abs(after.control.w - before.control.w), Math.abs(after.control.h - before.control.h)) : 0;
+  // The control's layout box (offsets ignore transforms, so a hover scale or nudge by transform is allowed).
+  const own = before.control && after.control ? Math.max(...(["x", "y", "w", "h"] as const).map((k) => Math.abs(after.control[k] - before.control[k]))) : 0;
   let hit: ShiftHit | null = null;
   if (moves.length || own >= 1) {
     moves.sort((a, b) => b.size - a.size);
@@ -388,7 +389,7 @@ async function measure(page: any, pick: string, ignore: string[], act: () => Pro
     const b = m ? before.boxes[m.index]!.rect : null;
     const what = c ? `${verb} ${c.sig}${c.label ? ` "${c.label}"` : ""}` : verb;
     const parts: string[] = [];
-    if (own >= 1 && before.control && after.control) parts.push(`resizes the control ${r1(before.control.w)}x${r1(before.control.h)} → ${r1(after.control.w)}x${r1(after.control.h)}px`);
+    if (own >= 1 && before.control && after.control) parts.push(`moves or resizes the control ${r1(before.control.w)}x${r1(before.control.h)} at ${r1(before.control.x)},${r1(before.control.y)} → ${r1(after.control.w)}x${r1(after.control.h)} at ${r1(after.control.x)},${r1(after.control.y)}px`);
     if (m && item) parts.push(`moves ${moves.length} neighbour${moves.length === 1 ? "" : "s"}; most: ${[m.dx && `dx ${m.dx}`, m.dy && `dy ${m.dy}`, m.dw && `dw ${m.dw}`, m.dh && `dh ${m.dh}`].filter(Boolean).join(", ")}px`);
     hit = {
       finding: {

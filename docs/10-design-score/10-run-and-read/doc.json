@@ -1594,25 +1594,7 @@
           }
         },
         {
-          "insert": ". Browsing is read-only. The run aborts every request other than GET, HEAD and OPTIONS unless "
-        },
-        {
-          "insert": "allowWrites",
-          "attributes": {
-            "code": true
-          }
-        },
-        {
-          "insert": " or "
-        },
-        {
-          "insert": "allowWritePaths",
-          "attributes": {
-            "code": true
-          }
-        },
-        {
-          "insert": " lets it through."
+          "insert": ". Browsing is read-only. The run aborts every request other than GET, HEAD and OPTIONS, and no config can turn that off."
         }
       ],
       "children": []
