@@ -129,6 +129,18 @@ describe("folding verdicts into a run", () => {
     expect(html).toContain("second reason");
   });
 
+  test("the report keeps a different reason for the same rule on another screenshot", () => {
+    const dir = run("reasons", "r1", ["home"]);
+    const card = JSON.parse(readFileSync(join(dir, "scorecard.json"), "utf8")) as Scorecard;
+    writeFileSync(join(dir, "shots", "home-dark.png"), bytes("home-dark"));
+    card.pages[0]!.shots.push({ theme: "dark", viewport: "800x600", file: "shots/home-dark.png", kind: "state" } as never);
+    writeFileSync(join(dir, "scorecard.json"), JSON.stringify(card));
+    refoldRun(dir, verdictsFile(dir, { [hashOf("home")]: all("fail", "light reason"), [hashOf("home-dark")]: all("fail", "dark reason") }), DESIGN_SYSTEM_ROOT);
+    const html = readFileSync(join(dir, "report.html"), "utf8");
+    expect(html).toContain("light reason");
+    expect(html).toContain("dark reason");
+  });
+
   test("a refold replaces the earlier V-judge findings instead of adding to them", () => {
     const dir = run("refold", "r1", ["home"]);
     refoldRun(dir, verdictsFile(dir, { [hashOf("home")]: all("fail", "dot alone") }), DESIGN_SYSTEM_ROOT);
