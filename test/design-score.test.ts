@@ -217,6 +217,15 @@ describe.skipIf(!!process.env.DS_SKIP_BROWSER)("design:score v2 in a browser", (
     expect(hits.map((h) => h.finding.measured)).toEqual([expect.stringMatching(/^hovering button\.nudge "Nudge": moves or resizes the control/)]);
   });
 
+  test("R-state-shift: a centered control that moves only because its menu hides the scrollbar passes", async () => {
+    await page.setContent(`<style>body { margin: 0; } .wrap { width: 300px; margin: 40px auto; display: flex; gap: 8px; } button { height: 32px; } .tall { height: 2000px; }</style>
+      <body><div class="wrap"><button aria-haspopup="menu" class="menu" onclick="document.documentElement.style.overflow='hidden'">Menu</button><span>Next</span></div><div class="tall"></div></body>`);
+    const gutter = await page.evaluate(() => window.innerWidth - document.documentElement.clientWidth);
+    const { hits } = await stateShiftPass(page, { ignore: [], open: [], max: 8 });
+    expect(gutter).toBeGreaterThan(0);
+    expect(hits.map((h) => h.finding.measured)).toEqual([]);
+  });
+
   test("R-contrast: a faded text does not change the color read for the next text", async () => {
     await page.setContent(`<body style="margin:20px;background:#fff;font:16px sans-serif"><p class="faded" style="color:#000;opacity:.3">Faded</p><p class="solid" style="color:#000">Solid</p></body>`);
     const contrast = (await probe()).findings.filter((f: { check: string }) => f.check === "R-contrast");

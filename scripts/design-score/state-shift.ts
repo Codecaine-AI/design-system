@@ -375,8 +375,10 @@ async function measure(page: any, pick: string, ignore: string[], act: () => Pro
   const gutterDelta = before.gutters.map((g: number, i: number) => (after.gutters[i] ?? g) - g);
   const { kept: moves, dropped } = dropScrollbarMoves(diffShift(before.boxes, after.boxes), gutterDelta);
   if (dropped) stats.scrollbar++;
-  // The control's layout box (offsets ignore transforms, so a hover scale or nudge by transform is allowed).
-  const own = before.control && after.control ? Math.max(...(["x", "y", "w", "h"] as const).map((k) => Math.abs(after.control[k] - before.control[k]))) : 0;
+  // The control's layout box (offsets ignore transforms, so a hover scale or nudge by transform is allowed),
+  // with the same scrollbar filter as its neighbours: a scrollbar that goes moves centered content too.
+  const ownMove = before.control && after.control ? { index: -1, dx: after.control.x - before.control.x, dy: after.control.y - before.control.y, dw: after.control.w - before.control.w, dh: after.control.h - before.control.h, size: 0 } : null;
+  const own = ownMove && dropScrollbarMoves([ownMove], gutterDelta).kept.length ? Math.max(Math.abs(ownMove.dx), Math.abs(ownMove.dy), Math.abs(ownMove.dw), Math.abs(ownMove.dh)) : 0;
   let hit: ShiftHit | null = null;
   if (moves.length || own >= 1) {
     moves.sort((a, b) => b.size - a.size);
