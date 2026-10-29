@@ -1,0 +1,190 @@
+{
+  "app": "teleprompter",
+  "name": "Teleprompter",
+  "repo": "lascari-ai/content/teleprompter",
+  "baseUrl": "http://127.0.0.1:47720/control/",
+  "sourceDirs": [
+    "apps/desktop/src/renderer"
+  ],
+  "excludes": [
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ],
+  "themes": {
+    "light": {
+      "colorScheme": "light",
+      "assert": "html[data-theme=\"light\"], .prompter[data-theme=\"light\"]"
+    },
+    "dark": {
+      "colorScheme": "dark",
+      "assert": "html[data-theme=\"dark\"]:not(:has([data-theme=\"light\"]))"
+    }
+  },
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "width": 1024,
+      "height": 768
+    }
+  ],
+  "settleMs": 700,
+  "cap": 6,
+  "motionAllow": [
+    {
+      "name": "ds-shell-sidebar",
+      "selector": ".ds-shell",
+      "props": [
+        "grid-template-columns"
+      ],
+      "reason": "The design-system app shell animates its sidebar column when it collapses (css/layout.css .ds-shell). The shell owns it; allowed by Ford."
+    }
+  ],
+  "pages": [
+    {
+      "id": "script",
+      "path": "/control/index.html",
+      "waitFor": ".ds-shell",
+      "note": "The control window renderer, served alone by Vite. Electron never runs: a score-run-only stub stands in for the preload bridge (window.teleprompter) with fixture state, ?tp= picks the scenario. Home: a selected script in Preview, the inspector open."
+    },
+    {
+      "id": "script-edit",
+      "path": "/control/index.html",
+      "waitFor": ".ds-shell",
+      "actions": [
+        {
+          "click": "[data-testid=\"mode-edit\"]"
+        },
+        {
+          "waitFor": "[data-testid=\"script-delete\"]"
+        }
+      ],
+      "note": "The selected script in Edit."
+    },
+    {
+      "id": "script-delete-confirm",
+      "path": "/control/index.html",
+      "waitFor": ".ds-shell",
+      "actions": [
+        {
+          "click": "[data-testid=\"mode-edit\"]"
+        },
+        {
+          "click": "[data-testid=\"script-delete\"]"
+        },
+        {
+          "waitFor": "[data-testid=\"script-delete-confirm\"]"
+        }
+      ],
+      "note": "Edit with Delete script clicked once, so the confirm shows. Never click the confirm."
+    },
+    {
+      "id": "take",
+      "path": "/control/index.html",
+      "waitFor": ".ds-shell",
+      "actions": [
+        {
+          "click": "[data-take-id=\"take-2026-10-29-0930\"]"
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "note": "A take's card above the script (Take 2 in the sidebar)."
+    },
+    {
+      "id": "no-inspector",
+      "path": "/control/index.html",
+      "waitFor": ".ds-shell",
+      "actions": [
+        {
+          "click": "[data-testid=\"settings-toggle\"]"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "note": "The script view with the Prompter settings inspector closed."
+    },
+    {
+      "id": "sidebar-collapsed",
+      "path": "/control/index.html",
+      "waitFor": ".ds-shell",
+      "actions": [
+        {
+          "click": ".ds-sidebar-toggle"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "note": "The sidebar collapsed."
+    },
+    {
+      "id": "live",
+      "path": "/control/index.html?tp=live",
+      "waitFor": ".ds-shell",
+      "note": "A live take: tracking, the heard strip, the highlighted word and the timeline."
+    },
+    {
+      "id": "setup-display",
+      "path": "/control/index.html?tp=setup",
+      "waitFor": ".ds-shell",
+      "note": "The setup state with no prompter display."
+    },
+    {
+      "id": "setup-key",
+      "path": "/control/index.html?tp=nokey",
+      "waitFor": ".ds-shell",
+      "note": "The setup state with no Deepgram key."
+    },
+    {
+      "id": "empty",
+      "path": "/control/index.html?tp=empty",
+      "waitFor": ".ds-shell",
+      "note": "An empty script library."
+    },
+    {
+      "id": "devices",
+      "path": "/control/index.html",
+      "waitFor": ".ds-shell",
+      "actions": [
+        {
+          "click": "[data-testid=\"nav-devices\"]"
+        },
+        {
+          "waitFor": ".devices-page"
+        }
+      ],
+      "note": "Devices: display, microphone and foot pedal."
+    },
+    {
+      "id": "preferences",
+      "path": "/control/index.html",
+      "waitFor": ".ds-shell",
+      "actions": [
+        {
+          "click": "[data-testid=\"nav-preferences\"]"
+        },
+        {
+          "waitFor": ".preferences-page"
+        }
+      ],
+      "note": "Preferences: Deepgram key, pedal keys, speech and motion."
+    },
+    {
+      "id": "prompter",
+      "path": "/prompter/index.html",
+      "waitFor": ".prompter",
+      "note": "The prompter window renderer, mirrored as on the glass. Its theme follows the run's theme through the stub's prompterTheme."
+    },
+    {
+      "id": "prompter-live",
+      "path": "/prompter/index.html?tp=live",
+      "waitFor": ".prompter",
+      "note": "The prompter during a live take, with the current word highlighted."
+    }
+  ]
+}
