@@ -339,7 +339,7 @@ function decideFamily(data: TokenData, ctx: Context, role: PropRole, ringShadow:
   // (`.overlay .dialog`) is a surface, not the scrim.
   if (role === "background" && h(/\b(backdrop|scrim|overlay)\b/) && literal.a < 0.99) narrow(["color.backdrop"], "backdrop", { terminal: true });
   else {
-    if (role === "border" && (h(/\b(img|image|images|media|avatar|avatars|thumbnail|thumbnails|thumb|photo|photos|video|figure)\b/) || ctx.component === "img")) narrow(["color.border.image"], "image outline");
+    if (role === "border" && (h(/\b(img|image|images|avatar|avatars|thumbnail|thumbnails|thumb|photo|photos|video|figure)\b/) || ctx.component === "img")) narrow(["color.border.image"], "image outline");
     if (h(/\bglass\b/) && (role === "background" || role === "border")) narrow(role === "background" ? ["color.glass.bg"] : ["color.glass.border", "color.glass.zone-border"], "glass");
     if (role === "background") {
       if (hover) narrow(["color.fill.hover"], "hover fill");

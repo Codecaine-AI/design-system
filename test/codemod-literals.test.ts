@@ -213,9 +213,10 @@ describe("propose: roles only structure gives", () => {
     expect(row("theme.css", 45, "rgb(174 184 198 / 35%)").proposed).toBe("color.border.default");
   });
 
-  test("only an image or media context takes color.border.image; the same black 10% elsewhere is a generic border", () => {
+  test("only an image context takes color.border.image; the same black 10% elsewhere is a generic border", () => {
     expect(at(css(), "roles.css", 91, "rgba(0, 0, 0, 0.1)")).toMatchObject({ proposed: "color.border.image", method: "role" }); // .thumbnail img outline
     expect(at(css(), "roles.css", 94, "rgba(0, 0, 0, 0.1)").proposed).not.toBe("color.border.image"); // .list-row rule
+    expect(at(css(), "roles.css", 98, "#0000001a").proposed).not.toBe("color.border.image"); // .list-row inside @media: the at-rule is no image
   });
 
   test("placeholder and link need ::placeholder or an a element, not a word", () => {
