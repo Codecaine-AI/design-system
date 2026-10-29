@@ -171,7 +171,7 @@ export function packText(pairs: Pair[], imagesDir: string, verdictsPath: string)
     "One entry per pair.",
     "",
     "```json",
-    JSON.stringify(verdictsSchema(pairs.map((p) => p.id), ["<any rule id above>"]), null, 2),
+    JSON.stringify(verdictsSchema(pairs.map((p) => p.id), rules.map((r) => r.id)), null, 2),
     "```",
     "",
     "Example:",

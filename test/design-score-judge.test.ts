@@ -10,7 +10,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { loadManifest, pairsOf, picked, score, validatePairVerdicts } from "../scripts/design-score/judge-calibrate";
+import { loadManifest, packText, pairsOf, picked, score, validatePairVerdicts } from "../scripts/design-score/judge-calibrate";
 import { judgeRules, judgeRun, refoldRun, STILL_SKIP, validateVerdicts } from "../scripts/design-score/judge";
 import { loadRules } from "../scripts/design-score/rules";
 import type { PageResult, Scorecard } from "../scripts/design-score/types";
@@ -164,6 +164,12 @@ describe("judge calibration", () => {
   const { items } = loadManifest();
   const pairs = pairsOf(items);
   const all = judgeRules(DESIGN_SYSTEM_ROOT).all.map((r) => r.id);
+
+  test("the pack's printed schema accepts every rule id the scorer accepts", () => {
+    const text = packText(pairs, "images", "verdicts.json");
+    const schema = JSON.parse(text.split("## verdicts.json")[1]!.split("```json")[1]!.split("```")[0]!);
+    expect(schema.properties.pairs.additionalProperties.properties.rule.enum).toEqual(all);
+  });
 
   test.each([
     ["AB", "A", 1],
