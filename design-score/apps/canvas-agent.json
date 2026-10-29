@@ -1,0 +1,130 @@
+{
+  "app": "canvas-agent",
+  "name": "Canvas-agent viewer",
+  "repo": "codecaine/core/canvas",
+  "baseUrl": "http://127.0.0.1:47580",
+  "sourceDirs": [
+    "packages/canvas-agent/src/viewer",
+    "packages/canvas-agent/src/viewer-extension"
+  ],
+  "themes": {
+    "light": {
+      "localStorage": {
+        "canvasAgentViewerStyle.v2": "{\"theme\":\"light\"}"
+      },
+      "colorScheme": "light",
+      "assert": "html[data-theme=\"light\"]"
+    },
+    "dark": {
+      "localStorage": {
+        "canvasAgentViewerStyle.v2": "{\"theme\":\"dark\"}"
+      },
+      "colorScheme": "dark",
+      "assert": "html[data-theme=\"dark\"]"
+    }
+  },
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "width": 1024,
+      "height": 768
+    }
+  ],
+  "settleMs": 700,
+  "cap": 6,
+  "motionAllow": [
+    {
+      "name": "ds-shell-sidebar",
+      "selector": ".ds-shell",
+      "props": [
+        "grid-template-columns"
+      ],
+      "reason": "The design-system app shell animates its sidebar column when it collapses (css/layout.css .ds-shell). The shell owns it; allowed by Ford (as in knowledge-system.json)."
+    }
+  ],
+  "pages": [
+    {
+      "id": "traces",
+      "path": "/traces",
+      "waitFor": "p:text-is(\"The agent service is not running.\")",
+      "note": "Traces with the harness down: the viewer's dev proxy points at a dead port, so the page shows its agent-service-not-running notice (apps.json route traces)."
+    },
+    {
+      "id": "config",
+      "path": "/config",
+      "waitFor": "p:text-is(\"The agent service is not running.\")",
+      "note": "Agent config with the harness down (apps.json route config)."
+    },
+    {
+      "id": "traces-style",
+      "path": "/traces?style=open",
+      "waitFor": "#ds-inspector [role=\"tablist\"]",
+      "note": "Traces with the Style inspector open on its Theme tab (apps.json route traces-style)."
+    },
+    {
+      "id": "style-effects",
+      "path": "/traces?style=open",
+      "waitFor": "#ds-inspector [role=\"tablist\"]",
+      "actions": [
+        {
+          "click": "#ds-inspector [role=\"tab\"]:has-text(\"Effects\")"
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "note": "The Style inspector on its Effects tab."
+    },
+    {
+      "id": "style-trace",
+      "path": "/traces?style=open",
+      "waitFor": "#ds-inspector [role=\"tablist\"]",
+      "actions": [
+        {
+          "click": "#ds-inspector [role=\"tab\"]:has-text(\"Trace\")"
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "note": "The Style inspector on its Trace tab."
+    },
+    {
+      "id": "style-layout",
+      "path": "/traces?style=open",
+      "waitFor": "#ds-inspector [role=\"tablist\"]",
+      "actions": [
+        {
+          "click": "#ds-inspector [role=\"tab\"]:has-text(\"Layout\")"
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "note": "The Style inspector on its Layout tab."
+    },
+    {
+      "id": "config-style",
+      "path": "/config?style=open",
+      "waitFor": "#ds-inspector [role=\"tablist\"]",
+      "note": "Agent config with the Style inspector open."
+    },
+    {
+      "id": "sidebar-collapsed",
+      "path": "/traces",
+      "waitFor": "p:text-is(\"The agent service is not running.\")",
+      "actions": [
+        {
+          "click": ".ds-sidebar-toggle"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "note": "Traces with the sidebar collapsed."
+    }
+  ]
+}
