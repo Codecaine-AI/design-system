@@ -339,10 +339,10 @@ export declare const tokens: {
       };
       readonly "size": {
         readonly "code": "13px";
-        readonly "micro": "10px";
+        readonly "micro": "11px";
         readonly "reading": "18px";
         readonly "title": "2.25rem";
-        readonly "ui-2xs": "11px";
+        readonly "ui-2xs": "12px";
         readonly "ui-lg": "14px";
         readonly "ui-md": "13.5px";
         readonly "ui-sm": "13px";
@@ -386,14 +386,14 @@ export declare const tokens: {
       };
     };
     readonly "letter-spacing": {
-      readonly "micro": "0.09em";
-      readonly "micro-wide": "0.14em";
+      readonly "micro": "0.05em";
+      readonly "micro-wide": "0.05em";
       readonly "normal": "0em";
       readonly "title": "-0.02em";
     };
     readonly "line-height": {
       readonly "code": "21px";
-      readonly "reading": 1.45;
+      readonly "reading": 1.5;
       readonly "row": "28px";
       readonly "tight": 1.2;
       readonly "ui": 1.5;
@@ -407,7 +407,7 @@ export declare const tokens: {
         readonly "slow": "260ms";
       };
       readonly "easing": {
-        readonly "decelerate": "ease-out";
+        readonly "decelerate": "cubic-bezier(0, 0, 0.2, 1)";
         readonly "emphasized": "cubic-bezier(0.32, 0.72, 0, 1)";
         readonly "out": "cubic-bezier(0, 0, 0.2, 1)";
         readonly "standard": "ease";
@@ -1055,10 +1055,10 @@ export declare const flat: {
     readonly "font.family.sans": "Inter, ui-sans-serif, system-ui, sans-serif";
     readonly "font.family.serif": "ui-serif, Georgia, 'Times New Roman', serif";
     readonly "font.size.code": "13px";
-    readonly "font.size.micro": "10px";
+    readonly "font.size.micro": "11px";
     readonly "font.size.reading": "18px";
     readonly "font.size.title": "2.25rem";
-    readonly "font.size.ui-2xs": "11px";
+    readonly "font.size.ui-2xs": "12px";
     readonly "font.size.ui-lg": "14px";
     readonly "font.size.ui-md": "13.5px";
     readonly "font.size.ui-sm": "13px";
@@ -1085,12 +1085,12 @@ export declare const flat: {
     readonly "layout.sidebar.width-collapsed": "68px";
     readonly "layout.topbar.height": "72px";
     readonly "layout.topbar.padding-x": "32px";
-    readonly "letter-spacing.micro": "0.09em";
-    readonly "letter-spacing.micro-wide": "0.14em";
+    readonly "letter-spacing.micro": "0.05em";
+    readonly "letter-spacing.micro-wide": "0.05em";
     readonly "letter-spacing.normal": "0em";
     readonly "letter-spacing.title": "-0.02em";
     readonly "line-height.code": "21px";
-    readonly "line-height.reading": 1.45;
+    readonly "line-height.reading": 1.5;
     readonly "line-height.row": "28px";
     readonly "line-height.tight": 1.2;
     readonly "line-height.ui": 1.5;
@@ -1099,7 +1099,7 @@ export declare const flat: {
     readonly "motion.duration.fast": "100ms";
     readonly "motion.duration.large": "400ms";
     readonly "motion.duration.slow": "260ms";
-    readonly "motion.easing.decelerate": "ease-out";
+    readonly "motion.easing.decelerate": "cubic-bezier(0, 0, 0.2, 1)";
     readonly "motion.easing.emphasized": "cubic-bezier(0.32, 0.72, 0, 1)";
     readonly "motion.easing.out": "cubic-bezier(0, 0, 0.2, 1)";
     readonly "motion.easing.standard": "ease";

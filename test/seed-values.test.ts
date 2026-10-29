@@ -145,7 +145,7 @@ const BASE_SEEDS: Array<[path: string, value: string | number]> = [
   ["radius.base", "2px"],
   ["font.size.title", "2.25rem"],
   ["font.size.ui-md", "13.5px"],
-  ["line-height.reading", 1.45],
+  ["line-height.reading", 1.5],
   ["motion.duration.slow", "260ms"],
   ["motion.easing.emphasized", "cubic-bezier(0.32, 0.72, 0, 1)"],
   ["motion.duration.enter", "300ms"],

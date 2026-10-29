@@ -144,8 +144,8 @@ One corner radius app-wide. Every rounded surface uses radius.base; pills use ra
 
 | Token | CSS variable | Type | Value | Description |
 | --- | --- | --- | --- | --- |
-| `font.size.micro` | `--ds-font-size-micro` | dimension | `10px` | Smallest uppercase labels: panel tabs, nav group labels, counts. |
-| `font.size.ui-2xs` | `--ds-font-size-ui-2xs` | dimension | `11px` | Uppercase section labels, compact selects. |
+| `font.size.micro` | `--ds-font-size-micro` | dimension | `11px` | Smallest uppercase labels: panel tabs, nav group labels, counts. |
+| `font.size.ui-2xs` | `--ds-font-size-ui-2xs` | dimension | `12px` | Uppercase section labels, compact selects. |
 | `font.size.ui-xs` | `--ds-font-size-ui-xs` | dimension | `12px` | Panel header labels, line numbers, captions in chrome. |
 | `font.size.ui-sm` | `--ds-font-size-ui-sm` | dimension | `13px` | Dense UI text: notes, field names. |
 | `font.size.code` | `--ds-font-size-code` | dimension | `13px` | Code blocks and mono rows (>= 13px floor). |
@@ -169,7 +169,7 @@ One corner radius app-wide. Every rounded surface uses radius.base; pills use ra
 | --- | --- | --- | --- | --- |
 | `line-height.tight` | `--ds-line-height-tight` | number | `1.2` | Page title. |
 | `line-height.ui` | `--ds-line-height-ui` | number | `1.5` | Default UI line height (Tailwind preflight html line-height). |
-| `line-height.reading` | `--ds-line-height-reading` | number | `1.45` | Document body text and table cells. |
+| `line-height.reading` | `--ds-line-height-reading` | number | `1.5` | Document body text and table cells. |
 | `line-height.code` | `--ds-line-height-code` | dimension | `21px` | Code line box: drives row height, zebra period and annotation overlays (13px / 21px). |
 | `line-height.row` | `--ds-line-height-row` | dimension | `28px` | Single-line list rows: file trees, outline rows. |
 
@@ -179,8 +179,8 @@ One corner radius app-wide. Every rounded surface uses radius.base; pills use ra
 | --- | --- | --- | --- | --- |
 | `letter-spacing.normal` | `--ds-letter-spacing-normal` | dimension | `0em` | Reading text. |
 | `letter-spacing.title` | `--ds-letter-spacing-title` | dimension | `-0.02em` | Page title. |
-| `letter-spacing.micro` | `--ds-letter-spacing-micro` | dimension | `0.09em` | Uppercase micro and section labels. |
-| `letter-spacing.micro-wide` | `--ds-letter-spacing-micro-wide` | dimension | `0.14em` | Uppercase panel tab labels. |
+| `letter-spacing.micro` | `--ds-letter-spacing-micro` | dimension | `0.05em` | Uppercase micro and section labels. |
+| `letter-spacing.micro-wide` | `--ds-letter-spacing-micro-wide` | dimension | `0.05em` | Uppercase panel tab labels. Equals letter-spacing.micro; kept so its readers keep a name. |
 
 #### `motion.duration`
 
@@ -198,7 +198,7 @@ One corner radius app-wide. Every rounded surface uses radius.base; pills use ra
 | --- | --- | --- | --- | --- |
 | `motion.easing.standard` | `--ds-motion-easing-standard` | cubicBezier | `ease` | Default for small state changes. |
 | `motion.easing.emphasized` | `--ds-motion-easing-emphasized` | cubicBezier | `cubic-bezier(0.32, 0.72, 0, 1)` | Panels entering, resizing or sliding. |
-| `motion.easing.decelerate` | `--ds-motion-easing-decelerate` | cubicBezier | `ease-out` | Fades out of a highlight, hover hints appearing. |
+| `motion.easing.decelerate` | `--ds-motion-easing-decelerate` | cubicBezier | `cubic-bezier(0, 0, 0.2, 1)` | Fades out of a highlight, hover hints appearing. |
 | `motion.easing.out` | `--ds-motion-easing-out` | cubicBezier | `cubic-bezier(0, 0, 0.2, 1)` | Enter and exit: a fast start that settles quickly. Also press feedback with motion.scale.press. |
 | `motion.easing.swap` | `--ds-motion-easing-swap` | cubicBezier | `cubic-bezier(0.2, 0, 0, 1)` | Icon cross-fades and state swaps without a motion library. |
 

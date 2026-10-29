@@ -145,9 +145,6 @@ Kept with the mobile part removed: `a11y-hit-target` (drops 44/40), `a11y-input-
 
 Token-level details are in `outputs/token-proposals.md`.
 
-- `line-height.reading` is 1.45. The body floor is 1.5.
-- `letter-spacing.micro` is 0.09em and `micro-wide` is 0.14em. Jakub uses 0.05em on uppercase labels.
-- `font.size.micro` (10px) and `ui-2xs` (11px) are under the 12px floor, so they warn.
-- The `motion.duration` steps are 100, 150 and 260ms. Jakub's size bands are 150, 250 and 350-450ms.
-- There is no image-outline, card-shadow or control-height token. `motion.scale.press` (0.96) is the press scale.
+- `font.size.micro` (11px) is under the 12px floor. An uppercase micro label warns.
+- `motion.duration.slow` is 260ms. Jakub's band for menus and tabs is 250ms.
 - Knowledge System icons are PNG masks, so `ui-icons-svg-not-raster` warns.

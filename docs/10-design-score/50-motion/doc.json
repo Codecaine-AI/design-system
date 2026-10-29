@@ -314,6 +314,44 @@
           [
             [
               {
+                "insert": "--ds-motion-duration-enter",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "300ms",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Content entering: an enter fade, a stagger chunk, an icon cross-fade."
+          ],
+          [
+            [
+              {
+                "insert": "--ds-motion-duration-large",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "400ms",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Modals, drawers and full-height panels opening or closing."
+          ],
+          [
+            [
+              {
                 "insert": "--ds-motion-easing-standard",
                 "attributes": {
                   "code": true
@@ -360,13 +398,51 @@
             ],
             [
               {
-                "insert": "ease-out",
+                "insert": "cubic-bezier(0, 0, 0.2, 1)",
                 "attributes": {
                   "code": true
                 }
               }
             ],
             "Fades out of a highlight, hover hints appearing."
+          ],
+          [
+            [
+              {
+                "insert": "--ds-motion-easing-out",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "cubic-bezier(0, 0, 0.2, 1)",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Enter and exit, and press feedback with the press scale."
+          ],
+          [
+            [
+              {
+                "insert": "--ds-motion-easing-swap",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "cubic-bezier(0.2, 0, 0, 1)",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Icon cross-fades and state swaps without a motion library."
           ],
           [
             [
@@ -464,16 +540,52 @@
           }
         },
         {
-          "insert": " limits are 200, 300 and 450ms, so every token duration passes. The longest token, "
+          "insert": " limits hover and press motion to 200ms, menus to 300ms, and dialogs and large panels to 450ms. "
         },
         {
-          "insert": "--ds-motion-duration-slow",
+          "insert": "fast",
           "attributes": {
             "code": true
           }
         },
         {
-          "insert": ", is 260ms."
+          "insert": " and "
+        },
+        {
+          "insert": "base",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " pass everywhere, "
+        },
+        {
+          "insert": "slow",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "enter",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " pass on menus and larger, and "
+        },
+        {
+          "insert": "large",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " (400ms) passes only on dialogs and large panels."
         }
       ],
       "children": []

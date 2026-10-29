@@ -205,7 +205,7 @@
         "typo-line-height-by-role",
         "15-line-height-by-role"
       ],
-      "notes": "DS line-height.reading is 1.45, under the 1.5 floor. See token proposals.",
+      "notes": "DS line-height.reading is 1.5, on the floor.",
       "check": null
     },
     {
@@ -244,7 +244,7 @@
         "typo-letter-spacing-by-size",
         "15-letter-spacing-by-role"
       ],
-      "notes": "DS uppercase labels use 0.09em and 0.14em. See token proposals.",
+      "notes": "DS uppercase labels use letter-spacing.micro and micro-wide, both 0.05em.",
       "check": null
     },
     {
@@ -482,7 +482,7 @@
         "typo-size-floors",
         "15-min-text-sizes"
       ],
-      "notes": "DS micro (10px) and ui-2xs (11px) sit under the 12px floor; each use warns.",
+      "notes": "DS micro (11px) sits under the 12px floor: an uppercase micro label warns, other micro text fails. ui-2xs is 12px.",
       "check": "R-min-font"
     },
     {

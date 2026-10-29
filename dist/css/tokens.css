@@ -29,10 +29,10 @@
   --ds-font-family-sans: Inter, ui-sans-serif, system-ui, sans-serif;
   --ds-font-family-serif: ui-serif, Georgia, 'Times New Roman', serif;
   --ds-font-size-code: 13px;
-  --ds-font-size-micro: 10px;
+  --ds-font-size-micro: 11px;
   --ds-font-size-reading: 18px;
   --ds-font-size-title: 2.25rem;
-  --ds-font-size-ui-2xs: 11px;
+  --ds-font-size-ui-2xs: 12px;
   --ds-font-size-ui-lg: 14px;
   --ds-font-size-ui-md: 13.5px;
   --ds-font-size-ui-sm: 13px;
@@ -59,12 +59,12 @@
   --ds-layout-sidebar-width-collapsed: 68px;
   --ds-layout-topbar-height: 72px;
   --ds-layout-topbar-padding-x: 32px;
-  --ds-letter-spacing-micro: 0.09em;
-  --ds-letter-spacing-micro-wide: 0.14em;
+  --ds-letter-spacing-micro: 0.05em;
+  --ds-letter-spacing-micro-wide: 0.05em;
   --ds-letter-spacing-normal: 0em;
   --ds-letter-spacing-title: -0.02em;
   --ds-line-height-code: 21px;
-  --ds-line-height-reading: 1.45;
+  --ds-line-height-reading: 1.5;
   --ds-line-height-row: 28px;
   --ds-line-height-tight: 1.2;
   --ds-line-height-ui: 1.5;
@@ -73,7 +73,7 @@
   --ds-motion-duration-fast: 100ms;
   --ds-motion-duration-large: 400ms;
   --ds-motion-duration-slow: 260ms;
-  --ds-motion-easing-decelerate: ease-out;
+  --ds-motion-easing-decelerate: cubic-bezier(0, 0, 0.2, 1);
   --ds-motion-easing-emphasized: cubic-bezier(0.32, 0.72, 0, 1);
   --ds-motion-easing-out: cubic-bezier(0, 0, 0.2, 1);
   --ds-motion-easing-standard: ease;
