@@ -10,8 +10,8 @@
  * Files come from scan-literals' collectFiles (same skips: node_modules, dist, tests, generated files),
  * and comments are stripped with its stripCss/lexJs, so line numbers match the source.
  */
-import { readFileSync } from "node:fs";
-import { extname, relative } from "node:path";
+import { readFileSync, statSync } from "node:fs";
+import { dirname, extname, join, relative, sep } from "node:path";
 
 import { collectFiles, lexJs, scan, stripCss, type Options, type SkipStats } from "../scan-literals";
 import type { CheckResult, RawFinding } from "./types";
@@ -392,12 +392,17 @@ export function runStaticChecks(repo: string, dirs: string[], excludes: string[]
 
   // S-color-literal: scan-literals itself.
   const report = scan(opts);
-  const base = report.roots.length === 1 ? report.roots[0]! : undefined;
+  // Hit paths are relative to the roots' common folder, where a file root counts as its folder.
+  const folders = report.roots.map((r) => (statSync(r).isFile() ? dirname(r) : r).split(sep));
+  const first = folders[0] ?? [];
+  let depth = 0;
+  while (first[depth] !== undefined && folders.every((f) => f[depth] === first[depth])) depth++;
+  const base = first.slice(0, depth).join(sep) || sep;
   for (const file of report.fileReports) {
     for (const hit of file.hits ?? []) {
       const isColor = COLOR_CATEGORIES.has(hit.category) || (hit.category === "twArbitrary" && COLOR_IN_ARBITRARY.test(hit.value));
       if (!isColor || hit.fallback) continue;
-      const abs = base ? `${base}/${file.path}` : file.path;
+      const abs = join(base, file.path);
       all["S-color-literal"]!.push({
         check: "S-color-literal",
         severity: hit.def ? "warn" : "fail",

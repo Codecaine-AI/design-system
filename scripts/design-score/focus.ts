@@ -113,6 +113,15 @@ export async function focusPass(page: any, max = 30): Promise<FocusResult> {
   try {
     await page.evaluate(() => {
       (document.activeElement as HTMLElement | null)?.blur?.();
+      // A blur leaves the Tab starting point at the blurred element, so the first Tab would skip every
+      // control before it. Focusing the body once moves the starting point back to the top of the page.
+      const body = document.body;
+      const had = body.getAttribute("tabindex");
+      body.setAttribute("tabindex", "-1");
+      body.focus({ preventScroll: true });
+      body.blur();
+      if (had === null) body.removeAttribute("tabindex");
+      else body.setAttribute("tabindex", had);
       (window as unknown as { __dsFocus?: Element[] }).__dsFocus = [];
     });
     await page.keyboard.press("Tab");

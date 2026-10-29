@@ -375,14 +375,17 @@ export function probePage(o: ProbeOptions): { findings: ProbeFinding[]; stats: R
     if (min >= 32) continue;
     let band: HitGroup["band"] = min < 24 ? "fail" : "warn-band";
     if (band === "fail") {
-      // Spacing exception: a 24px circle on its center touches no other target.
+      // Spacing exception (WCAG 2.5.8): a 24px circle on its center touches no other target, and
+      // no other undersized target's circle (two such centers under 24px apart).
       const cx = r.left + w / 2;
       const cy = r.top + h / 2;
       const crowded = targetRects.some(({ el: other, r: or }) => {
         if (other === el || other.contains(el) || el.contains(other)) return false;
         const nx = Math.max(or.left, Math.min(cx, or.right));
         const ny = Math.max(or.top, Math.min(cy, or.bottom));
-        return (nx - cx) ** 2 + (ny - cy) ** 2 < 144;
+        if ((nx - cx) ** 2 + (ny - cy) ** 2 < 144) return true;
+        if (Math.min(or.width, or.height) >= 24) return false;
+        return (or.left + or.width / 2 - cx) ** 2 + (or.top + or.height / 2 - cy) ** 2 < 576;
       });
       if (!crowded) band = "spaced";
     }
@@ -567,8 +570,12 @@ export function probePage(o: ProbeOptions): { findings: ProbeFinding[]; stats: R
     if (/flex|grid/.test(s.display)) {
       const rg = px(s.rowGap);
       const cg = px(s.columnGap);
-      if (rg > 0 && !onGrid(rg)) bad.push(`row-gap ${r1(rg)}px`);
-      if (cg > 0 && cg !== rg && !onGrid(cg)) bad.push(`column-gap ${r1(cg)}px`);
+      // One value for both axes is the `gap` shorthand: name it so, since a one-row flex has no row gap to see.
+      if (rg > 0 && rg === cg && !onGrid(rg)) bad.push(`gap ${r1(rg)}px`);
+      else {
+        if (rg > 0 && !onGrid(rg)) bad.push(`row-gap ${r1(rg)}px`);
+        if (cg > 0 && !onGrid(cg)) bad.push(`column-gap ${r1(cg)}px`);
+      }
     }
     if (!bad.length) continue;
     push({
