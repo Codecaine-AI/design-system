@@ -5,6 +5,8 @@
  *   bun run design:score --app <id> [--base-url <url>] [--label <name>] [--pages a,b,docs-*] [--quick]
  *                        [--themes light,dark] [--viewports 1440x900,1024x768] [--jobs 2] [--no-motion] [--no-focus]
  *                        [--no-static] [--config <file>] [--out <dir>] [--root <dir>] [--json]
+ *                        [--judge-pack]
+ *   bun run design:score --app <id> --judge-verdicts <file> [--run <run>]
  *   bun run design:score --app <id> --list-pages
  *   bun run design:score --fixture <check-id>[,<check-id>...] [--root <dir>]
  *
@@ -22,6 +24,13 @@
  * "<app>/latest" and "<app>/previous") and writes an HTML page with both runs' screenshots side by side
  * per page and the score delta per check.
  *
+ * V-judge, the screenshot judge (scripts/design-score/judge.ts), calls no model: an agent judges. --judge-pack
+ * writes <run>/judge/pack.md, which lists the taste rules, the verdicts.json schema and every state screenshot
+ * with no verdict yet, keyed by its hash. The agent writes <run>/judge/verdicts.json. --judge-verdicts <file>
+ * validates it and folds it into the run it sits in (else --run, else <app>/latest): scorecard.json and
+ * report.html, with no browser. Every run carries the verdicts of the app's earlier runs by screenshot hash.
+ * Calibration: bun run design:judge-calibrate.
+ *
  * --fixture runs one check against design-score/fixtures/<check-id>/good.html and bad.html (scripts/design-score/fixture.ts),
  * prints each page's status, and writes shots/good.png and shots/bad.png there with the findings boxed.
  * It exits 1 unless the bad page fails (warns, for a warn-only check) and the good page passes.
@@ -30,13 +39,14 @@
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { basename, isAbsolute, join, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 
 import { cleanupRuns, installSignalHandlers, startApp, validateLoadedRegistry, type RunningApp } from "../lib/app-runner";
 import { pinPlaywright } from "../lib/playwright";
 import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, REGISTRY_PATH, workspaceRoot } from "../lib/registry";
 import { CHECKS } from "./checks";
 import { judgeFixture, runFixture } from "./fixture";
+import { refoldRun } from "./judge";
 import { writeCompare } from "./report";
 import { AREAS } from "./score";
 import { runScore, selectPages } from "./run";
@@ -127,6 +137,24 @@ const config = JSON.parse(readFileSync(configPath, "utf8")) as AppConfig;
 if (config.app !== appId) fail(`${configPath} is for app "${config.app}", not "${appId}"`);
 if (!config.pages?.length) fail(`${configPath} lists no pages`);
 if (!config.themes || !Object.keys(config.themes).length) fail(`${configPath} lists no themes`);
+if (has("--judge-verdicts")) {
+  const file = resolve(flag("--judge-verdicts") ?? fail("--judge-verdicts <file> is required"));
+  if (!existsSync(file)) fail(`no file ${file}`);
+  // <run>/judge/verdicts.json belongs to <run>.
+  const own = resolve(file, "..", "..");
+  const dir = existsSync(join(own, "scorecard.json")) && basename(dirname(file)) === "judge" ? own : runDir(flag("--run") ?? `${appId}/latest`);
+  try {
+    const card = refoldRun(dir, file, DESIGN_SYSTEM_ROOT);
+    const t = card.checkTotals["V-judge"]!;
+    console.log(card.judge.note);
+    console.log(`V-judge pages: ${t.pass} pass, ${t.warn} warn, ${t.fail} fail, ${t["n/a"]} n/a`);
+    console.log(`${card.app}: ${card.score}`);
+    console.log(join(dir, "report.html"));
+  } catch (error) {
+    fail(error instanceof Error ? error.message : String(error));
+  }
+  process.exit(0);
+}
 if (has("--list-pages")) {
   for (const p of config.pages) console.log(`${p.id.padEnd(28)} ${p.path}${p.optional ? "  (optional)" : ""}`);
   process.exit(0);
@@ -187,6 +215,7 @@ try {
     static: !has("--no-static"),
     quiet: has("--json"),
     quick: has("--quick"),
+    judgePack: has("--judge-pack"),
   });
   if (has("--json")) {
     console.log(JSON.stringify({ dir, score: scorecard.score, areas: scorecard.areas, pages: scorecard.pages.map((p) => ({ id: p.id, score: p.score, errors: p.errors.length, ...(p.skipped ? { skipped: p.skipped } : {}), areas: p.areas })), checkTotals: scorecard.checkTotals }, null, 2));
@@ -200,6 +229,7 @@ try {
       console.log(`  ${c.id.padEnd(20)} ${String(t.pass).padStart(5)} ${String(t.warn).padStart(5)} ${String(t.fail).padStart(5)} ${String(t["n/a"]).padStart(5)}`);
     }
     console.log(`\n${join(dir, "report.html")}`);
+    if (scorecard.judge.pack) console.log(`V-judge pack: ${join(dir, scorecard.judge.pack)}`);
   }
   await cleanup();
   process.exit(scorecard.pages.some((p) => p.errors.length) ? 1 : 0);

@@ -1,0 +1,138 @@
+{
+  "judge": {
+    "verdicts": {
+      "good": {
+        "a11y-color-not-only-cue": {
+          "verdict": "pass",
+          "reason": "Each status pairs its colored dot with the word Live or Failed."
+        },
+        "layout-separators-last": {
+          "verdict": "pass",
+          "reason": "Rows are split by faint hairlines inside a tight list where no gap could carry the split."
+        },
+        "layout-static-not-control-shaped": {
+          "verdict": "pass",
+          "reason": "No badge or static element looks like a button."
+        },
+        "layout-importance-order": {
+          "verdict": "pass",
+          "reason": "Each row leads with the app name and ends with its status."
+        },
+        "layout-content-bleeds-controls-float": {
+          "verdict": "pass",
+          "reason": "All text and the list sit inside the page margin."
+        },
+        "typo-no-text-images": {
+          "verdict": "pass",
+          "reason": "All text is live text."
+        },
+        "14-pair-for-contrast": {
+          "verdict": "pass",
+          "reason": "One sans-serif family in two weights, no near-duplicate pairing."
+        },
+        "color-semantic-not-against-meaning": {
+          "verdict": "pass",
+          "reason": "Green marks live deploys and red marks the failed one."
+        },
+        "03-oklch-unintended-hues": {
+          "verdict": "pass",
+          "reason": "No gradient on the screen."
+        },
+        "ui-optical-asymmetric-glyphs": {
+          "verdict": "pass",
+          "reason": "No asymmetric icon on the screen."
+        },
+        "ui-shadow-for-depth": {
+          "verdict": "pass",
+          "reason": "The list border is structural on a plain page, not a depth border over an image."
+        },
+        "20-avatar-outline-matches-ui": {
+          "verdict": "pass",
+          "reason": "No avatar on the screen."
+        },
+        "ui-icon-outline-fill-states": {
+          "verdict": "pass",
+          "reason": "No icon with states on the screen."
+        },
+        "13-low-cognitive-load": {
+          "verdict": "pass",
+          "reason": "One heading and a three-row list, simple and predictable."
+        },
+        "copy-requirements-before-input": {
+          "verdict": "pass",
+          "reason": "No input on the screen."
+        },
+        "break-content-shape": {
+          "verdict": "pass",
+          "reason": "Short Latin names only, nothing that stresses content shape."
+        }
+      },
+      "bad": {
+        "a11y-color-not-only-cue": {
+          "verdict": "fail",
+          "reason": "Each status is a green or red dot with no word or icon, so color alone tells Live from Failed."
+        },
+        "layout-separators-last": {
+          "verdict": "pass",
+          "reason": "Rows are split by faint hairlines inside a tight list where no gap could carry the split."
+        },
+        "layout-static-not-control-shaped": {
+          "verdict": "pass",
+          "reason": "No badge or static element looks like a button."
+        },
+        "layout-importance-order": {
+          "verdict": "pass",
+          "reason": "Each row leads with the app name and ends with its status."
+        },
+        "layout-content-bleeds-controls-float": {
+          "verdict": "pass",
+          "reason": "All text and the list sit inside the page margin."
+        },
+        "typo-no-text-images": {
+          "verdict": "pass",
+          "reason": "All text is live text."
+        },
+        "14-pair-for-contrast": {
+          "verdict": "pass",
+          "reason": "One sans-serif family in two weights, no near-duplicate pairing."
+        },
+        "color-semantic-not-against-meaning": {
+          "verdict": "pass",
+          "reason": "Green marks live deploys and red marks the failed one."
+        },
+        "03-oklch-unintended-hues": {
+          "verdict": "pass",
+          "reason": "No gradient on the screen."
+        },
+        "ui-optical-asymmetric-glyphs": {
+          "verdict": "pass",
+          "reason": "No asymmetric icon on the screen."
+        },
+        "ui-shadow-for-depth": {
+          "verdict": "pass",
+          "reason": "The list border is structural on a plain page, not a depth border over an image."
+        },
+        "20-avatar-outline-matches-ui": {
+          "verdict": "pass",
+          "reason": "No avatar on the screen."
+        },
+        "ui-icon-outline-fill-states": {
+          "verdict": "pass",
+          "reason": "No icon with states on the screen."
+        },
+        "13-low-cognitive-load": {
+          "verdict": "pass",
+          "reason": "One heading and a three-row list, simple and predictable."
+        },
+        "copy-requirements-before-input": {
+          "verdict": "pass",
+          "reason": "No input on the screen."
+        },
+        "break-content-shape": {
+          "verdict": "pass",
+          "reason": "Short Latin names only, nothing that stresses content shape."
+        }
+      }
+    }
+  }
+}

@@ -19,6 +19,7 @@ import { CHECKS } from "./checks";
 import { markPng } from "./crop";
 import { runScore } from "./run";
 import { decodePng } from "../lib/png";
+import { refoldRun, type RuleVerdict } from "./judge";
 import type { AppConfig, CheckStatus, Finding, PageSpec, ThemeSpec } from "./types";
 
 export type Variant = "good" | "bad";
@@ -33,6 +34,8 @@ export interface FixtureSpec {
   page?: Pick<PageSpec, "waitFor" | "actions" | "settleMs" | "shiftWatch">;
   /** App config fields (R-align-near-miss handles, R-state-shift shift.open, M-layout-props motionAllow). */
   config?: Pick<AppConfig, "handles" | "ignore" | "shift" | "motionAllow" | "settleMs">;
+  /** V-judge: the verdicts an agent gave each variant's screenshot, by rule id. They are keyed to the run's hashes and folded in. */
+  judge?: { verdicts: Record<Variant, Record<string, RuleVerdict>> };
 }
 
 export interface FixtureResult {
@@ -134,7 +137,7 @@ export async function runFixture(checkId: string, opts: FixtureRunOptions): Prom
       mkdirSync(configDir, { recursive: true });
       const configPath = join(configDir, `config-${label}.json`);
       writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n");
-      const { dir: runDir, scorecard } = await runScore({
+      const run = await runScore({
         root: opts.root,
         designSystem: opts.designSystem,
         configPath,
@@ -151,6 +154,16 @@ export async function runFixture(checkId: string, opts: FixtureRunOptions): Prom
         static: isStatic,
         quiet: true,
       });
+      const runDir = run.dir;
+      let scorecard = run.scorecard;
+      if (checkId === "V-judge" && spec.judge) {
+        // The verdicts go in as an agent's would: verdicts.json keyed by this run's screenshot hashes.
+        const shots = Object.fromEntries(scorecard.judge.shots.map((s) => [s.hash, spec.judge!.verdicts[s.page as Variant]]));
+        const file = join(runDir, "judge", "verdicts.json");
+        mkdirSync(join(runDir, "judge"), { recursive: true });
+        writeFileSync(file, JSON.stringify({ version: 1, shots }, null, 2) + "\n");
+        scorecard = refoldRun(runDir, file, opts.designSystem);
+      }
       for (const page of scorecard.pages) {
         const variant = page.id as Variant;
         const pc = page.checks[checkId] ?? { status: "n/a" as const, fails: 0, warns: 0, cut: 0 };

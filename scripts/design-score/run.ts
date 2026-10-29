@@ -19,7 +19,7 @@ import { loadRuleMap } from "./rules";
 import { appAreas, appScore, checkTotals, markNa, pageAreas, pageScore, SCORING, statusOf, tally } from "./score";
 import { keepScroll, stateShiftPass, watchAfter, watchBefore, type ShiftBox } from "./state-shift";
 import { runStaticChecks } from "./static-checks";
-import { judgeStub } from "./judge";
+import { judgeRun } from "./judge";
 import { decodePng } from "../lib/png";
 import type { Action, AllowedFinding, AppConfig, Box, Finding, PageCheck, PageResult, PageSpec, RawFinding, Scorecard, Shot, ThemeSpec } from "./types";
 
@@ -41,6 +41,8 @@ export interface RunOptions {
   quiet: boolean;
   /** One theme (the first) and one viewport (the first): for fast hill-climbing. */
   quick?: boolean;
+  /** V-judge: write judge/pack.md for an agent to judge the state screenshots. */
+  judgePack?: boolean;
 }
 
 /** Page ids picked by --pages: exact ids, or globs with `*` (docs-*). Unknown exact ids throw. */
@@ -469,8 +471,8 @@ export async function runScore(opts: RunOptions): Promise<{ dir: string; scoreca
     }
     for (const c of CHECKS) {
       if (checks[c.id]) continue;
-      if (skip.has(c.id)) markNa(checks, c.id, spec.skipReason ?? "skipped by the page config");
-      else if (c.id === "V-judge") markNa(checks, c.id, "not run in this version");
+      if (skip.has(c.id)) checks[c.id] = { status: "n/a", fails: 0, warns: 0, cut: 0, note: spec.skipReason ?? "skipped by the page config", skipped: true };
+      else if (c.id === "V-judge") markNa(checks, c.id, "not judged");
       else if (c.id === "R-axe" && !axe) markNa(checks, c.id, "axe-core not found");
       else if (c.layer === "static") markNa(checks, c.id, "no sourceDirs, or --no-static");
       else if (c.layer === "motion" && !opts.motion) markNa(checks, c.id, "--no-motion");
@@ -537,8 +539,10 @@ export async function runScore(opts: RunOptions): Promise<{ dir: string; scoreca
     pages: results,
     findings,
     allowed: allowedAll,
-    judge: judgeStub(results),
+    judge: { shots: [], rules: 0, stale: [], pack: null, note: "" },
   };
+  // V-judge last, over the state screenshots: the verdicts carried from earlier runs, and the pack.
+  judgeRun(scorecard, dir, opts.designSystem, { pack: opts.judgePack });
   writeFileSync(join(dir, "scorecard.json"), JSON.stringify(scorecard, null, 2) + "\n");
   writeReport(dir, scorecard, opts.designSystem);
   return { dir, scorecard };

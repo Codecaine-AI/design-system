@@ -1,0 +1,31 @@
+<!doctype html>
+<!-- V-judge, good: each status shows a colored dot and a word (Live, Failed), so color is not the only cue (rule a11y-color-not-only-cue). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>V-judge: good</title>
+<link rel="stylesheet" href="../../../css/fonts.css">
+<link rel="stylesheet" href="../../../dist/css/tokens.css">
+<style>
+  body { margin: 0; padding: var(--ds-space-6); background: var(--ds-color-surface-page); color: var(--ds-color-text-body); font-family: var(--ds-font-family-sans); }
+  h2 { margin: 0 0 var(--ds-space-2); font-size: var(--ds-font-size-ui-lg); font-weight: var(--ds-font-weight-semibold); color: var(--ds-color-text-ink); }
+  ul { margin: 0; padding: 0; list-style: none; width: calc(var(--ds-space-16) * 6); border: 1px solid var(--ds-color-border-default); border-radius: var(--ds-radius-base); background: var(--ds-color-surface-panel); }
+  li { display: flex; align-items: center; justify-content: space-between; gap: var(--ds-space-2); padding: var(--ds-space-2) var(--ds-space-3); font-size: var(--ds-font-size-ui-md); }
+  li + li { border-top: 1px solid var(--ds-color-border-subtle); }
+  .status { display: inline-flex; align-items: center; gap: var(--ds-space-1-5); font-size: var(--ds-font-size-ui-sm); }
+  .dot { width: var(--ds-space-2); height: var(--ds-space-2); border-radius: var(--ds-radius-pill); }
+  .ok { color: var(--ds-color-status-success-text); }
+  .ok .dot { background: var(--ds-color-status-success-solid); }
+  .bad { color: var(--ds-color-status-danger-text); }
+  .bad .dot { background: var(--ds-color-status-danger-solid); }
+</style>
+</head>
+<body>
+  <h2>Deploys</h2>
+  <ul>
+    <li><span>Docs hub</span><span class="status ok"><span class="dot"></span>Live</span></li>
+    <li><span>Design system</span><span class="status bad"><span class="dot"></span>Failed</span></li>
+    <li><span>Knowledge app</span><span class="status ok"><span class="dot"></span>Live</span></li>
+  </ul>
+</body>
+</html>
