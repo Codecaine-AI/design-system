@@ -35,6 +35,7 @@
   /* borders (border-*) */
   --border-color-rule: var(--ds-color-border-default);
   --border-color-guide: var(--ds-color-border-guide);
+  --border-color-rule-image: var(--ds-color-border-image);
   --border-color-rule-strong: var(--ds-color-border-strong);
   --border-color-rule-subtle: var(--ds-color-border-subtle);
 
@@ -254,16 +255,21 @@
   --tracking-title: var(--ds-letter-spacing-title);
 
   /* shadows */
+  --shadow-card: var(--ds-shadow-card);
+  --shadow-card-hover: var(--ds-shadow-card-hover);
   --shadow-dialog: var(--ds-shadow-dialog);
   --shadow-glass: var(--ds-shadow-glass);
 
   /* blur */
   --blur-glass: var(--ds-blur-glass);
+  --blur-motion: var(--ds-blur-motion);
 
   /* easing */
   --ease-decelerate: var(--ds-motion-easing-decelerate);
   --ease-emphasized: var(--ds-motion-easing-emphasized);
+  --ease-out: var(--ds-motion-easing-out);
   --ease-standard: var(--ds-motion-easing-standard);
+  --ease-swap: var(--ds-motion-easing-swap);
 
   /* z-index */
   --z-index-overlay: var(--ds-z-overlay);
@@ -273,6 +279,9 @@
   --z-index-top: var(--ds-z-top);
 
   /* layout */
+  --height-control-lg: var(--ds-control-height-lg);
+  --height-control-md: var(--ds-control-height-md);
+  --height-control-sm: var(--ds-control-height-sm);
   --padding-content-bottom: var(--ds-layout-content-padding-bottom);
   --padding-content-top: var(--ds-layout-content-padding-top);
   --padding-content-x: var(--ds-layout-content-padding-x);

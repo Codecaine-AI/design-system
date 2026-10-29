@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- R-min-font, bad: the meta line is 11px (--ds-font-size-ui-2xs), and the uppercase status label is 10px (--ds-font-size-micro). -->
+<!-- R-min-font, bad: the meta line and the uppercase status label are 11px (--ds-font-size-micro). Mixed-case text under 12px fails; the uppercase label only warns. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -15,8 +15,8 @@
   .title { color: var(--ds-color-text-ink); }
   .meta { color: var(--ds-color-text-muted); }
   .label { text-transform: uppercase; letter-spacing: 0.04em; font-weight: var(--ds-font-weight-semibold); color: var(--ds-color-text-secondary); }
-  /* An 11px meta line fails. A 10px uppercase label warns. */
-  .meta { font-size: var(--ds-font-size-ui-2xs); }
+  /* An 11px meta line fails. An 11px uppercase label warns. */
+  .meta { font-size: var(--ds-font-size-micro); }
   .label { font-size: var(--ds-font-size-micro); }
 </style>
 </head>

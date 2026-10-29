@@ -1,0 +1,10 @@
+{
+  "control": {
+    "height": {
+      "$description": "Heights of buttons, inputs, selects and toggles. Aliases of the space steps.",
+      "sm": { "$type": "dimension", "$value": "{space.6}", "$description": "Small controls: inline row actions, icon buttons inside rows." },
+      "md": { "$type": "dimension", "$value": "{space.7}", "$description": "Default controls: buttons and inputs on a row, matching the 28px row height." },
+      "lg": { "$type": "dimension", "$value": "{space.8}", "$description": "Large controls: header strip actions, the sidebar toggle." }
+    }
+  }
+}

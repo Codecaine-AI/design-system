@@ -186,6 +186,11 @@ function says(ctx: Context, re: RegExp, raw = false): boolean {
   return re.test(norm(ctx.ownHints)) || ctx.chain.some((p) => selectorBranches(p).every((b) => re.test(norm(b))));
 }
 
+/** Border tokens a generic border may take: color.border.image outlines media only, so only an image context narrows to it. */
+function generalBorders(data: TokenData): string[] {
+  return byPrefix(data, "color.border").filter((p) => p !== "color.border.image");
+}
+
 function genericFamily(data: TokenData, role: PropRole, onSolid: boolean): Family | null {
   const text = byPrefix(data, "color.text").filter((p) => p !== "color.text.faint" && (onSolid || p !== "color.text.on-solid"));
   switch (role) {
@@ -194,11 +199,11 @@ function genericFamily(data: TokenData, role: PropRole, onSolid: boolean): Famil
     case "background":
       return { paths: [...byPrefix(data, "color.surface", "color.fill"), "color.accent"], label: "background (surface, fill, accent)", strict: true };
     case "border":
-      return { paths: [...byPrefix(data, "color.border"), "color.accent"], label: "border", strict: true };
+      return { paths: [...generalBorders(data), "color.accent"], label: "border", strict: true };
     case "svgFill":
-      return { paths: [...text, ...byPrefix(data, "color.border", "color.surface", "color.fill"), "color.accent"], label: "SVG fill", strict: true };
+      return { paths: [...text, ...generalBorders(data), ...byPrefix(data, "color.surface", "color.fill"), "color.accent"], label: "SVG fill", strict: true };
     case "svgStroke":
-      return { paths: [...byPrefix(data, "color.border"), ...text, "color.accent"], label: "SVG stroke", strict: true };
+      return { paths: [...generalBorders(data), ...text, "color.accent"], label: "SVG stroke", strict: true };
     case "accent":
       return { paths: ["color.accent"], label: "accent-color", definitive: true };
     default:
@@ -334,6 +339,7 @@ function decideFamily(data: TokenData, ctx: Context, role: PropRole, ringShadow:
   // (`.overlay .dialog`) is a surface, not the scrim.
   if (role === "background" && h(/\b(backdrop|scrim|overlay)\b/) && literal.a < 0.99) narrow(["color.backdrop"], "backdrop", { terminal: true });
   else {
+    if (role === "border" && (h(/\b(img|image|images|avatar|avatars|thumbnail|thumbnails|thumb|photo|photos|video|figure)\b/) || ctx.component === "img")) narrow(["color.border.image"], "image outline");
     if (h(/\bglass\b/) && (role === "background" || role === "border")) narrow(role === "background" ? ["color.glass.bg"] : ["color.glass.border", "color.glass.zone-border"], "glass");
     if (role === "background") {
       if (hover) narrow(["color.fill.hover"], "hover fill");
@@ -483,7 +489,7 @@ function nearestPool(data: TokenData, where: Allow, role: PropRole, ctx: Context
   if (role === "text") return [...byPrefix(data, "color.text", "color.link"), ...byPrefix(data, ...hues).filter((p) => p.endsWith(".text"))].filter((p) => onSolid || p !== "color.text.on-solid");
   const scrim = says(ctx, /\b(scrim|scrims|overlay|overlays|backdrop|backdrops|modal|modals)\b/);
   return byPrefix(data, "color.surface", "color.text", "color.border", "color.fill", "color.accent", "color.link", ...(scrim ? ["color.backdrop"] : []), ...hues)
-    .filter((p) => !p.endsWith(".on-solid") && tokenAllowed(p, where));
+    .filter((p) => !p.endsWith(".on-solid") && p !== "color.border.image" && tokenAllowed(p, where));
 }
 
 /**

@@ -7,7 +7,8 @@ export const defaultTheme = "light";
 export const tokens = {
   "base": {
     "blur": {
-      "glass": "14px"
+      "glass": "14px",
+      "motion": "4px"
     },
     "border": {
       "width": {
@@ -16,6 +17,13 @@ export const tokens = {
         "none": "0px",
         "rail": "3px",
         "ring": "1.5px"
+      }
+    },
+    "control": {
+      "height": {
+        "lg": "32px",
+        "md": "28px",
+        "sm": "24px"
       }
     },
     "focus": {
@@ -32,10 +40,10 @@ export const tokens = {
       },
       "size": {
         "code": "13px",
-        "micro": "10px",
+        "micro": "11px",
         "reading": "18px",
         "title": "2.25rem",
-        "ui-2xs": "11px",
+        "ui-2xs": "12px",
         "ui-lg": "14px",
         "ui-md": "13.5px",
         "ui-sm": "13px",
@@ -79,14 +87,14 @@ export const tokens = {
       }
     },
     "letter-spacing": {
-      "micro": "0.09em",
-      "micro-wide": "0.14em",
+      "micro": "0.05em",
+      "micro-wide": "0.05em",
       "normal": "0em",
       "title": "-0.02em"
     },
     "line-height": {
       "code": "21px",
-      "reading": 1.45,
+      "reading": 1.5,
       "row": "28px",
       "tight": 1.2,
       "ui": 1.5
@@ -94,13 +102,17 @@ export const tokens = {
     "motion": {
       "duration": {
         "base": "150ms",
+        "enter": "300ms",
         "fast": "100ms",
+        "large": "400ms",
         "slow": "260ms"
       },
       "easing": {
-        "decelerate": "ease-out",
+        "decelerate": "cubic-bezier(0, 0, 0.2, 1)",
         "emphasized": "cubic-bezier(0.32, 0.72, 0, 1)",
-        "standard": "ease"
+        "out": "cubic-bezier(0, 0, 0.2, 1)",
+        "standard": "ease",
+        "swap": "cubic-bezier(0.2, 0, 0, 1)"
       },
       "scale": {
         "press": 0.96
@@ -168,6 +180,7 @@ export const tokens = {
       "border": {
         "default": "#e6e5e3",
         "guide": "color-mix(in srgb, #9b9a97 45%, #e6e5e3)",
+        "image": "#0000001a",
         "strong": "color-mix(in srgb, #e6e5e3 70%, #9b9a97 30%)",
         "subtle": "#efeeec"
       },
@@ -422,6 +435,8 @@ export const tokens = {
       }
     },
     "shadow": {
+      "card": "0 0 0 1px #0000000f, 0 1px 2px -1px #0000000f, 0 2px 4px 0 #0000000a",
+      "card-hover": "0 0 0 1px #00000014, 0 1px 2px -1px #00000014, 0 2px 4px 0 #0000000f",
       "dialog": "0 20px 80px #00000044",
       "glass": "0 10px 32px rgba(30, 22, 60, 0.12), 0 1px 3px rgba(0, 0, 0, 0.07)"
     }
@@ -459,6 +474,7 @@ export const tokens = {
       "border": {
         "default": "#3d444d",
         "guide": "color-mix(in srgb, #656c76 45%, #3d444d)",
+        "image": "#ffffff1a",
         "strong": "color-mix(in srgb, #3d444d 70%, #656c76 30%)",
         "subtle": "#262c36"
       },
@@ -713,6 +729,8 @@ export const tokens = {
       }
     },
     "shadow": {
+      "card": "0 0 0 1px #ffffff14",
+      "card-hover": "0 0 0 1px #ffffff1f",
       "dialog": "0 20px 80px #00000044",
       "glass": "0 10px 32px rgba(0, 0, 0, 0.5)"
     }
@@ -723,21 +741,25 @@ export const tokens = {
 export const flat = {
   "base": {
     "blur.glass": "14px",
+    "blur.motion": "4px",
     "border.width.focus": "2px",
     "border.width.hairline": "1px",
     "border.width.none": "0px",
     "border.width.rail": "3px",
     "border.width.ring": "1.5px",
+    "control.height.lg": "32px",
+    "control.height.md": "28px",
+    "control.height.sm": "24px",
     "focus.ring.offset": "2px",
     "font.family.mono": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
     "font.family.mono-system": "ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace",
     "font.family.sans": "Inter, ui-sans-serif, system-ui, sans-serif",
     "font.family.serif": "ui-serif, Georgia, 'Times New Roman', serif",
     "font.size.code": "13px",
-    "font.size.micro": "10px",
+    "font.size.micro": "11px",
     "font.size.reading": "18px",
     "font.size.title": "2.25rem",
-    "font.size.ui-2xs": "11px",
+    "font.size.ui-2xs": "12px",
     "font.size.ui-lg": "14px",
     "font.size.ui-md": "13.5px",
     "font.size.ui-sm": "13px",
@@ -764,21 +786,25 @@ export const flat = {
     "layout.sidebar.width-collapsed": "68px",
     "layout.topbar.height": "72px",
     "layout.topbar.padding-x": "32px",
-    "letter-spacing.micro": "0.09em",
-    "letter-spacing.micro-wide": "0.14em",
+    "letter-spacing.micro": "0.05em",
+    "letter-spacing.micro-wide": "0.05em",
     "letter-spacing.normal": "0em",
     "letter-spacing.title": "-0.02em",
     "line-height.code": "21px",
-    "line-height.reading": 1.45,
+    "line-height.reading": 1.5,
     "line-height.row": "28px",
     "line-height.tight": 1.2,
     "line-height.ui": 1.5,
     "motion.duration.base": "150ms",
+    "motion.duration.enter": "300ms",
     "motion.duration.fast": "100ms",
+    "motion.duration.large": "400ms",
     "motion.duration.slow": "260ms",
-    "motion.easing.decelerate": "ease-out",
+    "motion.easing.decelerate": "cubic-bezier(0, 0, 0.2, 1)",
     "motion.easing.emphasized": "cubic-bezier(0.32, 0.72, 0, 1)",
+    "motion.easing.out": "cubic-bezier(0, 0, 0.2, 1)",
     "motion.easing.standard": "ease",
+    "motion.easing.swap": "cubic-bezier(0.2, 0, 0, 1)",
     "motion.scale.press": 0.96,
     "radius.base": "2px",
     "radius.none": "0px",
@@ -828,6 +854,7 @@ export const flat = {
     "color.blue.text": "#0b6e99",
     "color.border.default": "#e6e5e3",
     "color.border.guide": "color-mix(in srgb, #9b9a97 45%, #e6e5e3)",
+    "color.border.image": "#0000001a",
     "color.border.strong": "color-mix(in srgb, #e6e5e3 70%, #9b9a97 30%)",
     "color.border.subtle": "#efeeec",
     "color.category.1.soft": "#ddebf1",
@@ -1005,6 +1032,8 @@ export const flat = {
     "color.yellow.soft": "#fbf3db",
     "color.yellow.solid": "#dfab01",
     "color.yellow.text": "#805f01",
+    "shadow.card": "0 0 0 1px #0000000f, 0 1px 2px -1px #0000000f, 0 2px 4px 0 #0000000a",
+    "shadow.card-hover": "0 0 0 1px #00000014, 0 1px 2px -1px #00000014, 0 2px 4px 0 #0000000f",
     "shadow.dialog": "0 20px 80px #00000044",
     "shadow.glass": "0 10px 32px rgba(30, 22, 60, 0.12), 0 1px 3px rgba(0, 0, 0, 0.07)"
   },
@@ -1033,6 +1062,7 @@ export const flat = {
     "color.blue.text": "#4493f8",
     "color.border.default": "#3d444d",
     "color.border.guide": "color-mix(in srgb, #656c76 45%, #3d444d)",
+    "color.border.image": "#ffffff1a",
     "color.border.strong": "color-mix(in srgb, #3d444d 70%, #656c76 30%)",
     "color.border.subtle": "#262c36",
     "color.category.1.soft": "color-mix(in srgb, #4493f8 13%, #151b23)",
@@ -1210,6 +1240,8 @@ export const flat = {
     "color.yellow.soft": "color-mix(in srgb, #d29922 13%, #151b23)",
     "color.yellow.solid": "#d29922",
     "color.yellow.text": "#d29922",
+    "shadow.card": "0 0 0 1px #ffffff14",
+    "shadow.card-hover": "0 0 0 1px #ffffff1f",
     "shadow.dialog": "0 20px 80px #00000044",
     "shadow.glass": "0 10px 32px rgba(0, 0, 0, 0.5)"
   }

@@ -31,6 +31,7 @@ const color = (value) => ({ opacityVariable, opacityValue } = {}) => {
 const blur = {
   none: "",
   glass: "var(--ds-blur-glass)",
+  motion: "var(--ds-blur-motion)",
 };
 
 const backgroundColor = {
@@ -301,6 +302,8 @@ module.exports = {
     },
     boxShadow: {
       none: "none",
+      card: "var(--ds-shadow-card)",
+      "card-hover": "var(--ds-shadow-card-hover)",
       dialog: "var(--ds-shadow-dialog)",
       glass: "var(--ds-shadow-glass)",
     },
@@ -314,7 +317,9 @@ module.exports = {
       linear: "linear",
       decelerate: "var(--ds-motion-easing-decelerate)",
       emphasized: "var(--ds-motion-easing-emphasized)",
+      out: "var(--ds-motion-easing-out)",
       standard: "var(--ds-motion-easing-standard)",
+      swap: "var(--ds-motion-easing-swap)",
     },
     extend: {
       backgroundColor,
@@ -330,6 +335,7 @@ module.exports = {
       borderColor: {
         rule: color("var(--ds-color-border-default)"),
         guide: color("var(--ds-color-border-guide)"),
+        "rule-image": color("var(--ds-color-border-image)"),
         "rule-strong": color("var(--ds-color-border-strong)"),
         "rule-subtle": color("var(--ds-color-border-subtle)"),
       },
@@ -353,6 +359,9 @@ module.exports = {
       width: container,
       minWidth: container,
       height: {
+        "control-lg": "var(--ds-control-height-lg)",
+        "control-md": "var(--ds-control-height-md)",
+        "control-sm": "var(--ds-control-height-sm)",
         "sidebar-item": "var(--ds-layout-sidebar-item-height)",
         "sidebar-subitem": "var(--ds-layout-sidebar-subitem-height)",
         topbar: "var(--ds-layout-topbar-height)",

@@ -7,7 +7,7 @@ export function Widget() {
       style={{ padding: cssVar("space.2"), color: cssVar("color.nope") }}
     >
       <span style={{ transition: "opacity 150ms ease-out" }}>fades</span>
-      <span className="transition ease-out">eases</span>
+      <span className="transition ease-in ease-out">eases</span>
     </div>
   );
 }

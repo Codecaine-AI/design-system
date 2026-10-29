@@ -123,16 +123,7 @@
       "props": {},
       "text": [
         {
-          "insert": "Text under 12px fails. This includes text set with the design system's own "
-        },
-        {
-          "insert": "--ds-font-size-ui-2xs",
-          "attributes": {
-            "code": true
-          }
-        },
-        {
-          "insert": " (11px) and "
+          "insert": "Text under 12px fails. This includes mixed-case text set with the design system's own "
         },
         {
           "insert": "--ds-font-size-micro",
@@ -141,7 +132,7 @@
           }
         },
         {
-          "insert": " (10px)."
+          "insert": " (11px)."
         }
       ],
       "children": []
@@ -550,16 +541,7 @@
       "props": {},
       "text": [
         {
-          "insert": "The bad page sets the meta line to "
-        },
-        {
-          "insert": "--ds-font-size-ui-2xs",
-          "attributes": {
-            "code": true
-          }
-        },
-        {
-          "insert": " (11px) and the label to "
+          "insert": "The bad page sets the meta line and the label to "
         },
         {
           "insert": "--ds-font-size-micro",
@@ -568,7 +550,7 @@
           }
         },
         {
-          "insert": " (10px). The good page sets both to "
+          "insert": " (11px). The good page sets both to "
         },
         {
           "insert": "--ds-font-size-ui-xs",
@@ -597,7 +579,7 @@
           {
             "src": "./assets/images/bad.png",
             "heading": "Bad: fail",
-            "alt": "The same rows with smaller type. One magenta box marks the 11px meta line, and another marks the 10px LIVE label.",
+            "alt": "The same rows with smaller type. One magenta box marks the 11px meta line, and another marks the 11px LIVE label.",
             "caption": "bad.html, 1 fail and 1 warn finding"
           }
         ]
@@ -784,7 +766,13 @@
       "props": {},
       "text": [
         {
-          "insert": "The rule's note says each use of "
+          "insert": "micro",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " (11px) is the only design-system size under the floor. An uppercase "
         },
         {
           "insert": "micro",
@@ -793,16 +781,16 @@
           }
         },
         {
-          "insert": " and "
+          "insert": " label warns, and mixed-case "
         },
         {
-          "insert": "ui-2xs",
+          "insert": "micro",
           "attributes": {
             "code": true
           }
         },
         {
-          "insert": " warns. The check fails mixed-case text at those sizes."
+          "insert": " text fails."
         }
       ],
       "children": []

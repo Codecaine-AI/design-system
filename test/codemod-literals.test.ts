@@ -83,7 +83,7 @@ describe("propose: role first", () => {
     ["theme.css", 16, "#f9f9f9", "color.surface.sidebar", "var(--ds-color-surface-sidebar)"], // .sidebar
     ["theme.css", 20, "#c62121", "color.status.danger.text", "var(--ds-color-status-danger-text)"], // .error-text
     ["theme.css", 24, "#245a81", "color.link", "var(--ds-color-link)"], // a.doc-link
-    ["theme.css", 29, "11px", "font.size.ui-2xs", "var(--ds-font-size-ui-2xs)"],
+    ["theme.css", 29, "11px", "font.size.micro", "var(--ds-font-size-micro)"],
     ["theme.css", 30, '"SF Mono", Menlo, monospace', "font.family.mono", "var(--ds-font-family-mono)"],
     ["theme.css", 34, "999px", "radius.pill", "var(--ds-radius-pill)"],
     ["theme.css", 39, "6px", "radius.base", "var(--ds-radius-base)"],
@@ -163,7 +163,7 @@ describe("propose: nearest color", () => {
 describe("propose: Tailwind classes", () => {
   test.each([
     [4, "w-[320px]", "w-80"],
-    [4, "text-[11px]", "text-ui-2xs"],
+    [4, "text-[11px]", "text-micro"],
     [4, "rounded-[6px]", "rounded"],
     [4, "bg-[#fdfdfd]", "bg-page"],
     [4, "aspect-[16/10]", "aspect-16/10"],
@@ -172,7 +172,7 @@ describe("propose: Tailwind classes", () => {
     [5, "bg-white/95", "bg-page/95"], // same base color: the opacity modifier stays
     [5, "border-black/10", "border-rule"], // matched as rendered: the modifier goes
     [6, "bg-[#f2f2f1]", "bg-hover"], // hover: variant
-    [21, "text-[11px]", "text-ui-2xs"], // !text-[11px]: the leading ! stays outside the literal
+    [21, "text-[11px]", "text-micro"], // !text-[11px]: the leading ! stays outside the literal
     [21, "bg-[#fdfdfd]!", "bg-page!"], // v4 trailing important carries over
   ])("widgets.tsx:%i %s -> %s", (line, literal, replacement) => {
     expect(row("widgets.tsx", line, literal).replacement).toBe(replacement);
@@ -211,6 +211,12 @@ describe("propose: roles only structure gives", () => {
     expect(ring.proposed).toBe("color.focus-ring");
     expect(ring.why).toMatch(/^host contract: --ring is color\.focus-ring/);
     expect(row("theme.css", 45, "rgb(174 184 198 / 35%)").proposed).toBe("color.border.default");
+  });
+
+  test("only an image context takes color.border.image; the same black 10% elsewhere is a generic border", () => {
+    expect(at(css(), "roles.css", 91, "rgba(0, 0, 0, 0.1)")).toMatchObject({ proposed: "color.border.image", method: "role" }); // .thumbnail img outline
+    expect(at(css(), "roles.css", 94, "rgba(0, 0, 0, 0.1)").proposed).not.toBe("color.border.image"); // .list-row rule
+    expect(at(css(), "roles.css", 98, "#0000001a").proposed).not.toBe("color.border.image"); // .list-row inside @media: the at-rule is no image
   });
 
   test("placeholder and link need ::placeholder or an a element, not a word", () => {

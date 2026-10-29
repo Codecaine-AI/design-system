@@ -87,3 +87,14 @@ html:not([data-theme="dark"]) .note {
 .field {
   background: var(--input-bg);
 }
+.thumbnail img {
+  outline: 1px solid rgba(0, 0, 0, 0.1);
+}
+.list-row {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+@media (min-width: 600px) {
+  .list-row {
+    border-bottom: 1px solid #0000001a;
+  }
+}

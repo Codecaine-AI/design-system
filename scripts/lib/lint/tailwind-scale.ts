@@ -7,8 +7,9 @@
  * `shadow-glass`) do not match.
  *
  * Where a class can appear:
- * - JS/TS: inside string and template literals. `ease-in`/`ease-out` in a string that
- *   also holds a CSS time (`"opacity 150ms ease-out"`) is a CSS value, not a class.
+ * - JS/TS: inside string and template literals. `ease-in` in a string that
+ *   also holds a CSS time (`"opacity 150ms ease-in"`) is a CSS value, not a class.
+ *   `ease-out` is the design-system motion.easing.out utility, never a default-scale class.
  * - CSS/SCSS: inside `@apply` only.
  * - HTML, Vue, Svelte, Astro, Markdown: in class attributes (`class`, `className`,
  *   `:class`, `class:list`) and in the string literals of `<script>` blocks.
@@ -65,7 +66,7 @@ const SCALES: Scale[] = [
   { scale: "tracking", re: new RegExp(`${PRE}(tracking-(?:tighter|tight|wide|wider|widest))${POST}`, "g") },
   { scale: "blur", re: new RegExp(`${PRE}((?:backdrop-)?blur-(?:xs|sm|md|lg|xl|2xl|3xl))${POST}`, "g") },
   { scale: "blur", re: new RegExp(`${PRE}((?:backdrop-)?blur)${POST}`, "g"), classOnly: true },
-  { scale: "easing", re: new RegExp(`${PRE}(ease-(?:in-out|in|out))${POST}`, "g") },
+  { scale: "easing", re: new RegExp(`${PRE}(ease-(?:in-out|in))${POST}`, "g") },
   { scale: "container size", re: new RegExp(`${PRE}((?:${CONTAINER_ROOTS})-(?:${CONTAINER_STEPS}))${POST}`, "g") },
   // Container query variants on the default sizes (@md:, @max-2xl:, @min-lg:, @md/main:): the @ is part of
   // the match, so PRE checks the character before it. @container and @[500px]: do not match.

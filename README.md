@@ -45,7 +45,7 @@ scripts/pack.ts                   `bun run pack`: a tgz for apps that vendor the
 scripts/test-apps.ts              `bun run test:apps <app>`: an app's safe tests under its run profile and the sandbox
 guide/                            tokens.md, layout.md, consume.md, code-structure.md, ecosystem.md, migrate.md, audit.md, app-shell-demo.html
 templates/                        starter app shell
-skill/SKILL.md                    the design-system agent skill (source of truth; lascari-ai/agent-skills registers it)
+skill/SKILL.md                    the design-system agent skill (source of truth; infrastructure/agent-config registers it)
 test/                             bun test
 verification/docs-system/         screenshot harness and mapping.md for the docs-system migration
 ```

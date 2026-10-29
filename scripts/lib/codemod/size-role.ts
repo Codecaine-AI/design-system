@@ -34,6 +34,9 @@ export function toPx(value: string): number | null {
   return m[2] === "rem" ? n * 16 : m[2] === "pt" ? (n * 4) / 3 : n;
 }
 
+/** Sizes for uppercase labels: an exact match takes one only when no general size has the same value. */
+const LABEL_SIZES = new Set(["font.size.micro", "font.size.ui-2xs"]);
+
 export function pickFontSize(data: TokenData, value: string, ctx: Context): Pick {
   if (/(em|%)$/.test(value.trim()) && !/rem$/.test(value.trim())) return none(`relative size ${value}: keep, or set a token size on the parent`);
   const px = toPx(value);
@@ -42,7 +45,8 @@ export function pickFontSize(data: TokenData, value: string, ctx: Context): Pick
   const mono = /\b(code|mono|monospace|pre|kbd|editor|program|gutter)\b/.test(ctx.hints.toLowerCase().replace(/[^a-z0-9]+/g, " "));
   const exact = scale.filter(([, v]) => v === px);
   if (exact.length) {
-    const path = (exact.find(([p]) => (mono ? p === "font.size.code" : p !== "font.size.code")) ?? exact[0])[0];
+    const fits = exact.filter(([p]) => (mono ? p === "font.size.code" : p !== "font.size.code"));
+    const path = (fits.find(([p]) => !LABEL_SIZES.has(p)) ?? fits[0] ?? exact[0])[0];
     return { path, method: "role", deltaE: null, why: `font size ${value}${exact.length > 1 ? (mono ? " in code" : " in UI text") : ""}` };
   }
   const near = scale

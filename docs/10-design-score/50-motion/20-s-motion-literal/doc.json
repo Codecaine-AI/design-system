@@ -895,7 +895,7 @@
           }
         },
         {
-          "insert": " and "
+          "insert": ", "
         },
         {
           "insert": "-slow",
@@ -904,7 +904,25 @@
           }
         },
         {
-          "insert": " are 100, 150 and 260ms. "
+          "insert": ", "
+        },
+        {
+          "insert": "-enter",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "-large",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " are 100, 150, 260, 300 and 400ms. "
         },
         {
           "insert": "--ds-motion-easing-standard",
@@ -913,25 +931,7 @@
           }
         },
         {
-          "insert": ", "
-        },
-        {
-          "insert": "-emphasized",
-          "attributes": {
-            "code": true
-          }
-        },
-        {
-          "insert": " and "
-        },
-        {
-          "insert": "-decelerate",
-          "attributes": {
-            "code": true
-          }
-        },
-        {
-          "insert": " are "
+          "insert": " is "
         },
         {
           "insert": "ease",
@@ -940,7 +940,16 @@
           }
         },
         {
-          "insert": ", "
+          "insert": ", and "
+        },
+        {
+          "insert": "-emphasized",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is "
         },
         {
           "insert": "cubic-bezier(0.32, 0.72, 0, 1)",
@@ -949,10 +958,46 @@
           }
         },
         {
+          "insert": ". "
+        },
+        {
+          "insert": "-decelerate",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
           "insert": " and "
         },
         {
-          "insert": "ease-out",
+          "insert": "-out",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " are both "
+        },
+        {
+          "insert": "cubic-bezier(0, 0, 0.2, 1)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and "
+        },
+        {
+          "insert": "-swap",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is "
+        },
+        {
+          "insert": "cubic-bezier(0.2, 0, 0, 1)",
           "attributes": {
             "code": true
           }
@@ -1150,7 +1195,7 @@
           "insert": " with "
         },
         {
-          "insert": "ease-out",
+          "insert": "easing.decelerate",
           "attributes": {
             "code": true
           }

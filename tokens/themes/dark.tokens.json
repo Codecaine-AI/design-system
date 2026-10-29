@@ -19,7 +19,8 @@
       "default": { "$type": "color", "$value": "#3d444d", "$description": "Frames, rules, dividers, inputs. Seed: --palette-rule." },
       "subtle": { "$type": "color", "$value": "#262c36", "$description": "Row rules and inner separators. Seed: --palette-rule-soft." },
       "strong": { "$type": "color", "$value": "color-mix(in srgb, {color.border.default} 70%, {color.text.faint} 30%)", "$description": "Header rules that must read over a default rule. Seed: --docs-border-strong." },
-      "guide": { "$type": "color", "$value": "color-mix(in srgb, {color.text.faint} 45%, {color.border.default})", "$description": "Tree indent guides. Seed: --docs-guide." }
+      "guide": { "$type": "color", "$value": "color-mix(in srgb, {color.text.faint} 45%, {color.border.default})", "$description": "Tree indent guides. Seed: --docs-guide." },
+      "image": { "$type": "color", "$value": "#ffffff1a", "$description": "Outline on images and media: pure white at 10%, never a tinted neutral. Inset it with border.width.hairline and a negative hairline offset." }
     },
     "fill": {
       "chip": { "$type": "color", "$value": "#21262d", "$description": "Inline code chips and neutral tags. Seed: --palette-chip." },
@@ -291,6 +292,8 @@
   },
   "shadow": {
     "glass": { "$type": "shadow", "$value": "0 10px 32px rgba(0, 0, 0, 0.5)", "$description": "Glass panel lift on the dark page. Seed: --docs-lab-panel-shadow." },
-    "dialog": { "$type": "shadow", "$value": "0 20px 80px #00000044", "$description": "Modal dialog lift. Seed: export dialog box-shadow #0004." }
+    "dialog": { "$type": "shadow", "$value": "0 20px 80px #00000044", "$description": "Modal dialog lift. Seed: export dialog box-shadow #0004." },
+    "card": { "$type": "shadow", "$value": "0 0 0 1px #ffffff14", "$description": "Layered card edge in place of a border, where a hairline fights an image or a colored backdrop. Borders stay the default." },
+    "card-hover": { "$type": "shadow", "$value": "0 0 0 1px #ffffff1f", "$description": "shadow.card on hover: the same layers a step stronger. Transition box-shadow only." }
   }
 }
