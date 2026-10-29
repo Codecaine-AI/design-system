@@ -449,7 +449,7 @@
       "props": {},
       "text": [
         {
-          "insert": "A page with no screenshot verdict stays n/a. A rule left out of the file stays unjudged."
+          "insert": "A page with no screenshot verdict stays n/a. Each screenshot in the file must have a verdict for all 16 rules, or the command refuses the file."
         }
       ],
       "children": []

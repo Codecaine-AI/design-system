@@ -357,5 +357,9 @@ if (import.meta.main) {
   const items = manifest.items.filter((i) => split === "all" || i.split === split);
   const workDir = join(DESIGN_SYSTEM_ROOT, ".design-score", "judge-calibration", split);
   mkdirSync(workDir, { recursive: true });
-  console.log(writePack(items, media, workDir));
+  try {
+    console.log(writePack(items, media, workDir));
+  } catch (error) {
+    fail(error instanceof Error ? error.message : String(error));
+  }
 }

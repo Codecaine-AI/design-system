@@ -471,7 +471,7 @@ export async function runScore(opts: RunOptions): Promise<{ dir: string; scoreca
     }
     for (const c of CHECKS) {
       if (checks[c.id]) continue;
-      if (skip.has(c.id)) markNa(checks, c.id, spec.skipReason ?? "skipped by the page config");
+      if (skip.has(c.id)) checks[c.id] = { status: "n/a", fails: 0, warns: 0, cut: 0, note: spec.skipReason ?? "skipped by the page config", skipped: true };
       else if (c.id === "V-judge") markNa(checks, c.id, "not judged");
       else if (c.id === "R-axe" && !axe) markNa(checks, c.id, "axe-core not found");
       else if (c.layer === "static") markNa(checks, c.id, "no sourceDirs, or --no-static");

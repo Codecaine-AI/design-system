@@ -176,6 +176,8 @@ export interface PageCheck {
   warns: number;
   cut: number;
   note?: string;
+  /** The page config skips this check (`skip`). */
+  skipped?: true;
 }
 
 export interface Shot {

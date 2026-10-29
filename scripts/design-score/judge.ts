@@ -109,8 +109,9 @@ export function verdictsSchema(ruleIds: string[]) {
         propertyNames: { pattern: HASH.source },
         additionalProperties: {
           type: "object",
-          description: "Keyed by rule id. A rule you leave out stays unjudged.",
+          description: "Keyed by rule id. Give every rule.",
           propertyNames: { enum: ruleIds },
+          required: ruleIds,
           additionalProperties: {
             type: "object",
             additionalProperties: false,
@@ -143,6 +144,8 @@ export function validateVerdicts(json: unknown, ruleIds: string[]): { shots: Ver
       errors.push(`shots.${hash}: must be an object keyed by rule id`);
       continue;
     }
+    const missing = ruleIds.filter((id) => !(id in rules));
+    if (missing.length) errors.push(`shots.${hash.slice(0, 12)}: no verdict for ${missing.length} rules (${missing.join(", ")})`);
     for (const [rule, v] of Object.entries(rules)) {
       const at = `shots.${hash.slice(0, 12)}.${rule}`;
       if (!ids.has(rule)) errors.push(`${at}: "${rule}" is not one of the ${ruleIds.length} rules in the pack`);
@@ -219,9 +222,12 @@ export interface JudgeSummary {
 
 const sha256 = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
 
-/** Every state screenshot of the scored pages, with its hash. */
+/** A page V-judge leaves alone: skipped, or its config skips V-judge. */
+const unjudged = (p: PageResult) => !!p.skipped || !!p.checks["V-judge"]?.skipped;
+
+/** Every state screenshot of the pages V-judge scores, with its hash. */
 export function stateShots(pages: PageResult[], runDir: string): Omit<JudgedShot, "from">[] {
-  return pages.filter((p) => !p.skipped).flatMap((p) =>
+  return pages.filter((p) => !unjudged(p)).flatMap((p) =>
     p.shots.filter((s) => s.kind === "state" && existsSync(join(runDir, s.file))).map((s) => ({ file: s.file, hash: sha256(readFileSync(join(runDir, s.file))), page: p.id, theme: s.theme, viewport: s.viewport })),
   );
 }
@@ -239,7 +245,7 @@ export function foldVerdicts(pages: PageResult[], runDir: string, still: JudgeRu
   const applied: VerdictMap = {};
   const judged: JudgedShot[] = [];
   for (const page of pages) {
-    if (page.skipped) continue;
+    if (unjudged(page)) continue;
     let fails = 0;
     let warns = 0;
     let count = 0;
@@ -340,7 +346,7 @@ export function judgeRun(card: Scorecard, runDir: string, designSystem: string, 
   }
   for (const p of card.pages) {
     // A page whose browser checks all failed keeps no score (see run.ts).
-    if (p.score !== null || (!p.skipped && p.checks["V-judge"]?.status !== "n/a")) p.score = pageScore(p.checks);
+    if (p.score !== null || (!unjudged(p) && p.checks["V-judge"]?.status !== "n/a")) p.score = pageScore(p.checks);
     p.areas = pageAreas(p.checks);
   }
   const hashes = (from: JudgedShot["from"]) => new Set(folded.shots.filter((s) => s.from === from).map((s) => s.hash)).size;

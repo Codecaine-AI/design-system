@@ -39,7 +39,9 @@ function run(app: string, name: string, ids: string[]): string {
 }
 
 const RULE = "a11y-color-not-only-cue";
-const verdictsFile = (dir: string, shots: Record<string, Record<string, { verdict: string; reason: string }>>) => {
+/** A full set of verdicts for one screenshot: RULE as given, every other still rule a pass. */
+const all = (verdict: string, reason = `status cue ${verdict}`) => ({ ...Object.fromEntries(IDS.map((id) => [id, { verdict: "pass", reason: "nothing on the screen breaks it" }])), [RULE]: { verdict, reason } });
+const verdictsFile = (dir: string, shots: Record<string, ReturnType<typeof all>>) => {
   const file = join(dir, "agent-verdicts.json");
   writeFileSync(file, JSON.stringify({ version: 1, shots }));
   return file;
@@ -49,20 +51,26 @@ const statuses = (card: Scorecard) => Object.fromEntries(card.pages.map((p) => [
 describe("verdicts.json schema", () => {
   const ok = { verdict: "pass", reason: "Each status has a word." };
   const h = "a".repeat(64);
+  const with_ = (rule: string, v: unknown) => ({ ...all("pass"), [rule]: v });
 
   test("a valid file gives its verdicts", () => {
-    expect(validateVerdicts({ version: 1, shots: { [h]: { [RULE]: ok } } }, IDS)).toEqual({ shots: { [h]: { [RULE]: { verdict: "pass", reason: "Each status has a word." } } }, errors: [] });
+    const res = validateVerdicts({ version: 1, shots: { [h]: all("fail", "dot alone") } }, IDS);
+    expect(res.errors).toEqual([]);
+    expect(res.shots[h]![RULE]).toEqual({ verdict: "fail", reason: "dot alone" });
+    expect(Object.keys(res.shots[h]!).length).toBe(16);
   });
 
   test.each([
     ["no version", { shots: {} }, "version must be 1"],
     ["an extra top-level key", { version: 1, shots: {}, notes: "" }, 'unknown top-level key "notes"'],
-    ["a hash that is not a sha256", { version: 1, shots: { "shots/home.png": { [RULE]: ok } } }, "is not a sha256"],
-    ["a rule outside the still rules", { version: 1, shots: { [h]: { "copy-plain-words": ok } } }, '"copy-plain-words" is not one of the 16 rules'],
-    ["a verdict outside the four", { version: 1, shots: { [h]: { [RULE]: { verdict: "n/a", reason: "x" } } } }, 'verdict "n/a" is not pass, warn, fail, unsure'],
-    ["an empty reason", { version: 1, shots: { [h]: { [RULE]: { verdict: "fail", reason: " " } } } }, "reason must be a non-empty string"],
-    ["a two-line reason", { version: 1, shots: { [h]: { [RULE]: { verdict: "fail", reason: "one\ntwo" } } } }, "reason must be one line"],
-    ["an extra key in a verdict", { version: 1, shots: { [h]: { [RULE]: { ...ok, box: null } } } }, 'unknown key "box"'],
+    ["a hash that is not a sha256", { version: 1, shots: { "shots/home.png": all("pass") } }, "is not a sha256"],
+    ["a screenshot with no verdict for some rules", { version: 1, shots: { [h]: { [RULE]: ok } } }, "no verdict for 15 rules"],
+    ["a screenshot with no verdict at all", { version: 1, shots: { [h]: {} } }, "no verdict for 16 rules"],
+    ["a rule outside the still rules", { version: 1, shots: { [h]: with_("copy-plain-words", ok) } }, '"copy-plain-words" is not one of the 16 rules'],
+    ["a verdict outside the four", { version: 1, shots: { [h]: with_(RULE, { verdict: "n/a", reason: "x" }) } }, 'verdict "n/a" is not pass, warn, fail, unsure'],
+    ["an empty reason", { version: 1, shots: { [h]: with_(RULE, { verdict: "fail", reason: " " }) } }, "reason must be a non-empty string"],
+    ["a two-line reason", { version: 1, shots: { [h]: with_(RULE, { verdict: "fail", reason: "one\ntwo" }) } }, "reason must be one line"],
+    ["an extra key in a verdict", { version: 1, shots: { [h]: with_(RULE, { ...ok, box: null }) } }, 'unknown key "box"'],
   ])("rejects %s, and keeps no verdict", (_, json, error) => {
     const res = validateVerdicts(json, IDS);
     expect(res.errors.join("\n")).toContain(error);
@@ -72,7 +80,7 @@ describe("verdicts.json schema", () => {
   test("--judge-verdicts refuses an invalid file and leaves the scorecard as it was", () => {
     const dir = run("refuse", "r1", ["home"]);
     const before = readFileSync(join(dir, "scorecard.json"), "utf8");
-    const file = verdictsFile(dir, { [hashOf("home")]: { [RULE]: { verdict: "maybe", reason: "x" } } });
+    const file = verdictsFile(dir, { [hashOf("home")]: all("maybe") });
     expect(() => refoldRun(dir, file, DESIGN_SYSTEM_ROOT)).toThrow('verdict "maybe"');
     expect(readFileSync(join(dir, "scorecard.json"), "utf8")).toBe(before);
   });
@@ -81,7 +89,7 @@ describe("verdicts.json schema", () => {
 describe("folding verdicts into a run", () => {
   test("fail fails, warn and unsure warn, pass passes, a shot with no verdict stays n/a, a stale hash is ignored and reported", () => {
     const dir = run("fold", "r1", ["passes", "warns", "fails", "unsure", "missing"]);
-    const v = (verdict: string) => ({ [RULE]: { verdict, reason: `status cue ${verdict}` } });
+    const v = (verdict: string) => all(verdict);
     const stale = "f".repeat(64);
     const file = verdictsFile(dir, { [hashOf("passes")]: v("pass"), [hashOf("warns")]: v("warn"), [hashOf("fails")]: v("fail"), [hashOf("unsure")]: v("unsure"), [stale]: v("fail") });
     const card = refoldRun(dir, file, DESIGN_SYSTEM_ROOT);
@@ -100,17 +108,28 @@ describe("folding verdicts into a run", () => {
     expect(JSON.parse(readFileSync(join(dir, "judge", "verdicts.json"), "utf8")).shots[hashOf("fails")]).toEqual(v("fail"));
   });
 
+  test("a page whose config skips V-judge is not judged, listed or packed, even with a verdict for its screenshot", () => {
+    const dir = run("skip", "r1", ["home", "skips"]);
+    const card = JSON.parse(readFileSync(join(dir, "scorecard.json"), "utf8")) as Scorecard;
+    card.pages[1]!.checks["V-judge"] = { status: "n/a", fails: 0, warns: 0, cut: 0, note: "skipped by the page config", skipped: true };
+    writeFileSync(join(dir, "scorecard.json"), JSON.stringify(card));
+    const out = refoldRun(dir, verdictsFile(dir, { [hashOf("home")]: all("pass"), [hashOf("skips")]: all("fail") }), DESIGN_SYSTEM_ROOT);
+    expect(statuses(out)).toEqual({ home: "pass", skips: "n/a" });
+    expect(out.findings).toEqual([]);
+    expect(out.judge.shots.map((s) => s.page)).toEqual(["home"]);
+  });
+
   test("a refold replaces the earlier V-judge findings instead of adding to them", () => {
     const dir = run("refold", "r1", ["home"]);
-    refoldRun(dir, verdictsFile(dir, { [hashOf("home")]: { [RULE]: { verdict: "fail", reason: "dot alone" } } }), DESIGN_SYSTEM_ROOT);
-    const card = refoldRun(dir, verdictsFile(dir, { [hashOf("home")]: { [RULE]: { verdict: "pass", reason: "word beside dot" } } }), DESIGN_SYSTEM_ROOT);
+    refoldRun(dir, verdictsFile(dir, { [hashOf("home")]: all("fail", "dot alone") }), DESIGN_SYSTEM_ROOT);
+    const card = refoldRun(dir, verdictsFile(dir, { [hashOf("home")]: all("pass", "word beside dot") }), DESIGN_SYSTEM_ROOT);
     expect(card.findings).toEqual([]);
     expect(statuses(card)).toEqual({ home: "pass" });
   });
 
   test("a later run carries verdicts by screenshot hash, and its pack lists only the changed screenshot", () => {
     const first = run("carry", "2026-01-01T00-00-00", ["home", "settings"]);
-    refoldRun(first, verdictsFile(first, { [hashOf("home")]: { [RULE]: { verdict: "fail", reason: "dot alone" } }, [hashOf("settings")]: { [RULE]: { verdict: "pass", reason: "labels" } } }), DESIGN_SYSTEM_ROOT);
+    refoldRun(first, verdictsFile(first, { [hashOf("home")]: all("fail", "dot alone"), [hashOf("settings")]: all("pass", "labels") }), DESIGN_SYSTEM_ROOT);
     // The second run: home is unchanged, settings has new pixels.
     const second = run("carry", "2026-01-02T00-00-00", ["home", "changed"]);
     const card = JSON.parse(readFileSync(join(second, "scorecard.json"), "utf8")) as Scorecard;
@@ -125,9 +144,9 @@ describe("folding verdicts into a run", () => {
 
   test("the run's own verdict wins over a carried one for the same hash", () => {
     const first = run("own-wins", "2026-01-01T00-00-00", ["home"]);
-    refoldRun(first, verdictsFile(first, { [hashOf("home")]: { [RULE]: { verdict: "fail", reason: "dot alone" } } }), DESIGN_SYSTEM_ROOT);
+    refoldRun(first, verdictsFile(first, { [hashOf("home")]: all("fail", "dot alone") }), DESIGN_SYSTEM_ROOT);
     const second = run("own-wins", "2026-01-02T00-00-00", ["home"]);
-    const card = refoldRun(second, verdictsFile(second, { [hashOf("home")]: { [RULE]: { verdict: "pass", reason: "fixed: word beside dot" } } }), DESIGN_SYSTEM_ROOT);
+    const card = refoldRun(second, verdictsFile(second, { [hashOf("home")]: all("pass", "fixed: word beside dot") }), DESIGN_SYSTEM_ROOT);
     expect(statuses(card)).toEqual({ home: "pass" });
   });
 });
