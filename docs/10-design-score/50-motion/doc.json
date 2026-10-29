@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-3ad32f3c9708e5543647cacc6cd0335a",
+  "title": "Motion",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "intro",
+        "h-checks",
+        "h-rules"
+      ]
+    },
+    "intro": {
+      "id": "intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The motion checks find motion literals and "
+        },
+        {
+          "insert": "transition: all",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in the source, and record real animations while the run hovers and presses controls. The area has 2 static checks, 3 motion checks and 43 rules in "
+        },
+        {
+          "insert": "design-score/rules/motion.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/motion.json"
+            }
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-checks": {
+      "id": "h-checks",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Checks"
+        }
+      ],
+      "children": []
+    },
+    "h-rules": {
+      "id": "h-rules",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules"
+        }
+      ],
+      "children": []
+    }
+  }
+}

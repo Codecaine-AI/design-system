@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-bcd485456044ce0ffd83a5fe74d23ff6",
+  "title": "Interaction",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "intro",
+        "h-checks",
+        "h-rules"
+      ]
+    },
+    "intro": {
+      "id": "intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The interaction checks cover hover, focus, press and hit targets. They test that a control reacts without moving the layout, and that it is large enough to hit. The area has 2 static checks, 2 runtime checks, 1 motion check and 28 rules in "
+        },
+        {
+          "insert": "design-score/rules/interaction.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/interaction.json"
+            }
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-checks": {
+      "id": "h-checks",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Checks"
+        }
+      ],
+      "children": []
+    },
+    "h-rules": {
+      "id": "h-rules",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules"
+        }
+      ],
+      "children": []
+    }
+  }
+}

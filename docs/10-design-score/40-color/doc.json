@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-7649c5d2b30749a2b7c9d4d6223b11f5",
+  "title": "Color",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "intro",
+        "h-checks",
+        "h-rules"
+      ]
+    },
+    "intro": {
+      "id": "intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The color checks find hard-coded colors in the app's source and measure text contrast on the rendered page. The area has 1 static check, 1 runtime check and 38 rules in "
+        },
+        {
+          "insert": "design-score/rules/color.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/color.json"
+            }
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-checks": {
+      "id": "h-checks",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Checks"
+        }
+      ],
+      "children": []
+    },
+    "h-rules": {
+      "id": "h-rules",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules"
+        }
+      ],
+      "children": []
+    }
+  }
+}

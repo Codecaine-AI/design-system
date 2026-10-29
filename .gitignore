@@ -6,3 +6,6 @@ verification/**/*.png
 verification/**/fixtures/*.tar.gz
 # design:score runs: screenshots, crops and reports (bun run design:score).
 .design-score/
+# Docs system working state: the backlink index and the edit changesets.
+docs/.index/
+docs/.changesets/

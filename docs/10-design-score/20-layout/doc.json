@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-cce9cfbfd147a65f225f4866c4cd7394",
+  "title": "Layout",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "intro",
+        "h-checks",
+        "h-rules"
+      ]
+    },
+    "intro": {
+      "id": "intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The layout checks measure where boxes sit on the rendered page: edges, centers, radii, spacing and row heights. They run in a browser on every page, theme and viewport. The area has 5 runtime checks and 43 rules in "
+        },
+        {
+          "insert": "design-score/rules/layout.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/layout.json"
+            }
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-checks": {
+      "id": "h-checks",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Checks"
+        }
+      ],
+      "children": []
+    },
+    "h-rules": {
+      "id": "h-rules",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules"
+        }
+      ],
+      "children": []
+    }
+  }
+}

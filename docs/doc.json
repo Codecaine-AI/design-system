@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-design-system-root",
+  "title": "Design System",
+  "root": "root",
+  "blocks": {
+    "root": { "id": "root", "type": "paragraph", "props": {}, "children": [] }
+  }
+}

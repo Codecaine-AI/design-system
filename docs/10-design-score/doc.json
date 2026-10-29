@@ -1,0 +1,1093 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-d5c1a7b34ecb5c26d1109b5921ae819b",
+  "title": "Design Score",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b7",
+        "b9",
+        "b12",
+        "b13",
+        "b14",
+        "b15",
+        "b16",
+        "b17",
+        "b18",
+        "b20",
+        "b22",
+        "b24",
+        "b26",
+        "b27",
+        "b28",
+        "b29",
+        "b30",
+        "b31",
+        "b33",
+        "b36"
+      ]
+    },
+    "b1": {
+      "id": "b1",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "design:score",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " scores every page of an app against the design rules in a real browser. It runs 24 checks, and each check belongs to one area and one layer. Each check has its own page that explains what it measures and shows a good and a bad example. Each example pair is also a test that the check must pass."
+        }
+      ],
+      "children": []
+    },
+    "b2": {
+      "id": "b2",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "What It Scores"
+        }
+      ],
+      "children": []
+    },
+    "b3": {
+      "id": "b3",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A run visits every page in the app config, in each theme and viewport, and records each check as pass, warn, fail or n/a."
+        }
+      ],
+      "children": []
+    },
+    "b4": {
+      "id": "b4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Page score",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b5",
+        "b6"
+      ]
+    },
+    "b5": {
+      "id": "b5",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each applicable check counts pass as 1, warn as 0.5 and fail as 0. The page score is the mean times 100."
+        }
+      ],
+      "children": []
+    },
+    "b6": {
+      "id": "b6",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A check fails on a page when any finding is a fail in any theme or viewport."
+        }
+      ],
+      "children": []
+    },
+    "b7": {
+      "id": "b7",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "App score and area scores",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b8"
+      ]
+    },
+    "b8": {
+      "id": "b8",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The app score is the mean of the page scores. Each area gets a sub-score from the same formula over its own checks."
+        }
+      ],
+      "children": []
+    },
+    "b9": {
+      "id": "b9",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Where it lives",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b10",
+        "b11"
+      ]
+    },
+    "b10": {
+      "id": "b10",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The code is "
+        },
+        {
+          "insert": "scripts/design-score/",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/run.ts"
+            }
+          }
+        },
+        {
+          "insert": ". Each app's pages, themes and viewports are in "
+        },
+        {
+          "insert": "design-score/apps/<app>.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b11": {
+      "id": "b11",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A run writes "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", screenshots and finding crops to "
+        },
+        {
+          "insert": ".design-score/<app>/<run>/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b12": {
+      "id": "b12",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --app knowledge-system"
+        }
+      ],
+      "children": []
+    },
+    "b13": {
+      "id": "b13",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Areas"
+        }
+      ],
+      "children": []
+    },
+    "b14": {
+      "id": "b14",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Six areas group the checks, and two more group rules that no check decides yet. Each area page lists its checks and the rules from "
+        },
+        {
+          "insert": "design-score/rules/<area>.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/RULES.md"
+            }
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b15": {
+      "id": "b15",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Area",
+          "Checks",
+          "Rules"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "Layout",
+                "attributes": {
+                  "link": "10-design-score/20-layout"
+                }
+              }
+            ],
+            "5",
+            "43"
+          ],
+          [
+            [
+              {
+                "insert": "Typography",
+                "attributes": {
+                  "link": "10-design-score/30-typography"
+                }
+              }
+            ],
+            "4",
+            "44"
+          ],
+          [
+            [
+              {
+                "insert": "Color",
+                "attributes": {
+                  "link": "10-design-score/40-color"
+                }
+              }
+            ],
+            "2",
+            "38"
+          ],
+          [
+            [
+              {
+                "insert": "Motion",
+                "attributes": {
+                  "link": "10-design-score/50-motion"
+                }
+              }
+            ],
+            "5",
+            "43"
+          ],
+          [
+            [
+              {
+                "insert": "Interaction",
+                "attributes": {
+                  "link": "10-design-score/60-interaction"
+                }
+              }
+            ],
+            "5",
+            "28"
+          ],
+          [
+            [
+              {
+                "insert": "Accessibility",
+                "attributes": {
+                  "link": "10-design-score/70-accessibility"
+                }
+              }
+            ],
+            "2",
+            "56"
+          ],
+          [
+            [
+              {
+                "insert": "Writing",
+                "attributes": {
+                  "link": "10-design-score/80-writing"
+                }
+              }
+            ],
+            "0",
+            "19"
+          ],
+          [
+            [
+              {
+                "insert": "Screenshot Judge",
+                "attributes": {
+                  "link": "10-design-score/85-screenshot-judge"
+                }
+              }
+            ],
+            "1, not run",
+            "32"
+          ]
+        ],
+        "title": "design:score areas"
+      },
+      "children": []
+    },
+    "b16": {
+      "id": "b16",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Layers"
+        }
+      ],
+      "children": []
+    },
+    "b17": {
+      "id": "b17",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The layer says where a check gets its evidence. A page's score counts every layer that ran."
+        }
+      ],
+      "children": []
+    },
+    "b18": {
+      "id": "b18",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Static",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b19"
+      ]
+    },
+    "b19": {
+      "id": "b19",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The 5 static checks read the app's source files with no browser. Their result counts once on every page."
+        }
+      ],
+      "children": []
+    },
+    "b20": {
+      "id": "b20",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Runtime",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b21"
+      ]
+    },
+    "b21": {
+      "id": "b21",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The 14 runtime checks measure the rendered page in Chromium, once per theme and viewport."
+        }
+      ],
+      "children": []
+    },
+    "b22": {
+      "id": "b22",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Motion",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b23"
+      ]
+    },
+    "b23": {
+      "id": "b23",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The 4 motion checks record animations while the run hovers and presses controls, in the first theme and viewport. A second pass repeats it under reduced motion."
+        }
+      ],
+      "children": []
+    },
+    "b24": {
+      "id": "b24",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Judge",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b25"
+      ]
+    },
+    "b25": {
+      "id": "b25",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "V-judge is planned and does not run yet. The run keeps its state screenshots for it."
+        }
+      ],
+      "children": []
+    },
+    "b26": {
+      "id": "b26",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Checks"
+        }
+      ],
+      "children": []
+    },
+    "b27": {
+      "id": "b27",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check catalog is "
+        },
+        {
+          "insert": "scripts/design-score/checks.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/checks.ts"
+            }
+          }
+        },
+        {
+          "insert": ". The table lists the checks in page order, by area. The Result column says whether a finding can fail the page, only warn, or both."
+        }
+      ],
+      "children": []
+    },
+    "b28": {
+      "id": "b28",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Check",
+          "Area",
+          "Layer",
+          "Result",
+          "What It Finds"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "R-align-near-miss",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/20-layout/10-r-align-near-miss"
+                }
+              }
+            ],
+            "layout",
+            "runtime",
+            "Fail and warn",
+            "Edges or centers that miss by 1 to 3px"
+          ],
+          [
+            [
+              {
+                "insert": "R-concentric-radius",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/20-layout/20-r-concentric-radius"
+                }
+              }
+            ],
+            "layout",
+            "runtime",
+            "Warn",
+            "A nested radius that is not parent minus inset"
+          ],
+          [
+            [
+              {
+                "insert": "R-h-scroll",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/20-layout/30-r-h-scroll"
+                }
+              }
+            ],
+            "layout",
+            "runtime",
+            "Fail",
+            "A page or main area that scrolls sideways"
+          ],
+          [
+            [
+              {
+                "insert": "R-spacing-grid",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/20-layout/40-r-spacing-grid"
+                }
+              }
+            ],
+            "layout",
+            "runtime",
+            "Warn",
+            "Padding or gap off the 4px grid"
+          ],
+          [
+            [
+              {
+                "insert": "R-control-height",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/20-layout/50-r-control-height"
+                }
+              }
+            ],
+            "layout",
+            "runtime",
+            "Fail",
+            "Controls in one row with different heights"
+          ],
+          [
+            [
+              {
+                "insert": "R-tabular-nums",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/30-typography/10-r-tabular-nums"
+                }
+              }
+            ],
+            "typography",
+            "runtime",
+            "Warn",
+            "Numbers without tabular-nums"
+          ],
+          [
+            [
+              {
+                "insert": "R-text-clip",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/30-typography/20-r-text-clip"
+                }
+              }
+            ],
+            "typography",
+            "runtime",
+            "Fail",
+            "Text cut off without an ellipsis or line clamp"
+          ],
+          [
+            [
+              {
+                "insert": "R-min-font",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/30-typography/30-r-min-font"
+                }
+              }
+            ],
+            "typography",
+            "runtime",
+            "Fail and warn",
+            "Text under 12px"
+          ],
+          [
+            [
+              {
+                "insert": "R-line-length",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/30-typography/40-r-line-length"
+                }
+              }
+            ],
+            "typography",
+            "runtime",
+            "Warn",
+            "Prose lines over 80 characters"
+          ],
+          [
+            [
+              {
+                "insert": "S-color-literal",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/40-color/10-s-color-literal"
+                }
+              }
+            ],
+            "color",
+            "static",
+            "Fail and warn",
+            "A hard-coded color in the source"
+          ],
+          [
+            [
+              {
+                "insert": "R-contrast",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/40-color/20-r-contrast"
+                }
+              }
+            ],
+            "color",
+            "runtime",
+            "Fail",
+            "Text contrast under 4.5:1, or 3:1 for large text"
+          ],
+          [
+            [
+              {
+                "insert": "S-transition-all",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/50-motion/10-s-transition-all"
+                }
+              }
+            ],
+            "motion",
+            "static",
+            "Fail",
+            "A transition on all properties"
+          ],
+          [
+            [
+              {
+                "insert": "S-motion-literal",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/50-motion/20-s-motion-literal"
+                }
+              }
+            ],
+            "motion",
+            "static",
+            "Fail",
+            "A duration or easing literal instead of a motion token"
+          ],
+          [
+            [
+              {
+                "insert": "M-duration",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/50-motion/30-m-duration"
+                }
+              }
+            ],
+            "motion",
+            "motion",
+            "Fail",
+            "Motion longer than 200, 300 or 450ms"
+          ],
+          [
+            [
+              {
+                "insert": "M-layout-props",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/50-motion/40-m-layout-props"
+                }
+              }
+            ],
+            "motion",
+            "motion",
+            "Fail and warn",
+            "Animating width, height, margin or other layout properties"
+          ],
+          [
+            [
+              {
+                "insert": "M-reduced-motion",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/50-motion/50-m-reduced-motion"
+                }
+              }
+            ],
+            "motion",
+            "motion",
+            "Warn",
+            "Movement that runs under reduced motion"
+          ],
+          [
+            [
+              {
+                "insert": "S-hover-unguarded",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/60-interaction/10-s-hover-unguarded"
+                }
+              }
+            ],
+            "interaction",
+            "static",
+            "Warn",
+            "A :hover rule outside @media (hover: hover)"
+          ],
+          [
+            [
+              {
+                "insert": "S-outline-none",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/60-interaction/20-s-outline-none"
+                }
+              }
+            ],
+            "interaction",
+            "static",
+            "Fail",
+            "outline: none with no focus-visible style"
+          ],
+          [
+            [
+              {
+                "insert": "R-hit-target",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/60-interaction/30-r-hit-target"
+                }
+              }
+            ],
+            "interaction",
+            "runtime",
+            "Fail and warn",
+            "A control under 24px, or under 32px"
+          ],
+          [
+            [
+              {
+                "insert": "R-state-shift",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/60-interaction/40-r-state-shift"
+                }
+              }
+            ],
+            "interaction",
+            "runtime",
+            "Fail",
+            "Hover, focus or open moves the layout"
+          ],
+          [
+            [
+              {
+                "insert": "M-press-scale",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/60-interaction/50-m-press-scale"
+                }
+              }
+            ],
+            "interaction",
+            "motion",
+            "Fail and warn",
+            "A press scale outside 0.95 to 0.98"
+          ],
+          [
+            [
+              {
+                "insert": "R-axe",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/70-accessibility/10-r-axe"
+                }
+              }
+            ],
+            "accessibility",
+            "runtime",
+            "Fail",
+            "An axe-core WCAG 2.2 AA violation"
+          ],
+          [
+            [
+              {
+                "insert": "R-focus-visible",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/70-accessibility/20-r-focus-visible"
+                }
+              }
+            ],
+            "accessibility",
+            "runtime",
+            "Fail",
+            "A focused control that shows no visible change"
+          ],
+          [
+            [
+              {
+                "insert": "V-judge",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "judge",
+            "judge",
+            "Not run",
+            "A vision model judges the screenshots"
+          ]
+        ],
+        "title": "design:score checks"
+      },
+      "children": []
+    },
+    "b29": {
+      "id": "b29",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Page Numbering"
+        }
+      ],
+      "children": []
+    },
+    "b30": {
+      "id": "b30",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Every page path follows the same pattern, so a check page is easy to find from its id."
+        }
+      ],
+      "children": []
+    },
+    "b31": {
+      "id": "b31",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Area pages",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b32"
+      ]
+    },
+    "b32": {
+      "id": "b32",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Area folders sit under "
+        },
+        {
+          "insert": "10-design-score/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " from "
+        },
+        {
+          "insert": "20-layout",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " to "
+        },
+        {
+          "insert": "85-screenshot-judge",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", in the order of the Areas table."
+        }
+      ],
+      "children": []
+    },
+    "b33": {
+      "id": "b33",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Check pages",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b34",
+        "b35"
+      ]
+    },
+    "b34": {
+      "id": "b34",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A check page sits in its area folder. Its slug is the check id in lowercase, such as "
+        },
+        {
+          "insert": "10-r-align-near-miss",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b35": {
+      "id": "b35",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Numbers go up by 10 in the order of the Checks table."
+        }
+      ],
+      "children": []
+    },
+    "b36": {
+      "id": "b36",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Rules-only pages",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b37"
+      ]
+    },
+    "b37": {
+      "id": "b37",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Writing and Screenshot Judge have no check pages. Their rules are listed on the area page."
+        }
+      ],
+      "children": []
+    }
+  }
+}

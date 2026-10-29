@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-b5f6392266efc7cb6ee7cf290fb55a64",
+  "title": "Screenshot Judge",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "intro",
+        "planned",
+        "h-rules"
+      ]
+    },
+    "intro": {
+      "id": "intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The screenshot judge is "
+        },
+        {
+          "insert": "V-judge",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", a vision model that rates each page's state screenshots against taste rules such as hierarchy, grouping and polish. Its area holds 32 rules: the 26 rules mapped to "
+        },
+        {
+          "insert": "V-judge",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and 6 process rules that need a person or a model. The rules are in "
+        },
+        {
+          "insert": "design-score/rules/judge.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/judge.json"
+            }
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "planned": {
+      "id": "planned",
+      "type": "callout",
+      "props": {
+        "title": "Planned, not built",
+        "tone": "warning"
+      },
+      "text": [
+        {
+          "insert": "V-judge does not run in this version, so every page marks it n/a. Each run already saves the state screenshots it will read ("
+        },
+        {
+          "insert": "scripts/design-score/judge.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/judge.ts"
+            }
+          }
+        },
+        {
+          "insert": ")."
+        }
+      ],
+      "children": []
+    },
+    "h-rules": {
+      "id": "h-rules",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules"
+        }
+      ],
+      "children": []
+    }
+  }
+}

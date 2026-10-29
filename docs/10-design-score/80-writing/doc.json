@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-262010247cd4351105c491a0a8194bbf",
+  "title": "Writing",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "intro",
+        "h-rules"
+      ]
+    },
+    "intro": {
+      "id": "intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Writing holds the 19 copy rules, such as verb-first buttons and error messages that say the fix. No check decides them yet, so this page lists rules only. The rules are in "
+        },
+        {
+          "insert": "design-score/rules/writing.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/writing.json"
+            }
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-rules": {
+      "id": "h-rules",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules"
+        }
+      ],
+      "children": []
+    }
+  }
+}
