@@ -4,6 +4,7 @@
  */
 import { describe, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
+import { createRequire } from "node:module";
 import { dirname, join, relative, resolve } from "node:path";
 import { MD_BEGIN, MD_END } from "../scripts/build.ts";
 import {
@@ -165,6 +166,26 @@ describe("dist/tailwind/theme.css", () => {
     expect(theme.get("--background-color-page")).toBe("var(--ds-color-surface-page)");
     expect(theme.get("--text-color-ink")).toBe("var(--ds-color-text-ink)");
     expect(theme.get("--border-color-rule")).toBe("var(--ds-color-border-default)");
+  });
+
+  test("maps the image border, card shadows, motion blur, easings and control heights to their utilities, in v4 and the v3 preset", () => {
+    const theme = new Map(parseStylesheet(readText("dist/tailwind/theme.css")).blocks.find((b) => b.prelude === "@theme inline")!.declarations);
+    expect(Object.fromEntries(["--border-color-rule-image", "--shadow-card", "--shadow-card-hover", "--blur-motion", "--ease-out", "--ease-swap", "--height-control-sm", "--height-control-md", "--height-control-lg"].map((k) => [k, theme.get(k)]))).toEqual({
+      "--border-color-rule-image": "var(--ds-color-border-image)",
+      "--shadow-card": "var(--ds-shadow-card)",
+      "--shadow-card-hover": "var(--ds-shadow-card-hover)",
+      "--blur-motion": "var(--ds-blur-motion)",
+      "--ease-out": "var(--ds-motion-easing-out)",
+      "--ease-swap": "var(--ds-motion-easing-swap)",
+      "--height-control-sm": "var(--ds-control-height-sm)",
+      "--height-control-md": "var(--ds-control-height-md)",
+      "--height-control-lg": "var(--ds-control-height-lg)",
+    });
+    const { theme: v3 } = createRequire(import.meta.url)(join(PKG, "dist/tailwind/preset-v3.cjs"));
+    expect(v3.extend.height).toMatchObject({ "control-sm": "var(--ds-control-height-sm)", "control-md": "var(--ds-control-height-md)", "control-lg": "var(--ds-control-height-lg)" });
+    expect(v3.boxShadow).toMatchObject({ card: "var(--ds-shadow-card)", "card-hover": "var(--ds-shadow-card-hover)" });
+    expect(v3.blur).toMatchObject({ motion: "var(--ds-blur-motion)" });
+    expect(v3.transitionTimingFunction).toMatchObject({ out: "var(--ds-motion-easing-out)", swap: "var(--ds-motion-easing-swap)" });
   });
 
   test("references only declared variables, never a theme-pinned one (utilities follow data-theme)", () => {

@@ -525,7 +525,9 @@
         }
       ],
       "children": [
-        "b13"
+        "b13",
+        "b13b",
+        "b13c"
       ]
     },
     "b13": {
@@ -540,8 +542,27 @@
           }
         },
         {
-          "insert": " limits hover and press motion to 200ms, menus to 300ms, and dialogs and large panels to 450ms. "
-        },
+          "insert": " allows 200ms for motion that starts while the run hovers or presses a control, whatever moves."
+        }
+      ],
+      "children": []
+    },
+    "b13b": {
+      "id": "b13b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Outside those probes, the limit is 300ms for menus and 450ms for dialogs and large panels."
+        }
+      ],
+      "children": []
+    },
+    "b13c": {
+      "id": "b13c",
+      "type": "list-item",
+      "props": {},
+      "text": [
         {
           "insert": "fast",
           "attributes": {
@@ -558,7 +579,7 @@
           }
         },
         {
-          "insert": " pass everywhere, "
+          "insert": " always pass, and "
         },
         {
           "insert": "slow",
@@ -576,7 +597,7 @@
           }
         },
         {
-          "insert": " pass on menus and larger, and "
+          "insert": " pass only on menus and larger outside the probes. "
         },
         {
           "insert": "large",
