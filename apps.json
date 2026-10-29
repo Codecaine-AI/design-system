@@ -3385,28 +3385,28 @@
       ]
     },
     {
-      "id": "system-view",
-      "name": "system-view",
-      "wave": 1,
+      "id": "token-burner",
+      "name": "token-burner dashboard",
+      "wave": 3,
       "kind": "app",
-      "repo": "system-view",
-      "root": "system-view",
+      "repo": "codecaine/utilities/token-burner",
+      "root": "codecaine/utilities/token-burner",
       "scan": {
         "paths": [
-          "system-view/src/renderer"
+          "codecaine/utilities/token-burner/src/web"
         ],
         "exclude": []
       },
       "stack": {
-        "summary": "Electron 37, electron-vite 5, Vite 7, React 19, one plain CSS file; bun",
+        "summary": "React 19.3, Bun.build in the gateway wrapper (src/admin/dashboard.ts), plain CSS; bun",
         "tailwind": "none",
         "packageManager": "bun"
       },
       "consume": {
-        "via": "vendor-tgz",
-        "detail": "Packed copy through file:vendor/codecaine-ai-design-system-0.2.0.tgz that carries its fonts (OWNER_DECISIONS: apps outside Core take the vendored tgz), the same bytes personal-site and skitzo use; fonts.css, tokens.css and layout.css load in src/renderer/src/main.tsx; the main process pins native window colors through the JS tokens export. The theme bridge (THEME_TOKEN_NAMES in src/shared/ipc.ts) reads docs-workbench's shadcn names, --docs-sidebar-* knobs and the --ds-* names styles.css reads."
+        "via": "workspace",
+        "detail": "Add ../../../design-system to the workspaces array of the single-package token-burner/package.json and depend on `workspace:*` (a live symlink); bunfig.toml keeps the hoisted linker. src/web/main.tsx imports fonts.css, tokens.css and layout.css, which Bun.build bundles."
       },
-      "entryStylesheet": "system-view/src/renderer/src/main.tsx",
+      "entryStylesheet": "codecaine/utilities/token-burner/src/web/main.tsx",
       "theme": {
         "rule": "light-dark"
       },
@@ -3451,87 +3451,92 @@
         },
         "verify": {
           "required": false,
-          "reason": "run mode none: Electron runs are refused (decision 23); since 1e2f929 SYSTEM_VIEW_SERVICE_ORIGIN can point the app at a run-started docs-workbench, so the remaining blocker is the Electron rule, not the :4820 origin; verified statically (bridge contract, stubbed-preload render check)"
+          "reason": "run mode none: the dashboard needs the gateway wrapper with a pinned CPA binary and the mock upstream (test/integration/proxy-stack.ts); profile unproven; verified statically only"
         },
         "snapshot": {
           "required": false,
-          "reason": "run mode none: Electron runs are refused (decision 23); since 1e2f929 SYSTEM_VIEW_SERVICE_ORIGIN can point the app at a run-started docs-workbench, so the remaining blocker is the Electron rule, not the :4820 origin; verified statically (bridge contract, stubbed-preload render check)"
+          "reason": "run mode none: the dashboard needs the gateway wrapper with a pinned CPA binary and the mock upstream (test/integration/proxy-stack.ts); profile unproven; verified statically only"
         },
         "pixelDiff": {
           "required": false,
-          "reason": "run mode none: Electron runs are refused (decision 23); since 1e2f929 SYSTEM_VIEW_SERVICE_ORIGIN can point the app at a run-started docs-workbench, so the remaining blocker is the Electron rule, not the :4820 origin; verified statically (bridge contract, stubbed-preload render check)"
+          "reason": "run mode none: the dashboard needs the gateway wrapper with a pinned CPA binary and the mock upstream (test/integration/proxy-stack.ts); profile unproven; verified statically only"
         },
         "tests": {
-          "required": false,
-          "reason": "system-view has no tests"
+          "required": true
         }
       },
       "run": {
         "mode": "none",
-        "reason": "Electron runs are refused (decision 23), so the app is verified statically. Since system-view 1e2f929, SYSTEM_VIEW_SERVICE_ORIGIN (an http(s) origin; default http://127.0.0.1:4820 unchanged) redirects the docs polling and the renderer viewer URLs; a later profile can point it at a run-started docs-workbench with tempHome (the app restores the last stored URL on start).",
-        "cwd": "system-view",
-        "electron": {
-          "build": "bun --no-env-file run build",
-          "main": "system-view/out/main/index.js"
-        }
+        "reason": "needs the gateway wrapper, a pinned CPA binary and the mock upstream; profile unproven",
+        "cwd": "codecaine/utilities/token-burner",
+        "start": "bun --no-env-file src/index.ts",
+        "readyPattern": "Gateway: (http://127\\.0\\.0\\.1:\\d+)"
       },
       "commands": {
-        "cwd": "system-view",
+        "cwd": "codecaine/utilities/token-burner",
         "typecheck": "bun --no-env-file run typecheck",
-        "build": "bun --no-env-file run build --outDir {tmp}/system-view-out"
+        "build": "bun --no-env-file run build:web"
       },
       "tests": {
-        "safe": [],
-        "unsafe": [
+        "safe": [
           {
-            "cmd": "bun run dev",
-            "reason": "launches Electron against the owner's docs service on :4820 with the default userData"
-          },
-          {
-            "cmd": "bun run install:launcher / scripts/dev-launch.sh",
-            "reason": "write ~/Applications, ~/Desktop and ~/.local/state/system-view"
+            "cmd": "bun --no-env-file test src",
+            "cwd": "codecaine/utilities/token-burner"
           }
         ],
-        "baselines": {
-          "commands.typecheck": {
-            "cmd": "bun --no-env-file run typecheck",
-            "exit": 0,
-            "date": "2026-10-05",
-            "method": "bun run test:apps --root /Users/Ford/workspace-ds (sandbox-exec, profile env, write check), 1 run"
+        "unsafe": [
+          {
+            "cmd": "bun run accept",
+            "reason": "starts the pinned CPA binary and the mock upstream on loopback ports; run it only in the token-burner repo"
           }
-        }
+        ]
       },
       "routes": [
         {
-          "id": "tree",
-          "path": "main",
-          "waitFor": "aside.ds-sidebar"
+          "id": "requests",
+          "path": "/requests",
+          "waitFor": ".ds-shell"
+        },
+        {
+          "id": "accounts",
+          "path": "/accounts",
+          "waitFor": ".ds-shell"
+        },
+        {
+          "id": "sessions",
+          "path": "/sessions",
+          "waitFor": ".ds-shell"
+        },
+        {
+          "id": "keys",
+          "path": "/keys",
+          "waitFor": ".ds-shell"
         }
       ],
       "runProfile": {
         "env": {
-          "SYSTEM_VIEW_NO_HIDE_APPS": "1"
+          "NO_COLOR": "1",
+          "PORT": "{port:ui}",
+          "GW_DATA_DIR": "{tmp}/gateway",
+          "GW_CPA_URL": "http://127.0.0.1:{port:deadCpa}",
+          "GW_CPA_CLIENT_KEY": "fake-client-key",
+          "GW_CPA_MANAGEMENT_KEY": "fake-management-key"
         },
         "unsetEnv": [
-          "DOCS_SHARED_API_URL",
-          "DOCS_SHARED_API_TOKEN",
-          "DOCS_SHARED_PROJECT_ID",
-          "DOCS_STATIC",
-          "DOCS_API",
           "ANTHROPIC_API_KEY",
           "OPENAI_API_KEY",
           "GITHUB_TOKEN",
           "GH_TOKEN",
-          "SYSTEM_VIEW_OPEN_URL",
-          "SYSTEM_VIEW_CAPTURE_DIR",
-          "SYSTEM_VIEW_LOCKIN",
-          "SYSTEM_VIEW_DEBUG"
+          "GW_ADMIN_KEY",
+          "GW_KEYLESS_CIDRS",
+          "HOST"
         ],
         "tempHome": true,
         "fixtures": [],
         "flags": [],
         "ports": {
-          "docs": 47130
+          "ui": 47130,
+          "deadCpa": 47131
         },
         "proof": {
           "status": "unproven",
@@ -3539,59 +3544,50 @@
         }
       },
       "verify": {
-        "route": "tree",
+        "route": "requests",
         "probes": [
           {
-            "selector": ".app-shell",
+            "selector": "html",
             "property": "background-color",
             "token": "color.surface.page"
           },
           {
-            "selector": ".tree",
-            "property": "color",
-            "token": "color.text.body"
-          },
-          {
-            "selector": "aside.ds-sidebar",
+            "selector": ".ds-sidebar",
             "property": "background-color",
             "token": "color.surface.sidebar"
           },
           {
-            "selector": "header.ds-topbar",
-            "property": "border-bottom-color",
-            "token": "color.border.default"
-          },
-          {
-            "selector": "header.ds-topbar h1",
+            "selector": ".ds-topbar-title",
             "property": "color",
             "token": "color.text.ink"
+          },
+          {
+            "selector": ".ds-topbar",
+            "property": "border-bottom-color",
+            "token": "color.border.default"
           }
         ],
         "darkSwitch": {
           "kind": "attribute",
-          "target": ".app-shell"
+          "target": "html"
         },
         "sidebar": {
           "toggle": ".ds-sidebar-toggle",
-          "storageKey": "system-view.sidebar"
+          "storageKey": "token-burner.sidebar"
         }
       },
       "exceptions": [
         {
-          "what": "waits for docs-workbench to be fully done",
-          "reason": "STATE decision 3: the shell pass can rename the --docs-sidebar-* variables its theme bridge reads"
+          "what": "run mode none",
+          "reason": "the wrapper exits without CPA keys and serves data only through a running CPA; M1 1G checked both pages in light and dark by hand against the integration harness (mock upstream + pinned CPA on ephemeral ports)"
         },
         {
-          "what": "native window colors in src/main/index.ts",
-          "reason": "outside the scan path (main process BrowserWindow backgroundColor); keep them in step with the tokens by hand Since pass 1 they are pinned to the JS tokens export (src/main/native-theme.ts)."
+          "what": "tests.safe not run through test:apps",
+          "reason": "new entry (2026-10-14, M1 1G); the managing agent runs bun run test:apps token-burner (twice) and records the baseline before the tests gate counts it"
         },
         {
-          "what": "test:apps re-run under the round-3 sandbox (R3-C, 2026-10-05)",
-          "reason": "bun run test:apps --root /Users/Ford/workspace-ds --commands typecheck,build twice, under the round-3 sandbox (rollout-r3-a d24a159: writes only in the app's own checkouts, checkouts.ts appScope, and the run tmp; a suite connects only to its block and 49152-65535 on loopback, minus the listeners at start and the owner's ports; a named command gets no port; no .env reads) with the write check over the app's own checkouts (git status pinned to their git dirs, find -newer/-cnewer, .git entries): commands.typecheck: run 1 exit 0 in 1.7 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0 in 1.4 s, 0 unexpected writes, 0 cache writes, 0 strays. commands.build: run 1 exit 0 in 1.4 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0 in 1.1 s, 0 unexpected writes, 0 cache writes, 0 strays. Every result matches tests.baselines (commands.typecheck: recorded by R2-C, cmd added in R3-C from the commands those runs executed, which equal the current ones). Reports in rollout/tooling/r3-c-runs/final-1 and final-2"
-        },
-        {
-          "what": "commands.build writes into {tmp}",
-          "reason": "bun --no-env-file run build --outDir {tmp}/system-view-out: electron-vite 5 passes --outDir to every build (main/, preload/ and renderer/ land under it), so nothing goes to the checkout's out/. Under test:apps (R3-C, round-3 sandbox, no network port): run 1 exit 0 in 1.4 s, 0 unexpected writes, 0 cache writes, 0 strays; run 2 exit 0 in 1.1 s, 0 unexpected writes, 0 cache writes, 0 strays"
+          "what": "theme rule light-dark",
+          "reason": "new app: light by default, theme toggle in the topbar saves token-burner.theme and sets data-theme on <html>"
         }
       ]
     },
@@ -3876,11 +3872,11 @@
       "name": "agent-skills manager",
       "wave": 2,
       "kind": "app",
-      "repo": "lascari-ai/agent-skills",
-      "root": "lascari-ai/agent-skills/manager",
+      "repo": "infrastructure/agent-config",
+      "root": "infrastructure/agent-config/manager",
       "scan": {
         "paths": [
-          "lascari-ai/agent-skills/manager/web"
+          "infrastructure/agent-config/manager/web"
         ],
         "exclude": [
           "vendor"
@@ -3895,7 +3891,7 @@
         "via": "copy",
         "detail": "Copy the built tokens.css, layout.css (pass 2 shell) and fonts.css with its fonts into web/vendor/design-system/ and add each route to the whitelist in server.py; checked by the hash of tokens.css."
       },
-      "entryStylesheet": "lascari-ai/agent-skills/manager/web/index.html",
+      "entryStylesheet": "infrastructure/agent-config/manager/web/index.html",
       "theme": {
         "rule": "light-dark",
         "storageKey": "skill-theme"
@@ -3957,19 +3953,19 @@
       },
       "run": {
         "mode": "browser",
-        "cwd": "lascari-ai/agent-skills",
+        "cwd": "infrastructure/agent-config",
         "start": "python3 manager/server.py {flags}",
         "readyPattern": "Skill manager: (http://127\\.0\\.0\\.1:\\d+)",
-        "serveRoot": "lascari-ai/agent-skills/manager/web"
+        "serveRoot": "infrastructure/agent-config/manager/web"
       },
       "commands": {
-        "cwd": "lascari-ai/agent-skills"
+        "cwd": "infrastructure/agent-config"
       },
       "tests": {
         "safe": [
           {
             "cmd": "PYTHONDONTWRITEBYTECODE=1 python3 manager/test_server.py",
-            "cwd": "lascari-ai/agent-skills"
+            "cwd": "infrastructure/agent-config"
           }
         ],
         "baselines": {
@@ -4709,12 +4705,12 @@
       "name": "variator",
       "wave": 1,
       "kind": "app",
-      "repo": "codecaine/tools/variator",
-      "root": "codecaine/tools/variator",
+      "repo": "codecaine/codecaine-tools/variator",
+      "root": "codecaine/codecaine-tools/variator",
       "scan": {
         "paths": [
-          "codecaine/tools/variator/src/web",
-          "codecaine/tools/variator/src/preview"
+          "codecaine/codecaine-tools/variator/src/web",
+          "codecaine/codecaine-tools/variator/src/preview"
         ],
         "exclude": []
       },
@@ -4727,7 +4723,7 @@
         "via": "relative-import",
         "detail": "Point the relative @import in src/web/docs-light.css at the package (read by path, so it stays live), or add a workspaces entry or bun link; never a bun file: dependency."
       },
-      "entryStylesheet": "codecaine/tools/variator/src/web/main.tsx",
+      "entryStylesheet": "codecaine/codecaine-tools/variator/src/web/main.tsx",
       "theme": {
         "rule": "light-dark"
       },
@@ -4789,20 +4785,20 @@
       "run": {
         "mode": "none",
         "reason": "blocked by uncommitted owner work; profile unproven",
-        "cwd": "codecaine/tools/variator",
+        "cwd": "codecaine/codecaine-tools/variator",
         "start": "bun --no-env-file src/server/index.ts",
         "readyPattern": "Variator (http://127\\.0\\.0\\.1:\\d+)",
-        "serveRoot": "codecaine/tools/variator/src/web"
+        "serveRoot": "codecaine/codecaine-tools/variator/src/web"
       },
       "commands": {
-        "cwd": "codecaine/tools/variator",
+        "cwd": "codecaine/codecaine-tools/variator",
         "typecheck": "bun --no-env-file run typecheck"
       },
       "tests": {
         "safe": [
           {
             "cmd": "bun --no-env-file test src",
-            "cwd": "codecaine/tools/variator"
+            "cwd": "codecaine/codecaine-tools/variator"
           }
         ],
         "unsafe": [
@@ -6042,12 +6038,12 @@
       "name": "CircleSnakesWeb playground panels",
       "wave": 3,
       "kind": "app",
-      "repo": "apps/circle-snakes/CircleSnakesWeb",
-      "root": "apps/circle-snakes/CircleSnakesWeb",
+      "repo": "games/circle-snakes/web",
+      "root": "games/circle-snakes/web",
       "scan": {
         "paths": [
-          "apps/circle-snakes/CircleSnakesWeb/src/ui",
-          "apps/circle-snakes/CircleSnakesWeb/src/app"
+          "games/circle-snakes/web/src/ui",
+          "games/circle-snakes/web/src/app"
         ],
         "exclude": [
           "landing",
@@ -6065,7 +6061,7 @@
         "via": "vendor-tgz",
         "detail": "Owner decision: a packed copy through file:vendor/<name>.tgz that carries its fonts; Railway builds only this repo."
       },
-      "entryStylesheet": "apps/circle-snakes/CircleSnakesWeb/src/app/main.ts",
+      "entryStylesheet": "games/circle-snakes/web/src/app/main.ts",
       "theme": {
         "rule": "dark-first"
       },
@@ -6129,19 +6125,19 @@
       "run": {
         "mode": "none",
         "reason": "blocked by uncommitted owner work; profile unproven",
-        "cwd": "apps/circle-snakes/CircleSnakesWeb",
+        "cwd": "games/circle-snakes/web",
         "start": "./node_modules/.bin/vite {flags}",
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
       },
       "commands": {
-        "cwd": "apps/circle-snakes/CircleSnakesWeb",
+        "cwd": "games/circle-snakes/web",
         "typecheck": "./node_modules/.bin/tsc -b"
       },
       "tests": {
         "safe": [
           {
             "cmd": "./node_modules/.bin/vitest run --no-cache",
-            "cwd": "apps/circle-snakes/CircleSnakesWeb"
+            "cwd": "games/circle-snakes/web"
           }
         ],
         "unsafe": [
@@ -6247,213 +6243,6 @@
         {
           "what": "tests.safe not run: blocked",
           "reason": "the app is blocked by uncommitted owner work (STATE.md app_ledger), so test:apps did not run it and tests.baselines has no entry; when it unblocks, the managing agent runs bun run test:apps <app> (twice) and records the baseline before the tests gate counts it"
-        }
-      ]
-    },
-    {
-      "id": "token-burner",
-      "name": "token-burner dashboard",
-      "wave": 3,
-      "kind": "app",
-      "repo": "codecaine/utilities/token-burner",
-      "root": "codecaine/utilities/token-burner",
-      "scan": {
-        "paths": [
-          "codecaine/utilities/token-burner/src/web"
-        ],
-        "exclude": []
-      },
-      "stack": {
-        "summary": "React 19.3, Bun.build in the gateway wrapper (src/admin/dashboard.ts), plain CSS; bun",
-        "tailwind": "none",
-        "packageManager": "bun"
-      },
-      "consume": {
-        "via": "workspace",
-        "detail": "Add ../../../design-system to the workspaces array of the single-package token-burner/package.json and depend on `workspace:*` (a live symlink); bunfig.toml keeps the hoisted linker. src/web/main.tsx imports fonts.css, tokens.css and layout.css, which Bun.build bundles."
-      },
-      "entryStylesheet": "codecaine/utilities/token-burner/src/web/main.tsx",
-      "theme": {
-        "rule": "light-dark"
-      },
-      "literalFloor": 0,
-      "allowlist": null,
-      "shell": true,
-      "folderStandard": true,
-      "passes": {
-        "1": {
-          "required": true
-        },
-        "2": {
-          "required": true
-        },
-        "3": {
-          "required": true
-        }
-      },
-      "checks": {
-        "resolution": {
-          "required": true
-        },
-        "wiring": {
-          "required": true
-        },
-        "literals": {
-          "required": true
-        },
-        "names": {
-          "required": true
-        },
-        "shell": {
-          "required": true
-        },
-        "structure": {
-          "required": true
-        }
-      },
-      "gates": {
-        "lint": {
-          "required": true
-        },
-        "verify": {
-          "required": false,
-          "reason": "run mode none: the dashboard needs the gateway wrapper with a pinned CPA binary and the mock upstream (test/integration/proxy-stack.ts); profile unproven; verified statically only"
-        },
-        "snapshot": {
-          "required": false,
-          "reason": "run mode none: the dashboard needs the gateway wrapper with a pinned CPA binary and the mock upstream (test/integration/proxy-stack.ts); profile unproven; verified statically only"
-        },
-        "pixelDiff": {
-          "required": false,
-          "reason": "run mode none: the dashboard needs the gateway wrapper with a pinned CPA binary and the mock upstream (test/integration/proxy-stack.ts); profile unproven; verified statically only"
-        },
-        "tests": {
-          "required": true
-        }
-      },
-      "run": {
-        "mode": "none",
-        "reason": "needs the gateway wrapper, a pinned CPA binary and the mock upstream; profile unproven",
-        "cwd": "codecaine/utilities/token-burner",
-        "start": "bun --no-env-file src/index.ts",
-        "readyPattern": "Gateway: (http://127\\.0\\.0\\.1:\\d+)"
-      },
-      "commands": {
-        "cwd": "codecaine/utilities/token-burner",
-        "typecheck": "bun --no-env-file run typecheck",
-        "build": "bun --no-env-file run build:web"
-      },
-      "tests": {
-        "safe": [
-          {
-            "cmd": "bun --no-env-file test src",
-            "cwd": "codecaine/utilities/token-burner"
-          }
-        ],
-        "unsafe": [
-          {
-            "cmd": "bun run accept",
-            "reason": "starts the pinned CPA binary and the mock upstream on loopback ports; run it only in the token-burner repo"
-          }
-        ]
-      },
-      "routes": [
-        {
-          "id": "requests",
-          "path": "/requests",
-          "waitFor": ".ds-shell"
-        },
-        {
-          "id": "accounts",
-          "path": "/accounts",
-          "waitFor": ".ds-shell"
-        },
-        {
-          "id": "sessions",
-          "path": "/sessions",
-          "waitFor": ".ds-shell"
-        },
-        {
-          "id": "keys",
-          "path": "/keys",
-          "waitFor": ".ds-shell"
-        }
-      ],
-      "runProfile": {
-        "env": {
-          "NO_COLOR": "1",
-          "PORT": "{port:ui}",
-          "GW_DATA_DIR": "{tmp}/gateway",
-          "GW_CPA_URL": "http://127.0.0.1:{port:deadCpa}",
-          "GW_CPA_CLIENT_KEY": "fake-client-key",
-          "GW_CPA_MANAGEMENT_KEY": "fake-management-key"
-        },
-        "unsetEnv": [
-          "ANTHROPIC_API_KEY",
-          "OPENAI_API_KEY",
-          "GITHUB_TOKEN",
-          "GH_TOKEN",
-          "GW_ADMIN_KEY",
-          "GW_KEYLESS_CIDRS",
-          "HOST"
-        ],
-        "tempHome": true,
-        "fixtures": [],
-        "flags": [],
-        "ports": {
-          "ui": 47260,
-          "deadCpa": 47261
-        },
-        "proof": {
-          "status": "unproven",
-          "method": ""
-        }
-      },
-      "verify": {
-        "route": "requests",
-        "probes": [
-          {
-            "selector": "html",
-            "property": "background-color",
-            "token": "color.surface.page"
-          },
-          {
-            "selector": ".ds-sidebar",
-            "property": "background-color",
-            "token": "color.surface.sidebar"
-          },
-          {
-            "selector": ".ds-topbar-title",
-            "property": "color",
-            "token": "color.text.ink"
-          },
-          {
-            "selector": ".ds-topbar",
-            "property": "border-bottom-color",
-            "token": "color.border.default"
-          }
-        ],
-        "darkSwitch": {
-          "kind": "attribute",
-          "target": "html"
-        },
-        "sidebar": {
-          "toggle": ".ds-sidebar-toggle",
-          "storageKey": "token-burner.sidebar"
-        }
-      },
-      "exceptions": [
-        {
-          "what": "run mode none",
-          "reason": "the wrapper exits without CPA keys and serves data only through a running CPA; M1 1G checked both pages in light and dark by hand against the integration harness (mock upstream + pinned CPA on ephemeral ports)"
-        },
-        {
-          "what": "tests.safe not run through test:apps",
-          "reason": "new entry (2026-10-14, M1 1G); the managing agent runs bun run test:apps token-burner (twice) and records the baseline before the tests gate counts it"
-        },
-        {
-          "what": "theme rule light-dark",
-          "reason": "new app: light by default, theme toggle in the topbar saves token-burner.theme and sets data-theme on <html>"
         }
       ]
     }

@@ -34,19 +34,18 @@ Status as of 2026-10-07. For current status run `bun run progress`.
 | viewer-ui | `codecaine/core/agent-kernel/packages/viewer-ui` | `@codecaine-ai/agent-kernel-viewer-ui` | host-css library | Migrated: pass 1 (2, 3 n/a) | n/a |
 | simple-research-kernel | `codecaine/core/agent-kernel/examples/simple-research-kernel` | `@codecaine-ai/agent-kernel-example-simple-research-kernel` | workspace (Tailwind v3 preset) | Migrated: passes 1, 2, 3 | Shell |
 | prompt-kit-ui | `codecaine/core/prompt-kit/packages/prompt-kit` | `@codecaine-ai/prompt-kit` | host-css library | Migrated: pass 1 (2, 3 n/a) | n/a |
-| system-view | `system-view` | `system-view` | vendor-tgz | Migrated: passes 1, 2, 3. Not under git, so not rolled out (see [Rollout record](#rollout-record)). | Shell |
-| agent-skills-manager | `lascari-ai/agent-skills/manager` | none (vanilla JS) | copy | Migrated: passes 1, 2 (3 n/a) | Shell |
+| agent-skills-manager | `infrastructure/agent-config/manager` | none (vanilla JS) | copy | Migrated: passes 1, 2 (3 n/a) | Shell |
 | skitzo | `experiments/skitzo/apps/frontend` | `frontend` | vendor-tgz | Migrated: passes 1, 2, 3 | Shell |
 | personal-site | `lascari-ai/personal-site` | `lascari-personal-site` | vendor-tgz | Excluded: out of scope. Its migration branch is not merged. | n/a |
 | annotations | `codecaine/core/annotations` | `@codecaine-ai/annotations` | host-css library | Pending: uncommitted `package.json` version line | n/a |
 | observatory | `codecaine/core/observatory` | `@codecaine-ai/observatory` | link | Pending: uncommitted `package.json`, 4 UI files and 3 untracked items | Shell |
-| variator | `codecaine/tools/variator` | `variator` | relative-import | Pending: uncommitted files in `src/web` and `src/preview` | Shell |
+| variator | `codecaine/codecaine-tools/variator` | `variator` | relative-import | Pending: uncommitted files in `src/web` and `src/preview` | Shell |
 | slidev-template | `learning/lascari-ai-learning/presentations/SlidevTemplate` | `slidev` | relative-import | Pending: uncommitted `components/MotionCanvas.vue` and a description file | n/a |
 | budget | `life/budget/apps/web` | `@personal-budget/web` | workspace | Pending: 83 uncommitted files in `apps/web/src` and staged submodules | Shell |
 | pen-plotter | `apps/pen-plotter/apps/desktop` | `@pen-plotter/desktop` | workspace | Pending: uncommitted `SetupPanel.tsx` and 12 open worktrees to merge. Commits have landed since, so re-assess. | Shell |
 | mainmenu | `apps/MainMenu/apps/scene-engine` | `scene-engine` | npm-file | Pending: uncommitted editor work in `app/editor/_components` | Shell |
 | gamecube | `harnesses/gamecube-decomp-harness/apps/frontend` | `@decomp-orchestrator/frontend` | link | Pending: uncommitted `styles.css`, `vite.config.ts` and root `package.json` | Shell |
-| circlesnakes-panels | `apps/circle-snakes/CircleSnakesWeb` | `circle-snakes-web` | vendor-tgz | Pending: 42 uncommitted entries in `src/ui`, `src/app` and `vite.config.ts` | n/a |
+| circlesnakes-panels | `games/circle-snakes/web` | `circle-snakes-web` | vendor-tgz | Pending: 42 uncommitted entries in `src/ui`, `src/app` and `vite.config.ts` | n/a |
 
 - Libraries (docs-viewer, docs-publish, viewer-shell, viewer-ui, prompt-kit-ui, annotations) have no pass 3. Libraries and leaf renderers have no pass 2: they render inside a host's shell. Each n/a pass carries its reason in the registry entry.
 - Every pending app is blocked by uncommitted work in its repo. The action is to commit that work. The pending apps are the next batch.
@@ -63,7 +62,7 @@ A token change is a `bun run build` in design-system (see [Change a token](../RE
 | npm-file | mainmenu | Live symlink, unless an `.npmrc` sets `install-links=true`. |
 | relative-import | variator, slidev-template | Read by path, so live on the next reload or build. |
 | relative-import (build time) | docs-publish | Compiled into `dist/styles/docs.css` at build time. Published pages change only after a docs-publish rebuild. |
-| vendor-tgz | system-view, skitzo, circlesnakes-panels | A snapshot. Needs a version bump, a repack and a new lockfile entry: [consume.md §5](consume.md#repack-after-a-token-change). |
+| vendor-tgz | skitzo, circlesnakes-panels | A snapshot. Needs a version bump, a repack and a new lockfile entry: [consume.md §5](consume.md#repack-after-a-token-change). |
 | copy | agent-skills-manager | A snapshot. Copy the built `tokens.css`, `layout.css` and `fonts.css` with its fonts into `web/vendor/design-system/` again. The linter checks the copy by the hash of `tokens.css`. |
 | host-css library | docs-viewer, viewer-shell, viewer-ui, prompt-kit-ui, annotations | Through the host. The host must load `tokens.css` before the library's CSS, and gets the change through its own consume type. |
 
@@ -102,7 +101,7 @@ The first rollout shipped on 2026-10-07. Each repo's `origin/main` was fast-forw
 
 Not rolled out:
 
-1. system-view. It is not under git. Its migration has to be copied in by hand.
+1. system-view. It was not under git, and its migrated copy lived only in the rollout mirror. `apps.json` no longer lists it.
 2. personal-site. Out of scope.
 3. The 9 pending apps in the [Consumers](#consumers) table.
 
