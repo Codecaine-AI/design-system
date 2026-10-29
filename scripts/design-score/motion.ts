@@ -169,11 +169,12 @@ export function readScale(probe: string): { scale: number; selector: string; box
   const s = getComputedStyle(el);
   let scale = 1;
   if (s.scale && s.scale !== "none") scale *= Number(s.scale.split(/\s+/)[0]) || 1;
-  // matrix(a, b, ...) and matrix3d(m11, m12, ...): the x scale is the length of the first column.
-  const m = /^matrix(?:3d)?\(([^)]+)\)/.exec(s.transform);
+  // matrix(a, b, ...) and matrix3d(m11, m12, m13, ...): the x scale is the length of the first column,
+  // z included for matrix3d, so a rotateY on press is not read as shrinking.
+  const m = /^matrix(3d)?\(([^)]+)\)/.exec(s.transform);
   if (m) {
-    const [a, b] = m[1]!.split(",").map(Number);
-    scale *= Math.hypot(a!, b!);
+    const v = m[2]!.split(",").map(Number);
+    scale *= m[1] ? Math.hypot(v[0]!, v[1]!, v[2]!) : Math.hypot(v[0]!, v[1]!);
   }
   const r = el.getBoundingClientRect();
   const label = (el.getAttribute("aria-label") || el.textContent || "").replace(/\s+/g, " ").trim().slice(0, 30);

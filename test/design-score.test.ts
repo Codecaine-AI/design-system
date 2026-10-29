@@ -264,8 +264,9 @@ describe.skipIf(!!process.env.DS_SKIP_BROWSER)("design:score v2 in a browser", (
     expect(hits.map((h) => h.finding.measured)).toContainEqual(expect.stringMatching(/^hovering button\.grow "Grow": moves or resizes the control/));
   });
 
-  test("M-press-scale reads a matrix3d press transform: scale(0.9) translateZ(1px) on :active fails", async () => {
-    await page.setContent(`<style>.press { width: 80px; height: 32px; } .press:active { transform: scale(0.9) translateZ(1px); }</style>
+  // Forces :active on one button through CDP and returns the M-press-scale findings for its press.
+  const pressFindings = async (activeTransform: string) => {
+    await page.setContent(`<style>.press { width: 80px; height: 32px; } .press:active { transform: ${activeTransform}; }</style>
       <body style="margin:20px"><button class="press">Press</button></body>`);
     await page.evaluate(() => void ((window as unknown as { __dsProbe: Element[] }).__dsProbe = [document.querySelector(".press")!]));
     const cdp = await page.context().newCDPSession(page);
@@ -278,11 +279,18 @@ describe.skipIf(!!process.env.DS_SKIP_BROWSER)("design:score v2 in a browser", (
       const rest = await page.evaluate(readScale, "0");
       await cdp.send("CSS.forcePseudoState", { nodeId, forcedPseudoClasses: ["hover", "active"] });
       const pressed = await page.evaluate(readScale, "0");
-      const found = analyzeMotion([], [{ scale: pressed.scale, rest: rest.scale, selector: pressed.selector, box: rest.box }], [])["M-press-scale"]!;
-      expect(found.map((f) => f.severity)).toEqual(["fail"]);
+      return analyzeMotion([], [{ scale: pressed.scale, rest: rest.scale, selector: pressed.selector, box: rest.box }], [])["M-press-scale"]!;
     } finally {
       await cdp.detach();
     }
+  };
+
+  test("M-press-scale reads a matrix3d press transform: scale(0.9) translateZ(1px) on :active fails", async () => {
+    expect((await pressFindings("scale(0.9) translateZ(1px)")).map((f) => f.severity)).toEqual(["fail"]);
+  });
+
+  test("M-press-scale: a rotateY on :active is not read as a press scale", async () => {
+    expect(await pressFindings("rotateY(30deg)")).toEqual([]);
   });
 
   test("the read-only guard closes every WebSocket before a message reaches its server", async () => {
