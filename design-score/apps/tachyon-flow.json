@@ -1,0 +1,120 @@
+{
+  "app": "tachyon-flow",
+  "name": "Tachyon Flow (Parkour)",
+  "repo": "experiments/tachyon-flow-clone",
+  "baseUrl": "http://127.0.0.1:47740",
+  "sourceDirs": [
+    "game/src"
+  ],
+  "themes": {
+    "dark": {
+      "colorScheme": "dark",
+      "assert": "html[data-theme=\"dark\"]"
+    }
+  },
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "width": 1024,
+      "height": 768
+    }
+  ],
+  "ignore": [
+    "canvas"
+  ],
+  "settleMs": 1500,
+  "cap": 6,
+  "motionAllow": [
+    {
+      "name": "ds-shell-sidebar",
+      "selector": ".ds-shell",
+      "props": [
+        "grid-template-columns"
+      ],
+      "reason": "The design-system app shell animates its sidebar column when it collapses (css/layout.css .ds-shell). The lab uses the shell; the shell owns it. Same allowance as knowledge-system."
+    }
+  ],
+  "pages": [
+    {
+      "id": "game-start",
+      "path": "/",
+      "waitFor": ".hud-overlay[data-mode=\"start\"]",
+      "note": "The game on load: the start card (title, sound settings, controls) over the 3D course. The app has one theme: index.html fixes data-theme=\"dark\", and the HUD floats over a 3D scene. Serve a build on the base URL (in game/: vite build --outDir <tmp>, then vite preview --outDir <tmp> --port 47740): the dev server is too slow. Every page draws a live WebGL canvas, and design:score launches Chromium with --disable-gpu, so a busy machine can push the game pages past the 15 s waitFor."
+    },
+    {
+      "id": "game-hud",
+      "path": "/?autoplay=1",
+      "waitFor": ".hud-overlay[data-mode=\"hidden\"]",
+      "note": "Playing: the overlay is hidden, so only the timer, checkpoint and speed HUD show over the canvas."
+    },
+    {
+      "id": "game-paused",
+      "path": "/?autoplay=1",
+      "waitFor": ".hud-overlay[data-mode=\"hidden\"]",
+      "actions": [
+        {
+          "press": "Escape"
+        },
+        {
+          "waitFor": ".hud-overlay[data-mode=\"paused\"]"
+        }
+      ],
+      "note": "Paused with Esc: the card with Restart, sound settings and controls."
+    },
+    {
+      "id": "viewer",
+      "path": "/?viewer=1",
+      "waitFor": ".viewer-panel",
+      "note": "The clip viewer: a panel over the 3D clip preview."
+    },
+    {
+      "id": "lab",
+      "path": "/?lab=1&frame=0",
+      "waitFor": ".lab-shell",
+      "note": "The animation lab on its first move, side by side."
+    },
+    {
+      "id": "lab-ghost",
+      "path": "/?lab=1&frame=0&mode=ghost",
+      "waitFor": ".lab-shell",
+      "note": "The animation lab in Ghost mode."
+    },
+    {
+      "id": "lab-in-game",
+      "path": "/?lab=1&frame=0&mode=capture",
+      "waitFor": ".lab-shell",
+      "note": "The animation lab in In-game (capture) mode."
+    },
+    {
+      "id": "lab-notes",
+      "path": "/?lab=1&frame=0",
+      "waitFor": ".notes-panel",
+      "actions": [
+        {
+          "scrollTo": ".notes-panel"
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "note": "The lab scrolled to the notes panel (move facts, keys, sign-off)."
+    },
+    {
+      "id": "lab-sidebar-collapsed",
+      "path": "/?lab=1&frame=0",
+      "waitFor": ".lab-shell",
+      "actions": [
+        {
+          "click": ".ds-sidebar-toggle"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "note": "The lab with its sidebar collapsed."
+    }
+  ]
+}
