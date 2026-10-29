@@ -565,7 +565,7 @@
           }
         },
         {
-          "insert": " says what the run measured. It holds the git head and changed-file count of the app and the design system, the Chromium build, the axe-core version and sha256, and up to 50 blocked requests."
+          "insert": " says what the run measured. It holds the git head and changed-file count of the app and the design system. It also holds the Chromium build, the axe-core version and sha256, and up to 50 blocked requests and WebSockets."
         }
       ],
       "children": []
@@ -1594,7 +1594,7 @@
           }
         },
         {
-          "insert": ". Browsing is read-only. The run aborts every request other than GET, HEAD and OPTIONS, and no config can turn that off."
+          "insert": ". Browsing is read-only, and no config can turn that off. The run aborts every request other than GET, HEAD and OPTIONS. It closes every WebSocket before the socket reaches its server."
         }
       ],
       "children": []

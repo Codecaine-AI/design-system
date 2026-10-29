@@ -4,7 +4,8 @@
  *
  * Every check measures only elements that are visible and intersect the viewport, so each finding has
  * evidence in the state screenshot. Checks prefer missing a finding to guessing: anything whose value
- * cannot be measured with confidence (text over an image, a background from a pseudo-element) is skipped.
+ * cannot be measured with confidence (text over an image, a background from a pseudo-element, a
+ * background inside the same faded group as the text) is skipped.
  */
 
 export interface ProbeOptions {
@@ -293,7 +294,12 @@ export function probePage(o: ProbeOptions): { findings: ProbeFinding[]; stats: R
     const layers: Array<[number, number, number, number]> = [];
     let uncertain = false;
     let opacity = 1;
-    for (let a: Element | null = el; a && a !== document.documentElement; a = a.parentElement) opacity *= px(cs(a).opacity) || (cs(a).opacity === "0" ? 0 : 1);
+    const faded: Element[] = [];
+    for (let a: Element | null = el; a && a !== document.documentElement; a = a.parentElement) {
+      const o = px(cs(a).opacity) || (cs(a).opacity === "0" ? 0 : 1);
+      if (o < 1) faded.push(a);
+      opacity *= o;
+    }
     for (let i = idx; i < stack.length; i++) {
       const x = stack[i]!;
       const xs = cs(x);
@@ -306,6 +312,11 @@ export function probePage(o: ProbeOptions): { findings: ProbeFinding[]; stats: R
         break;
       }
       const c = rgba(xs.backgroundColor);
+      // A background inside the faded group fades with the text: the group's colors are not read here.
+      if (c[3] > 0 && faded.some((f) => f.contains(x))) {
+        uncertain = true;
+        break;
+      }
       if (c[3] > 0) layers.push(c);
       if (c[3] >= 0.999) break;
     }

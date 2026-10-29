@@ -8,9 +8,10 @@ import { CHECK_IDS, CHECKS } from "../scripts/design-score/checks";
 import { analyzeMotion, type MotionRecord } from "../scripts/design-score/motion";
 import { probePage } from "../scripts/design-score/probes";
 import { loadRuleMap, loadRules, RULE_AREAS, rulesByCheck } from "../scripts/design-score/rules";
-import { selectPages } from "../scripts/design-score/run";
+import { focusPass } from "../scripts/design-score/focus";
+import { guardReadOnly, selectPages } from "../scripts/design-score/run";
 import { AREAS, appAreas, appScore, pageAreas, pageScore, statusOf } from "../scripts/design-score/score";
-import { diffShift, dropScrollbarMoves, stateShiftPass, type ShiftBox } from "../scripts/design-score/state-shift";
+import { diffShift, dropScrollbarMoves, keepScroll, stateShiftPass, type ShiftBox } from "../scripts/design-score/state-shift";
 import { runStaticChecks } from "../scripts/design-score/static-checks";
 import type { PageCheck, PageResult, RawFinding } from "../scripts/design-score/types";
 import { DESIGN_SYSTEM_ROOT, workspaceRoot } from "../scripts/lib/registry";
@@ -231,5 +232,65 @@ describe.skipIf(!!process.env.DS_SKIP_BROWSER)("design:score v2 in a browser", (
     const contrast = (await probe()).findings.filter((f: { check: string }) => f.check === "R-contrast");
     expect(contrast.map((f: { selector: string }) => f.selector).some((sel: string) => sel.includes("solid"))).toBe(false);
     expect(contrast.length).toBe(1);
+  });
+
+  test("R-contrast: text and a background in one faded group are skipped; a faded text on the page still fails", async () => {
+    await page.setContent(`<body style="margin:20px;background:#fff;font:16px sans-serif">
+      <div style="background:#000;color:#fff;opacity:.5;padding:8px"><span class="on-dark">White on a faded black panel</span></div>
+      <div style="background:#000;padding:8px"><div style="background:#fff;color:#000;opacity:.5;padding:8px"><span class="on-light">Black on a faded white panel</span></div></div>
+      <p class="gray" style="color:#666;opacity:.6">Faded gray</p></body>`);
+    const contrast = (await probe()).findings.filter((f: { check: string }) => f.check === "R-contrast");
+    // Without the skip, the faded white panel would read as 3.95:1 (#808080 on #ffffff): it renders black on #808080.
+    expect(contrast.map((f: { selector: string }) => f.selector)).toEqual([expect.stringContaining("gray")]);
+  });
+
+  test("R-focus-visible: a control with no focus style fails next to a control with a ring", async () => {
+    await page.setContent(`<style>button { width: 80px; height: 32px; border: 1px solid #888; background: #eee; } .bare, .bare:focus { outline: none; } .ring:focus-visible { outline: 3px solid #00f; outline-offset: 1px; }</style>
+      <body style="margin:20px;background:#fff"><div style="display:flex;gap:2px"><button class="bare">Bare</button><button class="ring">Ring</button></div></body>`);
+    const { findings, stops } = await focusPass(page, 10);
+    expect(stops).toBe(2);
+    expect(findings.map((f) => f.selector)).toEqual([expect.stringContaining("button.bare")]);
+  });
+
+  test("R-state-shift: the shift pass runs on the view the page state left, not where the focus pass scrolled", async () => {
+    await page.setContent(`<style>body { margin: 20px; } button { display: block; height: 32px; margin: 8px 0; border: 1px solid #888; } .grow:hover { border-width: 4px; }</style>
+      <body><button class="grow">Grow</button>${Array.from({ length: 40 }, (_, i) => `<button class="b">B${i}</button>`).join("")}</body>`);
+    const restoreView = await keepScroll(page);
+    await focusPass(page, 30);
+    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+    await restoreView();
+    const { hits } = await stateShiftPass(page, { ignore: [], open: [], max: 8 });
+    expect(hits.map((h) => h.finding.measured)).toContainEqual(expect.stringMatching(/^hovering button\.grow "Grow": moves or resizes the control/));
+  });
+
+  test("the read-only guard closes every WebSocket before a message reaches its server", async () => {
+    const received: string[] = [];
+    const server = Bun.serve({
+      port: 0,
+      hostname: "127.0.0.1",
+      fetch: (req, srv) => (srv.upgrade(req) ? undefined : new Response("no", { status: 400 })),
+      websocket: { message: (_ws, message) => void received.push(String(message)) },
+    });
+    const ctx = await browser.newContext();
+    try {
+      const blocked: string[] = [];
+      await guardReadOnly(ctx, blocked);
+      const p = await ctx.newPage();
+      await p.setContent("<body></body>");
+      await p.evaluate((url: string) => new Promise<void>((done) => {
+        const ws = new WebSocket(url);
+        ws.onopen = () => {
+          ws.send("write");
+          setTimeout(done, 300);
+        };
+        ws.onclose = () => done();
+      }), `ws://127.0.0.1:${server.port}/`);
+      await Bun.sleep(200);
+      expect(received).toEqual([]);
+      expect(blocked).toEqual([`WebSocket ws://127.0.0.1:${server.port}/`]);
+    } finally {
+      await ctx.close();
+      server.stop(true);
+    }
   });
 });

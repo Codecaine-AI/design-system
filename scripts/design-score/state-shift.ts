@@ -414,6 +414,35 @@ async function measure(page: any, pick: string, ignore: string[], act: () => Pro
   return hit;
 }
 
+/**
+ * Saves the window's and every scroll container's scroll position. The returned function blurs the
+ * focused element and puts every saved position back: run it before stateShiftPass, so the pass picks
+ * its controls from the view the page state left (the focus pass scrolls to reach later Tab stops).
+ */
+export async function keepScroll(page: any): Promise<() => Promise<void>> {
+  await page.evaluate(() => {
+    const saved: Array<[Element, number, number]> = [];
+    for (const el of document.querySelectorAll("*")) {
+      const s = getComputedStyle(el);
+      const scrolls = el === document.scrollingElement || /auto|scroll|hidden/.test(s.overflowX + s.overflowY);
+      if (scrolls && (el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth)) saved.push([el, el.scrollLeft, el.scrollTop]);
+    }
+    (window as unknown as { __dsScroll?: unknown }).__dsScroll = { x: window.scrollX, y: window.scrollY, saved };
+  });
+  return async () => {
+    await page.evaluate(() => {
+      (document.activeElement as HTMLElement | null)?.blur?.();
+      const st = (window as unknown as { __dsScroll?: { x: number; y: number; saved: Array<[Element, number, number]> } }).__dsScroll;
+      if (!st) return;
+      for (const [el, left, top] of st.saved) {
+        el.scrollLeft = left;
+        el.scrollTop = top;
+      }
+      window.scrollTo(st.x, st.y);
+    });
+  };
+}
+
 /** The R-state-shift pass on an open page. */
 export async function stateShiftPass(page: any, o: ShiftOptions): Promise<{ hits: ShiftHit[]; note: string }> {
   const style = await page.addStyleTag({ content: NO_MOTION });

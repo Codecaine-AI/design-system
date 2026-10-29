@@ -384,7 +384,7 @@
       "props": {},
       "text": [
         {
-          "insert": "The pass skips text it cannot measure. Text inside an svg, disabled text, gradient text and text with a blend mode are skipped. Text over an image, a video, a canvas, an iframe, a background image or a backdrop filter is also skipped."
+          "insert": "The pass skips text it cannot measure. Text inside an svg, disabled text, gradient text and text with a blend mode are skipped. Text over an image, a video, a canvas, an iframe, a background image or a backdrop filter is also skipped. Faded text is skipped when a background under it sits inside the same faded ancestor, because that ancestor fades the text and the background together."
         }
       ],
       "children": []

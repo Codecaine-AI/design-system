@@ -17,7 +17,7 @@ import { markMotionCandidates, probePage, type ProbeFinding } from "./probes";
 import { writeReport } from "./report";
 import { loadRuleMap } from "./rules";
 import { appAreas, appScore, checkTotals, markNa, pageAreas, pageScore, SCORING, statusOf, tally } from "./score";
-import { stateShiftPass, watchAfter, watchBefore, type ShiftBox } from "./state-shift";
+import { keepScroll, stateShiftPass, watchAfter, watchBefore, type ShiftBox } from "./state-shift";
 import { runStaticChecks } from "./static-checks";
 import { judgeStub } from "./judge";
 import { decodePng } from "../lib/png";
@@ -116,6 +116,24 @@ function urlFor(base: string, path: string, theme: ThemeSpec): string {
   return url.toString();
 }
 
+/**
+ * Keeps a scored context read-only: anything but a GET, HEAD or OPTIONS request is aborted, and every
+ * WebSocket is closed before it reaches its server (no connectToServer). Each one goes into `blocked`.
+ */
+export async function guardReadOnly(ctx: any, blocked: string[]): Promise<void> {
+  await ctx.route("**/*", (route: any) => {
+    const req = route.request();
+    const method = req.method();
+    if (method === "GET" || method === "HEAD" || method === "OPTIONS") return route.continue();
+    blocked.push(`${method} ${req.url()}`);
+    return route.abort("blockedbyclient");
+  });
+  await ctx.routeWebSocket(() => true, (ws: any) => {
+    blocked.push(`WebSocket ${ws.url()}`);
+    return ws.close({ code: 1008, reason: "design:score is read-only" });
+  });
+}
+
 export async function runScore(opts: RunOptions): Promise<{ dir: string; scorecard: Scorecard }> {
   const { config } = opts;
   const startedAt = new Date();
@@ -191,13 +209,7 @@ export async function runScore(opts: RunOptions): Promise<{ dir: string; scoreca
       }, theme.localStorage);
     }
     if (recorder) await ctx.addInitScript(installMotionRecorder);
-    await ctx.route("**/*", (route: any) => {
-      const req = route.request();
-      const method = req.method();
-      if (method === "GET" || method === "HEAD" || method === "OPTIONS") return route.continue();
-      blockedAll.push(`${method} ${req.url()}`);
-      return route.abort("blockedbyclient");
-    });
+    await guardReadOnly(ctx, blockedAll);
     return ctx;
   };
 
@@ -320,6 +332,9 @@ export async function runScore(opts: RunOptions): Promise<{ dir: string; scoreca
             }
           }
 
+          // The view the page state left, for the shift pass (the focus pass scrolls).
+          const restoreView = first && !skip.has("R-state-shift") ? await keepScroll(page) : null;
+
           // Focus: every theme, first viewport (the ring's color is what changes by theme).
           if (opts.focus && vi === 0 && !skip.has("R-focus-visible")) {
             const focus = await focusPass(page, 30);
@@ -341,6 +356,7 @@ export async function runScore(opts: RunOptions): Promise<{ dir: string; scoreca
           // State shift: first theme, first viewport, after everything else measured this state.
           if (first && !skip.has("R-state-shift")) {
             try {
+              await restoreView?.();
               const pass = await stateShiftPass(page, { ignore: config.ignore ?? [], open: config.shift?.open ?? [], max: config.shift?.max ?? 16 });
               const hits = watchHit ? [{ ...watchHit, png }, ...pass.hits] : pass.hits;
               const { kept, fails, warns, cut } = capped(hits.map((h) => h.finding), cap);

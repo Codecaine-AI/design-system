@@ -67,7 +67,7 @@
           }
         },
         {
-          "insert": " hovers, focuses, opens and selects controls, and fails when that moves or resizes the layout. It is a runtime check in the interaction area. It runs once per page, in the first theme and viewport, after the other runtime checks."
+          "insert": " hovers, focuses, opens and selects controls, and fails when that moves or resizes the layout. It is a runtime check in the interaction area. It runs once per page, in the first theme and viewport, after the other runtime checks. The run first restores the scroll positions that the page state left, because the focus pass scrolls the page."
         }
       ],
       "children": []

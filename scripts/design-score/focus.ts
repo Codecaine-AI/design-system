@@ -1,10 +1,11 @@
 /**
  * R-focus-visible: Tab through the first N focusables; each must change the pixels around it.
  *
- * For each Tab stop: capture a clip around the focused element, press Tab, capture the same clip again
- * (the element now unfocused) and count changed pixels. Transitions are switched off for the pass, so
- * both captures are settled. When the element moved between the captures (focus scrolled it), the
- * computed style decides instead: an outline or a changed box-shadow counts as visible.
+ * For each Tab stop: capture a clip around the focused element, blur it, capture the same clip again
+ * (nothing focused, so a neighbour's ring cannot change the clip) and count changed pixels, then focus
+ * the element again and press Tab from it. Transitions are switched off for the pass, so both captures
+ * are settled. When the element moved between the captures, the computed style decides instead: an
+ * outline or a changed box-shadow counts as visible.
  * Tabbing stops at a contenteditable (Tab may edit there), when focus cycles, or after N stops.
  */
 import { decodePng } from "../lib/png";
@@ -75,6 +76,19 @@ function styleOf(key: string): { box: Box; outline: string; shadow: string } | n
   return { box: { x: r.left, y: r.top, w: r.width, h: r.height }, outline, shadow: s.boxShadow };
 }
 
+/** Blurs the focused element (inside open shadow roots too) and remembers it. Self-contained. */
+function blurActive(): void {
+  let el = document.activeElement;
+  while (el?.shadowRoot?.activeElement) el = el.shadowRoot.activeElement;
+  (window as unknown as { __dsBlurred?: Element | null }).__dsBlurred = el;
+  (el as HTMLElement | null)?.blur?.();
+}
+
+/** Focuses the element blurActive blurred, without scrolling. Self-contained. */
+function refocusBlurred(): void {
+  ((window as unknown as { __dsBlurred?: Element | null }).__dsBlurred as HTMLElement | null)?.focus?.({ preventScroll: true });
+}
+
 const NO_MOTION = "*, *::before, *::after { transition: none !important; animation-duration: 0s !important; animation-delay: 0s !important; caret-color: transparent !important; }";
 
 function clipFor(box: Box, vw: number, vh: number, pad = 6) {
@@ -136,8 +150,8 @@ export async function focusPass(page: any, max = 30): Promise<FocusResult> {
       const focusedPng: Uint8Array | null = clip ? await page.screenshot({ clip }) : null;
       // Never Tab inside an editor (Tab can indent there); its focus shows as the caret. Stop here.
       if (current.editable) break;
-      await page.keyboard.press("Tab");
-      const next: Stop | null = await page.evaluate(activeInfo);
+      // The unfocused capture has nothing focused (a neighbour's ring would change the same clip).
+      await page.evaluate(blurActive);
       await page.waitForTimeout(40);
       const after = await page.evaluate(styleOf, current.key);
       let visible: boolean | null = null;
@@ -157,6 +171,10 @@ export async function focusPass(page: any, max = 30): Promise<FocusResult> {
         visible = focusedNow.outline !== "none" || focusedNow.shadow !== after.shadow;
         measured = `element moved between captures; style: outline ${focusedNow.outline}, box-shadow ${focusedNow.shadow === after.shadow ? "unchanged" : "changes"}`;
       }
+      // Focus the control again and Tab on from it, so the Tab order is the page's own.
+      await page.evaluate(refocusBlurred);
+      await page.keyboard.press("Tab");
+      const next: Stop | null = await page.evaluate(activeInfo);
       if (visible === false) {
         findings.push({
           check: "R-focus-visible",

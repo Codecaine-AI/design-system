@@ -42,7 +42,6 @@
         "fp1",
         "fp2",
         "fp3",
-        "fp-miss",
         "h-debug",
         "d-lead",
         "d1",
@@ -291,7 +290,7 @@
       },
       "text": [
         {
-          "insert": "The pass presses Tab and screenshots the same clip again, now without focus. "
+          "insert": "The pass blurs the control and screenshots the same clip again, with nothing focused. "
         },
         {
           "insert": "changedPixels",
@@ -318,7 +317,7 @@
       },
       "text": [
         {
-          "insert": "A stop with too few changed pixels is a finding. The pass keeps a crop of the focused clip for the report."
+          "insert": "A stop with too few changed pixels is a finding. The pass keeps a crop of the focused clip for the report, then focuses the control again and presses Tab from it."
         }
       ],
       "children": []
@@ -329,7 +328,7 @@
       "props": {},
       "text": [
         {
-          "insert": "Focus can scroll the page between the two clips. When the control moved, the pass reads the computed style instead. A set outline or a changed box-shadow then counts as visible."
+          "insert": "The control can move between the two clips. When the control moved, the pass reads the computed style instead. A set outline or a changed box-shadow then counts as visible."
         }
       ],
       "children": []
@@ -722,7 +721,7 @@
       "props": {},
       "text": [
         {
-          "insert": "Scrolled controls",
+          "insert": "Moved controls",
           "attributes": {
             "bold": true
           }
@@ -738,7 +737,7 @@
       "props": {},
       "text": [
         {
-          "insert": "A control that scrolls between the two clips is judged by its style. A focus style that changes only the background then fails."
+          "insert": "A control that moves between the two clips is judged by its style. A focus style that changes only the background then fails."
         }
       ],
       "children": []
@@ -802,17 +801,6 @@
         },
         {
           "insert": " to skip the focus pass for a whole run."
-        }
-      ],
-      "children": []
-    },
-    "fp-miss": {
-      "id": "fp-miss",
-      "type": "paragraph",
-      "props": {},
-      "text": [
-        {
-          "insert": "The check can also miss a problem. The next control's ring can reach into the clip, so a control with no ring of its own can pass."
         }
       ],
       "children": []
