@@ -85,8 +85,9 @@
           [
             [
               {
-                "insert": "`R-tabular-nums`",
+                "insert": "R-tabular-nums",
                 "attributes": {
+                  "code": true,
                   "link": "10-design-score/30-typography/10-r-tabular-nums"
                 }
               }
@@ -98,8 +99,9 @@
           [
             [
               {
-                "insert": "`R-text-clip`",
+                "insert": "R-text-clip",
                 "attributes": {
+                  "code": true,
                   "link": "10-design-score/30-typography/20-r-text-clip"
                 }
               }
@@ -111,8 +113,9 @@
           [
             [
               {
-                "insert": "`R-min-font`",
+                "insert": "R-min-font",
                 "attributes": {
+                  "code": true,
                   "link": "10-design-score/30-typography/30-r-min-font"
                 }
               }
@@ -124,8 +127,9 @@
           [
             [
               {
-                "insert": "`R-line-length`",
+                "insert": "R-line-length",
                 "attributes": {
+                  "code": true,
                   "link": "10-design-score/30-typography/40-r-line-length"
                 }
               }

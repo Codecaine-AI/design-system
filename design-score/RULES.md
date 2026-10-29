@@ -126,7 +126,7 @@ Kept with the mobile part removed: `a11y-hit-target` (drops 44/40), `a11y-input-
 
 1. **Press scale.** The skill says exactly 0.96. The magazine says 0.95-0.98. Ford's 0.95-0.98 wins. Duration: the skill's 150ms is shorter than the magazine's 200ms, so 150ms wins.
 2. **Hit target.** The skill says 24px (AA). The magazine says 32px on desktop and 44px on mobile. Ford's rule: fail under 24px, warn under 32px.
-3. **Reduced motion and press.** Keep the press scale under reduce, because it is functional feedback. Every reduced-motion rule warns.
+3. **Reduced motion and press.** Drop the press scale under reduce and keep the color change as the press feedback. Every reduced-motion rule warns.
 4. **Spring bounce.** The magazine allows a subtle bounce. The skill says 0. 0 is stricter and wins.
 5. **Exit motion.** The magazine slides to -70%. The skill moves a fixed 12px over 150ms with a 4px blur. The skill wins. A 0.99 exit scale (issue 17) is also allowed.
 6. **Stagger values.** For product UI, the skill's values win: 100ms, 300ms, 4px blur, 12px. Issue 09's 800ms hero values are noted as an exception.
@@ -149,5 +149,5 @@ Token-level details are in `outputs/token-proposals.md`.
 - `letter-spacing.micro` is 0.09em and `micro-wide` is 0.14em. Jakub uses 0.05em on uppercase labels.
 - `font.size.micro` (10px) and `ui-2xs` (11px) are under the 12px floor, so they warn.
 - The `motion.duration` steps are 100, 150 and 260ms. Jakub's size bands are 150, 250 and 350-450ms.
-- There is no image-outline, card-shadow, press-scale or control-height token.
+- There is no image-outline, card-shadow or control-height token. `motion.scale.press` (0.96) is the press scale.
 - Knowledge System icons are PNG masks, so `ui-icons-svg-not-raster` warns.

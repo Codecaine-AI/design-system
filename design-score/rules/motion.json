@@ -22,7 +22,7 @@
       "id": "ui-reduced-motion-runtime",
       "area": "motion",
       "title": "Reduced motion keeps the fade",
-      "rule": "Under reduce, movement, scale and blur become an opacity cross-fade; feedback stays, and the press scale stays as functional feedback.",
+      "rule": "Under reduce, movement, scale and blur become an opacity cross-fade; the press scale is dropped and the color change stays as the press feedback.",
       "severity": "warn",
       "layer": "motion",
       "values": null,

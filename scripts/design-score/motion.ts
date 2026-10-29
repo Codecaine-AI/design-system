@@ -169,7 +169,8 @@ export function readScale(probe: string): { scale: number; selector: string; box
   const s = getComputedStyle(el);
   let scale = 1;
   if (s.scale && s.scale !== "none") scale *= Number(s.scale.split(/\s+/)[0]) || 1;
-  const m = /^matrix\(([^)]+)\)/.exec(s.transform);
+  // matrix(a, b, ...) and matrix3d(m11, m12, ...): the x scale is the length of the first column.
+  const m = /^matrix(?:3d)?\(([^)]+)\)/.exec(s.transform);
   if (m) {
     const [a, b] = m[1]!.split(",").map(Number);
     scale *= Math.hypot(a!, b!);

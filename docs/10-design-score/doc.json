@@ -48,7 +48,7 @@
           }
         },
         {
-          "insert": " scores every page of an app against the design rules in a real browser. It runs 24 checks, and each check belongs to one area and one layer. Each check has its own page that explains what it measures and shows a good and a bad example. Each example pair is also a test that the check must pass."
+          "insert": " scores every page of an app against the design rules in a real browser. It runs 23 checks, and each check belongs to one area and one layer. A 24th check, V-judge, is planned and does not run yet. Each check that runs has its own page with a good and a bad example, and each example pair is a test that the check must pass."
         }
       ],
       "children": []
@@ -524,7 +524,25 @@
       "props": {},
       "text": [
         {
-          "insert": "The 14 runtime checks measure the rendered page in Chromium, once per theme and viewport."
+          "insert": "The 14 runtime checks measure the rendered page in Chromium, once per theme and viewport. Two checks run less often: "
+        },
+        {
+          "insert": "R-state-shift",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " runs in the first theme and viewport only, and "
+        },
+        {
+          "insert": "R-focus-visible",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " runs in every theme in the first viewport."
         }
       ],
       "children": []

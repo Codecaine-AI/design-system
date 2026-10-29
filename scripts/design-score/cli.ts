@@ -92,7 +92,9 @@ if (has("--compare")) {
   const path = writeCompare(dirA, dirB, resolve(out), DESIGN_SYSTEM_ROOT);
   const ca = JSON.parse(readFileSync(join(dirA, "scorecard.json"), "utf8"));
   const cb = JSON.parse(readFileSync(join(dirB, "scorecard.json"), "utf8"));
-  console.log(`${ca.app}: ${ca.score} → ${cb.score} (${cb.score - ca.score >= 0 ? "+" : ""}${Math.round((cb.score - ca.score) * 10) / 10})`);
+  const scoreText = (score: number | null) => (score === null ? "n/a" : String(score));
+  const delta = ca.score === null || cb.score === null ? "" : ` (${cb.score - ca.score >= 0 ? "+" : ""}${Math.round((cb.score - ca.score) * 10) / 10})`;
+  console.log(`${ca.app}: ${scoreText(ca.score)} → ${scoreText(cb.score)}${delta}`);
   console.log(path);
   process.exit(0);
 }
@@ -141,6 +143,9 @@ const viewports = list(flag("--viewports"))?.map((v) => {
   if (!m) fail(`--viewports: "${v}" is not <width>x<height>`);
   return { width: Number(m![1]), height: Number(m![2]) };
 }) ?? null;
+const jobsArg = flag("--jobs") ?? "2";
+if (!/^[1-9]\d*$/.test(jobsArg)) fail(`--jobs: "${jobsArg}" is not a positive integer`);
+const jobs = Number(jobsArg);
 
 let running: RunningApp | null = null;
 let baseUrl = flag("--base-url") ?? config.baseUrl;
@@ -176,7 +181,7 @@ try {
     pages: list(flag("--pages")),
     themes: list(flag("--themes")),
     viewports,
-    jobs: Number(flag("--jobs") ?? 2),
+    jobs,
     motion: !has("--no-motion"),
     focus: !has("--no-focus"),
     static: !has("--no-static"),

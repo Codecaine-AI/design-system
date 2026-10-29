@@ -41,7 +41,6 @@
         "b38",
         "b39",
         "b40",
-        "b41",
         "b43",
         "b46",
         "b48",
@@ -940,43 +939,7 @@
       "props": {},
       "text": [
         {
-          "insert": "The check reports every movement under reduce, including movement a rule keeps."
-        }
-      ],
-      "children": []
-    },
-    "b41": {
-      "id": "b41",
-      "type": "list-item",
-      "props": {},
-      "text": [
-        {
-          "insert": "Press scale",
-          "attributes": {
-            "bold": true
-          }
-        }
-      ],
-      "children": [
-        "b42"
-      ]
-    },
-    "b42": {
-      "id": "b42",
-      "type": "list-item",
-      "props": {},
-      "text": [
-        {
-          "insert": "A button that scales on "
-        },
-        {
-          "insert": ":active",
-          "attributes": {
-            "code": true
-          }
-        },
-        {
-          "insert": " warns under reduce. The rule "
+          "insert": "The check reports every movement under reduce, and it misses movement that no animation records. A press scale under reduce is a true finding, because "
         },
         {
           "insert": "ui-reduced-motion-runtime",
@@ -985,7 +948,7 @@
           }
         },
         {
-          "insert": " keeps the press scale as functional feedback."
+          "insert": " drops the press scale and keeps the color change."
         }
       ],
       "children": []

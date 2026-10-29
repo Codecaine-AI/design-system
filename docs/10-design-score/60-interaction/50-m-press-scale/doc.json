@@ -72,7 +72,7 @@
           }
         },
         {
-          "insert": ". It is a motion check in the interaction area, so it runs in the motion pass, in the first theme and viewport. A scale below 0.95 fails, a scale from 0.98 to 1 warns, and a control that does not scale is not judged."
+          "insert": ". It is a motion check in the interaction area, so it runs in the motion pass, in the first theme and viewport. A scale below 0.95 fails, a scale over 0.98 and under 0.999 warns, and a control that scales to 0.999 or more is not judged."
         }
       ],
       "children": []

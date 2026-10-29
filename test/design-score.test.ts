@@ -5,7 +5,7 @@ import { join } from "node:path";
 
 import { launch } from "../scripts/design-score/browser";
 import { CHECK_IDS, CHECKS } from "../scripts/design-score/checks";
-import { analyzeMotion, type MotionRecord } from "../scripts/design-score/motion";
+import { analyzeMotion, readScale, type MotionRecord } from "../scripts/design-score/motion";
 import { probePage } from "../scripts/design-score/probes";
 import { loadRuleMap, loadRules, RULE_AREAS, rulesByCheck } from "../scripts/design-score/rules";
 import { focusPass } from "../scripts/design-score/focus";
@@ -261,6 +261,27 @@ describe.skipIf(!!process.env.DS_SKIP_BROWSER)("design:score v2 in a browser", (
     await restoreView();
     const { hits } = await stateShiftPass(page, { ignore: [], open: [], max: 8 });
     expect(hits.map((h) => h.finding.measured)).toContainEqual(expect.stringMatching(/^hovering button\.grow "Grow": moves or resizes the control/));
+  });
+
+  test("M-press-scale reads a matrix3d press transform: scale(0.9) translateZ(1px) on :active fails", async () => {
+    await page.setContent(`<style>.press { width: 80px; height: 32px; } .press:active { transform: scale(0.9) translateZ(1px); }</style>
+      <body style="margin:20px"><button class="press">Press</button></body>`);
+    await page.evaluate(() => void ((window as unknown as { __dsProbe: Element[] }).__dsProbe = [document.querySelector(".press")!]));
+    const cdp = await page.context().newCDPSession(page);
+    try {
+      await cdp.send("DOM.enable");
+      await cdp.send("CSS.enable");
+      await cdp.send("DOM.getDocument", { depth: 0 });
+      const obj = await cdp.send("Runtime.evaluate", { expression: "window.__dsProbe[0]" });
+      const { nodeId } = await cdp.send("DOM.requestNode", { objectId: obj.result.objectId });
+      const rest = await page.evaluate(readScale, "0");
+      await cdp.send("CSS.forcePseudoState", { nodeId, forcedPseudoClasses: ["hover", "active"] });
+      const pressed = await page.evaluate(readScale, "0");
+      const found = analyzeMotion([], [{ scale: pressed.scale, rest: rest.scale, selector: pressed.selector, box: rest.box }], [])["M-press-scale"]!;
+      expect(found.map((f) => f.severity)).toEqual(["fail"]);
+    } finally {
+      await cdp.detach();
+    }
   });
 
   test("the read-only guard closes every WebSocket before a message reaches its server", async () => {

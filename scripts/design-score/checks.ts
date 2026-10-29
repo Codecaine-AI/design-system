@@ -28,7 +28,7 @@ export const CHECKS: CheckDef[] = [
   // motion
   { id: "M-duration", layer: "motion", title: "Motion durations", rule: "Durations of transitions and animations seen while hovering/pressing controls (max 200ms), opening menus/popovers (300ms) and dialogs or large panels (450ms). Longer fails.", area: "motion" },
   { id: "M-layout-props", layer: "motion", title: "Animating layout properties", rule: "A transition or animation seen running on width, height, top/left/right/bottom, margin, padding, gap or grid tracks fails; one only declared in computed style warns.", area: "motion" },
-  { id: "M-press-scale", layer: "motion", title: "Press scale", rule: "A control that scales on :active must scale to 0.95-0.98. Below 0.95 fails; 0.98-1 warns. Controls without a press scale are not judged.", area: "interaction" },
+  { id: "M-press-scale", layer: "motion", title: "Press scale", rule: "A control that scales on :active must scale to 0.95-0.98. Below 0.95 fails; over 0.98 and under 0.999 warns. Controls without a press scale are not judged.", area: "interaction" },
   { id: "M-reduced-motion", layer: "motion", title: "Reduced motion", rule: "With prefers-reduced-motion: reduce, any transform/translate/scale/rotate or position animation still running while hovering or reaching the page state. Warns.", area: "motion" },
   // judge
   { id: "V-judge", layer: "judge", title: "Vision judge", rule: "Not run in this version: the state screenshots are captured for it." },

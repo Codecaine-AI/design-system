@@ -650,7 +650,17 @@
           }
         },
         {
-          "insert": " asks for 3:1, and no check measures it yet."
+          "insert": " asks for 3:1, and "
+        },
+        {
+          "insert": "R-contrast",
+          "attributes": {
+            "code": true,
+            "link": "10-design-score/40-color/20-r-contrast"
+          }
+        },
+        {
+          "insert": " lists that rule. R-contrast measures text contrast only, not the focus ring, so the rule is only partly measured."
         }
       ],
       "children": []
