@@ -19,6 +19,7 @@ import { CHECKS } from "./checks";
 import { markPng } from "./crop";
 import { runScore } from "./run";
 import { decodePng } from "../lib/png";
+import type { JudgeOptions, ModelCall, RuleVerdict } from "./judge";
 import type { AppConfig, CheckStatus, Finding, PageSpec, ThemeSpec } from "./types";
 
 export type Variant = "good" | "bad";
@@ -33,6 +34,8 @@ export interface FixtureSpec {
   page?: Pick<PageSpec, "waitFor" | "actions" | "settleMs" | "shiftWatch">;
   /** App config fields (R-align-near-miss handles, R-state-shift shift.open, M-layout-props motionAllow). */
   config?: Pick<AppConfig, "handles" | "ignore" | "shift" | "motionAllow" | "settleMs">;
+  /** V-judge: the model reply each variant's screenshot gets when the model is stubbed (no --judge). */
+  judge?: { replies: Record<Variant, { verdicts: RuleVerdict[] }> };
 }
 
 export interface FixtureResult {
@@ -99,6 +102,17 @@ export interface FixtureRunOptions {
   /** Write shots/<variant>.png into the fixture folder (default true). */
   writeShots?: boolean;
   variants?: Variant[];
+  /** V-judge with a real model. Absent: the fixture's stubbed replies (fixture.json `judge`), so no call costs money. */
+  judge?: JudgeOptions;
+}
+
+/** A model stub that answers each page with its variant's reply from fixture.json. */
+export function stubModel(replies: Record<Variant, unknown>): ModelCall {
+  return async (req) => {
+    const reply = replies[req.page as Variant];
+    if (!reply) throw new Error(`no stubbed reply for page ${req.page}`);
+    return { json: reply, usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 } };
+  };
 }
 
 /** Runs `checkId` on its fixture pages: one runScore per variant for a static check, else one run with both pages. */
@@ -150,6 +164,7 @@ export async function runFixture(checkId: string, opts: FixtureRunOptions): Prom
         focus: checkId === "R-focus-visible",
         static: isStatic,
         quiet: true,
+        judge: checkId !== "V-judge" ? null : opts.judge ?? (spec.judge ? { call: stubModel(spec.judge.replies), cacheDir: join(outRoot, config.app, "judge-cache", `${Date.now()}`) } : null),
       });
       for (const page of scorecard.pages) {
         const variant = page.id as Variant;

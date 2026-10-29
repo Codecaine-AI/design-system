@@ -19,11 +19,27 @@
         "how4",
         "how5",
         "how-after",
+        "h-choices",
+        "choices-lead",
+        "ch1",
+        "ch2",
+        "ch3",
+        "ch4",
+        "ch5",
         "h-cal",
         "cal-lead",
         "cal1",
         "cal2",
         "cal3",
+        "h-run-cal",
+        "run-cal-lead",
+        "run-cal-code",
+        "rc1",
+        "rc2",
+        "rc3",
+        "rc4",
+        "h-cal-results",
+        "cal-results",
         "h-bar",
         "bar-lead",
         "bar1",
@@ -94,6 +110,20 @@
           }
         },
         {
+          "insert": ", and the judge is "
+        },
+        {
+          "insert": "runJudge",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/judge.ts",
+              "symbol": "runJudge"
+            }
+          }
+        },
+        {
           "insert": "."
         }
       ],
@@ -103,25 +133,21 @@
       "id": "planned",
       "type": "callout",
       "props": {
-        "title": "Planned, not built",
-        "tone": "warning"
+        "title": "Opt-in",
+        "tone": "info"
       },
       "text": [
         {
-          "insert": "V-judge does not run in this version, so every page marks it n/a. Each run already saves the state screenshots it will read ("
+          "insert": "V-judge runs only with "
         },
         {
-          "insert": "scripts/design-score/judge.ts",
+          "insert": "bun run design:score --judge",
           "attributes": {
-            "code": true,
-            "reference": {
-              "kind": "source",
-              "path": "scripts/design-score/judge.ts"
-            }
+            "code": true
           }
         },
         {
-          "insert": ")."
+          "insert": ", because each screenshot costs a model call. Without the flag every page marks it n/a."
         }
       ],
       "children": []
@@ -134,7 +160,7 @@
       },
       "text": [
         {
-          "insert": "How It Will Work"
+          "insert": "How It Works"
         }
       ],
       "children": []
@@ -145,7 +171,7 @@
       "props": {},
       "text": [
         {
-          "insert": "The judge compares fixed screenshots, and code picks them. The app config lists the pages, so the judge never chooses an easy screenshot. Each judged pair goes through these steps."
+          "insert": "The judge reads the state screenshots the run already took, so it never picks an easy screen. Each screenshot goes through these steps."
         }
       ],
       "children": []
@@ -158,7 +184,16 @@
       },
       "text": [
         {
-          "insert": "A run saves the state screenshot of each page, theme and viewport, as every run does today."
+          "insert": "The run saves the state screenshot of each page, theme and viewport as "
+        },
+        {
+          "insert": "shots/<page>__<theme>__<viewport>.png",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
         }
       ],
       "children": []
@@ -171,7 +206,16 @@
       },
       "text": [
         {
-          "insert": "The judge takes the before and after screenshots of one page state from two runs. Only pairs whose pixels changed go in."
+          "insert": "The cheap model, "
+        },
+        {
+          "insert": "claude-haiku-5-5",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", answers pass, fail, unsure or n/a for each of the 16 still rules. Each answer has a short reason, and each fail or unsure has a box."
         }
       ],
       "children": []
@@ -184,7 +228,16 @@
       },
       "text": [
         {
-          "insert": "For each rule, the judge asks one yes or no question and boxes the region its answer is about."
+          "insert": "On any fail or unsure, the strong model, "
+        },
+        {
+          "insert": "claude-opus-5-5",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", rates the same screenshot again. Its answers are final."
         }
       ],
       "children": []
@@ -197,7 +250,7 @@
       },
       "text": [
         {
-          "insert": "A cheap model answers first. A strong model answers again for each no and each unsure answer."
+          "insert": "A strong fail is a fail finding, and a strong unsure is a warn finding for Ford. A rule that the cheap model flagged and the strong model passed goes to the review list, and it never counts."
         }
       ],
       "children": []
@@ -210,7 +263,7 @@
       },
       "text": [
         {
-          "insert": "When the two models disagree, or the strong model is unsure, the pair and its boxes go to Ford."
+          "insert": "Every reply is cached under the hash of its request: the screenshot bytes, the model and the prompt. A rerun over the same pixels makes no call."
         }
       ],
       "children": []
@@ -230,7 +283,52 @@
           }
         },
         {
-          "insert": ", a severity, the page, theme, viewport and box. Motion rules get a strip of frames instead of one still, because a still cannot show motion."
+          "insert": ". It cites one rule id in "
+        },
+        {
+          "insert": "rules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", the reason in "
+        },
+        {
+          "insert": "measured",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and the rule text in "
+        },
+        {
+          "insert": "expected",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The run writes the call count, the cache hits, the token usage, the cost and the review list to the "
+        },
+        {
+          "insert": "judge",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " field of "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
         }
       ],
       "children": []
@@ -254,7 +352,21 @@
       "props": {},
       "text": [
         {
-          "insert": "The judge must agree with known answers before its findings count. Three label sets give those answers, and agreement is reported per rule group, not as one number."
+          "insert": "The judge must agree with known answers before its findings count. Three label sets give those answers. Issue 20 is the first set, and "
+        },
+        {
+          "insert": "calibrate",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/judge-calibrate.ts",
+              "symbol": "calibrate"
+            }
+          }
+        },
+        {
+          "insert": " scores the judge on it."
         }
       ],
       "children": []
@@ -305,7 +417,7 @@
       "props": {},
       "text": [
         {
-          "insert": "The assets are "
+          "insert": "The posters and clips, "
         },
         {
           "insert": "demo-02.png",
@@ -323,16 +435,16 @@
           }
         },
         {
-          "insert": " in "
+          "insert": ", are not in git, because their licence does not allow a copy. Pass their folder with "
         },
         {
-          "insert": "library/design/creators/jakub-krehel/sources/interfaces-magazine/media/issue-20-can-you-tell-the-difference/",
+          "insert": "--media",
           "attributes": {
             "code": true
           }
         },
         {
-          "insert": " in the knowledge base."
+          "insert": "."
         }
       ],
       "children": []
@@ -498,7 +610,7 @@
       "props": {},
       "text": [
         {
-          "insert": "Only changed pairs go to a model, and only no or unsure answers go to the strong model. The research estimate is a few dozen calls per pull request."
+          "insert": "Only a fail or unsure from the cheap model goes to the strong model. Cached replies cost nothing."
         }
       ],
       "children": []
@@ -509,7 +621,7 @@
       "props": {},
       "text": [
         {
-          "insert": "Each run gets a hard limit on model calls. At the limit the judge stops and reports the pairs it did not judge."
+          "insert": "A run stops at 100 uncached calls by default. At the cap the judge reports the screenshots it did not judge."
         }
       ],
       "children": []
@@ -523,7 +635,16 @@
       },
       "text": [
         {
-          "insert": "The call limit per run and the two models are not chosen yet."
+          "insert": "Ford sets the pass bar. Until then, "
+        },
+        {
+          "insert": "--judge",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " counts V-judge in the score, and a run without it leaves V-judge n/a."
         }
       ],
       "children": []
@@ -536,7 +657,7 @@
       },
       "text": [
         {
-          "insert": "What Is Built Today"
+          "insert": "What Is Built"
         }
       ],
       "children": []
@@ -547,7 +668,7 @@
       "props": {},
       "text": [
         {
-          "insert": "Only the inputs and a stub exist. No model is called."
+          "insert": "The judge, its fixture pair and the calibration are built. Ford's own labels and the held-out issues are not."
         }
       ],
       "children": []
@@ -558,7 +679,7 @@
       "props": {},
       "text": [
         {
-          "insert": "The stub",
+          "insert": "The judge",
           "attributes": {
             "bold": true
           }
@@ -574,27 +695,18 @@
       "props": {},
       "text": [
         {
-          "insert": "judgeStub",
+          "insert": "runJudge",
           "attributes": {
             "code": true,
             "reference": {
               "kind": "source",
               "path": "scripts/design-score/judge.ts",
-              "symbol": "judgeStub"
+              "symbol": "runJudge"
             }
           }
         },
         {
-          "insert": " returns "
-        },
-        {
-          "insert": "status: \"not-run\"",
-          "attributes": {
-            "code": true
-          }
-        },
-        {
-          "insert": " and the list of state screenshots. The run writes it to the "
+          "insert": " rates the state screenshots after every other check. The run writes its summary to the "
         },
         {
           "insert": "judge",
@@ -623,7 +735,7 @@
       "props": {},
       "text": [
         {
-          "insert": "The score",
+          "insert": "The fixture pair",
           "attributes": {
             "bold": true
           }
@@ -639,16 +751,22 @@
       "props": {},
       "text": [
         {
-          "insert": "Every page marks "
-        },
-        {
-          "insert": "V-judge",
+          "insert": "design-score/fixtures/V-judge/",
           "attributes": {
             "code": true
           }
         },
         {
-          "insert": " n/a with the note \"not run in this version\", so the judge never changes a score."
+          "insert": " holds a status list that shows status by color alone, and one that adds a word. The test stubs the model, so it costs nothing, and "
+        },
+        {
+          "insert": "--fixture V-judge --judge",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " runs it with the real model."
         }
       ],
       "children": []
@@ -659,7 +777,7 @@
       "props": {},
       "text": [
         {
-          "insert": "The inputs",
+          "insert": "The calibration",
           "attributes": {
             "bold": true
           }
@@ -675,16 +793,22 @@
       "props": {},
       "text": [
         {
-          "insert": "Each run saves "
-        },
-        {
-          "insert": "shots/<page>__<theme>__<viewport>.png",
+          "insert": "bun run design:judge-calibrate",
           "attributes": {
             "code": true
           }
         },
         {
-          "insert": ", the motion screenshots and a crop per finding."
+          "insert": " scores the judge on issue 20 and writes the per-item verdicts to "
+        },
+        {
+          "insert": ".design-score/judge-calibration/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
         }
       ],
       "children": []
@@ -711,7 +835,7 @@
       "props": {},
       "text": [
         {
-          "insert": "The pair selection, the questions, the model calls, the frame strips and the label sets do not exist yet."
+          "insert": "Ford's labelled pairs, the held-out pairs from issues 09, 16 and 19, and frame strips for motion rules in a real run do not exist yet."
         }
       ],
       "children": []
@@ -849,7 +973,7 @@
           }
         },
         {
-          "insert": " in five groups, and each row gives the yes or no question the judge will ask. A yes passes. Five rules are marked text-only, so the judge reads extracted strings instead of pixels."
+          "insert": " in five groups, and each row gives the yes or no question the judge asks. A yes passes. The still judge asks 16 of them, and the Choices section names the 10 it skips."
         }
       ],
       "children": []
@@ -1416,6 +1540,465 @@
         "title": "Process rules"
       },
       "children": []
+    },
+    "h-choices": {
+      "id": "h-choices",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "children": [],
+      "text": [
+        {
+          "insert": "Choices the Design Left Open"
+        }
+      ]
+    },
+    "choices-lead": {
+      "id": "choices-lead",
+      "type": "paragraph",
+      "props": {},
+      "children": [],
+      "text": [
+        {
+          "insert": "The first build took the simplest option wherever the plan was silent or could not run as written."
+        }
+      ]
+    },
+    "ch1a": {
+      "id": "ch1a",
+      "type": "list-item",
+      "props": {},
+      "children": [],
+      "text": [
+        {
+          "insert": "The plan compared the same state from two runs. A first run and a fixture page have no earlier shot, so a run rates each screenshot alone."
+        }
+      ]
+    },
+    "ch1b": {
+      "id": "ch1b",
+      "type": "list-item",
+      "props": {},
+      "children": [],
+      "text": [
+        {
+          "insert": "The pair comparison, "
+        },
+        {
+          "insert": "comparePair",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/judge.ts",
+              "symbol": "comparePair"
+            }
+          }
+        },
+        {
+          "insert": ", runs the calibration. It uses the same rubric and the same model call."
+        }
+      ]
+    },
+    "ch1": {
+      "id": "ch1",
+      "type": "list-item",
+      "props": {},
+      "children": [
+        "ch1a",
+        "ch1b"
+      ],
+      "text": [
+        {
+          "insert": "One screenshot, not a pair",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ]
+    },
+    "ch2a": {
+      "id": "ch2a",
+      "type": "list-item",
+      "props": {},
+      "children": [],
+      "text": [
+        {
+          "insert": "One call answers all 16 still rules, not one call per rule. The system prompt holds all 303 rules and is cached."
+        }
+      ]
+    },
+    "ch2": {
+      "id": "ch2",
+      "type": "list-item",
+      "props": {},
+      "children": [
+        "ch2a"
+      ],
+      "text": [
+        {
+          "insert": "One call per screenshot",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ]
+    },
+    "ch3a": {
+      "id": "ch3a",
+      "type": "list-item",
+      "props": {},
+      "children": [],
+      "text": [
+        {
+          "insert": "10 of the 26 rules skip the still judge, and "
+        },
+        {
+          "insert": "STILL_SKIP",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/judge.ts",
+              "symbol": "STILL_SKIP"
+            }
+          }
+        },
+        {
+          "insert": " gives each reason. 5 are text-only, 2 need motion, 1 needs a right-to-left run and 2 need the design frame."
+        }
+      ]
+    },
+    "ch3": {
+      "id": "ch3",
+      "type": "list-item",
+      "props": {},
+      "children": [
+        "ch3a"
+      ],
+      "text": [
+        {
+          "insert": "Rules a still cannot show",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ]
+    },
+    "ch4a": {
+      "id": "ch4a",
+      "type": "list-item",
+      "props": {},
+      "children": [],
+      "text": [
+        {
+          "insert": "A run makes at most 100 uncached calls, and "
+        },
+        {
+          "insert": "--judge-max-calls",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " changes it. A screenshot needs up to 2 calls."
+        }
+      ]
+    },
+    "ch4b": {
+      "id": "ch4b",
+      "type": "list-item",
+      "props": {},
+      "children": [],
+      "text": [
+        {
+          "insert": "At the cap, the judge lists the screenshots it did not judge, and their pages mark V-judge n/a."
+        }
+      ]
+    },
+    "ch4": {
+      "id": "ch4",
+      "type": "list-item",
+      "props": {},
+      "children": [
+        "ch4a",
+        "ch4b"
+      ],
+      "text": [
+        {
+          "insert": "The call cap",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ]
+    },
+    "ch5a": {
+      "id": "ch5a",
+      "type": "list-item",
+      "props": {},
+      "children": [],
+      "text": [
+        {
+          "insert": "With "
+        },
+        {
+          "insert": "--judge",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", V-judge counts in each page score like any other check. It has no area, so the area scores do not change."
+        }
+      ]
+    },
+    "ch5": {
+      "id": "ch5",
+      "type": "list-item",
+      "props": {},
+      "children": [
+        "ch5a"
+      ],
+      "text": [
+        {
+          "insert": "The score",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ]
+    },
+    "h-run-cal": {
+      "id": "h-run-cal",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "children": [],
+      "text": [
+        {
+          "insert": "Run the Calibration"
+        }
+      ]
+    },
+    "run-cal-lead": {
+      "id": "run-cal-lead",
+      "type": "paragraph",
+      "props": {},
+      "children": [],
+      "text": [
+        {
+          "insert": "The command builds each option's image with ffmpeg and asks the strong model which option follows the rules better. Replies are cached, so a rerun is free."
+        }
+      ]
+    },
+    "run-cal-code": {
+      "id": "run-cal-code",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "children": [],
+      "text": [
+        {
+          "insert": "bun run design:judge-calibrate --media <folder with the issue 20 media> --split all"
+        }
+      ]
+    },
+    "rc1a": {
+      "id": "rc1a",
+      "type": "list-item",
+      "props": {},
+      "children": [],
+      "text": [
+        {
+          "insert": "scripts/design-score/judge-calibration.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/judge-calibration.json"
+            }
+          }
+        },
+        {
+          "insert": " holds the 24 visual items, each with its known answer, its rules and the crop or frame window."
+        }
+      ]
+    },
+    "rc1b": {
+      "id": "rc1b",
+      "type": "list-item",
+      "props": {},
+      "children": [],
+      "text": [
+        {
+          "insert": "A still option is its half of the poster. A motion option is a strip of frames from its window in the clip."
+        }
+      ]
+    },
+    "rc1": {
+      "id": "rc1",
+      "type": "list-item",
+      "props": {},
+      "children": [
+        "rc1a",
+        "rc1b"
+      ],
+      "text": [
+        {
+          "insert": "Items",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ]
+    },
+    "rc2a": {
+      "id": "rc2a",
+      "type": "list-item",
+      "props": {},
+      "children": [],
+      "text": [
+        {
+          "insert": "Each item is asked twice, with the options swapped. It agrees only when both orders pick the known answer, so a judge that always picks one side scores 0."
+        }
+      ]
+    },
+    "rc2": {
+      "id": "rc2",
+      "type": "list-item",
+      "props": {},
+      "children": [
+        "rc2a"
+      ],
+      "text": [
+        {
+          "insert": "Both orders",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ]
+    },
+    "rc3a": {
+      "id": "rc3a",
+      "type": "list-item",
+      "props": {},
+      "children": [],
+      "text": [
+        {
+          "insert": "The split was fixed before any model run. Items alternate tune and held-out within each kind, so each half holds 5 stills and 7 motion items."
+        }
+      ]
+    },
+    "rc3b": {
+      "id": "rc3b",
+      "type": "list-item",
+      "props": {},
+      "children": [],
+      "text": [
+        {
+          "insert": "Tuning runs only "
+        },
+        {
+          "insert": "--split tune",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Agreement on the held-out half is reported on its own."
+        }
+      ]
+    },
+    "rc3": {
+      "id": "rc3",
+      "type": "list-item",
+      "props": {},
+      "children": [
+        "rc3a",
+        "rc3b"
+      ],
+      "text": [
+        {
+          "insert": "Tune and held-out halves",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ]
+    },
+    "rc4a": {
+      "id": "rc4a",
+      "type": "list-item",
+      "props": {},
+      "children": [],
+      "text": [
+        {
+          "insert": "7 clips never show the difference their question tests, for example a tooltip that never opens or a hit area that has no pixels. The manifest marks them "
+        },
+        {
+          "insert": "\"visible\": false",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and they stay in the count."
+        }
+      ]
+    },
+    "rc4": {
+      "id": "rc4",
+      "type": "list-item",
+      "props": {},
+      "children": [
+        "rc4a"
+      ],
+      "text": [
+        {
+          "insert": "Items the media cannot show",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ]
+    },
+    "h-cal-results": {
+      "id": "h-cal-results",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "children": [],
+      "text": [
+        {
+          "insert": "Calibration Results"
+        }
+      ]
+    },
+    "cal-results": {
+      "id": "cal-results",
+      "type": "paragraph",
+      "props": {},
+      "children": [],
+      "text": [
+        {
+          "insert": "Not run yet. The first run needs an Anthropic key in "
+        },
+        {
+          "insert": "~/workspace/.env",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ]
     }
   }
 }

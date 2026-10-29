@@ -19,7 +19,7 @@ import { loadRuleMap } from "./rules";
 import { appAreas, appScore, checkTotals, markNa, pageAreas, pageScore, SCORING, statusOf, tally } from "./score";
 import { keepScroll, stateShiftPass, watchAfter, watchBefore, type ShiftBox } from "./state-shift";
 import { runStaticChecks } from "./static-checks";
-import { judgeStub } from "./judge";
+import { judgeOff, judgeRules, runJudge, type JudgeOptions } from "./judge";
 import { decodePng } from "../lib/png";
 import type { Action, AllowedFinding, AppConfig, Box, Finding, PageCheck, PageResult, PageSpec, RawFinding, Scorecard, Shot, ThemeSpec } from "./types";
 
@@ -41,6 +41,8 @@ export interface RunOptions {
   quiet: boolean;
   /** One theme (the first) and one viewport (the first): for fast hill-climbing. */
   quick?: boolean;
+  /** V-judge: rate the state screenshots with a vision model (costs money). Null or absent: V-judge is n/a. */
+  judge?: JudgeOptions | null;
 }
 
 /** Page ids picked by --pages: exact ids, or globs with `*` (docs-*). Unknown exact ids throw. */
@@ -470,7 +472,7 @@ export async function runScore(opts: RunOptions): Promise<{ dir: string; scoreca
     for (const c of CHECKS) {
       if (checks[c.id]) continue;
       if (skip.has(c.id)) markNa(checks, c.id, spec.skipReason ?? "skipped by the page config");
-      else if (c.id === "V-judge") markNa(checks, c.id, "not run in this version");
+      else if (c.id === "V-judge") markNa(checks, c.id, opts.judge ? "not judged" : "not run (opt-in: --judge)");
       else if (c.id === "R-axe" && !axe) markNa(checks, c.id, "axe-core not found");
       else if (c.layer === "static") markNa(checks, c.id, "no sourceDirs, or --no-static");
       else if (c.layer === "motion" && !opts.motion) markNa(checks, c.id, "--no-motion");
@@ -502,6 +504,18 @@ export async function runScore(opts: RunOptions): Promise<{ dir: string; scoreca
   for (const f of [...findings, ...allowedAll]) {
     const ids = ruleMap.map.get(f.check);
     if (ids?.length) f.rules = ids;
+  }
+
+  // V-judge runs last, over the state screenshots; each of its findings cites its own rule.
+  let judge = judgeOff(results);
+  if (opts.judge) {
+    const judged = await runJudge(results, dir, judgeRules(opts.designSystem), opts.judge, log);
+    findings.push(...judged.findings);
+    judge = judged.summary;
+    for (const p of results) {
+      if (p.score !== null) p.score = pageScore(p.checks);
+      p.areas = pageAreas(p.checks);
+    }
   }
 
   const configText = readFileSync(opts.configPath, "utf8");
@@ -537,7 +551,7 @@ export async function runScore(opts: RunOptions): Promise<{ dir: string; scoreca
     pages: results,
     findings,
     allowed: allowedAll,
-    judge: judgeStub(results),
+    judge,
   };
   writeFileSync(join(dir, "scorecard.json"), JSON.stringify(scorecard, null, 2) + "\n");
   writeReport(dir, scorecard, opts.designSystem);

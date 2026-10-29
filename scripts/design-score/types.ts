@@ -1,6 +1,8 @@
 /**
  * Shapes shared by design:score: the app config, the checks, findings and the scorecard.
  */
+import type { JudgeSummary } from "./judge";
+
 
 export type Severity = "fail" | "warn";
 export type CheckStatus = "pass" | "warn" | "fail" | "n/a";
@@ -218,5 +220,5 @@ export interface Scorecard {
   findings: Finding[];
   /** Findings the config allows (not counted). */
   allowed?: AllowedFinding[];
-  judge: { status: "not-run"; shots: string[]; note: string };
+  judge: JudgeSummary;
 }

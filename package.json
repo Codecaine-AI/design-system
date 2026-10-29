@@ -81,6 +81,7 @@
     "test:apps": "bun scripts/test-apps.ts",
     "use:app": "bun scripts/use-app.ts",
     "design:score": "bun scripts/design-score/cli.ts",
+    "design:judge-calibrate": "bun scripts/design-score/judge-calibrate.ts",
     "prepack": "bun run build"
   },
   "publishConfig": {

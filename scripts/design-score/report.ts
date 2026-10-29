@@ -184,7 +184,8 @@ export function writeReport(dir: string, card: Scorecard, designSystem: string):
     if (!mine.length) parts.push(`<p class="muted">No runtime findings.</p>`);
     parts.push(`<details><summary>Screenshots (${p.shots.length})</summary><div class="shots">${p.shots.map((s) => `<figure><a href="${esc(s.file)}"><img src="${esc(s.file)}" alt="" loading="lazy"></a><figcaption>${esc(s.kind)} · ${esc(s.theme)} · ${esc(s.viewport)}</figcaption></figure>`).join("")}</div></details>`);
   }
-  parts.push(`<h2>V-judge</h2><p class="muted">${esc(card.judge.note)}</p></main></body></html>`);
+  const review = card.judge.review?.length ? `<p class="muted">For Ford (the cheap model flagged, the strong model passed): ${card.judge.review.map((r) => `${esc(r.shot)} ${esc(r.rules.join(", "))}`).join("; ")}</p>` : "";
+  parts.push(`<h2>V-judge</h2><p class="muted">${esc(card.judge.note)}</p>${review}</main></body></html>`);
   const path = join(dir, "report.html");
   writeFileSync(path, parts.join("\n"));
   return path;
