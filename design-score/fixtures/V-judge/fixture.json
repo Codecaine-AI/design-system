@@ -1,14 +1,14 @@
 {
   "judge": {
-    "replies": {
-      "good": { "verdicts": [
-        { "rule": "a11y-color-not-only-cue", "verdict": "pass", "reason": "Each status pairs its colored dot with the word Live or Failed.", "box": null },
-        { "rule": "layout-importance-order", "verdict": "pass", "reason": "Each row leads with the app name and ends with its status.", "box": null }
-      ] },
-      "bad": { "verdicts": [
-        { "rule": "a11y-color-not-only-cue", "verdict": "fail", "reason": "Each status is a green or red dot with no word or icon, so color alone tells Live from Failed.", "box": { "x": 390, "y": 60, "w": 40, "h": 120 } },
-        { "rule": "layout-importance-order", "verdict": "pass", "reason": "Each row leads with the app name and ends with its status.", "box": null }
-      ] }
+    "verdicts": {
+      "good": {
+        "a11y-color-not-only-cue": { "verdict": "pass", "reason": "Each status pairs its colored dot with the word Live or Failed." },
+        "layout-importance-order": { "verdict": "pass", "reason": "Each row leads with the app name and ends with its status." }
+      },
+      "bad": {
+        "a11y-color-not-only-cue": { "verdict": "fail", "reason": "Each status is a green or red dot with no word or icon, so color alone tells Live from Failed." },
+        "layout-importance-order": { "verdict": "pass", "reason": "Each row leads with the app name and ends with its status." }
+      }
     }
   }
 }

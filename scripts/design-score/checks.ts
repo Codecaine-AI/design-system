@@ -31,7 +31,7 @@ export const CHECKS: CheckDef[] = [
   { id: "M-press-scale", layer: "motion", title: "Press scale", rule: "A control that scales on :active must scale to 0.95-0.98. Below 0.95 fails; over 0.98 and under 0.999 warns. Controls without a press scale are not judged.", area: "interaction" },
   { id: "M-reduced-motion", layer: "motion", title: "Reduced motion", rule: "With prefers-reduced-motion: reduce, any transform/translate/scale/rotate or position animation still running while hovering or reaching the page state. Warns.", area: "motion" },
   // judge
-  { id: "V-judge", layer: "judge", title: "Vision judge", rule: "Opt-in (--judge). A cheap vision model rates each state screenshot against the taste rules a still can show; a strong model answers again on any fail or unsure. The strong model's confident no fails; its unsure warns." },
+  { id: "V-judge", layer: "judge", title: "Vision judge", rule: "An agent judges each state screenshot against the taste rules a still can show, from judge/pack.md (--judge-pack), and writes judge/verdicts.json. Any fail fails; a warn or unsure warns. n/a for a screenshot with no verdict. Verdicts carry to later runs by screenshot hash." },
 ];
 
 export const CHECK_IDS = CHECKS.map((check) => check.id);

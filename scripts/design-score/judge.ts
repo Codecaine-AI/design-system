@@ -1,35 +1,27 @@
 /**
- * V-judge: a vision model that scores the taste rules no code check can decide, from the state
- * screenshots every run already takes (shots/<page>__<theme>__<viewport>.png). Opt-in (it costs money):
- * `design:score --judge`. Design and calibration: docs/10-design-score/85-screenshot-judge.
+ * V-judge: an agent judges the taste rules no code check can decide, from the state screenshots every run
+ * already takes (shots/<page>__<theme>__<viewport>.png). design:score calls no model. Design and
+ * calibration: docs/10-design-score/85-screenshot-judge.
  *
- *   rate a screenshot   the cheap model answers pass, fail, unsure or n/a for each still rule (STILL_SKIP
- *                       lists the V-judge rules a still cannot show). On any fail or unsure, the strong
- *                       model answers again and its answer is final.
- *   finding             strong fail -> fail finding; strong unsure -> warn finding (for Ford). Each cites
- *                       one rule id and a short reason, with a box when the model gives one.
- *   compare a pair      the calibration (judge-calibrate.ts): which of two versions follows the rules
- *                       better, and the rule that decides it. The same rubric and the same model call.
- *   cache               every model reply is kept under the screenshot's hash, the model and the prompt,
- *                       so a rerun over the same pixels costs nothing.
- *   cost cap            at most `maxCalls` uncached calls per run; shots past the cap are listed unjudged.
+ *   pack      --judge-pack writes judge/pack.md in the run folder: the still rules (STILL_SKIP lists the
+ *             V-judge rules a still cannot show), what each verdict means, the verdicts.json schema, and
+ *             each state screenshot still to judge, keyed by the sha256 of its PNG bytes.
+ *   verdicts  the agent writes judge/verdicts.json: per screenshot hash and rule id, pass, warn, fail or
+ *             unsure, with a one-line reason. --judge-verdicts <path> validates it and folds it into the run.
+ *   fold      per page: fail on any fail, warn on any warn or unsure, else pass; n/a when none of its shots
+ *             has a verdict. Each fail, warn or unsure is a finding that cites its rule. A verdict whose hash
+ *             is not in the run is ignored and listed in judge.stale.
+ *   carry     the verdicts of earlier runs of the app (their judge/applied.json) apply by hash, so an
+ *             unchanged screenshot needs no new judging. The run's own verdicts.json wins.
  */
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
-import { join } from "node:path";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 
+import { writeReport } from "./report";
 import { loadRules } from "./rules";
-import type { Box, Finding, PageResult } from "./types";
-
-export const JUDGE_MODELS = { cheap: "claude-haiku-5-5", strong: "claude-opus-5-5" } as const;
-/** USD per million tokens. Cache reads are billed at a tenth of input, cache writes at 1.25x. */
-export const PRICES: Record<string, { input: number; output: number }> = {
-  "claude-haiku-5-5": { input: 0.1, output: 0.5 },
-  "claude-sonnet-5-5": { input: 2, output: 10 },
-  "claude-opus-5-5": { input: 4, output: 20 },
-};
-export const DEFAULT_MAX_CALLS = 100;
+import { appAreas, appScore, checkTotals, pageAreas, pageScore } from "./score";
+import type { Finding, PageResult, Scorecard } from "./types";
 
 /** V-judge rules a still screenshot cannot decide, and why. */
 export const STILL_SKIP: Record<string, string> = {
@@ -52,48 +44,6 @@ export interface JudgeRule {
   rule: string;
 }
 
-export interface Usage {
-  input: number;
-  output: number;
-  cacheRead: number;
-  cacheWrite: number;
-}
-
-export interface ModelRequest {
-  model: string;
-  effort: "low" | "medium" | "high";
-  system: string;
-  /** PNG bytes, in order, each after its label. */
-  images: Array<{ label: string; png: Uint8Array }>;
-  text: string;
-  schema: Record<string, unknown>;
-  /** The page id the image comes from (stubs key replies on it; the API never sees it). */
-  page?: string;
-}
-
-export interface ModelReply {
-  json: unknown;
-  usage: Usage;
-}
-
-export type ModelCall = (req: ModelRequest) => Promise<ModelReply>;
-
-export type Verdict = "pass" | "fail" | "unsure" | "n/a";
-
-export interface RuleVerdict {
-  rule: string;
-  verdict: Verdict;
-  reason: string;
-  box: Box | null;
-}
-
-export interface JudgeOptions {
-  call: ModelCall;
-  cacheDir: string;
-  maxCalls?: number;
-  models?: { cheap: string; strong: string };
-}
-
 /** Every rule in design-score/rules/, and the still rules: V-judge rules a screenshot can show. */
 export function judgeRules(designSystem: string): { all: JudgeRule[]; still: JudgeRule[] } {
   const all = loadRules(designSystem).rules.map((r) => {
@@ -104,47 +54,71 @@ export function judgeRules(designSystem: string): { all: JudgeRule[]; still: Jud
   return { all: all.map(({ check: _, ...r }) => r), still: still.map(({ check: _, ...r }) => r) };
 }
 
-/** The rubric: every rule, grouped by area. Stable text, so the API caches it. */
-export function systemPrompt(rules: JudgeRule[]): string {
-  const areas = [...new Set(rules.map((r) => r.area))];
-  return [
-    "You are a design reviewer. You judge interface screenshots against the design rules below and nothing else.",
-    "Judge only what the pixels show. When the image cannot show whether a rule holds, say so instead of guessing.",
-    "Each reason is one short sentence that names what you see.",
-    "",
-    ...areas.flatMap((a) => [`## ${a}`, ...rules.filter((r) => r.area === a).map((r) => `- ${r.id}: ${r.rule}`), ""]),
-  ].join("\n");
-}
+// ---------------------------------------------------------------------------------------------- pack text
 
-const BOX_SCHEMA = {
-  anyOf: [
-    { type: "null" },
-    {
-      type: "object",
-      additionalProperties: false,
-      required: ["x", "y", "w", "h"],
-      properties: { x: { type: "number" }, y: { type: "number" }, w: { type: "number" }, h: { type: "number" } },
-    },
-  ],
+/** How to look. The run pack and the calibration pack share it; calibration tunes this text. */
+export const LOOK = [
+  "Judge only what the pixels show. Code checks already measure contrast, sizes, spacing, alignment and motion timing, so judge taste, not numbers.",
+  "Before you give a verdict, name the exact element the rule is about and what you see in it: the words of a heading and where its lines break, the quote and dash characters, the corners, the edges of a card on what is behind it, the space around an icon.",
+  "Look at the detail at full size. A difference of one character, one line break or a few pixels is often the whole answer.",
+  "When the image cannot show whether a rule holds (it needs motion, hover, a second state or the source), say unsure. Never guess from what is typical.",
+  "Each reason is one line that names what you see.",
+];
+
+export const VERDICT_MEANING: Record<Verdict, string> = {
+  pass: "the screen follows the rule, or nothing on it is about the rule.",
+  warn: "the screen mostly follows the rule but one detail is weak (a near miss). Counts half.",
+  fail: "the screen clearly breaks the rule in a place you can name.",
+  unsure: "the image cannot show whether the rule holds. Counts as warn, so use it only when you looked and cannot tell.",
 };
 
-export function rateSchema(ids: string[]) {
+/** The rules as pack lines, grouped by area. */
+export function ruleLines(rules: JudgeRule[]): string[] {
+  const areas = [...new Set(rules.map((r) => r.area))];
+  return areas.flatMap((a) => [`### ${a}`, "", ...rules.filter((r) => r.area === a).map((r) => `- \`${r.id}\` (${r.title}): ${r.rule}`), ""]);
+}
+
+// ---------------------------------------------------------------------------------------------- verdicts
+
+export const VERDICTS = ["pass", "warn", "fail", "unsure"] as const;
+export type Verdict = (typeof VERDICTS)[number];
+
+export interface RuleVerdict {
+  verdict: Verdict;
+  reason: string;
+}
+
+/** Screenshot sha256 -> rule id -> verdict. */
+export type VerdictMap = Record<string, Record<string, RuleVerdict>>;
+
+const HASH = /^[0-9a-f]{64}$/;
+const MAX_REASON = 300;
+
+/** The verdicts.json schema (JSON Schema 2020-12), as the pack prints it. validateVerdicts enforces it. */
+export function verdictsSchema(ruleIds: string[]) {
   return {
+    $schema: "https://json-schema.org/draft/2020-12/schema",
     type: "object",
     additionalProperties: false,
-    required: ["verdicts"],
+    required: ["version", "shots"],
     properties: {
-      verdicts: {
-        type: "array",
-        items: {
+      version: { const: 1 },
+      shots: {
+        type: "object",
+        description: "Keyed by the screenshot's sha256 (64 lowercase hex characters).",
+        propertyNames: { pattern: HASH.source },
+        additionalProperties: {
           type: "object",
-          additionalProperties: false,
-          required: ["rule", "verdict", "reason", "box"],
-          properties: {
-            rule: { type: "string", enum: ids },
-            verdict: { type: "string", enum: ["pass", "fail", "unsure", "n/a"] },
-            reason: { type: "string" },
-            box: BOX_SCHEMA,
+          description: "Keyed by rule id. A rule you leave out stays unjudged.",
+          propertyNames: { enum: ruleIds },
+          additionalProperties: {
+            type: "object",
+            additionalProperties: false,
+            required: ["verdict", "reason"],
+            properties: {
+              verdict: { enum: [...VERDICTS] },
+              reason: { type: "string", minLength: 1, maxLength: MAX_REASON, pattern: "^[^\\n\\r]+$" },
+            },
           },
         },
       },
@@ -152,313 +126,257 @@ export function rateSchema(ids: string[]) {
   };
 }
 
-export function rateText(still: JudgeRule[], width: number, height: number): string {
-  return [
-    `The image is one screen of an app, ${width}x${height} pixels.`,
-    "Code checks already measure contrast, sizes, spacing, alignment and motion. Judge only these taste rules:",
-    ...still.map((r) => `- ${r.id} (${r.title})`),
-    "Give one verdict per rule: pass when the screen follows it, fail when it breaks it, unsure when you cannot tell, n/a when nothing on the screen is about it.",
-    "For a fail or unsure, give the box (image pixels) of the region your answer is about; else box is null.",
-  ].join("\n");
-}
+const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
-export function compareSchema(ids: string[]) {
-  return {
-    type: "object",
-    additionalProperties: false,
-    required: ["difference", "better", "rule", "reason"],
-    properties: {
-      difference: { type: "string" },
-      better: { type: "string", enum: ["A", "B", "same", "unsure"] },
-      rule: { type: "string", enum: ids },
-      reason: { type: "string" },
-    },
-  };
-}
-
-export const COMPARE_TEXT = [
-  "Images A and B show two versions of the same interface. A strip of frames is a short clip, read left to right, top to bottom.",
-  "First describe the visible difference between A and B. Then say which version follows the design rules better: A, B, same (no difference you can see) or unsure.",
-  "Cite the one rule id that decides it, and give the reason in one short sentence.",
-].join("\n");
-
-// ---------------------------------------------------------------------------------------------- model
-
-/** ANTHROPIC_API_KEY from the environment, else from ~/workspace/.env (where envsync writes the keys). Never printed. */
-export function apiKey(envFile = join(homedir(), "workspace", ".env")): string | null {
-  if (process.env.ANTHROPIC_API_KEY) return process.env.ANTHROPIC_API_KEY;
-  if (!existsSync(envFile)) return null;
-  const line = readFileSync(envFile, "utf8").split("\n").find((l) => /^\s*(export\s+)?ANTHROPIC_API_KEY=/.test(l));
-  const value = line?.split("=").slice(1).join("=").trim().replace(/^["']|["']$/g, "");
-  return value || null;
-}
-
-/** The Messages API over fetch (this package has no dependencies, so no SDK). Retries 429, 5xx and network errors. */
-export function anthropicCall(key: string, opts: { retries?: number } = {}): ModelCall {
-  return async (req) => {
-    const content: unknown[] = [];
-    for (const img of req.images) {
-      content.push({ type: "text", text: img.label });
-      content.push({ type: "image", source: { type: "base64", media_type: "image/png", data: Buffer.from(img.png).toString("base64") } });
+/** Checks a parsed verdicts.json against verdictsSchema. Returns the verdicts, or every error found. */
+export function validateVerdicts(json: unknown, ruleIds: string[]): { shots: VerdictMap; errors: string[] } {
+  const errors: string[] = [];
+  const shots: VerdictMap = {};
+  if (!isObject(json)) return { shots, errors: ["the file is not a JSON object"] };
+  for (const key of Object.keys(json)) if (key !== "version" && key !== "shots") errors.push(`unknown top-level key "${key}"`);
+  if (json.version !== 1) errors.push(`version must be 1, not ${JSON.stringify(json.version)}`);
+  if (!isObject(json.shots)) return { shots, errors: [...errors, "shots must be an object keyed by screenshot hash"] };
+  const ids = new Set(ruleIds);
+  for (const [hash, rules] of Object.entries(json.shots)) {
+    if (!HASH.test(hash)) errors.push(`shots: "${hash}" is not a sha256 (64 lowercase hex characters)`);
+    if (!isObject(rules)) {
+      errors.push(`shots.${hash}: must be an object keyed by rule id`);
+      continue;
     }
-    content.push({ type: "text", text: req.text });
-    const body = JSON.stringify({
-      model: req.model,
-      max_tokens: 16000,
-      system: [{ type: "text", text: req.system, cache_control: { type: "ephemeral" } }],
-      messages: [{ role: "user", content }],
-      output_config: { effort: req.effort, format: { type: "json_schema", schema: req.schema } },
-    });
-    let last = "";
-    for (let attempt = 0; attempt <= (opts.retries ?? 3); attempt++) {
-      if (attempt) await Bun.sleep(1000 * 2 ** attempt);
-      let res: Response;
-      try {
-        res = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2026-10-21" },
-          body,
-        });
-      } catch (error) {
-        last = `network: ${error instanceof Error ? error.message : error}`;
+    for (const [rule, v] of Object.entries(rules)) {
+      const at = `shots.${hash.slice(0, 12)}.${rule}`;
+      if (!ids.has(rule)) errors.push(`${at}: "${rule}" is not one of the ${ruleIds.length} rules in the pack`);
+      if (!isObject(v)) {
+        errors.push(`${at}: must be { "verdict", "reason" }`);
         continue;
       }
-      const text = await res.text();
-      if (res.status === 429 || res.status >= 500) {
-        last = `HTTP ${res.status}`;
-        continue;
-      }
-      if (!res.ok) throw new Error(`Messages API HTTP ${res.status}: ${text.slice(0, 300)}`);
-      const msg = JSON.parse(text) as { stop_reason: string; content: Array<{ type: string; text?: string }>; usage: Record<string, number> };
-      if (msg.stop_reason === "refusal") throw new Error("the model refused the request");
-      if (msg.stop_reason === "max_tokens") throw new Error("the reply hit max_tokens");
-      const out = msg.content.filter((b) => b.type === "text").map((b) => b.text).join("");
-      return {
-        json: JSON.parse(out),
-        usage: {
-          input: msg.usage.input_tokens ?? 0,
-          output: msg.usage.output_tokens ?? 0,
-          cacheRead: msg.usage.cache_read_input_tokens ?? 0,
-          cacheWrite: msg.usage.cache_creation_input_tokens ?? 0,
-        },
-      };
+      for (const key of Object.keys(v)) if (key !== "verdict" && key !== "reason") errors.push(`${at}: unknown key "${key}"`);
+      if (!VERDICTS.includes(v.verdict as Verdict)) errors.push(`${at}: verdict ${JSON.stringify(v.verdict)} is not ${VERDICTS.join(", ")}`);
+      if (typeof v.reason !== "string" || !v.reason.trim()) errors.push(`${at}: reason must be a non-empty string`);
+      else if (/[\n\r]/.test(v.reason)) errors.push(`${at}: reason must be one line`);
+      else if (v.reason.length > MAX_REASON) errors.push(`${at}: reason is over ${MAX_REASON} characters`);
+      (shots[hash] ??= {})[rule] = { verdict: v.verdict as Verdict, reason: v.reason as string };
     }
-    throw new Error(`Messages API failed after retries (${last})`);
-  };
-}
-
-/** The cache key: every byte the model sees, plus the model and its settings. */
-export function cacheKey(req: ModelRequest): string {
-  const h = createHash("sha256");
-  h.update(JSON.stringify({ model: req.model, effort: req.effort, system: req.system, text: req.text, schema: req.schema, labels: req.images.map((i) => i.label) }));
-  for (const img of req.images) h.update(createHash("sha256").update(img.png).digest("hex"));
-  return h.digest("hex");
-}
-
-export interface Meter {
-  calls: number;
-  cached: number;
-  usage: Record<string, Usage>;
-}
-
-export const newMeter = (): Meter => ({ calls: 0, cached: 0, usage: {} });
-
-/** Calls the model unless the cache holds this exact request. */
-export async function cachedCall(call: ModelCall, cacheDir: string, req: ModelRequest, meter: Meter): Promise<unknown> {
-  const file = join(cacheDir, `${cacheKey(req)}.json`);
-  if (existsSync(file)) {
-    meter.cached++;
-    return (JSON.parse(readFileSync(file, "utf8")) as { json: unknown }).json;
   }
-  const reply = await call(req);
-  meter.calls++;
-  const u = (meter.usage[req.model] ??= { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 });
-  u.input += reply.usage.input;
-  u.output += reply.usage.output;
-  u.cacheRead += reply.usage.cacheRead;
-  u.cacheWrite += reply.usage.cacheWrite;
-  mkdirSync(cacheDir, { recursive: true });
-  writeFileSync(file, JSON.stringify({ model: req.model, json: reply.json, usage: reply.usage }) + "\n");
-  return reply.json;
+  return { shots: errors.length ? {} : shots, errors };
 }
 
-export function costUsd(usage: Record<string, Usage>): number {
-  let usd = 0;
-  for (const [model, u] of Object.entries(usage)) {
-    const p = PRICES[model];
-    if (!p) continue;
-    usd += (u.input * p.input + u.cacheRead * p.input * 0.1 + u.cacheWrite * p.input * 1.25 + u.output * p.output) / 1e6;
+/** Reads and validates a verdicts.json file. Throws with every error. */
+export function readVerdicts(path: string, ruleIds: string[]): VerdictMap {
+  let json: unknown;
+  try {
+    json = JSON.parse(readFileSync(path, "utf8"));
+  } catch (error) {
+    throw new Error(`${path}: not JSON (${error instanceof Error ? error.message : error})`);
   }
-  return Math.round(usd * 10000) / 10000;
+  const { shots, errors } = validateVerdicts(json, ruleIds);
+  if (errors.length) throw new Error(`${path} does not match the verdicts schema:\n  ${errors.join("\n  ")}`);
+  return shots;
 }
 
-// ---------------------------------------------------------------------------------------------- rate
-
-/** Keeps the verdicts for known rules, one per rule (the first). An unknown rule id is dropped. */
-export function parseVerdicts(json: unknown, ids: string[]): RuleVerdict[] {
-  const list = (json as { verdicts?: unknown[] } | null)?.verdicts;
-  if (!Array.isArray(list)) throw new Error("judge reply has no verdicts list");
-  const seen = new Set<string>();
-  const out: RuleVerdict[] = [];
-  for (const v of list as Array<Partial<RuleVerdict>>) {
-    if (!v || typeof v.rule !== "string" || !ids.includes(v.rule) || seen.has(v.rule)) continue;
-    if (!["pass", "fail", "unsure", "n/a"].includes(v.verdict as string)) continue;
-    seen.add(v.rule);
-    const b = v.box;
-    const box = b && [b.x, b.y, b.w, b.h].every((n) => typeof n === "number" && Number.isFinite(n)) ? { x: b.x, y: b.y, w: b.w, h: b.h } : null;
-    out.push({ rule: v.rule, verdict: v.verdict as Verdict, reason: String(v.reason ?? "").slice(0, 300), box });
+/**
+ * Verdicts carried from the app's other runs (siblings of runDir): each run's judge/applied.json, oldest
+ * run first, so a later run's verdict wins. A file that fails the schema (an older rule set) is skipped.
+ */
+export function carriedVerdicts(runDir: string, ruleIds: string[]): VerdictMap {
+  const appDir = dirname(runDir);
+  const self = runDir.slice(appDir.length + 1);
+  const out: VerdictMap = {};
+  const runs = existsSync(appDir) ? readdirSync(appDir).filter((d) => d !== self && existsSync(join(appDir, d, "judge", "applied.json"))).sort() : [];
+  for (const run of runs) {
+    let shots: VerdictMap;
+    try {
+      shots = readVerdicts(join(appDir, run, "judge", "applied.json"), ruleIds);
+    } catch {
+      continue;
+    }
+    for (const [hash, rules] of Object.entries(shots)) out[hash] = { ...out[hash], ...rules };
   }
   return out;
 }
 
-export interface ShotRating {
-  /** The final verdicts: the strong model's when it was asked, else the cheap model's. */
-  verdicts: RuleVerdict[];
-  /** Rules where the cheap model said fail or unsure and the strong model said pass (for Ford). */
-  disagreed: string[];
-  strong: boolean;
-}
-
-/** Rates one screenshot: the cheap model first, the strong model again on any fail or unsure. */
-export async function rateShot(png: Uint8Array, size: { width: number; height: number }, ctx: { opts: JudgeOptions; rules: { all: JudgeRule[]; still: JudgeRule[] }; meter: Meter; page?: string }): Promise<ShotRating> {
-  const models = ctx.opts.models ?? JUDGE_MODELS;
-  const ids = ctx.rules.still.map((r) => r.id);
-  const base = { system: systemPrompt(ctx.rules.all), images: [{ label: "Screenshot:", png }], text: rateText(ctx.rules.still, size.width, size.height), schema: rateSchema(ids), page: ctx.page };
-  const cheap = parseVerdicts(await cachedCall(ctx.opts.call, ctx.opts.cacheDir, { ...base, model: models.cheap, effort: "low" }, ctx.meter), ids);
-  if (!cheap.some((v) => v.verdict === "fail" || v.verdict === "unsure")) return { verdicts: cheap, disagreed: [], strong: false };
-  const strong = parseVerdicts(await cachedCall(ctx.opts.call, ctx.opts.cacheDir, { ...base, model: models.strong, effort: "medium" }, ctx.meter), ids);
-  const flagged = cheap.filter((v) => v.verdict === "fail" || v.verdict === "unsure").map((v) => v.rule);
-  const disagreed = flagged.filter((id) => strong.find((v) => v.rule === id)?.verdict === "pass");
-  return { verdicts: strong, disagreed, strong: true };
-}
-
-export interface PairVerdict {
-  difference: string;
-  better: "A" | "B" | "same" | "unsure";
-  rule: string;
-  reason: string;
-}
-
-/** Which of two versions follows the rules better. Each side is one image (a still or a frame strip). */
-export async function comparePair(a: Uint8Array, b: Uint8Array, ctx: { call: ModelCall; cacheDir: string; model: string; effort: "low" | "medium" | "high"; rules: JudgeRule[]; meter: Meter }): Promise<PairVerdict> {
-  const ids = ctx.rules.map((r) => r.id);
-  const json = (await cachedCall(ctx.call, ctx.cacheDir, {
-    model: ctx.model,
-    effort: ctx.effort,
-    system: systemPrompt(ctx.rules),
-    images: [{ label: "Image A:", png: a }, { label: "Image B:", png: b }],
-    text: COMPARE_TEXT,
-    schema: compareSchema(ids),
-  }, ctx.meter)) as Partial<PairVerdict> | null;
-  const better = json?.better;
-  if (better !== "A" && better !== "B" && better !== "same" && better !== "unsure") throw new Error("judge reply has no better field");
-  return { difference: String(json?.difference ?? ""), better, rule: ids.includes(String(json?.rule)) ? String(json!.rule) : "", reason: String(json?.reason ?? "") };
-}
-
 // ---------------------------------------------------------------------------------------------- run
 
+export interface JudgedShot {
+  file: string;
+  hash: string;
+  page: string;
+  theme: string;
+  viewport: string;
+  /** Where its verdicts came from: this run's verdicts.json, an earlier run, or none yet. */
+  from: "run" | "carried" | "none";
+}
+
 export interface JudgeSummary {
-  status: "not-run" | "ran";
-  shots: string[];
+  shots: JudgedShot[];
+  rules: number;
+  /** Hashes in this run's verdicts.json that match no screenshot in the run (ignored). */
+  stale: string[];
+  /** judge/pack.md, relative to the run folder, when --judge-pack wrote it. */
+  pack: string | null;
   note: string;
-  models?: { cheap: string; strong: string };
-  calls?: number;
-  cached?: number;
-  usage?: Record<string, Usage>;
-  costUsd?: number;
-  /** State shots the call cap left unjudged. */
-  unjudged?: string[];
-  /** Cheap and strong model disagreed: for Ford, never counted. */
-  review?: Array<{ shot: string; rules: string[] }>;
 }
 
-const stateShots = (pages: PageResult[]) => pages.flatMap((p) => p.shots.filter((s) => s.kind === "state").map((s) => s.file));
+const sha256 = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
 
-/** The judge field when --judge is off: the state screenshots it would read. */
-export function judgeOff(pages: PageResult[]): JudgeSummary {
-  return { status: "not-run", shots: stateShots(pages), note: "V-judge did not run (opt-in: --judge). V-judge is n/a in every page score." };
+/** Every state screenshot of the scored pages, with its hash. */
+export function stateShots(pages: PageResult[], runDir: string): Omit<JudgedShot, "from">[] {
+  return pages.filter((p) => !p.skipped).flatMap((p) =>
+    p.shots.filter((s) => s.kind === "state" && existsSync(join(runDir, s.file))).map((s) => ({ file: s.file, hash: sha256(readFileSync(join(runDir, s.file))), page: p.id, theme: s.theme, viewport: s.viewport })),
+  );
 }
 
-/** PNG width and height from its IHDR chunk. */
-export function pngSize(png: Uint8Array): { width: number; height: number } {
-  const v = new DataView(png.buffer, png.byteOffset, png.byteLength);
-  return { width: v.getUint32(16), height: v.getUint32(20) };
+const MESSAGE: Record<Exclude<Verdict, "pass">, string> = { fail: "Breaks", warn: "Near miss on", unsure: "Unsure about" };
+
+/**
+ * Folds verdicts into the pages: sets each page's V-judge status and returns the findings. `own` is this
+ * run's verdicts.json, `carried` the earlier runs'. Per rule, own wins.
+ */
+export function foldVerdicts(pages: PageResult[], runDir: string, still: JudgeRule[], own: VerdictMap, carried: VerdictMap): { findings: Finding[]; shots: JudgedShot[]; applied: VerdictMap; stale: string[] } {
+  const rules = new Map(still.map((r) => [r.id, r]));
+  const shots = stateShots(pages, runDir);
+  const findings: Finding[] = [];
+  const applied: VerdictMap = {};
+  const judged: JudgedShot[] = [];
+  for (const page of pages) {
+    if (page.skipped) continue;
+    let fails = 0;
+    let warns = 0;
+    let count = 0;
+    for (const shot of shots.filter((s) => s.page === page.id)) {
+      const verdicts = { ...carried[shot.hash], ...own[shot.hash] };
+      const from = own[shot.hash] ? "run" : carried[shot.hash] ? "carried" : "none";
+      judged.push({ ...shot, from });
+      if (from === "none") continue;
+      count++;
+      applied[shot.hash] = verdicts;
+      for (const [id, v] of Object.entries(verdicts)) {
+        if (v.verdict === "pass") continue;
+        const severity = v.verdict === "fail" ? "fail" : "warn";
+        if (severity === "fail") fails++;
+        else warns++;
+        const rule = rules.get(id)!;
+        findings.push({ check: "V-judge", severity, page: page.id, theme: shot.theme, viewport: shot.viewport, selector: null, box: null, measured: v.reason, expected: rule.rule, message: `${MESSAGE[v.verdict]} ${rule.title}`, rules: [id] });
+      }
+    }
+    const total = shots.filter((s) => s.page === page.id).length;
+    page.checks["V-judge"] = count
+      ? { status: fails ? "fail" : warns ? "warn" : "pass", fails, warns, cut: 0, note: `${count} of ${total} screenshots judged` }
+      : { status: "n/a", fails: 0, warns: 0, cut: 0, note: "no screenshot has a verdict (design:score --judge-pack writes the pack)" };
+  }
+  const known = new Set(shots.map((s) => s.hash));
+  return { findings, shots: judged, applied, stale: Object.keys(own).filter((h) => !known.has(h)) };
+}
+
+/** judge/pack.md: what an agent reads to judge this run. Lists only the screenshots with no verdict yet. */
+export function packText(card: Pick<Scorecard, "app" | "runId">, runDir: string, still: JudgeRule[], shots: JudgedShot[], cli: string): string {
+  const todo = new Map<string, JudgedShot[]>();
+  for (const s of shots.filter((s) => s.from === "none")) todo.set(s.hash, [...(todo.get(s.hash) ?? []), s]);
+  const carried = new Set(shots.filter((s) => s.from !== "none").map((s) => s.hash)).size;
+  const example = { version: 1, shots: { [todo.keys().next().value ?? "0".repeat(64)]: { [still[0]!.id]: { verdict: "pass", reason: "One line that names what you see." } } } };
+  const verdictsPath = join(runDir, "judge", "verdicts.json");
+  return [
+    `# V-judge pack: ${card.app}, run ${card.runId}`,
+    "",
+    `You are the design judge. Open each screenshot below, judge it against each of the ${still.length} rules, and write ${verdictsPath}.`,
+    "",
+    "## How to look",
+    "",
+    ...LOOK.map((l) => `- ${l}`),
+    "",
+    "## Verdicts",
+    "",
+    ...VERDICTS.map((v) => `- \`${v}\`: ${VERDICT_MEANING[v]}`),
+    "",
+    "## Rules",
+    "",
+    ...ruleLines(still),
+    "## verdicts.json",
+    "",
+    "One entry per screenshot hash and rule id. Give every rule for every screenshot.",
+    "",
+    "```json",
+    JSON.stringify(verdictsSchema(still.map((r) => r.id)), null, 2),
+    "```",
+    "",
+    "Example:",
+    "",
+    "```json",
+    JSON.stringify(example, null, 2),
+    "```",
+    "",
+    `Then fold it into the run: \`${cli} --judge-verdicts ${verdictsPath}\``,
+    "",
+    `## Screenshots (${todo.size} to judge${carried ? `, ${carried} carried from earlier runs` : ""})`,
+    "",
+    ...(todo.size ? [...todo].flatMap(([hash, places]) => [`### \`${hash}\``, "", `- file: ${join(runDir, places[0]!.file)}`, ...places.map((p) => `- ${p.page} · ${p.theme} · ${p.viewport}`), ""]) : ["Every screenshot already has a verdict from an earlier run.", ""]),
+  ].join("\n");
+}
+
+export interface JudgeRunOptions {
+  /** Write judge/pack.md. */
+  pack?: boolean;
+  /** The command the pack tells the agent to run next. */
+  cli?: string;
 }
 
 /**
- * Rates every state screenshot of the scored pages and sets each page's V-judge status: fail on a strong
- * fail, warn on a strong unsure, else pass; n/a when none of its shots was judged. Returns the findings.
+ * Folds the run's judge/verdicts.json (if any) and the carried verdicts into the scorecard: page statuses,
+ * V-judge findings, scores, judge summary. Writes judge/applied.json, and judge/pack.md with opts.pack.
+ * Throws when verdicts.json does not match the schema.
  */
-export async function runJudge(pages: PageResult[], runDir: string, rules: { all: JudgeRule[]; still: JudgeRule[] }, opts: JudgeOptions, log: (s: string) => void = () => undefined): Promise<{ findings: Finding[]; summary: JudgeSummary }> {
-  const meter = newMeter();
-  const maxCalls = opts.maxCalls ?? DEFAULT_MAX_CALLS;
-  const titles = new Map(rules.still.map((r) => [r.id, r]));
-  const findings: Finding[] = [];
-  const unjudged: string[] = [];
-  const review: JudgeSummary["review"] = [];
-  for (const page of pages) {
-    if (page.skipped) continue;
-    let judged = 0;
-    let fails = 0;
-    let warns = 0;
-    for (const shot of page.shots.filter((s) => s.kind === "state")) {
-      // A shot needs up to two calls; stop before the cap, unless both replies are cached.
-      if (meter.calls + 2 > maxCalls) {
-        unjudged.push(shot.file);
-        continue;
-      }
-      const png = new Uint8Array(readFileSync(join(runDir, shot.file)));
-      let rating: ShotRating;
-      try {
-        rating = await rateShot(png, pngSize(png), { opts, rules, meter, page: page.id });
-      } catch (error) {
-        page.errors.push(`V-judge ${shot.theme} ${shot.viewport}: ${error instanceof Error ? error.message : error}`);
-        continue;
-      }
-      judged++;
-      if (rating.disagreed.length) review.push({ shot: shot.file, rules: rating.disagreed });
-      for (const v of rating.verdicts) {
-        if (v.verdict !== "fail" && v.verdict !== "unsure") continue;
-        // Only the strong model's no counts as a fail; its unsure goes to Ford as a warn.
-        const severity = v.verdict === "fail" && rating.strong ? "fail" : "warn";
-        if (severity === "fail") fails++;
-        else warns++;
-        const rule = titles.get(v.rule)!;
-        findings.push({
-          check: "V-judge",
-          severity,
-          page: page.id,
-          theme: shot.theme,
-          viewport: shot.viewport,
-          selector: null,
-          box: v.box,
-          measured: v.reason,
-          expected: rule.rule,
-          message: `${v.verdict === "fail" ? "Breaks" : "Unsure about"} ${rule.title}`,
-          rules: [v.rule],
-        });
-      }
-    }
-    if (!judged) page.checks["V-judge"] = { status: "n/a", fails: 0, warns: 0, cut: 0, note: unjudged.length ? "not judged: the call cap was reached" : "no state screenshot was judged" };
-    else page.checks["V-judge"] = { status: fails ? "fail" : warns ? "warn" : "pass", fails, warns, cut: 0, note: `${judged} screenshots judged` };
-    log(`V-judge ${page.id}: ${page.checks["V-judge"]!.status}`);
+export function judgeRun(card: Scorecard, runDir: string, designSystem: string, opts: JudgeRunOptions = {}): Scorecard {
+  const still = judgeRules(designSystem).still;
+  const ids = still.map((r) => r.id);
+  const ownPath = join(runDir, "judge", "verdicts.json");
+  const own = existsSync(ownPath) ? readVerdicts(ownPath, ids) : {};
+  const folded = foldVerdicts(card.pages, runDir, still, own, carriedVerdicts(runDir, ids));
+  mkdirSync(join(runDir, "judge"), { recursive: true });
+  writeFileSync(join(runDir, "judge", "applied.json"), JSON.stringify({ version: 1, shots: folded.applied }, null, 2) + "\n");
+  let pack: string | null = null;
+  if (opts.pack) {
+    pack = "judge/pack.md";
+    writeFileSync(join(runDir, pack), packText(card, runDir, still, folded.shots, opts.cli ?? `bun run design:score --app ${card.app}`));
   }
-  const models = opts.models ?? JUDGE_MODELS;
-  const usd = costUsd(meter.usage);
-  return {
-    findings,
-    summary: {
-      status: "ran",
-      shots: stateShots(pages),
-      note: `V-judge rated ${stateShots(pages).length - unjudged.length} state screenshots against ${rules.still.length} rules: ${meter.calls} model calls, ${meter.cached} from the cache, about $${usd}.${unjudged.length ? ` ${unjudged.length} screenshots were left unjudged at the call cap of ${maxCalls}.` : ""}`,
-      models,
-      calls: meter.calls,
-      cached: meter.cached,
-      usage: meter.usage,
-      costUsd: usd,
-      unjudged,
-      review,
-    },
+  for (const p of card.pages) {
+    // A page whose browser checks all failed keeps no score (see run.ts).
+    if (p.score !== null || (!p.skipped && p.checks["V-judge"]?.status !== "n/a")) p.score = pageScore(p.checks);
+    p.areas = pageAreas(p.checks);
+  }
+  const hashes = (from: JudgedShot["from"]) => new Set(folded.shots.filter((s) => s.from === from).map((s) => s.hash)).size;
+  const total = new Set(folded.shots.map((s) => s.hash)).size;
+  const left = hashes("none");
+  card.findings = [...card.findings.filter((f) => f.check !== "V-judge"), ...folded.findings];
+  card.score = appScore(card.pages);
+  card.areas = appAreas(card.pages);
+  card.checkTotals = checkTotals(card.pages);
+  card.judge = {
+    shots: folded.shots,
+    rules: still.length,
+    stale: folded.stale,
+    pack,
+    note: [
+      `V-judge: ${total - left} of ${total} distinct state screenshots have verdicts (${hashes("run")} from this run, ${hashes("carried")} carried from earlier runs), against ${still.length} rules.`,
+      left ? `${left} have none, so their pages stay n/a${pack ? `: an agent judges them from ${pack}` : " (--judge-pack writes the pack)"}.` : "",
+      folded.stale.length ? `${folded.stale.length} verdicts.json entries match no screenshot in this run and were ignored: ${folded.stale.map((h) => h.slice(0, 12)).join(", ")}.` : "",
+    ].filter(Boolean).join(" "),
   };
+  return card;
 }
 
+/**
+ * --judge-verdicts: validates a verdicts.json, puts it at <run>/judge/verdicts.json, and refolds the run's
+ * scorecard.json and report.html. No browser, no capture.
+ */
+export function refoldRun(runDir: string, verdictsPath: string, designSystem: string): Scorecard {
+  const ids = judgeRules(designSystem).still.map((r) => r.id);
+  const own = readVerdicts(verdictsPath, ids);
+  const target = join(runDir, "judge", "verdicts.json");
+  mkdirSync(dirname(target), { recursive: true });
+  if (verdictsPath !== target) writeFileSync(target, JSON.stringify({ version: 1, shots: own }, null, 2) + "\n");
+  const card = JSON.parse(readFileSync(join(runDir, "scorecard.json"), "utf8")) as Scorecard;
+  judgeRun(card, runDir, designSystem);
+  writeFileSync(join(runDir, "scorecard.json"), JSON.stringify(card, null, 2) + "\n");
+  writeReport(runDir, card, designSystem);
+  return card;
+}

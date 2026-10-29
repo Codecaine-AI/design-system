@@ -48,7 +48,7 @@
           }
         },
         {
-          "insert": " scores every page of an app against the design rules in a real browser. It runs 23 checks, and each check belongs to one area and one layer. A 24th check, V-judge, is planned and does not run yet. Each check that runs has its own page with a good and a bad example, and each example pair is a test that the check must pass."
+          "insert": " scores every page of an app against the design rules in a real browser. It runs 23 checks, and each check belongs to one area and one layer. A 24th check, V-judge, counts the verdicts an agent gives the screenshots. Each of the 23 checks has its own page with a good and a bad example, and each example pair is a test that the check must pass."
         }
       ],
       "children": []
@@ -443,7 +443,7 @@
                 }
               }
             ],
-            "1, not run",
+            "1",
             "32"
           ]
         ],
@@ -596,7 +596,25 @@
       "props": {},
       "text": [
         {
-          "insert": "V-judge is planned and does not run yet. The run keeps its state screenshots for it."
+          "insert": "V-judge calls no model. An agent judges the state screenshots from the run's "
+        },
+        {
+          "insert": "judge/pack.md",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and "
+        },
+        {
+          "insert": "--judge-verdicts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " folds its verdicts into the score."
         }
       ],
       "children": []
@@ -1006,8 +1024,8 @@
             ],
             "judge",
             "judge",
-            "Not run",
-            "A vision model judges the screenshots"
+            "Fail and warn",
+            "A taste rule that an agent judges broken in a screenshot"
           ]
         ],
         "title": "design:score checks"
