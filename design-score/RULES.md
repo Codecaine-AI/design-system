@@ -2,6 +2,8 @@
 
 `rules/` holds one merged list of Jakub Krehel's design rules, deduplicated from two catalogs: the skills (248 rules) and the magazine (171 rules). Source catalogs: `knowledge-base/sessions/design-principle-verification-across-apps/outputs/`.
 
+Sources: the rules paraphrase Jakub Krehel's agent skills (https://github.com/jakubkrehel/skills, MIT License, Copyright (c) 2026 Jakub Krehel) and his Interfaces Magazine issues (https://jakub.kr). Each rule is a one-sentence summary with its source ids in `sources`; no text is copied.
+
 - One file per area: `rules/<area>.json`, each `{ "area", "rules": [...] }`. The areas are the six check areas (layout, typography, color, motion, interaction, accessibility), `writing` (copy rules) and `judge` (taste and process rules for the screenshot judge).
 - A rule with a check takes its check's area from `scripts/design-score/checks.ts`. A `V-judge` rule is in `judge`.
 - `decisions.json` holds Ford's decisions, the source catalogs and the dropped rules.
