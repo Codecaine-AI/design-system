@@ -119,6 +119,16 @@ describe("folding verdicts into a run", () => {
     expect(out.judge.shots.map((s) => s.page)).toEqual(["home"]);
   });
 
+  test("the report lists each failed V-judge rule of a screenshot on its own", () => {
+    const dir = run("report", "r1", ["home"]);
+    const [first, second] = IDS.filter((id) => id !== RULE);
+    const verdicts = { ...all("pass"), [first!]: { verdict: "fail", reason: "first reason" }, [second!]: { verdict: "fail", reason: "second reason" } };
+    refoldRun(dir, verdictsFile(dir, { [hashOf("home")]: verdicts }), DESIGN_SYSTEM_ROOT);
+    const html = readFileSync(join(dir, "report.html"), "utf8");
+    expect(html).toContain("first reason");
+    expect(html).toContain("second reason");
+  });
+
   test("a refold replaces the earlier V-judge findings instead of adding to them", () => {
     const dir = run("refold", "r1", ["home"]);
     refoldRun(dir, verdictsFile(dir, { [hashOf("home")]: all("fail", "dot alone") }), DESIGN_SYSTEM_ROOT);

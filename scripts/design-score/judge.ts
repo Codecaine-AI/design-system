@@ -262,7 +262,7 @@ export function foldVerdicts(pages: PageResult[], runDir: string, still: JudgeRu
         if (severity === "fail") fails++;
         else warns++;
         const rule = rules.get(id)!;
-        findings.push({ check: "V-judge", severity, page: page.id, theme: shot.theme, viewport: shot.viewport, selector: null, box: null, measured: v.reason, expected: rule.rule, message: `${MESSAGE[v.verdict]} ${rule.title}`, rules: [id] });
+        findings.push({ check: "V-judge", severity, page: page.id, theme: shot.theme, viewport: shot.viewport, selector: null, box: null, measured: v.reason, expected: rule.rule, message: `${MESSAGE[v.verdict]} ${rule.title}`, rules: [id], group: id });
       }
     }
     const total = shots.filter((s) => s.page === page.id).length;
