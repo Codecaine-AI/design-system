@@ -654,10 +654,10 @@
       ],
       "actions": [
         {
-          "waitFor": "section[aria-label=\"Library\"]"
+          "waitFor": "section.owp-section:has(h2:has-text(\"Library\"))"
         },
         {
-          "scrollTo": "section[aria-label=\"Library\"]"
+          "scrollTo": "section.owp-section:has(h2:has-text(\"Library\"))"
         },
         {
           "wait": 300
