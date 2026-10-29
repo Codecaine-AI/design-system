@@ -1,0 +1,31 @@
+<!doctype html>
+<!-- S-outline-none, good: the same toolbar. Each outline removal has a replacement: a :focus-visible ring on the buttons and a focus border on the search field. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>S-outline-none: good</title>
+<link rel="stylesheet" href="../../../css/fonts.css">
+<link rel="stylesheet" href="../../../dist/css/tokens.css">
+<link rel="stylesheet" href="good.css">
+</head>
+<body>
+  <h2>Files</h2>
+  <div class="toolbar">
+    <button class="btn" type="button">Upload</button>
+    <button class="btn" type="button">New folder</button>
+    <input class="field" type="search" placeholder="Search files" aria-label="Search files">
+  </div>
+  <p class="label">good.css, the focus rules the check reads</p>
+  <pre class="source"></pre>
+  <script>
+    // Shows the stylesheet from its second comment on (the rules this fixture is about), with line numbers.
+    const pre = document.querySelector(".source");
+    fetch("good.css").then((r) => r.text()).then((t) => {
+      const lines = t.trimEnd().split("\n");
+      const from = Math.max(0, lines.findIndex((l, i) => i > 0 && l.startsWith("/*")));
+      pre.textContent = lines.slice(from).map((l, i) => String(from + i + 1).padStart(2) + "  " + l).join("\n");
+      pre.classList.add("loaded");
+    });
+  </script>
+</body>
+</html>

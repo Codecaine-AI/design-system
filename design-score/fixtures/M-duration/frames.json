@@ -1,0 +1,7 @@
+{
+  "step": { "click": ".trigger" },
+  "times": [0, 130, 260, 390, 520],
+  "clip": ".toolbar, .menu",
+  "pad": 8,
+  "viewport": { "width": 400, "height": 300 }
+}

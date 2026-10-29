@@ -1,0 +1,29 @@
+<!doctype html>
+<!-- M-press-scale, bad: Save presses to 0.9 (fail), and Cancel presses to 0.99, too small to feel (warn). Details has no press scale and is not judged. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>M-press-scale: bad</title>
+<link rel="stylesheet" href="../../../css/fonts.css">
+<link rel="stylesheet" href="../../../dist/css/tokens.css">
+<style>
+  body { margin: 0; padding: var(--ds-space-6); background: var(--ds-color-surface-page); color: var(--ds-color-text-body); font-family: var(--ds-font-family-sans); }
+  h2 { margin: 0 0 var(--ds-space-3); font-size: var(--ds-font-size-ui-lg); font-weight: var(--ds-font-weight-semibold); }
+  .toolbar { display: inline-flex; gap: var(--ds-space-3); padding: var(--ds-space-4); border: 1px solid var(--ds-color-border-default); border-radius: var(--ds-radius-base); background: var(--ds-color-surface-panel); }
+  .btn { min-height: var(--ds-space-10); padding: 0 var(--ds-space-5); border: 1px solid var(--ds-color-border-default); border-radius: var(--ds-radius-base); background: var(--ds-color-surface-panel); color: var(--ds-color-text-body); font: inherit; font-size: var(--ds-font-size-ui-md); transition: transform var(--ds-motion-duration-fast) var(--ds-motion-easing-standard); }
+  .save { border-color: var(--ds-color-accent); background: var(--ds-color-accent); color: var(--ds-color-text-on-solid); }
+  /* Fail: 0.9 is below 0.95, so the button looks like it drops away. */
+  .save:active { transform: scale(0.9); }
+  /* Warn: 0.99 is above 0.98, so the press is too small to see. */
+  .cancel:active { transform: scale(0.99); }
+</style>
+</head>
+<body>
+  <h2>Publish the page</h2>
+  <div class="toolbar">
+    <button class="btn save" type="button">Save</button>
+    <button class="btn cancel" type="button">Cancel</button>
+    <button class="btn details" type="button">Details</button>
+  </div>
+</body>
+</html>

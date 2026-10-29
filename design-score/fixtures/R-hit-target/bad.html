@@ -1,0 +1,47 @@
+<!doctype html>
+<!-- R-hit-target, bad: an editor card with three small targets. The format buttons are 20x20px and 2px apart (fail), the close button is 28x28px (warn), and the lone help button is 16x16px with nothing near it (warn). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>R-hit-target: bad</title>
+<link rel="stylesheet" href="../../../css/fonts.css">
+<link rel="stylesheet" href="../../../dist/css/tokens.css">
+<style>
+  body { margin: 0; padding: var(--ds-space-6); background: var(--ds-color-surface-page); color: var(--ds-color-text-body); font-family: var(--ds-font-family-sans); }
+  .card { width: calc(var(--ds-space-16) * 7); border: 1px solid var(--ds-color-border-default); border-radius: var(--ds-radius-base); background: var(--ds-color-surface-panel); }
+  .head { display: flex; align-items: center; justify-content: space-between; padding: var(--ds-space-2) var(--ds-space-3); border-bottom: 1px solid var(--ds-color-border-subtle); }
+  h2 { margin: 0; font-size: var(--ds-font-size-ui-lg); font-weight: var(--ds-font-weight-semibold); }
+  .tools { display: flex; align-items: center; gap: var(--ds-space-1); padding: var(--ds-space-2) var(--ds-space-3); border-bottom: 1px solid var(--ds-color-border-subtle); }
+  .tool, .close, .info { display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 1px solid var(--ds-color-border-default); border-radius: var(--ds-radius-base); background: var(--ds-color-surface-panel); color: var(--ds-color-text-body); font: inherit; font-size: var(--ds-font-size-ui-sm); flex-shrink: 0; }
+  .tool svg, .close svg, .info svg { width: var(--ds-space-3); height: var(--ds-space-3); }
+  .note { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--ds-space-16); padding: var(--ds-space-3); }
+  .note p { margin: 0; font-size: var(--ds-font-size-ui-md); line-height: var(--ds-line-height-ui); }
+  .note a { color: var(--ds-color-link); }
+  /* Fail: 20x20px, 2px apart. Two centers 22px apart put each 24px circle over its neighbor's. */
+  .tool { width: var(--ds-space-5); height: var(--ds-space-5); }
+  .tools { gap: var(--ds-space-0-5); }
+  /* Warn: 28x28px is in the 24 to 32px band. */
+  .close { width: var(--ds-space-7); height: var(--ds-space-7); }
+  /* Warn: 16x16px, but no other target is within 12px of its center. */
+  .info { width: var(--ds-space-4); height: var(--ds-space-4); }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="head">
+      <h2>Release notes</h2>
+      <button class="close" type="button" aria-label="Close"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.5"/></svg></button>
+    </div>
+    <div class="tools">
+      <button class="tool" type="button" aria-label="Bold"><b>B</b></button>
+      <button class="tool" type="button" aria-label="Italic"><i>I</i></button>
+      <button class="tool" type="button" aria-label="Underline"><u>U</u></button>
+      <button class="tool" type="button" aria-label="Strikethrough"><s>S</s></button>
+    </div>
+    <div class="note">
+      <p>Draft the notes for version 2.4 here. The <a href="#style">writing guide</a> lists the words to avoid.</p>
+      <button class="info" type="button" aria-label="Help"><svg viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5" fill="none" stroke="currentColor"/><path d="M6 5v4" stroke="currentColor" stroke-width="1.5"/><circle cx="6" cy="3.2" r="0.8" fill="currentColor"/></svg></button>
+    </div>
+  </div>
+</body>
+</html>

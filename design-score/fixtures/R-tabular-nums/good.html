@@ -1,0 +1,32 @@
+<!doctype html>
+<!-- R-tabular-nums, good: every number cell sets font-variant-numeric: tabular-nums, so the digits line up in columns. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>R-tabular-nums: good</title>
+<link rel="stylesheet" href="../../../css/fonts.css">
+<link rel="stylesheet" href="../../../dist/css/tokens.css">
+<style>
+  body { margin: 0; padding: var(--ds-space-6); background: var(--ds-color-surface-page); color: var(--ds-color-text-body); font-family: var(--ds-font-family-sans); font-size: var(--ds-font-size-ui-md); line-height: var(--ds-line-height-ui); }
+  h2 { margin: 0 0 var(--ds-space-2); font-size: var(--ds-font-size-ui-lg); font-weight: var(--ds-font-weight-semibold); color: var(--ds-color-text-ink); }
+  table { border-collapse: collapse; width: calc(var(--ds-space-16) * 6); border: 1px solid var(--ds-color-border-default); background: var(--ds-color-surface-panel); }
+  th, td { padding: var(--ds-space-1-5) var(--ds-space-3); text-align: start; border-top: 1px solid var(--ds-color-border-subtle); }
+  th { font-weight: var(--ds-font-weight-medium); color: var(--ds-color-text-muted); }
+  td.num, th.num { text-align: end; }
+  /* Every digit takes the same width, so the columns line up. */
+  td.num { font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+  <h2>Build times</h2>
+  <table>
+    <thead><tr><th>App</th><th class="num">Builds</th><th class="num">Median</th></tr></thead>
+    <tbody>
+      <tr><td>Knowledge</td><td class="num">1,111</td><td class="num">11.1</td></tr>
+      <tr><td>Docs hub</td><td class="num">808</td><td class="num">40.8</td></tr>
+      <tr><td>Canvas</td><td class="num">1,904</td><td class="num">17.1</td></tr>
+      <tr><td>Design system</td><td class="num">90</td><td class="num">8.0</td></tr>
+    </tbody>
+  </table>
+</body>
+</html>

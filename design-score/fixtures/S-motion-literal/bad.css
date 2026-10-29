@@ -1,0 +1,17 @@
+/* S-motion-literal, bad: literal durations and easings. Each declaration fails. */
+body { margin: 0; padding: var(--ds-space-6); background: var(--ds-color-surface-page); color: var(--ds-color-text-body); font-family: var(--ds-font-family-sans); }
+h2 { margin: 0 0 var(--ds-space-3); font-size: var(--ds-font-size-ui-lg); font-weight: var(--ds-font-weight-semibold); }
+.row { display: inline-flex; align-items: center; gap: var(--ds-space-3); padding: var(--ds-space-2) var(--ds-space-3); border: 1px solid var(--ds-color-border-default); border-radius: var(--ds-radius-base); background: var(--ds-color-surface-panel); }
+.label { font-size: var(--ds-font-size-ui-md); }
+.spinner { width: var(--ds-space-3); height: var(--ds-space-3); border: var(--ds-border-width-focus) solid var(--ds-color-border-default); border-top-color: var(--ds-color-text-muted); border-radius: var(--ds-radius-pill); }
+.switch { position: relative; width: var(--ds-space-8); height: var(--ds-space-5); padding: 0; border: 0; border-radius: var(--ds-radius-pill); background: var(--ds-color-border-strong); }
+.switch.on { background: var(--ds-color-accent); }
+.knob { position: absolute; top: var(--ds-space-0-5); left: var(--ds-space-0-5); width: var(--ds-space-4); height: var(--ds-space-4); border-radius: var(--ds-radius-pill); background: var(--ds-color-surface-panel); }
+.switch.on .knob { transform: translateX(var(--ds-space-3)); }
+@keyframes spin { to { transform: rotate(1turn); } }
+/* Fail 1: a literal duration. */
+.switch { transition: background-color 150ms ease; }
+/* Fail 2: a long literal duration and an overshooting cubic-bezier(). */
+.knob { transition: transform 600ms cubic-bezier(0.68, -0.6, 0.32, 1.6); }
+/* Fail 3: a literal in seconds. */
+.spinner { animation: spin 1s linear infinite; }

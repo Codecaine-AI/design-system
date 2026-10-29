@@ -1,0 +1,19 @@
+<!doctype html>
+<!-- S-motion-literal, bad: the same settings row. In bad.css the switch, the spinner and the row fade use ms, s and cubic-bezier() literals (fail). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>S-motion-literal: bad</title>
+<link rel="stylesheet" href="../../../css/fonts.css">
+<link rel="stylesheet" href="../../../dist/css/tokens.css">
+<link rel="stylesheet" href="bad.css">
+</head>
+<body>
+  <h2>Sync</h2>
+  <div class="row">
+    <span class="label">Sync on save</span>
+    <span class="spinner" aria-hidden="true"></span>
+    <button class="switch" type="button" role="switch" aria-checked="false" aria-label="Sync on save"><span class="knob"></span></button>
+  </div>
+</body>
+</html>

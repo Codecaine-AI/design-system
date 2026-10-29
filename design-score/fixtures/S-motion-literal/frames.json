@@ -1,0 +1,6 @@
+{
+  "step": { "js": "document.querySelector('.switch').classList.add('on')" },
+  "times": [0, 75, 150, 300, 450, 600],
+  "clip": ".switch",
+  "pad": 8
+}

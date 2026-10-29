@@ -1,0 +1,23 @@
+<!doctype html>
+<!-- R-h-scroll, good: the banner is width: 100%, so it fills the body's content box and the page never scrolls sideways. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>R-h-scroll: good</title>
+<link rel="stylesheet" href="../../../css/fonts.css">
+<link rel="stylesheet" href="../../../dist/css/tokens.css">
+<style>
+  body { margin: 0; padding: var(--ds-space-6); background: var(--ds-color-surface-page); color: var(--ds-color-text-body); font-family: var(--ds-font-family-sans); }
+  h2 { margin: 0 0 var(--ds-space-3); font-size: var(--ds-font-size-ui-lg); font-weight: var(--ds-font-weight-semibold); }
+  .banner { box-sizing: border-box; padding: var(--ds-space-3) var(--ds-space-4); border: 1px solid var(--ds-color-yellow-line); border-radius: var(--ds-radius-base); background: var(--ds-color-yellow-soft); font-size: var(--ds-font-size-ui-md); line-height: var(--ds-line-height-ui); }
+  p { margin: var(--ds-space-4) 0 0; font-size: var(--ds-font-size-ui-md); line-height: var(--ds-line-height-ui); max-width: calc(var(--ds-space-16) * 9); }
+  /* 100% of the body's content box: the padding stays inside the viewport. */
+  .banner { width: 100%; }
+</style>
+</head>
+<body>
+  <h2>Workspace</h2>
+  <div class="banner">Sync is paused. Changes stay on this device until you sign in again.</div>
+  <p>Three files changed since the last sync. They upload as soon as the connection comes back.</p>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "page": {
+    "waitFor": ".source.loaded",
+    "actions": [
+      {
+        "hover": ".row"
+      }
+    ]
+  },
+  "viewport": {
+    "width": 800,
+    "height": 400
+  }
+}

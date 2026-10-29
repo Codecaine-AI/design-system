@@ -1,0 +1,28 @@
+<!doctype html>
+<!-- R-axe, good: the avatar has alt text, the search field has a label, and the icon button has an aria-label. axe finds no violation. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>R-axe: good</title>
+<link rel="stylesheet" href="../../../css/fonts.css">
+<link rel="stylesheet" href="../../../dist/css/tokens.css">
+<style>
+  body { margin: 0; padding: var(--ds-space-6); background: var(--ds-color-surface-page); color: var(--ds-color-text-body); font-family: var(--ds-font-family-sans); }
+  header { display: flex; align-items: flex-end; gap: var(--ds-space-3); width: calc(var(--ds-space-16) * 7); padding: var(--ds-space-3); border: 1px solid var(--ds-color-border-default); border-radius: var(--ds-radius-base); background: var(--ds-color-surface-panel); }
+  .avatar { width: var(--ds-space-10); height: var(--ds-space-10); }
+  .field { display: flex; flex: 1; flex-direction: column; gap: var(--ds-space-1); }
+  .label { font-size: var(--ds-font-size-ui-sm); color: var(--ds-color-text-muted); }
+  input { height: var(--ds-space-8); padding: 0 var(--ds-space-2); border: 1px solid var(--ds-color-border-default); border-radius: var(--ds-radius-base); background: var(--ds-color-surface-page); color: var(--ds-color-text-body); font: inherit; font-size: var(--ds-font-size-ui-md); }
+  .icon { display: grid; place-items: center; width: var(--ds-space-8); height: var(--ds-space-8); padding: 0; border: 1px solid var(--ds-color-border-default); border-radius: var(--ds-radius-base); background: var(--ds-color-surface-page); color: var(--ds-color-text-muted); }
+</style>
+</head>
+<body>
+  <main>
+    <header>
+      <img class="avatar" src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22%3E%3Crect width=%2240%22 height=%2240%22 rx=%2220%22 fill=%22%238a8a86%22/%3E%3C/svg%3E" alt="Ford Lascari">
+      <label class="field"><span class="label">Search threads</span><input type="search"></label>
+      <button class="icon" type="button" aria-label="More actions"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><g fill="currentColor"><circle cx="3" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13" cy="8" r="1.5"/></g></svg></button>
+    </header>
+  </main>
+</body>
+</html>

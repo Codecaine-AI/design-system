@@ -1,0 +1,41 @@
+<!doctype html>
+<!-- M-duration, bad: a toolbar with a menu that the page's action opens. The button hover and the menu open both take 520ms (twice duration.slow). The hover is over 200ms and the menu over 300ms, so both fail. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>M-duration: bad</title>
+<link rel="stylesheet" href="../../../css/fonts.css">
+<link rel="stylesheet" href="../../../dist/css/tokens.css">
+<style>
+  body { margin: 0; padding: var(--ds-space-6); background: var(--ds-color-surface-page); color: var(--ds-color-text-body); font-family: var(--ds-font-family-sans); }
+  .toolbar { position: relative; display: flex; gap: var(--ds-space-2); }
+  .btn { height: var(--ds-space-8); padding: 0 var(--ds-space-3); border: 1px solid var(--ds-color-border-default); border-radius: var(--ds-radius-base); background: var(--ds-color-surface-panel); color: var(--ds-color-text-body); font: inherit; font-size: var(--ds-font-size-ui-md); }
+  .btn:hover { background: var(--ds-color-fill-hover); }
+  .menu { position: absolute; top: calc(var(--ds-space-8) + var(--ds-space-1)); left: 0; display: flex; flex-direction: column; min-width: calc(var(--ds-space-16) * 3); margin: 0; padding: var(--ds-space-1); list-style: none; border: 1px solid var(--ds-color-border-default); border-radius: var(--ds-radius-base); background: var(--ds-color-surface-panel); box-shadow: var(--ds-shadow-dialog); opacity: 0; transform: translateY(calc(var(--ds-space-1) * -1)); visibility: hidden; }
+  .menu.open { opacity: 1; transform: none; visibility: visible; }
+  .menu [role="menuitem"] { padding: var(--ds-space-1-5) var(--ds-space-2); border-radius: var(--ds-radius-base); font-size: var(--ds-font-size-ui-md); }
+  /* Too slow 1: a 520ms hover, over the 200ms control limit. */
+  .btn { transition: background-color calc(var(--ds-motion-duration-slow) * 2) var(--ds-motion-easing-standard); }
+  /* Too slow 2: a 520ms menu open, over the 300ms menu limit. */
+  .menu { transition-property: opacity, transform, visibility; transition-duration: calc(var(--ds-motion-duration-slow) * 2); transition-timing-function: var(--ds-motion-easing-decelerate); }
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <button class="btn trigger" type="button" aria-haspopup="menu" aria-expanded="false">Sort</button>
+    <button class="btn" type="button">Filter</button>
+    <ul class="menu" role="menu">
+      <li role="menuitem">Name</li>
+      <li role="menuitem">Date changed</li>
+      <li role="menuitem">Size</li>
+    </ul>
+  </div>
+  <script>
+    const trigger = document.querySelector(".trigger");
+    trigger.addEventListener("click", () => {
+      const open = document.querySelector(".menu").classList.toggle("open");
+      trigger.setAttribute("aria-expanded", String(open));
+    });
+  </script>
+</body>
+</html>

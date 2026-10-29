@@ -1,0 +1,13 @@
+/* S-color-literal, bad: the same card painted with literals. */
+body { margin: 0; padding: var(--ds-space-6); background: var(--ds-color-surface-page); color: var(--ds-color-text-body); font-family: var(--ds-font-family-sans); }
+/* Fail: an inline rgb() border. */
+.card { width: calc(var(--ds-space-16) * 6); padding: var(--ds-space-4); border: 1px solid rgb(224 224 222); border-radius: var(--ds-radius-base); background: var(--ds-color-surface-panel); }
+.head { display: flex; align-items: center; justify-content: space-between; gap: var(--ds-space-2); }
+/* Fail: an inline hex. */
+.title { font-size: var(--ds-font-size-ui-lg); font-weight: var(--ds-font-weight-semibold); color: #1f1f1d; }
+/* Warn: a palette value defined in a custom property. */
+.badge { --badge-bg: #e3f1e6; padding: var(--ds-space-0-5) var(--ds-space-2); border-radius: var(--ds-radius-pill); font-size: var(--ds-font-size-ui-sm); background: var(--badge-bg); color: var(--ds-color-status-success-text); }
+/* Ignored: a literal fallback already sits behind a token. */
+.meta { margin: var(--ds-space-2) 0; font-size: var(--ds-font-size-ui-md); color: var(--ds-color-text-muted, #6b6b68); }
+/* Fail: an inline hsl(). */
+.link { font-size: var(--ds-font-size-ui-md); color: hsl(212 80% 42%); }

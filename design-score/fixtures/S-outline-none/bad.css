@@ -1,0 +1,10 @@
+/* S-outline-none, bad: two outline removals with no focus style in their place. Each one fails. */
+body { margin: 0; padding: var(--ds-space-6); background: var(--ds-color-surface-page); color: var(--ds-color-text-body); font-family: var(--ds-font-family-sans); }
+h2 { margin: 0 0 var(--ds-space-3); font-size: var(--ds-font-size-ui-lg); font-weight: var(--ds-font-weight-semibold); }
+.toolbar { display: flex; gap: var(--ds-space-2); }
+.btn, .field { min-height: var(--ds-space-8); padding: 0 var(--ds-space-3); border: 1px solid var(--ds-color-border-default); border-radius: var(--ds-radius-base); background: var(--ds-color-surface-panel); color: var(--ds-color-text-body); font: inherit; font-size: var(--ds-font-size-ui-sm); }
+.label { margin: var(--ds-space-6) 0 var(--ds-space-2); font-size: var(--ds-font-size-ui-sm); color: var(--ds-color-text-muted); }
+.source { margin: 0; padding: var(--ds-space-3); border: 1px solid var(--ds-color-border-subtle); border-radius: var(--ds-radius-base); background: var(--ds-color-surface-sunken); font-family: var(--ds-font-family-mono); font-size: var(--ds-font-size-ui-sm); white-space: pre-wrap; }
+/* Fail 1 and 2: the outline goes, and nothing shows focus instead. */
+.btn:focus { outline: none; }
+.field:focus { outline: 0; }

@@ -1,0 +1,30 @@
+<!doctype html>
+<!-- R-control-height, bad: the button takes its height from 4px of padding around one text line, so it is 30.3px tall beside a 32px input and select (fail). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>R-control-height: bad</title>
+<link rel="stylesheet" href="../../../css/fonts.css">
+<link rel="stylesheet" href="../../../dist/css/tokens.css">
+<style>
+  body { margin: 0; padding: var(--ds-space-6); background: var(--ds-color-surface-page); color: var(--ds-color-text-body); font-family: var(--ds-font-family-sans); }
+  h2 { margin: 0 0 var(--ds-space-3); font-size: var(--ds-font-size-ui-lg); font-weight: var(--ds-font-weight-semibold); }
+  .bar { display: flex; align-items: center; gap: var(--ds-space-2); }
+  input, select, button { box-sizing: border-box; margin: 0; font: inherit; font-size: var(--ds-font-size-ui-md); line-height: var(--ds-line-height-ui); border-radius: var(--ds-radius-base); }
+  /* The input and the select are 32px tall. */
+  input, select { height: var(--ds-space-8); padding: 0 var(--ds-space-2); border: 1px solid var(--ds-color-border-default); background: var(--ds-color-surface-panel); color: var(--ds-color-text-ink); }
+  input { width: calc(var(--ds-space-16) * 4); }
+  button { padding: 0 var(--ds-space-3); border: 1px solid var(--ds-color-accent); background: var(--ds-color-accent); color: var(--ds-color-text-on-solid); }
+  /* The miss: padding sizes the button, so its height comes from the line height instead of the 32px token. */
+  button { padding: var(--ds-space-1) var(--ds-space-3); }
+</style>
+</head>
+<body>
+  <h2>Find issues</h2>
+  <div class="bar">
+    <input type="search" placeholder="Search issues" aria-label="Search issues">
+    <select aria-label="Status"><option>Open</option><option>Closed</option></select>
+    <button type="button">Search</button>
+  </div>
+</body>
+</html>

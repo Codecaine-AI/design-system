@@ -1,0 +1,30 @@
+<!doctype html>
+<!-- R-concentric-radius, good: each preview is inset 8px into a card with a 12px radius, so the preview takes 4px: 4 + 8 = 12, and the corners run parallel. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>R-concentric-radius: good</title>
+<link rel="stylesheet" href="../../../css/fonts.css">
+<link rel="stylesheet" href="../../../dist/css/tokens.css">
+<style>
+  body { margin: 0; padding: var(--ds-space-6); background: var(--ds-color-surface-page); color: var(--ds-color-text-body); font-family: var(--ds-font-family-sans); }
+  h2 { margin: 0 0 var(--ds-space-3); font-size: var(--ds-font-size-ui-lg); font-weight: var(--ds-font-weight-semibold); }
+  .cards { display: flex; gap: var(--ds-space-4); }
+  /* The card: 12px outer radius, a 1px border and an 8px inset. */
+  .card { width: calc(var(--ds-space-16) * 3); padding: var(--ds-space-2); border: 1px solid var(--ds-color-border-default); border-radius: calc(var(--ds-radius-base) * 6); background: var(--ds-color-surface-panel); }
+  .preview { height: calc(var(--ds-space-16) * 2); background: var(--ds-color-surface-sunken); }
+  .name { margin: var(--ds-space-2) var(--ds-space-1) 0; font-size: var(--ds-font-size-ui-md); line-height: var(--ds-line-height-ui); }
+  .meta { margin: 0 var(--ds-space-1); font-size: var(--ds-font-size-ui-sm); line-height: var(--ds-line-height-ui); color: var(--ds-color-text-muted); }
+  /* Concentric: the inner radius is the outer radius minus the inset. */
+  .preview { border-radius: calc(var(--ds-radius-base) * 2); }
+</style>
+</head>
+<body>
+  <h2>Recent files</h2>
+  <div class="cards">
+    <div class="card"><div class="preview"></div><div class="name">Spacing audit</div><div class="meta">Edited today</div></div>
+    <div class="card"><div class="preview"></div><div class="name">Release notes</div><div class="meta">Edited Monday</div></div>
+    <div class="card"><div class="preview"></div><div class="name">Focus rings</div><div class="meta">Edited last week</div></div>
+  </div>
+</body>
+</html>

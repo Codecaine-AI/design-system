@@ -1,0 +1,8 @@
+{
+  "step": { "click": ".save" },
+  "times": [0, 65, 130, 195, 260],
+  "clip": ".stage",
+  "pad": 4,
+  "reduced": true,
+  "viewport": { "width": 480, "height": 260 }
+}

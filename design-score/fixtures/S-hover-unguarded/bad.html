@@ -1,0 +1,30 @@
+<!doctype html>
+<!-- S-hover-unguarded, bad: a task list whose :hover rules sit outside @media (hover: hover). A tap on a touch screen leaves the hover look stuck (warn). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>S-hover-unguarded: bad</title>
+<link rel="stylesheet" href="../../../css/fonts.css">
+<link rel="stylesheet" href="../../../dist/css/tokens.css">
+<link rel="stylesheet" href="bad.css">
+</head>
+<body>
+  <h2>Inbox</h2>
+  <ul class="list">
+    <li class="row"><span class="title">Reply to the design review</span><button class="btn" type="button">Done</button></li>
+    <li class="row"><span class="title">Book the venue</span><button class="btn" type="button">Done</button></li>
+  </ul>
+  <p class="label">bad.css, the hover rules the check reads</p>
+  <pre class="source"></pre>
+  <script>
+    // Shows the stylesheet from its second comment on (the rules this fixture is about), with line numbers.
+    const pre = document.querySelector(".source");
+    fetch("bad.css").then((r) => r.text()).then((t) => {
+      const lines = t.trimEnd().split("\n");
+      const from = Math.max(0, lines.findIndex((l, i) => i > 0 && l.startsWith("/*")));
+      pre.textContent = lines.slice(from).map((l, i) => String(from + i + 1).padStart(2) + "  " + l).join("\n");
+      pre.classList.add("loaded");
+    });
+  </script>
+</body>
+</html>

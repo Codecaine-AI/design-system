@@ -1,0 +1,36 @@
+<!doctype html>
+<!-- M-reduced-motion, bad: a form row whose Save button shows a toast (the page's action). The toast slides up and the button lifts on hover, with or without reduced motion (warn). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>M-reduced-motion: bad</title>
+<link rel="stylesheet" href="../../../css/fonts.css">
+<link rel="stylesheet" href="../../../dist/css/tokens.css">
+<style>
+  body { margin: 0; padding: var(--ds-space-6); background: var(--ds-color-surface-page); color: var(--ds-color-text-body); font-family: var(--ds-font-family-sans); }
+  .stage { position: relative; width: calc(var(--ds-space-16) * 5); height: calc(var(--ds-space-16) * 2); padding: var(--ds-space-3); border: 1px solid var(--ds-color-border-default); border-radius: var(--ds-radius-base); background: var(--ds-color-surface-panel); }
+  .title { margin: 0 0 var(--ds-space-3); font-size: var(--ds-font-size-ui-lg); font-weight: var(--ds-font-weight-semibold); }
+  .btn { height: var(--ds-space-8); padding: 0 var(--ds-space-3); border: 1px solid var(--ds-color-border-default); border-radius: var(--ds-radius-base); background: var(--ds-color-surface-panel); color: var(--ds-color-text-body); font: inherit; font-size: var(--ds-font-size-ui-md); }
+  .btn:hover { background: var(--ds-color-fill-hover); }
+  .toast { position: absolute; left: var(--ds-space-3); right: var(--ds-space-3); bottom: var(--ds-space-3); display: none; padding: var(--ds-space-2) var(--ds-space-3); border: 1px solid var(--ds-color-border-default); border-radius: var(--ds-radius-base); background: var(--ds-color-surface-page); box-shadow: var(--ds-shadow-glass); font-size: var(--ds-font-size-ui-md); }
+  .toast.show { display: block; }
+  @keyframes toast-in { from { opacity: 0; transform: translateY(var(--ds-space-4)); } }
+  @keyframes toast-fade { from { opacity: 0; } }
+  /* Warn 1: the toast slides in even under reduce. */
+  .toast.show { animation: toast-in var(--ds-motion-duration-slow) var(--ds-motion-easing-decelerate) both; }
+  /* Warn 2: the button lifts on hover even under reduce. */
+  .btn { transition: background-color var(--ds-motion-duration-fast) var(--ds-motion-easing-standard), transform var(--ds-motion-duration-base) var(--ds-motion-easing-standard); }
+  .btn:hover { transform: translateY(calc(var(--ds-space-0-5) * -1)); }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <h2 class="title">Profile</h2>
+    <button class="btn save" type="button">Save changes</button>
+    <div class="toast" role="status">Saved</div>
+  </div>
+  <script>
+    document.querySelector(".save").addEventListener("click", () => document.querySelector(".toast").classList.add("show"));
+  </script>
+</body>
+</html>
