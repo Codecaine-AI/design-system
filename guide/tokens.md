@@ -70,7 +70,7 @@ Both theme files hold exactly the same paths. The build fails if they differ. It
 
 <!-- BEGIN GENERATED: token reference (scripts/build.ts) -->
 
-79 base tokens and 203 theme tokens (light and dark), 688 CSS custom properties in total. Theme values show the authored value: `{path}` is an alias, emitted as `var()`.
+80 base tokens and 203 theme tokens (light and dark), 689 CSS custom properties in total. Theme values show the authored value: `{path}` is an alias, emitted as `var()`.
 
 ### Base tokens
 
@@ -248,6 +248,12 @@ Content measures. Blocks cap themselves at a lane and stay left-anchored.
 | --- | --- | --- | --- | --- |
 | `layout.topbar.height` | `--ds-layout-topbar-height` | dimension | `72px` | Topbar height. Budget app: .workspace-topbar and .sidebar-header 72px. The sidebar header and inspector header share it, so their bottom borders form one line. |
 | `layout.topbar.padding-x` | `--ds-layout-topbar-padding-x` | dimension | `32px` | Inline padding of the topbar. Budget app: .workspace-topbar padding 0 32px. |
+
+#### `motion.scale`
+
+| Token | CSS variable | Type | Value | Description |
+| --- | --- | --- | --- | --- |
+| `motion.scale.press` | `--ds-motion-scale-press` | number | `0.96` | Press feedback: a button or toggle scales to this on :active, transform only, over duration.base. Drop the scale under prefers-reduced-motion and keep the color change. |
 
 ### Theme tokens
 

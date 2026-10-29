@@ -9,6 +9,9 @@
       "standard": { "$type": "cubicBezier", "$value": "ease", "$description": "Default for small state changes." },
       "emphasized": { "$type": "cubicBezier", "$value": "cubic-bezier(0.32, 0.72, 0, 1)", "$description": "Panels entering, resizing or sliding." },
       "decelerate": { "$type": "cubicBezier", "$value": "ease-out", "$description": "Fades out of a highlight, hover hints appearing." }
+    },
+    "scale": {
+      "press": { "$type": "number", "$value": 0.96, "$description": "Press feedback: a button or toggle scales to this on :active, transform only, over duration.base. Drop the scale under prefers-reduced-motion and keep the color change." }
     }
   },
   "z": {
