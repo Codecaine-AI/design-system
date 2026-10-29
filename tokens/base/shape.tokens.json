@@ -20,6 +20,7 @@
     }
   },
   "blur": {
-    "glass": { "$type": "dimension", "$value": "14px", "$description": "Backdrop blur behind glass panels. Seed: --docs-lab-glass-blur." }
+    "glass": { "$type": "dimension", "$value": "14px", "$description": "Backdrop blur behind glass panels. Seed: --docs-lab-glass-blur." },
+    "motion": { "$type": "dimension", "$value": "4px", "$description": "filter: blur() on content entering or exiting and on an icon swap; animate it to 0." }
   }
 }

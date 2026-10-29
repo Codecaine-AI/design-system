@@ -3,11 +3,15 @@
 export type ThemeName = "light" | "dark";
 export type BaseTokenPath =
   | "blur.glass"
+  | "blur.motion"
   | "border.width.focus"
   | "border.width.hairline"
   | "border.width.none"
   | "border.width.rail"
   | "border.width.ring"
+  | "control.height.lg"
+  | "control.height.md"
+  | "control.height.sm"
   | "focus.ring.offset"
   | "font.family.mono"
   | "font.family.mono-system"
@@ -54,11 +58,15 @@ export type BaseTokenPath =
   | "line-height.tight"
   | "line-height.ui"
   | "motion.duration.base"
+  | "motion.duration.enter"
   | "motion.duration.fast"
+  | "motion.duration.large"
   | "motion.duration.slow"
   | "motion.easing.decelerate"
   | "motion.easing.emphasized"
+  | "motion.easing.out"
   | "motion.easing.standard"
+  | "motion.easing.swap"
   | "motion.scale.press"
   | "radius.base"
   | "radius.none"
@@ -107,6 +115,7 @@ export type ThemeTokenPath =
   | "color.blue.text"
   | "color.border.default"
   | "color.border.guide"
+  | "color.border.image"
   | "color.border.strong"
   | "color.border.subtle"
   | "color.category.1.soft"
@@ -284,6 +293,8 @@ export type ThemeTokenPath =
   | "color.yellow.soft"
   | "color.yellow.solid"
   | "color.yellow.text"
+  | "shadow.card"
+  | "shadow.card-hover"
   | "shadow.dialog"
   | "shadow.glass";
 export type TokenPath = BaseTokenPath | ThemeTokenPath;
@@ -296,6 +307,7 @@ export declare const tokens: {
   readonly "base": {
     readonly "blur": {
       readonly "glass": "14px";
+      readonly "motion": "4px";
     };
     readonly "border": {
       readonly "width": {
@@ -304,6 +316,13 @@ export declare const tokens: {
         readonly "none": "0px";
         readonly "rail": "3px";
         readonly "ring": "1.5px";
+      };
+    };
+    readonly "control": {
+      readonly "height": {
+        readonly "lg": "32px";
+        readonly "md": "28px";
+        readonly "sm": "24px";
       };
     };
     readonly "focus": {
@@ -382,13 +401,17 @@ export declare const tokens: {
     readonly "motion": {
       readonly "duration": {
         readonly "base": "150ms";
+        readonly "enter": "300ms";
         readonly "fast": "100ms";
+        readonly "large": "400ms";
         readonly "slow": "260ms";
       };
       readonly "easing": {
         readonly "decelerate": "ease-out";
         readonly "emphasized": "cubic-bezier(0.32, 0.72, 0, 1)";
+        readonly "out": "cubic-bezier(0, 0, 0.2, 1)";
         readonly "standard": "ease";
+        readonly "swap": "cubic-bezier(0.2, 0, 0, 1)";
       };
       readonly "scale": {
         readonly "press": 0.96;
@@ -456,6 +479,7 @@ export declare const tokens: {
       readonly "border": {
         readonly "default": "#e6e5e3";
         readonly "guide": "color-mix(in srgb, #9b9a97 45%, #e6e5e3)";
+        readonly "image": "#0000001a";
         readonly "strong": "color-mix(in srgb, #e6e5e3 70%, #9b9a97 30%)";
         readonly "subtle": "#efeeec";
       };
@@ -710,6 +734,8 @@ export declare const tokens: {
       };
     };
     readonly "shadow": {
+      readonly "card": "0 0 0 1px #0000000f, 0 1px 2px -1px #0000000f, 0 2px 4px 0 #0000000a";
+      readonly "card-hover": "0 0 0 1px #00000014, 0 1px 2px -1px #00000014, 0 2px 4px 0 #0000000f";
       readonly "dialog": "0 20px 80px #00000044";
       readonly "glass": "0 10px 32px rgba(30, 22, 60, 0.12), 0 1px 3px rgba(0, 0, 0, 0.07)";
     };
@@ -747,6 +773,7 @@ export declare const tokens: {
       readonly "border": {
         readonly "default": "#3d444d";
         readonly "guide": "color-mix(in srgb, #656c76 45%, #3d444d)";
+        readonly "image": "#ffffff1a";
         readonly "strong": "color-mix(in srgb, #3d444d 70%, #656c76 30%)";
         readonly "subtle": "#262c36";
       };
@@ -1001,6 +1028,8 @@ export declare const tokens: {
       };
     };
     readonly "shadow": {
+      readonly "card": "0 0 0 1px #ffffff14";
+      readonly "card-hover": "0 0 0 1px #ffffff1f";
       readonly "dialog": "0 20px 80px #00000044";
       readonly "glass": "0 10px 32px rgba(0, 0, 0, 0.5)";
     };
@@ -1011,11 +1040,15 @@ export declare const tokens: {
 export declare const flat: {
   readonly "base": {
     readonly "blur.glass": "14px";
+    readonly "blur.motion": "4px";
     readonly "border.width.focus": "2px";
     readonly "border.width.hairline": "1px";
     readonly "border.width.none": "0px";
     readonly "border.width.rail": "3px";
     readonly "border.width.ring": "1.5px";
+    readonly "control.height.lg": "32px";
+    readonly "control.height.md": "28px";
+    readonly "control.height.sm": "24px";
     readonly "focus.ring.offset": "2px";
     readonly "font.family.mono": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
     readonly "font.family.mono-system": "ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace";
@@ -1062,11 +1095,15 @@ export declare const flat: {
     readonly "line-height.tight": 1.2;
     readonly "line-height.ui": 1.5;
     readonly "motion.duration.base": "150ms";
+    readonly "motion.duration.enter": "300ms";
     readonly "motion.duration.fast": "100ms";
+    readonly "motion.duration.large": "400ms";
     readonly "motion.duration.slow": "260ms";
     readonly "motion.easing.decelerate": "ease-out";
     readonly "motion.easing.emphasized": "cubic-bezier(0.32, 0.72, 0, 1)";
+    readonly "motion.easing.out": "cubic-bezier(0, 0, 0.2, 1)";
     readonly "motion.easing.standard": "ease";
+    readonly "motion.easing.swap": "cubic-bezier(0.2, 0, 0, 1)";
     readonly "motion.scale.press": 0.96;
     readonly "radius.base": "2px";
     readonly "radius.none": "0px";
@@ -1116,6 +1153,7 @@ export declare const flat: {
     readonly "color.blue.text": "#0b6e99";
     readonly "color.border.default": "#e6e5e3";
     readonly "color.border.guide": "color-mix(in srgb, #9b9a97 45%, #e6e5e3)";
+    readonly "color.border.image": "#0000001a";
     readonly "color.border.strong": "color-mix(in srgb, #e6e5e3 70%, #9b9a97 30%)";
     readonly "color.border.subtle": "#efeeec";
     readonly "color.category.1.soft": "#ddebf1";
@@ -1293,6 +1331,8 @@ export declare const flat: {
     readonly "color.yellow.soft": "#fbf3db";
     readonly "color.yellow.solid": "#dfab01";
     readonly "color.yellow.text": "#805f01";
+    readonly "shadow.card": "0 0 0 1px #0000000f, 0 1px 2px -1px #0000000f, 0 2px 4px 0 #0000000a";
+    readonly "shadow.card-hover": "0 0 0 1px #00000014, 0 1px 2px -1px #00000014, 0 2px 4px 0 #0000000f";
     readonly "shadow.dialog": "0 20px 80px #00000044";
     readonly "shadow.glass": "0 10px 32px rgba(30, 22, 60, 0.12), 0 1px 3px rgba(0, 0, 0, 0.07)";
   };
@@ -1321,6 +1361,7 @@ export declare const flat: {
     readonly "color.blue.text": "#4493f8";
     readonly "color.border.default": "#3d444d";
     readonly "color.border.guide": "color-mix(in srgb, #656c76 45%, #3d444d)";
+    readonly "color.border.image": "#ffffff1a";
     readonly "color.border.strong": "color-mix(in srgb, #3d444d 70%, #656c76 30%)";
     readonly "color.border.subtle": "#262c36";
     readonly "color.category.1.soft": "color-mix(in srgb, #4493f8 13%, #151b23)";
@@ -1498,6 +1539,8 @@ export declare const flat: {
     readonly "color.yellow.soft": "color-mix(in srgb, #d29922 13%, #151b23)";
     readonly "color.yellow.solid": "#d29922";
     readonly "color.yellow.text": "#d29922";
+    readonly "shadow.card": "0 0 0 1px #ffffff14";
+    readonly "shadow.card-hover": "0 0 0 1px #ffffff1f";
     readonly "shadow.dialog": "0 20px 80px #00000044";
     readonly "shadow.glass": "0 10px 32px rgba(0, 0, 0, 0.5)";
   };

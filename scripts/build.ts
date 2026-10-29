@@ -945,6 +945,7 @@ export function tailwindEntries(model: Model): TailwindEntry[] {
     } else if (p[0] === "letter-spacing") add(`--tracking-${last}`, id, [`tracking-${last}`]);
     else if (p[0] === "motion" && p[1] === "easing") add(`--ease-${last}`, id, [`ease-${last}`]);
     else if (p[0] === "z") add(`--z-index-${p.slice(1).join("-")}`, id, [`z-${p.slice(1).join("-")}`]);
+    else if (p[0] === "control" && p[1] === "height") add(`--height-control-${last}`, id, [`h-control-${last}`]);
     else if (p[0] === "blur") add(`--blur-${p.slice(1).join("-")}`, id, [`blur-${p.slice(1).join("-")}`, `backdrop-blur-${p.slice(1).join("-")}`]);
     else if (p[0] === "border" && p[1] === "width" && last !== "none") add(`--border-width-${last}`, id, [`border-${last}`]);
     else if (id === "focus.ring.offset") add("--outline-offset-focus", id, ["outline-offset-focus"]);
@@ -1243,11 +1244,11 @@ const THEME_GROUP_ORDER = [
   "shadow",
 ];
 const BASE_GROUP_ORDER = [
-  "space", "radius", "border", "focus", "font.family", "font.size", "font.weight", "line-height", "letter-spacing",
+  "space", "control.height", "radius", "border", "focus", "font.family", "font.size", "font.weight", "line-height", "letter-spacing",
   "motion.duration", "motion.easing", "z", "blur", "layout.lane",
 ];
 /** Base groups that read as a scale: listed by value, not by authoring order. */
-const SCALE_GROUPS = new Set(["space", "radius", "border", "font.size", "motion.duration", "z"]);
+const SCALE_GROUPS = new Set(["space", "control.height", "radius", "border", "font.size", "motion.duration", "z"]);
 
 /** Group key for docs: the longest listed group that contains the path, else its first two segments. */
 function docGroup(id: string, order: string[]): string {
@@ -1674,6 +1675,8 @@ export function renderGuideHtml(model: Model): string {
 
   const space = byPx(take("space"));
   if (space.length) sections.push({ id: "space", title: "Spacing", body: `<p class="g-note">4px grid with 2px and 6px half steps. Tailwind: <code>p-1</code> = <code>--ds-space-1</code>.</p>${baseRows(model, space, (id) => `<div class="g-bar" style="width: ${v(id)}"></div>`)}` });
+  const controls = byPx(take("control.height"));
+  if (controls.length) sections.push({ id: "control", title: "Control heights", body: `<p class="g-note">Buttons, inputs and toggles. Tailwind: <code>h-control-md</code>.</p>${baseRows(model, controls, (id) => `<button class="g-button" style="height: ${v(id)}">Button</button>`)}` });
   const radius = take("radius");
   if (radius.length) sections.push({ id: "radius", title: "Radius", body: baseRows(model, radius, (id) => `<div class="g-box" style="border-radius: ${v(id)}"></div>`) });
   const borders = [...take("border"), ...take("focus")];

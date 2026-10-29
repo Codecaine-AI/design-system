@@ -3,12 +3,16 @@
     "duration": {
       "fast": { "$type": "duration", "$value": "100ms", "$description": "Hover fills, grip fade." },
       "base": { "$type": "duration", "$value": "150ms", "$description": "Toggles, color changes." },
-      "slow": { "$type": "duration", "$value": "260ms", "$description": "Panel open, resize and tab slide (glass panel)." }
+      "slow": { "$type": "duration", "$value": "260ms", "$description": "Panel open, resize and tab slide (glass panel)." },
+      "enter": { "$type": "duration", "$value": "300ms", "$description": "Content entering: an enter fade, a stagger chunk, an icon cross-fade." },
+      "large": { "$type": "duration", "$value": "400ms", "$description": "Large surfaces: modals, drawers and full-height panels opening or closing." }
     },
     "easing": {
       "standard": { "$type": "cubicBezier", "$value": "ease", "$description": "Default for small state changes." },
       "emphasized": { "$type": "cubicBezier", "$value": "cubic-bezier(0.32, 0.72, 0, 1)", "$description": "Panels entering, resizing or sliding." },
-      "decelerate": { "$type": "cubicBezier", "$value": "ease-out", "$description": "Fades out of a highlight, hover hints appearing." }
+      "decelerate": { "$type": "cubicBezier", "$value": "ease-out", "$description": "Fades out of a highlight, hover hints appearing." },
+      "out": { "$type": "cubicBezier", "$value": "cubic-bezier(0, 0, 0.2, 1)", "$description": "Enter and exit: a fast start that settles quickly. Also press feedback with motion.scale.press." },
+      "swap": { "$type": "cubicBezier", "$value": "cubic-bezier(0.2, 0, 0, 1)", "$description": "Icon cross-fades and state swaps without a motion library." }
     },
     "scale": {
       "press": { "$type": "number", "$value": 0.96, "$description": "Press feedback: a button or toggle scales to this on :active, transform only, over duration.base. Drop the scale under prefers-reduced-motion and keep the color change." }

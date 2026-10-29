@@ -23,6 +23,7 @@
   "color.blue.text": "#4493f8",
   "color.border.default": "#3d444d",
   "color.border.guide": "color-mix(in srgb, #656c76 45%, #3d444d)",
+  "color.border.image": "#ffffff1a",
   "color.border.strong": "color-mix(in srgb, #3d444d 70%, #656c76 30%)",
   "color.border.subtle": "#262c36",
   "color.category.1.soft": "color-mix(in srgb, #4493f8 13%, #151b23)",
@@ -200,6 +201,8 @@
   "color.yellow.soft": "color-mix(in srgb, #d29922 13%, #151b23)",
   "color.yellow.solid": "#d29922",
   "color.yellow.text": "#d29922",
+  "shadow.card": "0 0 0 1px #ffffff14",
+  "shadow.card-hover": "0 0 0 1px #ffffff1f",
   "shadow.dialog": "0 20px 80px #00000044",
   "shadow.glass": "0 10px 32px rgba(0, 0, 0, 0.5)"
 }

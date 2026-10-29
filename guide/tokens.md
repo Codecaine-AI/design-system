@@ -6,7 +6,7 @@ Design tokens are the named values every app styles with: colors, spacing, radiu
 
 | Tier | Where | What it holds |
 | --- | --- | --- |
-| 1. Base scales | `tokens/base/*.tokens.json` | Theme-independent: `space`, `radius`, `border.width`, `focus`, `blur`, `font`, `line-height`, `letter-spacing`, `motion`, `z`, `layout` (lanes and app-shell sizes). |
+| 1. Base scales | `tokens/base/*.tokens.json` | Theme-independent: `space`, `control.height`, `radius`, `border.width`, `focus`, `blur`, `font`, `line-height`, `letter-spacing`, `motion`, `z`, `layout` (lanes and app-shell sizes). |
 | 2. Theme colors | `tokens/themes/<theme>.tokens.json` | Literal values per theme: the neutral roles (`color.surface`, `color.text`, `color.border`, `color.fill.chip`, `color.accent`, `color.link`), the hue roster (`color.<hue>.*`, `color.amber.text`) and the chart series (`color.chart.series.*`). |
 | 3. Derived roles | same theme files | Aliases and mixes over tier 2: `color.status`, `color.category`, `color.chart.diverging`, `color.diff`, `color.selection`, `color.focus-ring`, `color.fill.*`, `color.code`, `color.syntax`, `color.annotation`, `color.glass`, `shadow`. |
 | Compat | same theme files | `color.notion.*`: docs-system's Notion palette (`--color-*`). CSS variables only, no Tailwind utilities. |
@@ -70,7 +70,7 @@ Both theme files hold exactly the same paths. The build fails if they differ. It
 
 <!-- BEGIN GENERATED: token reference (scripts/build.ts) -->
 
-80 base tokens and 203 theme tokens (light and dark), 689 CSS custom properties in total. Theme values show the authored value: `{path}` is an alias, emitted as `var()`.
+88 base tokens and 206 theme tokens (light and dark), 706 CSS custom properties in total. Theme values show the authored value: `{path}` is an alias, emitted as `var()`.
 
 ### Base tokens
 
@@ -94,6 +94,16 @@ Spacing scale on a 4px grid, with half steps at 2px and 6px. Also used for fixed
 | `space.10` | `--ds-space-10` | dimension | `40px` | Heading margin-top, code gutter width. |
 | `space.12` | `--ds-space-12` | dimension | `48px` | Large section gap. |
 | `space.16` | `--ds-space-16` | dimension | `64px` | Page-level separation. |
+
+#### `control.height`
+
+Heights of buttons, inputs, selects and toggles. Aliases of the space steps.
+
+| Token | CSS variable | Type | Value | Description |
+| --- | --- | --- | --- | --- |
+| `control.height.sm` | `--ds-control-height-sm` | dimension | `{space.6}` | Small controls: inline row actions, icon buttons inside rows. |
+| `control.height.md` | `--ds-control-height-md` | dimension | `{space.7}` | Default controls: buttons and inputs on a row, matching the 28px row height. |
+| `control.height.lg` | `--ds-control-height-lg` | dimension | `{space.8}` | Large controls: header strip actions, the sidebar toggle. |
 
 #### `radius`
 
@@ -179,6 +189,8 @@ One corner radius app-wide. Every rounded surface uses radius.base; pills use ra
 | `motion.duration.fast` | `--ds-motion-duration-fast` | duration | `100ms` | Hover fills, grip fade. |
 | `motion.duration.base` | `--ds-motion-duration-base` | duration | `150ms` | Toggles, color changes. |
 | `motion.duration.slow` | `--ds-motion-duration-slow` | duration | `260ms` | Panel open, resize and tab slide (glass panel). |
+| `motion.duration.enter` | `--ds-motion-duration-enter` | duration | `300ms` | Content entering: an enter fade, a stagger chunk, an icon cross-fade. |
+| `motion.duration.large` | `--ds-motion-duration-large` | duration | `400ms` | Large surfaces: modals, drawers and full-height panels opening or closing. |
 
 #### `motion.easing`
 
@@ -187,6 +199,8 @@ One corner radius app-wide. Every rounded surface uses radius.base; pills use ra
 | `motion.easing.standard` | `--ds-motion-easing-standard` | cubicBezier | `ease` | Default for small state changes. |
 | `motion.easing.emphasized` | `--ds-motion-easing-emphasized` | cubicBezier | `cubic-bezier(0.32, 0.72, 0, 1)` | Panels entering, resizing or sliding. |
 | `motion.easing.decelerate` | `--ds-motion-easing-decelerate` | cubicBezier | `ease-out` | Fades out of a highlight, hover hints appearing. |
+| `motion.easing.out` | `--ds-motion-easing-out` | cubicBezier | `cubic-bezier(0, 0, 0.2, 1)` | Enter and exit: a fast start that settles quickly. Also press feedback with motion.scale.press. |
+| `motion.easing.swap` | `--ds-motion-easing-swap` | cubicBezier | `cubic-bezier(0.2, 0, 0, 1)` | Icon cross-fades and state swaps without a motion library. |
 
 #### `z`
 
@@ -203,6 +217,7 @@ One corner radius app-wide. Every rounded surface uses radius.base; pills use ra
 | Token | CSS variable | Type | Value | Description |
 | --- | --- | --- | --- | --- |
 | `blur.glass` | `--ds-blur-glass` | dimension | `14px` | Backdrop blur behind glass panels. Seed: --docs-lab-glass-blur. |
+| `blur.motion` | `--ds-blur-motion` | dimension | `4px` | filter: blur() on content entering or exiting and on an icon swap; animate it to 0. |
 
 #### `layout.lane`
 
@@ -286,6 +301,7 @@ Content measures. Blocks cap themselves at a lane and stay left-anchored.
 | `color.border.subtle` | `--ds-color-border-subtle` | `#efeeec` | `#262c36` | Row rules and inner separators. Seed: --palette-rule-soft. |
 | `color.border.strong` | `--ds-color-border-strong` | `color-mix(in srgb, {color.border.default} 70%, {color.text.faint} 30%)` | `color-mix(in srgb, {color.border.default} 70%, {color.text.faint} 30%)` | Header rules that must read over a default rule. Seed: --docs-border-strong. |
 | `color.border.guide` | `--ds-color-border-guide` | `color-mix(in srgb, {color.text.faint} 45%, {color.border.default})` | `color-mix(in srgb, {color.text.faint} 45%, {color.border.default})` | Tree indent guides. Seed: --docs-guide. |
+| `color.border.image` | `--ds-color-border-image` | `#0000001a` | `#ffffff1a` | Outline on images and media: pure black at 10%, never a tinted neutral. Inset it with border.width.hairline and a negative hairline offset. |
 
 #### `color.fill`
 
@@ -614,6 +630,8 @@ Compat: the Notion palette (--color-* in docs-system). Feeds docs-system's style
 | --- | --- | --- | --- | --- |
 | `shadow.glass` | `--ds-shadow-glass` | `0 10px 32px rgba(30, 22, 60, 0.12), 0 1px 3px rgba(0, 0, 0, 0.07)` | `0 10px 32px rgba(0, 0, 0, 0.5)` | Glass panel lift: separates the panel from the warm page. Seed: --docs-lab-panel-shadow. |
 | `shadow.dialog` | `--ds-shadow-dialog` | `0 20px 80px #00000044` | `0 20px 80px #00000044` | Modal dialog lift. Seed: export dialog box-shadow #0004. |
+| `shadow.card` | `--ds-shadow-card` | `0 0 0 1px #0000000f, 0 1px 2px -1px #0000000f, 0 2px 4px 0 #0000000a` | `0 0 0 1px #ffffff14` | Layered card edge in place of a border, where a hairline fights an image or a colored backdrop. Borders stay the default. |
+| `shadow.card-hover` | `--ds-shadow-card-hover` | `0 0 0 1px #00000014, 0 1px 2px -1px #00000014, 0 2px 4px 0 #0000000f` | `0 0 0 1px #ffffff1f` | shadow.card on hover: the same layers a step stronger. Transition box-shadow only. |
 
 ### Tailwind utilities
 
@@ -647,6 +665,7 @@ Keys written by `dist/tailwind/theme.css`. Each reads the token's `--ds-*` varia
 | `--color-blue` | `color.blue.text` | `bg-blue`, `text-blue`, `border-blue` |
 | `--border-color-rule` | `color.border.default` | `border-rule` |
 | `--border-color-guide` | `color.border.guide` | `border-guide` |
+| `--border-color-rule-image` | `color.border.image` | `border-rule-image` |
 | `--border-color-rule-strong` | `color.border.strong` | `border-rule-strong` |
 | `--border-color-rule-subtle` | `color.border.subtle` | `border-rule-subtle` |
 | `--color-cat-1-soft` | `color.category.1.soft` | `bg-cat-1-soft`, `text-cat-1-soft`, `border-cat-1-soft` |
@@ -791,13 +810,19 @@ Keys written by `dist/tailwind/theme.css`. Each reads the token's `--ds-*` varia
 | `--color-yellow-soft` | `color.yellow.soft` | `bg-yellow-soft`, `text-yellow-soft`, `border-yellow-soft` |
 | `--color-yellow-solid` | `color.yellow.solid` | `bg-yellow-solid`, `text-yellow-solid`, `border-yellow-solid` |
 | `--color-yellow` | `color.yellow.text` | `bg-yellow`, `text-yellow`, `border-yellow` |
+| `--shadow-card` | `shadow.card` | `shadow-card` |
+| `--shadow-card-hover` | `shadow.card-hover` | `shadow-card-hover` |
 | `--shadow-dialog` | `shadow.dialog` | `shadow-dialog` |
 | `--shadow-glass` | `shadow.glass` | `shadow-glass` |
 | `--blur-glass` | `blur.glass` | `blur-glass`, `backdrop-blur-glass` |
+| `--blur-motion` | `blur.motion` | `blur-motion`, `backdrop-blur-motion` |
 | `--border-width-focus` | `border.width.focus` | `border-focus` |
 | `--border-width-hairline` | `border.width.hairline` | `border-hairline` |
 | `--border-width-rail` | `border.width.rail` | `border-rail` |
 | `--border-width-ring` | `border.width.ring` | `border-ring` |
+| `--height-control-lg` | `control.height.lg` | `h-control-lg` |
+| `--height-control-md` | `control.height.md` | `h-control-md` |
+| `--height-control-sm` | `control.height.sm` | `h-control-sm` |
 | `--outline-offset-focus` | `focus.ring.offset` | `outline-offset-focus` |
 | `--font-mono` | `font.family.mono` | `font-mono` |
 | `--font-mono-system` | `font.family.mono-system` | `font-mono-system` |
@@ -845,7 +870,9 @@ Keys written by `dist/tailwind/theme.css`. Each reads the token's `--ds-*` varia
 | `--leading-ui` | `line-height.ui` | `leading-ui` |
 | `--ease-decelerate` | `motion.easing.decelerate` | `ease-decelerate` |
 | `--ease-emphasized` | `motion.easing.emphasized` | `ease-emphasized` |
+| `--ease-out` | `motion.easing.out` | `ease-out` |
 | `--ease-standard` | `motion.easing.standard` | `ease-standard` |
+| `--ease-swap` | `motion.easing.swap` | `ease-swap` |
 | `--radius-xs` | `radius.base` | `rounded-xs` |
 | `--radius-sm` | `radius.base` | `rounded-sm` |
 | `--radius-md` | `radius.base` | `rounded-md` |

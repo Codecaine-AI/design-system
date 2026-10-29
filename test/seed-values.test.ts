@@ -30,6 +30,9 @@ const THEME_ROLES = [
   ...HUES.flatMap((hue) => ["text", "solid", "on-solid", "soft", "line"].map((part) => `--ds-color-${hue}-${part}`)),
   ...["info", "success", "warning", "danger", "neutral"].map((status) => `--ds-color-status-${status}-on-solid`),
   "--ds-shadow-glass",
+  "--ds-color-border-image",
+  "--ds-shadow-card",
+  "--ds-shadow-card-hover",
 ];
 
 const BASE_NAMES = [
@@ -56,6 +59,13 @@ const BASE_NAMES = [
   "--ds-motion-duration-slow",
   "--ds-motion-easing-standard",
   "--ds-motion-easing-emphasized",
+  "--ds-motion-duration-enter",
+  "--ds-motion-duration-large",
+  "--ds-motion-easing-out",
+  "--ds-motion-easing-swap",
+  "--ds-motion-scale-press",
+  "--ds-blur-motion",
+  ...["sm", "md", "lg"].map((size) => `--ds-control-height-${size}`),
   "--ds-z-raised",
   "--ds-z-overlay",
   "--ds-z-popover",
@@ -122,6 +132,10 @@ const THEME_SEEDS: Array<[path: string, seeds: Partial<Record<Theme, string>>]> 
   ["color.syntax.string", color("#a31515", "#ce9178")],
   ["color.syntax.comment", color("#008000", "#6a9955")],
   ["shadow.glass", color("0 10px 32px rgba(30, 22, 60, 0.12), 0 1px 3px rgba(0, 0, 0, 0.07)", "0 10px 32px rgba(0, 0, 0, 0.5)")],
+  // Image outline and card edge: pure black or white alpha, never a tinted neutral.
+  ["color.border.image", color("#0000001a", "#ffffff1a")],
+  ["shadow.card", color("0 0 0 1px #0000000f, 0 1px 2px -1px #0000000f, 0 2px 4px 0 #0000000a", "0 0 0 1px #ffffff14")],
+  ["shadow.card-hover", color("0 0 0 1px #00000014, 0 1px 2px -1px #00000014, 0 2px 4px 0 #0000000f", "0 0 0 1px #ffffff1f")],
 ];
 
 /** Base seeds; numbers must stay JSON numbers. */
@@ -134,6 +148,15 @@ const BASE_SEEDS: Array<[path: string, value: string | number]> = [
   ["line-height.reading", 1.45],
   ["motion.duration.slow", "260ms"],
   ["motion.easing.emphasized", "cubic-bezier(0.32, 0.72, 0, 1)"],
+  ["motion.duration.enter", "300ms"],
+  ["motion.duration.large", "400ms"],
+  ["motion.easing.out", "cubic-bezier(0, 0, 0.2, 1)"],
+  ["motion.easing.swap", "cubic-bezier(0.2, 0, 0, 1)"],
+  ["motion.scale.press", 0.96],
+  ["blur.motion", "4px"],
+  ["control.height.sm", "24px"],
+  ["control.height.md", "28px"],
+  ["control.height.lg", "32px"],
   ["z.top", 60],
   ["layout.lane.code", "88ch"],
 ];
