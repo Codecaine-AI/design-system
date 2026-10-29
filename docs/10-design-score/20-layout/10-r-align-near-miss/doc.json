@@ -260,7 +260,7 @@
             "reference": {
               "kind": "source",
               "path": "scripts/design-score/run.ts",
-              "line": 303
+              "symbol": "runScore"
             }
           }
         },
@@ -293,7 +293,7 @@
             "reference": {
               "kind": "source",
               "path": "scripts/design-score/probes.ts",
-              "line": 672
+              "symbol": "R-align-near-miss"
             }
           }
         },
@@ -316,7 +316,7 @@
             "reference": {
               "kind": "source",
               "path": "scripts/design-score/probes.ts",
-              "line": 730
+              "symbol": "Column"
             }
           }
         },
@@ -339,7 +339,7 @@
             "reference": {
               "kind": "source",
               "path": "scripts/design-score/probes.ts",
-              "line": 783
+              "symbol": "Row"
             }
           }
         },
@@ -362,7 +362,7 @@
             "reference": {
               "kind": "source",
               "path": "scripts/design-score/probes.ts",
-              "line": 822
+              "symbol": "Handles"
             }
           }
         },
@@ -423,7 +423,7 @@
             "reference": {
               "kind": "source",
               "path": "scripts/design-score/probes.ts",
-              "line": 696
+              "symbol": "related"
             }
           }
         },
@@ -437,7 +437,7 @@
             "reference": {
               "kind": "source",
               "path": "scripts/design-score/probes.ts",
-              "line": 716
+              "symbol": "alignedOtherwise"
             }
           }
         },
@@ -516,7 +516,7 @@
             "reference": {
               "kind": "source",
               "path": "scripts/design-score/probes.ts",
-              "line": 823
+              "symbol": "handleSel"
             }
           }
         },
@@ -628,7 +628,7 @@
             "code": true,
             "reference": {
               "kind": "source",
-              "path": "design-score/fixtures/R-align-near-miss/bad.html"
+              "path": "design-score/fixtures/R-align-near-miss"
             }
           }
         },

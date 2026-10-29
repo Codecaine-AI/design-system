@@ -11,7 +11,50 @@
       "children": [
         "intro",
         "planned",
-        "h-rules"
+        "h-how",
+        "how-lead",
+        "how1",
+        "how2",
+        "how3",
+        "how4",
+        "how5",
+        "how-after",
+        "h-cal",
+        "cal-lead",
+        "cal1",
+        "cal2",
+        "cal3",
+        "h-bar",
+        "bar-lead",
+        "bar1",
+        "bar2",
+        "bar-open",
+        "h-built",
+        "built-lead",
+        "built1",
+        "built2",
+        "built3",
+        "built4",
+        "h-why",
+        "why-lead",
+        "why1",
+        "why2",
+        "why3",
+        "h-rules",
+        "rules-lead",
+        "h-g1",
+        "t-g1",
+        "h-g2",
+        "t-g2",
+        "h-g3",
+        "t-g3",
+        "h-g4",
+        "t-g4",
+        "h-g5",
+        "t-g5",
+        "h-g6",
+        "g6-lead",
+        "t-g6"
       ]
     },
     "intro": {
@@ -83,6 +126,701 @@
       ],
       "children": []
     },
+    "h-how": {
+      "id": "h-how",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "How It Will Work"
+        }
+      ],
+      "children": []
+    },
+    "how-lead": {
+      "id": "how-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The judge compares fixed screenshots, and code picks them. The app config lists the pages, so the judge never chooses an easy screenshot. Each judged pair goes through these steps."
+        }
+      ],
+      "children": []
+    },
+    "how1": {
+      "id": "how1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "A run saves the state screenshot of each page, theme and viewport, as every run does today."
+        }
+      ],
+      "children": []
+    },
+    "how2": {
+      "id": "how2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The judge takes the before and after screenshots of one page state from two runs. Only pairs whose pixels changed go in."
+        }
+      ],
+      "children": []
+    },
+    "how3": {
+      "id": "how3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "For each rule, the judge asks one yes or no question and boxes the region its answer is about."
+        }
+      ],
+      "children": []
+    },
+    "how4": {
+      "id": "how4",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "A cheap model answers first. A strong model answers again for each no and each unsure answer."
+        }
+      ],
+      "children": []
+    },
+    "how5": {
+      "id": "how5",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "When the two models disagree, or the strong model is unsure, the pair and its boxes go to Ford."
+        }
+      ],
+      "children": []
+    },
+    "how-after": {
+      "id": "how-after",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A judge finding has the same shape as every other finding, with "
+        },
+        {
+          "insert": "check: \"V-judge\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", a severity, the page, theme, viewport and box. Motion rules get a strip of frames instead of one still, because a still cannot show motion."
+        }
+      ],
+      "children": []
+    },
+    "h-cal": {
+      "id": "h-cal",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Calibration"
+        }
+      ],
+      "children": []
+    },
+    "cal-lead": {
+      "id": "cal-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The judge must agree with known answers before its findings count. Three label sets give those answers, and agreement is reported per rule group, not as one number."
+        }
+      ],
+      "children": []
+    },
+    "cal1": {
+      "id": "cal1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Interfaces Magazine issue 20",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "cal1a",
+        "cal1b",
+        "cal1c"
+      ]
+    },
+    "cal1a": {
+      "id": "cal1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Issue 20, \"Can you tell the difference?\", has 27 A/B questions, each with its answer and the reason."
+        }
+      ],
+      "children": []
+    },
+    "cal1b": {
+      "id": "cal1b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "10 questions compare still frames, and 14 compare motion. The other 3 are knowledge questions for a text-only judge."
+        }
+      ],
+      "children": []
+    },
+    "cal1c": {
+      "id": "cal1c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The assets are "
+        },
+        {
+          "insert": "demo-02.png",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " to "
+        },
+        {
+          "insert": "demo-27.mp4",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "library/design/creators/jakub-krehel/sources/interfaces-magazine/media/issue-20-can-you-tell-the-difference/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in the knowledge base."
+        }
+      ],
+      "children": []
+    },
+    "cal2": {
+      "id": "cal2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Pairs Ford labels",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "cal2a",
+        "cal2b"
+      ]
+    },
+    "cal2a": {
+      "id": "cal2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Ford labels 30 to 50 before and after pairs from real runs as better, same or worse."
+        }
+      ],
+      "children": []
+    },
+    "cal2b": {
+      "id": "cal2b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The judge is tuned to Ford's taste, because professional designers often disagree with each other."
+        }
+      ],
+      "children": []
+    },
+    "cal3": {
+      "id": "cal3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Held-out pairs",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "cal3a"
+      ]
+    },
+    "cal3a": {
+      "id": "cal3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Labelled pairs from issues 09, 16 and 19, with the labels masked, test the judge on data it was not tuned on."
+        }
+      ],
+      "children": []
+    },
+    "h-bar": {
+      "id": "h-bar",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Pass Bar and Cost Cap"
+        }
+      ],
+      "children": []
+    },
+    "bar-lead": {
+      "id": "bar-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "These limits are proposals, and Ford sets the final numbers before the first judge run."
+        }
+      ],
+      "children": []
+    },
+    "bar1": {
+      "id": "bar1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Pass bar",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "bar1a",
+        "bar1b"
+      ]
+    },
+    "bar1a": {
+      "id": "bar1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The judge counts in a score only while it agrees with Ford on 80% or more of the labelled pairs."
+        }
+      ],
+      "children": []
+    },
+    "bar1b": {
+      "id": "bar1b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Below that bar, its findings are advisory and "
+        },
+        {
+          "insert": "V-judge",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " stays n/a. A finding fails a page only on a confident no from the strong model."
+        }
+      ],
+      "children": []
+    },
+    "bar2": {
+      "id": "bar2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Cost cap",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "bar2a",
+        "bar2b"
+      ]
+    },
+    "bar2a": {
+      "id": "bar2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Only changed pairs go to a model, and only no or unsure answers go to the strong model. The research estimate is a few dozen calls per pull request."
+        }
+      ],
+      "children": []
+    },
+    "bar2b": {
+      "id": "bar2b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each run gets a hard limit on model calls. At the limit the judge stops and reports the pairs it did not judge."
+        }
+      ],
+      "children": []
+    },
+    "bar-open": {
+      "id": "bar-open",
+      "type": "callout",
+      "props": {
+        "title": "Open decision",
+        "tone": "info"
+      },
+      "text": [
+        {
+          "insert": "The call limit per run and the two models are not chosen yet."
+        }
+      ],
+      "children": []
+    },
+    "h-built": {
+      "id": "h-built",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "What Is Built Today"
+        }
+      ],
+      "children": []
+    },
+    "built-lead": {
+      "id": "built-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Only the inputs and a stub exist. No model is called."
+        }
+      ],
+      "children": []
+    },
+    "built1": {
+      "id": "built1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The stub",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "built1a"
+      ]
+    },
+    "built1a": {
+      "id": "built1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "judgeStub",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/judge.ts",
+              "symbol": "judgeStub"
+            }
+          }
+        },
+        {
+          "insert": " returns "
+        },
+        {
+          "insert": "status: \"not-run\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and the list of state screenshots. The run writes it to the "
+        },
+        {
+          "insert": "judge",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " field of "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "built2": {
+      "id": "built2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The score",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "built2a"
+      ]
+    },
+    "built2a": {
+      "id": "built2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Every page marks "
+        },
+        {
+          "insert": "V-judge",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " n/a with the note \"not run in this version\", so the judge never changes a score."
+        }
+      ],
+      "children": []
+    },
+    "built3": {
+      "id": "built3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The inputs",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "built3a"
+      ]
+    },
+    "built3a": {
+      "id": "built3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each run saves "
+        },
+        {
+          "insert": "shots/<page>__<theme>__<viewport>.png",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", the motion screenshots and a crop per finding."
+        }
+      ],
+      "children": []
+    },
+    "built4": {
+      "id": "built4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Not built",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "built4a"
+      ]
+    },
+    "built4a": {
+      "id": "built4a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The pair selection, the questions, the model calls, the frame strips and the label sets do not exist yet."
+        }
+      ],
+      "children": []
+    },
+    "h-why": {
+      "id": "h-why",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Why This Design"
+        }
+      ],
+      "children": []
+    },
+    "why-lead": {
+      "id": "why-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Three studies shape the plan."
+        }
+      ],
+      "children": []
+    },
+    "why1": {
+      "id": "why1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "MLLM as a UI Judge",
+          "attributes": {
+            "link": "https://arxiv.org/abs/2510.08783"
+          }
+        }
+      ],
+      "children": [
+        "why1a"
+      ]
+    },
+    "why1a": {
+      "id": "why1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Models agreed with people best on factors with concrete visual cues, such as visual hierarchy. That is why each question names one cue."
+        }
+      ],
+      "children": []
+    },
+    "why2": {
+      "id": "why2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "DesignPref",
+          "attributes": {
+            "link": "https://arxiv.org/abs/2511.20513"
+          }
+        }
+      ],
+      "children": [
+        "why2a"
+      ]
+    },
+    "why2a": {
+      "id": "why2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "20 professional designers made 12,000 pairwise choices and often disagreed. That is why Ford's labels calibrate the judge."
+        }
+      ],
+      "children": []
+    },
+    "why3": {
+      "id": "why3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Trust or Escalate (ICLR 2025)",
+          "attributes": {
+            "link": "https://proceedings.iclr.cc/paper_files/paper/2025/file/08dabd5345b37fffcbe335bd578b15a0-Paper-Conference.pdf"
+          }
+        }
+      ],
+      "children": [
+        "why3a"
+      ]
+    },
+    "why3a": {
+      "id": "why3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A small labelled set decides when to trust a judge and when to ask a person. That is why unsure answers go to Ford."
+        }
+      ],
+      "children": []
+    },
     "h-rules": {
       "id": "h-rules",
       "type": "heading",
@@ -94,6 +832,589 @@
           "insert": "Rules"
         }
       ],
+      "children": []
+    },
+    "rules-lead": {
+      "id": "rules-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "26 rules map to "
+        },
+        {
+          "insert": "V-judge",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in five groups, and each row gives the yes or no question the judge will ask. A yes passes. Five rules are marked text-only, so the judge reads extracted strings instead of pixels."
+        }
+      ],
+      "children": []
+    },
+    "h-g1": {
+      "id": "h-g1",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Layout and Hierarchy"
+        }
+      ],
+      "children": []
+    },
+    "t-g1": {
+      "id": "t-g1",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Question"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "layout-importance-order",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Importance order",
+            "Does the most important content sit top and leading, with metadata and actions after it?"
+          ],
+          [
+            [
+              {
+                "insert": "layout-separators-last",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Separators last",
+            "Does each separator sit where space alone cannot show the structure?"
+          ],
+          [
+            [
+              {
+                "insert": "layout-static-not-control-shaped",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Static is not control-shaped",
+            "Does each static badge look different from the buttons beside it?"
+          ],
+          [
+            [
+              {
+                "insert": "layout-content-bleeds-controls-float",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Content bleeds, controls stay inside",
+            "Do controls and text stay inside the layout margins?"
+          ],
+          [
+            [
+              {
+                "insert": "layout-rtl-mirror",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "RTL mirror",
+            "Under dir=rtl, does the layout mirror cleanly? Only for apps that support RTL."
+          ],
+          [
+            [
+              {
+                "insert": "13-low-cognitive-load",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Low cognitive load",
+            "Is the screen simple and predictable?"
+          ]
+        ],
+        "title": "Judge rules for layout"
+      },
+      "children": []
+    },
+    "h-g2": {
+      "id": "h-g2",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Type, Icons and Images"
+        }
+      ],
+      "children": []
+    },
+    "t-g2": {
+      "id": "t-g2",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Question"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "typo-no-text-images",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No text images",
+            "Is all decorative text real text, not an image?"
+          ],
+          [
+            [
+              {
+                "insert": "14-pair-for-contrast",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Pair fonts for contrast",
+            "Do paired fonts differ clearly?"
+          ],
+          [
+            [
+              {
+                "insert": "ui-optical-asymmetric-glyphs",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Optical glyph alignment",
+            "Do play, star and other asymmetric icons look centered?"
+          ],
+          [
+            [
+              {
+                "insert": "ui-icon-outline-fill-states",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Outline default, fill active",
+            "Are icons outlined, with fill only on the active state?"
+          ],
+          [
+            [
+              {
+                "insert": "20-avatar-outline-matches-ui",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Images match the UI",
+            "Do avatars have an outline only when the controls beside them have borders?"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-alt-by-purpose",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Alt by purpose",
+            "Text-only. Does each alt text say what the image tells or does?"
+          ]
+        ],
+        "title": "Judge rules for type, icons and images"
+      },
+      "children": []
+    },
+    "h-g3": {
+      "id": "h-g3",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Color, Surfaces and Motion"
+        }
+      ],
+      "children": []
+    },
+    "t-g3": {
+      "id": "t-g3",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Question"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "a11y-color-not-only-cue",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Not color alone",
+            "Does each status show an icon, text or underline as well as a color?"
+          ],
+          [
+            [
+              {
+                "insert": "color-semantic-not-against-meaning",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Semantic color keeps its meaning",
+            "Does each semantic color keep its meaning?"
+          ],
+          [
+            [
+              {
+                "insert": "03-oklch-unintended-hues",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No hue detours",
+            "Is each gradient free of hues nobody defined?"
+          ],
+          [
+            [
+              {
+                "insert": "ui-shadow-for-depth",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Shadows for depth",
+            "Over an image or a colored backdrop, does a card use a shadow instead of a border?"
+          ],
+          [
+            [
+              {
+                "insert": "08-focus-motion-subtle",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Subtle focus motion",
+            "Does focus motion stay subtle during keyboard navigation?"
+          ],
+          [
+            [
+              {
+                "insert": "13-subtle-not-over-animated",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Not over-animated",
+            "Does each interaction use one subtle effect?"
+          ]
+        ],
+        "title": "Judge rules for color and motion"
+      },
+      "children": []
+    },
+    "h-g4": {
+      "id": "h-g4",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Copy"
+        }
+      ],
+      "children": []
+    },
+    "t-g4": {
+      "id": "t-g4",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Question"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "copy-consistent-terms",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Consistent terms",
+            "Text-only. Does each object and action keep one name?"
+          ],
+          [
+            [
+              {
+                "insert": "copy-tone-by-stakes",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Tone by stakes",
+            "Text-only. Does the tone match the stakes?"
+          ],
+          [
+            [
+              {
+                "insert": "copy-plain-words",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Plain words",
+            "Text-only. Would a tired reader get each word on the first pass?"
+          ],
+          [
+            [
+              {
+                "insert": "copy-status-parallel",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Parallel status copy",
+            "Text-only. Does progress copy use -ing plus object, and done copy use object plus past tense?"
+          ],
+          [
+            [
+              {
+                "insert": "copy-requirements-before-input",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Requirements up front",
+            "Do known requirements show as helper text before the input?"
+          ]
+        ],
+        "title": "Judge rules for copy"
+      },
+      "children": []
+    },
+    "h-g5": {
+      "id": "h-g5",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Fidelity and Content"
+        }
+      ],
+      "children": []
+    },
+    "t-g5": {
+      "id": "t-g5",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Question"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "bd-fidelity-compare",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Fidelity compare",
+            "Does the build match its design at every frame width?"
+          ],
+          [
+            [
+              {
+                "insert": "bd-rounding-threshold",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Rounding threshold",
+            "Is each value within 2px or one color step of the design?"
+          ],
+          [
+            [
+              {
+                "insert": "break-content-shape",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Content shape",
+            "Does user text survive emoji, RTL, mixed direction, tall scripts and aligned numbers?"
+          ]
+        ],
+        "title": "Judge rules for design fidelity"
+      },
+      "children": []
+    },
+    "h-g6": {
+      "id": "h-g6",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Rules for Ford"
+        }
+      ],
+      "children": []
+    },
+    "g6-lead": {
+      "id": "g6-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Six process rules have no check and stay with Ford or the agent that does the work."
+        }
+      ],
+      "children": []
+    },
+    "t-g6": {
+      "id": "t-g6",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Rule Text"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "review-sibling-parity",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Sibling parity",
+            "A control added to one surface is added to its siblings"
+          ],
+          [
+            [
+              {
+                "insert": "bd-diff-scope",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Diff scope",
+            "A design build touches only what the frames show"
+          ],
+          [
+            [
+              {
+                "insert": "variant-floor",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Variant floor",
+            "Every candidate design clears the floor before anyone sees it"
+          ],
+          [
+            [
+              {
+                "insert": "ei-evidence-tiers",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Evidence tiers",
+            "Every claimed value is tagged measured, derived or inferred"
+          ],
+          [
+            [
+              {
+                "insert": "12-dogfood-the-flow",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Dogfood the flow",
+            "Use what you build end to end before you call it done"
+          ],
+          [
+            [
+              {
+                "insert": "13-justify-each-addition",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Justify each addition",
+            "Add an element, animation or feature only when it clearly improves the result"
+          ]
+        ],
+        "title": "Process rules"
+      },
       "children": []
     }
   }

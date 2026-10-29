@@ -1,0 +1,1271 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-84c4b399ae04c58a7e13b0e2ce3514c2",
+  "title": "S-outline-none: outline: none Without a Replacement",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "on1",
+        "on2",
+        "on3",
+        "on4",
+        "on7",
+        "on10",
+        "on12",
+        "on13",
+        "on14",
+        "on15",
+        "on16",
+        "on17",
+        "on18",
+        "on19",
+        "on20",
+        "on21",
+        "on22",
+        "on23",
+        "on24",
+        "on25",
+        "on27",
+        "on29",
+        "on30",
+        "on31",
+        "on32",
+        "on33",
+        "on34",
+        "on35",
+        "on36",
+        "on37",
+        "on39",
+        "on41",
+        "on43",
+        "on44",
+        "on45",
+        "on46",
+        "on47",
+        "on48",
+        "on49"
+      ]
+    },
+    "on1": {
+      "id": "on1",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "S-outline-none",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " finds code that removes the focus outline and puts no other focus style in its place. It is a static check in the interaction area, so it reads CSS and JS source and never opens a browser. Each removal it finds fails."
+        }
+      ],
+      "children": []
+    },
+    "on2": {
+      "id": "on2",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "What It Catches"
+        }
+      ],
+      "children": []
+    },
+    "on3": {
+      "id": "on3",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A keyboard user follows the outline to see where focus is. The check reports two kinds of removal with no replacement."
+        }
+      ],
+      "children": []
+    },
+    "on4": {
+      "id": "on4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "CSS outline removal",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "on5",
+        "on6"
+      ]
+    },
+    "on5": {
+      "id": "on5",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A rule in a "
+        },
+        {
+          "insert": ".css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": ".scss",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " file sets "
+        },
+        {
+          "insert": "outline: none",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "outline: 0",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "outline-style: none",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "outline-width: 0",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "on6": {
+      "id": "on6",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "No focus rule in the same file gives the same element a visible change."
+        }
+      ],
+      "children": []
+    },
+    "on7": {
+      "id": "on7",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Tailwind outline removal",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "on8",
+        "on9"
+      ]
+    },
+    "on8": {
+      "id": "on8",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A string in a JS or TS file holds the class "
+        },
+        {
+          "insert": "outline-none",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "outline-hidden",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "on9": {
+      "id": "on9",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "No "
+        },
+        {
+          "insert": "focus-visible:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " utility sits on the same element, and no wrapper near it has a "
+        },
+        {
+          "insert": "focus-within:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " style."
+        }
+      ],
+      "children": []
+    },
+    "on10": {
+      "id": "on10",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Selectors it skips",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "on11"
+      ]
+    },
+    "on11": {
+      "id": "on11",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A pseudo-element rule that is not a focus rule, a "
+        },
+        {
+          "insert": "[tabindex=\"-1\"]",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " rule, and a "
+        },
+        {
+          "insert": ":not(:focus-visible)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " rule are skipped."
+        }
+      ],
+      "children": []
+    },
+    "on12": {
+      "id": "on12",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "How It Measures"
+        }
+      ],
+      "children": []
+    },
+    "on13": {
+      "id": "on13",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check matches selector names. It never looks at pixels, which is the job of "
+        },
+        {
+          "insert": "R-focus-visible",
+          "attributes": {
+            "code": true,
+            "link": "10-design-score/70-accessibility/20-r-focus-visible"
+          }
+        },
+        {
+          "insert": ". It takes these steps in order."
+        }
+      ],
+      "children": []
+    },
+    "on14": {
+      "id": "on14",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "OUTLINE_NONE",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/static-checks.ts",
+              "symbol": "OUTLINE_NONE"
+            }
+          }
+        },
+        {
+          "insert": " marks each declaration that removes the outline."
+        }
+      ],
+      "children": []
+    },
+    "on15": {
+      "id": "on15",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The CSS pass",
+          "attributes": {
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/static-checks.ts",
+              "symbol": "S-outline-none"
+            }
+          }
+        },
+        {
+          "insert": " returns early when the same rule is a focus rule that also shows a replacement, such as a "
+        },
+        {
+          "insert": ":focus",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " rule with a border color."
+        }
+      ],
+      "children": []
+    },
+    "on16": {
+      "id": "on16",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "subjectKeys",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/static-checks.ts",
+              "symbol": "subjectKeys"
+            }
+          }
+        },
+        {
+          "insert": " takes the classes, ids and attributes in the selector's last part, the element the rule styles."
+        }
+      ],
+      "children": []
+    },
+    "on17": {
+      "id": "on17",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The pass looks for a "
+        },
+        {
+          "insert": ":focus",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": ":focus-visible",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": ":focus-within",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " rule in the same file whose selector holds one of those keys. A selector with no keys, such as "
+        },
+        {
+          "insert": "button:focus",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", matches any focus rule in the file."
+        }
+      ],
+      "children": []
+    },
+    "on18": {
+      "id": "on18",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The Tailwind pass",
+          "attributes": {
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/static-checks.ts",
+              "symbol": "jsFindings"
+            }
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "jsFindings",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " looks for a "
+        },
+        {
+          "insert": "focus-visible:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " utility in the same class string, or a focus style up to 400 characters away."
+        }
+      ],
+      "children": []
+    },
+    "on19": {
+      "id": "on19",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "showsFocus",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/static-checks.ts",
+              "symbol": "showsFocus"
+            }
+          }
+        },
+        {
+          "insert": " decides what counts as a replacement. A box shadow, border, background, outline color, text decoration or a real outline counts. An "
+        },
+        {
+          "insert": "@apply",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with a ring, border, shadow or outline utility counts too."
+        }
+      ],
+      "children": []
+    },
+    "on20": {
+      "id": "on20",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Thresholds"
+        }
+      ],
+      "children": []
+    },
+    "on21": {
+      "id": "on21",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check has no count threshold. One removal without a replacement fails the check on every page of the app."
+        }
+      ],
+      "children": []
+    },
+    "on22": {
+      "id": "on22",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Code",
+          "Result"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "outline: none",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and a "
+              },
+              {
+                "insert": ":focus-visible",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " ring for the same class in the same file"
+              }
+            ],
+            "Pass"
+          ],
+          [
+            [
+              {
+                "insert": "outline: 0",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " in a "
+              },
+              {
+                "insert": ":focus",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " rule that also sets a border color"
+              }
+            ],
+            "Pass"
+          ],
+          [
+            [
+              {
+                "insert": "outline: none",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and no focus rule for the class"
+              }
+            ],
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "Tailwind "
+              },
+              {
+                "insert": "outline-none",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " with no "
+              },
+              {
+                "insert": "focus-visible:",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " utility near it"
+              }
+            ],
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "Tailwind "
+              },
+              {
+                "insert": "focus-visible:outline-none",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " with no other "
+              },
+              {
+                "insert": "focus-visible:",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " utility"
+              }
+            ],
+            "Fail"
+          ]
+        ],
+        "title": "S-outline-none results"
+      },
+      "children": []
+    },
+    "on23": {
+      "id": "on23",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Example"
+        }
+      ],
+      "children": []
+    },
+    "on24": {
+      "id": "on24",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The fixture pair is "
+        },
+        {
+          "insert": "design-score/fixtures/S-outline-none/",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/fixtures/S-outline-none"
+            }
+          }
+        },
+        {
+          "insert": ". Both pages show a toolbar with two buttons and a search field. The page presses Tab once, so the Upload button has keyboard focus. Each page prints its own focus rules with line numbers."
+        }
+      ],
+      "children": []
+    },
+    "on25": {
+      "id": "on25",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "bad.css",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "on26"
+      ]
+    },
+    "on26": {
+      "id": "on26",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Line 9 removes the button outline, and line 10 removes the field outline. No rule shows focus instead."
+        }
+      ],
+      "children": []
+    },
+    "on27": {
+      "id": "on27",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "good.css",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "on28"
+      ]
+    },
+    "on28": {
+      "id": "on28",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A "
+        },
+        {
+          "insert": ".btn:focus-visible",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " rule brings back a 2px ring, and the field's "
+        },
+        {
+          "insert": ":focus",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " rule sets a focus border."
+        }
+      ],
+      "children": []
+    },
+    "on29": {
+      "id": "on29",
+      "type": "image-grid",
+      "props": {
+        "columns": 2,
+        "images": [
+          {
+            "src": "./assets/images/good.png",
+            "heading": "Good: pass",
+            "alt": "The Upload button has keyboard focus and shows a blue ring. Below it, good.css removes each outline and adds a replacement.",
+            "caption": "good.html, 0 findings"
+          },
+          {
+            "src": "./assets/images/bad.png",
+            "heading": "Bad: fail",
+            "alt": "The Upload button has keyboard focus but shows no ring. Below it, bad.css removes both outlines with nothing in their place.",
+            "caption": "bad.html, 2 fail findings"
+          }
+        ]
+      },
+      "children": []
+    },
+    "on30": {
+      "id": "on30",
+      "type": "callout",
+      "props": {
+        "title": "Screenshots, not live pages",
+        "tone": "info"
+      },
+      "text": [
+        {
+          "insert": "These images come from "
+        },
+        {
+          "insert": "bun run design:score --fixture S-outline-none",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", which writes them to the fixture's "
+        },
+        {
+          "insert": "shots/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " folder. A static finding has no position, so no box is drawn."
+        }
+      ],
+      "children": []
+    },
+    "on31": {
+      "id": "on31",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules Behind It"
+        }
+      ],
+      "children": []
+    },
+    "on32": {
+      "id": "on32",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "One rule in "
+        },
+        {
+          "insert": "design-score/rules/interaction.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/interaction.json"
+            }
+          }
+        },
+        {
+          "insert": " names this check. Every finding carries its id in "
+        },
+        {
+          "insert": "rules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "on33": {
+      "id": "on33",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity",
+          "Measured"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "a11y-no-outline-none-without-replacement",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No outline removal without replacement",
+            "Fail",
+            "Yes, by name"
+          ]
+        ],
+        "title": "Rules decided by S-outline-none"
+      },
+      "children": []
+    },
+    "on34": {
+      "id": "on34",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The rule asks for a verified replacement. The check verifies the replacement by its selector only, and R-focus-visible verifies it in the browser."
+        }
+      ],
+      "children": []
+    },
+    "on35": {
+      "id": "on35",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Known False Positives"
+        }
+      ],
+      "children": []
+    },
+    "on36": {
+      "id": "on36",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check matches names within one file, so it misses a replacement that it cannot connect to the removal."
+        }
+      ],
+      "children": []
+    },
+    "on37": {
+      "id": "on37",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Replacement in another file",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "on38"
+      ]
+    },
+    "on38": {
+      "id": "on38",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A "
+        },
+        {
+          "insert": ":focus-visible",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " ring in a second stylesheet is not seen. The removal in the first file fails."
+        }
+      ],
+      "children": []
+    },
+    "on39": {
+      "id": "on39",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Replacement under another name",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "on40"
+      ]
+    },
+    "on40": {
+      "id": "on40",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A ring on a wrapper class, such as "
+        },
+        {
+          "insert": ".field-wrap:focus-within",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " for "
+        },
+        {
+          "insert": ".input",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", does not match the input's keys in CSS."
+        }
+      ],
+      "children": []
+    },
+    "on41": {
+      "id": "on41",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix it in the app config",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "on42"
+      ]
+    },
+    "on42": {
+      "id": "on42",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Add the file to "
+        },
+        {
+          "insert": "excludes",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "design-score/apps/<app>.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or skip the check on one page with "
+        },
+        {
+          "insert": "skip",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "skipReason",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "on43": {
+      "id": "on43",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Debug It"
+        }
+      ],
+      "children": []
+    },
+    "on44": {
+      "id": "on44",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Run these commands in the design-system checkout. Each run writes a folder under "
+        },
+        {
+          "insert": ".design-score/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "on45": {
+      "id": "on45",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run the fixture pair. The command exits 1 unless the bad page fails and the good page passes."
+        }
+      ],
+      "children": []
+    },
+    "on46": {
+      "id": "on46",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --fixture S-outline-none"
+        }
+      ],
+      "children": []
+    },
+    "on47": {
+      "id": "on47",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Score one page of an app with the focus pass on, so R-focus-visible checks the same controls in the browser."
+        }
+      ],
+      "children": []
+    },
+    "on48": {
+      "id": "on48",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --app knowledge-system --pages session --quick --no-motion"
+        }
+      ],
+      "children": []
+    },
+    "on49": {
+      "id": "on49",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Open "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and filter "
+        },
+        {
+          "insert": "findings",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " by "
+        },
+        {
+          "insert": "check",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Each finding has the "
+        },
+        {
+          "insert": "file",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", the "
+        },
+        {
+          "insert": "line",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and the removing declaration."
+        }
+      ],
+      "children": []
+    }
+  }
+}

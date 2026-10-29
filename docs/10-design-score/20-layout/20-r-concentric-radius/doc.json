@@ -1,0 +1,889 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-eb6e5f44f19b0eb552ed06dea5dbcab7",
+  "title": "R-concentric-radius: Concentric Radius",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "intro",
+        "h-catches",
+        "catches-lead",
+        "c1",
+        "c2",
+        "h-measures",
+        "m-lead",
+        "m1",
+        "m2",
+        "m3",
+        "m4",
+        "m5",
+        "m-after",
+        "h-thresholds",
+        "t-lead",
+        "t-table",
+        "t-after",
+        "h-example",
+        "e-lead",
+        "e-grid",
+        "e-key",
+        "e-callout",
+        "h-rules",
+        "r-lead",
+        "r-table",
+        "r-gap",
+        "h-fp",
+        "fp-lead",
+        "fp1",
+        "fp2",
+        "fp3",
+        "h-debug",
+        "d-lead",
+        "d1",
+        "d1c",
+        "d2",
+        "d2c",
+        "d3"
+      ]
+    },
+    "intro": {
+      "id": "intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "R-concentric-radius",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " finds a rounded child set inside a rounded parent whose corners do not run parallel. It is a runtime check in the layout area, so it runs in a browser on every page, theme and viewport. A miss warns and never fails the page."
+        }
+      ],
+      "children": []
+    },
+    "h-catches": {
+      "id": "h-catches",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "What It Catches"
+        }
+      ],
+      "children": []
+    },
+    "catches-lead": {
+      "id": "catches-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check reports one finding for each parent and child pair whose corners miss. It skips radii under 4px, because the design system's one radius token is 2px."
+        }
+      ],
+      "children": []
+    },
+    "c1": {
+      "id": "c1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Corners that pinch",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "c1a",
+        "c1b"
+      ]
+    },
+    "c1a": {
+      "id": "c1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A child sits the same distance in from its parent's top and left edges. The parent's radius is not the child's radius plus that inset."
+        }
+      ],
+      "children": []
+    },
+    "c1b": {
+      "id": "c1b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The common case is a child that copies its parent's radius. The band between the two curves is then thicker at the corner than along the sides."
+        }
+      ],
+      "children": []
+    },
+    "c2": {
+      "id": "c2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Only visible surfaces",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "c2a"
+      ]
+    },
+    "c2a": {
+      "id": "c2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Both the parent and the child need a visible border, shadow or background. A transparent wrapper with a radius is never compared."
+        }
+      ],
+      "children": []
+    },
+    "h-measures": {
+      "id": "h-measures",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "How It Measures"
+        }
+      ],
+      "children": []
+    },
+    "m-lead": {
+      "id": "m-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The probe runs inside the page and reads computed styles and layout boxes. It takes these steps for each visible element."
+        }
+      ],
+      "children": []
+    },
+    "m1": {
+      "id": "m1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "scripts/design-score/run.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/run.ts",
+              "symbol": "runScore"
+            }
+          }
+        },
+        {
+          "insert": " calls "
+        },
+        {
+          "insert": "probePage",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " once per theme and viewport, after the page's actions and settle time. It also passes "
+        },
+        {
+          "insert": "baseRadii",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", the radius tokens other than none and pill."
+        }
+      ],
+      "children": []
+    },
+    "m2": {
+      "id": "m2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The radius pass",
+          "attributes": {
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/probes.ts",
+              "symbol": "R-concentric-radius"
+            }
+          }
+        },
+        {
+          "insert": " reads the parent's top-left "
+        },
+        {
+          "insert": "border-radius",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". It skips a parent with no radius, a percent radius, a pill shape or no chrome ("
+        },
+        {
+          "insert": "hasChrome",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/probes.ts",
+              "symbol": "hasChrome"
+            }
+          }
+        },
+        {
+          "insert": ")."
+        }
+      ],
+      "children": []
+    },
+    "m3": {
+      "id": "m3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "It reads up to 30 children and grandchildren and skips each one under the same rules. It also skips a pair where both radii are base radius tokens."
+        }
+      ],
+      "children": []
+    },
+    "m4": {
+      "id": "m4",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "It measures the inset as the child's left offset inside the parent's border. The inset must be from 0.5px to 24px, and the top inset must match it within 1px."
+        }
+      ],
+      "children": []
+    },
+    "m5": {
+      "id": "m5",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "It compares the parent's radius minus its border with the child's radius plus the inset. A miss over the tolerance makes one warn finding, and the pass moves to the next parent."
+        }
+      ],
+      "children": []
+    },
+    "m-after": {
+      "id": "m-after",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A shape counts as a pill when its radius is at least half its shorter side, less 1px. Each finding has a key made from the class signatures of the parent and the child, so repeated cards report once."
+        }
+      ],
+      "children": []
+    },
+    "h-thresholds": {
+      "id": "h-thresholds",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Thresholds"
+        }
+      ],
+      "children": []
+    },
+    "t-lead": {
+      "id": "t-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check reads the top-left corner only. Every value comes from the computed style in CSS pixels."
+        }
+      ],
+      "children": []
+    },
+    "t-table": {
+      "id": "t-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Measure",
+          "Value"
+        ],
+        "rows": [
+          [
+            "Radii checked",
+            "The larger of the two is 4px or more"
+          ],
+          [
+            "Inset",
+            "0.5px to 24px, top and left within 1px"
+          ],
+          [
+            "Expected parent radius",
+            "Child radius + inset + parent border"
+          ],
+          [
+            "Tolerance",
+            "2px, or 25% of child radius + inset when that is larger"
+          ],
+          [
+            "Skipped pairs",
+            "Both radii on a base radius token, a percent radius, or a pill"
+          ],
+          [
+            "Severity",
+            "Warn"
+          ]
+        ],
+        "title": "R-concentric-radius thresholds"
+      },
+      "children": []
+    },
+    "t-after": {
+      "id": "t-after",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A 4px child inset 8px expects 12px with a 3px tolerance. Inside a 1px border, a parent radius from 10px to 16px passes."
+        }
+      ],
+      "children": []
+    },
+    "h-example": {
+      "id": "h-example",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Example"
+        }
+      ],
+      "children": []
+    },
+    "e-lead": {
+      "id": "e-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The fixture pair is "
+        },
+        {
+          "insert": "design-score/fixtures/R-concentric-radius/",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/fixtures/R-concentric-radius"
+            }
+          }
+        },
+        {
+          "insert": ". Both pages show three file cards with a 12px radius, a 1px border and an 8px inset. The good page gives each preview "
+        },
+        {
+          "insert": "calc(var(--ds-radius-base) * 2)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", which is 4px. The bad page gives each preview the card's own 12px radius."
+        }
+      ],
+      "children": []
+    },
+    "e-grid": {
+      "id": "e-grid",
+      "type": "image-grid",
+      "props": {
+        "columns": 2,
+        "images": [
+          {
+            "src": "./assets/images/good.png",
+            "heading": "Good: pass",
+            "alt": "Three file cards. Each gray preview has 4px corners that run parallel to the card's 12px corners. No boxes are drawn.",
+            "caption": "good.html, 0 findings"
+          },
+          {
+            "src": "./assets/images/bad.png",
+            "heading": "Bad: warn",
+            "alt": "The same cards with 12px preview corners. A magenta box marks the first card, and a cyan box marks its preview.",
+            "caption": "bad.html, 1 warn finding"
+          }
+        ]
+      },
+      "children": []
+    },
+    "e-key": {
+      "id": "e-key",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Magenta boxes the parent, and cyan boxes the child it was compared with. The finding reads \"outer radius 12px, inner 12px inset 8px\" and expects 21px. Only the first card is boxed, because the other cards have the same class signature."
+        }
+      ],
+      "children": []
+    },
+    "e-callout": {
+      "id": "e-callout",
+      "type": "callout",
+      "props": {
+        "title": "Screenshots, not live pages",
+        "tone": "info"
+      },
+      "text": [
+        {
+          "insert": "The docs hub has no app host, so an "
+        },
+        {
+          "insert": "app-embed",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " block shows \"App not available here\" in it. These images come from "
+        },
+        {
+          "insert": "bun run design:score --fixture R-concentric-radius",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", which writes them to the fixture's "
+        },
+        {
+          "insert": "shots/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " folder."
+        }
+      ],
+      "children": []
+    },
+    "h-rules": {
+      "id": "h-rules",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules Behind It"
+        }
+      ],
+      "children": []
+    },
+    "r-lead": {
+      "id": "r-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Two rules in "
+        },
+        {
+          "insert": "design-score/rules/layout.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/layout.json"
+            }
+          }
+        },
+        {
+          "insert": " name this check. Every finding carries their ids in "
+        },
+        {
+          "insert": "rules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "r-table": {
+      "id": "r-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity",
+          "Measured"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "ui-concentric-radius",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Concentric radius",
+            "Warn",
+            "Yes"
+          ],
+          [
+            [
+              {
+                "insert": "16-focus-ring-concentric",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Concentric focus ring",
+            "Warn",
+            "No"
+          ]
+        ],
+        "title": "Rules decided by R-concentric-radius"
+      },
+      "children": []
+    },
+    "r-gap": {
+      "id": "r-gap",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The probe does not measure "
+        },
+        {
+          "insert": "16-focus-ring-concentric",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". It compares element boxes only, and an offset focus ring is an outline, not a child element."
+        }
+      ],
+      "children": []
+    },
+    "h-fp": {
+      "id": "h-fp",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Known False Positives"
+        }
+      ],
+      "children": []
+    },
+    "fp-lead": {
+      "id": "fp-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check reads geometry only, so it cannot tell whether a child fills its parent's corner."
+        }
+      ],
+      "children": []
+    },
+    "fp1": {
+      "id": "fp1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Small items in a corner",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "fp1a"
+      ]
+    },
+    "fp1a": {
+      "id": "fp1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A small badge or chip inset evenly at a card's top left gets compared like a preview pane. It warns even though no one sees the two curves together."
+        }
+      ],
+      "children": []
+    },
+    "fp2": {
+      "id": "fp2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Mixed corners",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "fp2a"
+      ]
+    },
+    "fp2a": {
+      "id": "fp2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check reads only the top-left radius. A tab rounded on top or a child rounded on one side is judged by that one corner."
+        }
+      ],
+      "children": []
+    },
+    "fp3": {
+      "id": "fp3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix it in the app config",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "fp3a"
+      ]
+    },
+    "fp3a": {
+      "id": "fp3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Add the element's selector to "
+        },
+        {
+          "insert": "ignore",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "design-score/apps/<app>.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or skip the check on one page with "
+        },
+        {
+          "insert": "skip",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "skipReason",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-debug": {
+      "id": "h-debug",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Debug It"
+        }
+      ],
+      "children": []
+    },
+    "d-lead": {
+      "id": "d-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Run these commands in the design-system checkout. Each run writes a folder under "
+        },
+        {
+          "insert": ".design-score/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and one crop per finding."
+        }
+      ],
+      "children": []
+    },
+    "d1": {
+      "id": "d1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run the fixture pair. The command exits 1 unless the bad page gets its expected result and the good page passes."
+        }
+      ],
+      "children": []
+    },
+    "d1c": {
+      "id": "d1c",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --fixture R-concentric-radius"
+        }
+      ],
+      "children": []
+    },
+    "d2": {
+      "id": "d2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Score one page of an app in one theme and one viewport."
+        }
+      ],
+      "children": []
+    },
+    "d2c": {
+      "id": "d2c",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --app knowledge-system --pages session --quick"
+        }
+      ],
+      "children": []
+    },
+    "d3": {
+      "id": "d3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Open the crops in "
+        },
+        {
+          "insert": "crops/<page>/R-concentric-radius-*.png",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Each crop boxes the element in magenta and the element it was compared with in cyan."
+        }
+      ],
+      "children": []
+    }
+  }
+}

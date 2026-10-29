@@ -1,0 +1,1122 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-21fca6f1ff47adbdd9bfa0bf570faecd",
+  "title": "R-hit-target: Hit Target Size",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "ht1",
+        "ht2",
+        "ht3",
+        "ht4",
+        "ht6",
+        "ht8",
+        "ht10",
+        "ht13",
+        "ht14",
+        "ht15",
+        "ht16",
+        "ht17",
+        "ht18",
+        "ht19",
+        "ht20",
+        "ht21",
+        "ht22",
+        "ht23",
+        "ht24",
+        "ht25",
+        "ht26",
+        "ht29",
+        "ht31",
+        "ht32",
+        "ht33",
+        "ht34",
+        "ht35",
+        "ht36",
+        "ht37",
+        "ht38",
+        "ht39",
+        "ht40",
+        "ht42",
+        "ht44",
+        "ht46",
+        "ht47",
+        "ht48",
+        "ht49",
+        "ht50",
+        "ht51",
+        "ht52"
+      ]
+    },
+    "ht1": {
+      "id": "ht1",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "R-hit-target",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " finds buttons, links and other controls that are too small to hit. It is a runtime check in the interaction area, so it runs in a browser on every page, theme and viewport. A target under 24px fails, and a target under 32px warns."
+        }
+      ],
+      "children": []
+    },
+    "ht2": {
+      "id": "ht2",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "What It Catches"
+        }
+      ],
+      "children": []
+    },
+    "ht3": {
+      "id": "ht3",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check sorts each small target into one of three bands by its smaller side. Inline links in running text are exempt."
+        }
+      ],
+      "children": []
+    },
+    "ht4": {
+      "id": "ht4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Crowded targets under 24px",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ht5"
+      ]
+    },
+    "ht5": {
+      "id": "ht5",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The target fails when another target sits inside the 24px circle on its center. It also fails when another small target's circle overlaps its circle."
+        }
+      ],
+      "children": []
+    },
+    "ht6": {
+      "id": "ht6",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Spaced targets under 24px",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ht7"
+      ]
+    },
+    "ht7": {
+      "id": "ht7",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The target only warns when its 24px circle touches no other target and no other small target's circle. This is the spacing exception of WCAG 2.5.8."
+        }
+      ],
+      "children": []
+    },
+    "ht8": {
+      "id": "ht8",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Targets from 24 to 32px",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ht9"
+      ]
+    },
+    "ht9": {
+      "id": "ht9",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The target warns. Ford's floor is 32px, above the 24px that WCAG asks for."
+        }
+      ],
+      "children": []
+    },
+    "ht10": {
+      "id": "ht10",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Exempt links",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ht11",
+        "ht12"
+      ]
+    },
+    "ht11": {
+      "id": "ht11",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A link with "
+        },
+        {
+          "insert": "display: inline",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " inside a block of other text is exempt."
+        }
+      ],
+      "children": []
+    },
+    "ht12": {
+      "id": "ht12",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "An "
+        },
+        {
+          "insert": "inline-flex",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "inline-block",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " link in a line of words, and no taller than that line, is exempt too."
+        }
+      ],
+      "children": []
+    },
+    "ht13": {
+      "id": "ht13",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "How It Measures"
+        }
+      ],
+      "children": []
+    },
+    "ht14": {
+      "id": "ht14",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The probe runs inside the page and reads each target's box with "
+        },
+        {
+          "insert": "getBoundingClientRect",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". It takes these steps in order."
+        }
+      ],
+      "children": []
+    },
+    "ht15": {
+      "id": "ht15",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "scripts/design-score/run.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/run.ts",
+              "symbol": "runScore"
+            }
+          }
+        },
+        {
+          "insert": " calls "
+        },
+        {
+          "insert": "probePage",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " once per theme and viewport, after the page's actions and settle time."
+        }
+      ],
+      "children": []
+    },
+    "ht16": {
+      "id": "ht16",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "interactiveSel",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/probes.ts",
+              "symbol": "interactiveSel"
+            }
+          }
+        },
+        {
+          "insert": " picks links, buttons, form controls, "
+        },
+        {
+          "insert": "summary",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", the ARIA widget roles and "
+        },
+        {
+          "insert": "[tabindex]",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " elements. Disabled, hidden, clipped and "
+        },
+        {
+          "insert": "pointer-events: none",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " elements are dropped, and so is a control inside a button or link."
+        }
+      ],
+      "children": []
+    },
+    "ht17": {
+      "id": "ht17",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The label pass",
+          "attributes": {
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/probes.ts",
+              "symbol": "targetRects"
+            }
+          }
+        },
+        {
+          "insert": " gives an input the box of its label when the label is larger."
+        }
+      ],
+      "children": []
+    },
+    "ht18": {
+      "id": "ht18",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The size pass",
+          "attributes": {
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/probes.ts",
+              "symbol": "band"
+            }
+          }
+        },
+        {
+          "insert": " takes the smaller side of each box and puts the target in a band. A target under 24px gets "
+        },
+        {
+          "insert": "the circle test",
+          "attributes": {
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/probes.ts",
+              "symbol": "crowded"
+            }
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "ht19": {
+      "id": "ht19",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The group pass",
+          "attributes": {
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/probes.ts",
+              "symbol": "hitGroups"
+            }
+          }
+        },
+        {
+          "insert": " makes one finding per band and component, keyed by tag, classes and role. The finding gives the count and the size range."
+        }
+      ],
+      "children": []
+    },
+    "ht20": {
+      "id": "ht20",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The circle test measures from the target's center. A target is crowded when the nearest point of another target is under 12px away. It is also crowded when another target under 24px has its center under 24px away."
+        }
+      ],
+      "children": []
+    },
+    "ht21": {
+      "id": "ht21",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Thresholds"
+        }
+      ],
+      "children": []
+    },
+    "ht22": {
+      "id": "ht22",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The bands come from the rule "
+        },
+        {
+          "insert": "a11y-hit-target",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". axe-core's own "
+        },
+        {
+          "insert": "target-size",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " rule is off, so R-axe never reports the same targets."
+        }
+      ],
+      "children": []
+    },
+    "ht23": {
+      "id": "ht23",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Smaller Side",
+          "Neighbors",
+          "Result"
+        ],
+        "rows": [
+          [
+            "Under 24px",
+            "A target or a small target's circle inside its 24px circle",
+            "Fail"
+          ],
+          [
+            "Under 24px",
+            "None inside its 24px circle",
+            "Warn"
+          ],
+          [
+            "24px to under 32px",
+            "Any",
+            "Warn"
+          ],
+          [
+            "32px or more",
+            "Any",
+            "Pass"
+          ]
+        ],
+        "title": "R-hit-target thresholds"
+      },
+      "children": []
+    },
+    "ht24": {
+      "id": "ht24",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Example"
+        }
+      ],
+      "children": []
+    },
+    "ht25": {
+      "id": "ht25",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The fixture pair is "
+        },
+        {
+          "insert": "design-score/fixtures/R-hit-target/",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/fixtures/R-hit-target"
+            }
+          }
+        },
+        {
+          "insert": ". Both pages show an editor card with a close button, four format buttons, a help button and a note with an inline link."
+        }
+      ],
+      "children": []
+    },
+    "ht26": {
+      "id": "ht26",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "bad.html",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ht27",
+        "ht28"
+      ]
+    },
+    "ht27": {
+      "id": "ht27",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The format buttons are 20x20px and 2px apart, so their circles overlap. This fails."
+        }
+      ],
+      "children": []
+    },
+    "ht28": {
+      "id": "ht28",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The close button is 28x28px, and the lone help button is 16x16px. Each one warns."
+        }
+      ],
+      "children": []
+    },
+    "ht29": {
+      "id": "ht29",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "good.html",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ht30"
+      ]
+    },
+    "ht30": {
+      "id": "ht30",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Every button is 32x32px. The inline link stays exempt on both pages."
+        }
+      ],
+      "children": []
+    },
+    "ht31": {
+      "id": "ht31",
+      "type": "image-grid",
+      "props": {
+        "columns": 2,
+        "images": [
+          {
+            "src": "./assets/images/good.png",
+            "heading": "Good: pass",
+            "alt": "An editor card with 32px close, format and help buttons. No boxes are drawn.",
+            "caption": "good.html, 0 findings"
+          },
+          {
+            "src": "./assets/images/bad.png",
+            "heading": "Bad: fail",
+            "alt": "The same card with small buttons. Magenta boxes mark the close button, the first format button and the help button.",
+            "caption": "bad.html, 1 fail and 2 warn findings"
+          }
+        ]
+      },
+      "children": []
+    },
+    "ht32": {
+      "id": "ht32",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Magenta boxes the first element of each finding. The four format buttons share the class "
+        },
+        {
+          "insert": "tool",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", so they are one finding with a count of 4."
+        }
+      ],
+      "children": []
+    },
+    "ht33": {
+      "id": "ht33",
+      "type": "callout",
+      "props": {
+        "title": "Screenshots, not live pages",
+        "tone": "info"
+      },
+      "text": [
+        {
+          "insert": "These images come from "
+        },
+        {
+          "insert": "bun run design:score --fixture R-hit-target",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", which writes them to the fixture's "
+        },
+        {
+          "insert": "shots/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " folder. The docs hub has no app host for a live embed."
+        }
+      ],
+      "children": []
+    },
+    "ht34": {
+      "id": "ht34",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules Behind It"
+        }
+      ],
+      "children": []
+    },
+    "ht35": {
+      "id": "ht35",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Three rules in "
+        },
+        {
+          "insert": "design-score/rules/interaction.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/interaction.json"
+            }
+          }
+        },
+        {
+          "insert": " name this check. Every finding carries their ids in "
+        },
+        {
+          "insert": "rules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "ht36": {
+      "id": "ht36",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity",
+          "Measured"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "a11y-hit-target",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Hit target size",
+            "Fail",
+            "Yes"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-hit-areas-no-overlap",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Hit areas never overlap",
+            "Fail",
+            "No"
+          ],
+          [
+            [
+              {
+                "insert": "16-no-dead-zones",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No dead zones",
+            "Warn",
+            "No"
+          ]
+        ],
+        "title": "Rules decided by R-hit-target"
+      },
+      "children": []
+    },
+    "ht37": {
+      "id": "ht37",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The probe measures neither overlapping hit areas nor the gaps between list items. It reads each target's own box and never the hit area that a pseudo-element adds."
+        }
+      ],
+      "children": []
+    },
+    "ht38": {
+      "id": "ht38",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Known False Positives"
+        }
+      ],
+      "children": []
+    },
+    "ht39": {
+      "id": "ht39",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check reads the element's own box, so it misses hit area that comes from somewhere else."
+        }
+      ],
+      "children": []
+    },
+    "ht40": {
+      "id": "ht40",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Pseudo-element hit areas",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ht41"
+      ]
+    },
+    "ht41": {
+      "id": "ht41",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A small icon whose "
+        },
+        {
+          "insert": "::before",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " extends the hit area by 8px is still reported. The rule "
+        },
+        {
+          "insert": "a11y-hit-target",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " asks for exactly this fix."
+        }
+      ],
+      "children": []
+    },
+    "ht42": {
+      "id": "ht42",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Labels that are not label elements",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ht43"
+      ]
+    },
+    "ht43": {
+      "id": "ht43",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A checkbox beside plain text gets no larger box, because only a "
+        },
+        {
+          "insert": "label",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " element counts."
+        }
+      ],
+      "children": []
+    },
+    "ht44": {
+      "id": "ht44",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix it in the app config",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ht45"
+      ]
+    },
+    "ht45": {
+      "id": "ht45",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Add the element's selector to "
+        },
+        {
+          "insert": "ignore",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "design-score/apps/<app>.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or skip the check on one page with "
+        },
+        {
+          "insert": "skip",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "skipReason",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "ht46": {
+      "id": "ht46",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Debug It"
+        }
+      ],
+      "children": []
+    },
+    "ht47": {
+      "id": "ht47",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Run these commands in the design-system checkout. Each run writes a folder under "
+        },
+        {
+          "insert": ".design-score/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and one crop per finding."
+        }
+      ],
+      "children": []
+    },
+    "ht48": {
+      "id": "ht48",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run the fixture pair. The command exits 1 unless the bad page fails and the good page passes."
+        }
+      ],
+      "children": []
+    },
+    "ht49": {
+      "id": "ht49",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --fixture R-hit-target"
+        }
+      ],
+      "children": []
+    },
+    "ht50": {
+      "id": "ht50",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Score one page of an app in one theme and one viewport."
+        }
+      ],
+      "children": []
+    },
+    "ht51": {
+      "id": "ht51",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --app knowledge-system --pages session --quick"
+        }
+      ],
+      "children": []
+    },
+    "ht52": {
+      "id": "ht52",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Read the check's note in "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". It counts the fail, spaced and warn-band groups, and the crops are in "
+        },
+        {
+          "insert": "crops/<page>/R-hit-target-*.png",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    }
+  }
+}

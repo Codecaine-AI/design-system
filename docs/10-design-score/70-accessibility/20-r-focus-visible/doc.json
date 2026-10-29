@@ -1,0 +1,946 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-d9cdbf1c3563d83261e81ed5ca2f7e5b",
+  "title": "R-focus-visible: Focus Visible",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "intro",
+        "h-catches",
+        "catches-lead",
+        "c1",
+        "c2",
+        "c3",
+        "h-measures",
+        "m-lead",
+        "m1",
+        "m2",
+        "m3",
+        "m4",
+        "m5",
+        "m-moved",
+        "m-stop",
+        "h-thresholds",
+        "t-lead",
+        "t-table",
+        "t-after",
+        "h-example",
+        "e-lead",
+        "e-grid",
+        "e-key",
+        "e-callout",
+        "h-rules",
+        "r-lead",
+        "r-table",
+        "r-gap",
+        "h-fp",
+        "fp-lead",
+        "fp1",
+        "fp2",
+        "fp3",
+        "fp-miss",
+        "h-debug",
+        "d-lead",
+        "d1",
+        "d1c",
+        "d2",
+        "d2c",
+        "d3"
+      ]
+    },
+    "intro": {
+      "id": "intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "R-focus-visible",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " presses Tab through each page and checks that every focused control changes the pixels around it. It is a runtime check in the accessibility area. It runs in every theme, in the first viewport only. A control that shows no change on keyboard focus fails the page."
+        }
+      ],
+      "children": []
+    },
+    "h-catches": {
+      "id": "h-catches",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "What It Catches"
+        }
+      ],
+      "children": []
+    },
+    "catches-lead": {
+      "id": "catches-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check reports keyboard focus that a sighted user cannot see. It compares screenshots, so it does not care how the indicator is drawn."
+        }
+      ],
+      "children": []
+    },
+    "c1": {
+      "id": "c1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A removed outline",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "c1a"
+      ]
+    },
+    "c1a": {
+      "id": "c1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "outline: none",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on "
+        },
+        {
+          "insert": ":focus",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with nothing in its place fails at every control it matches."
+        }
+      ],
+      "children": []
+    },
+    "c2": {
+      "id": "c2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A ring that the theme hides",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "c2a"
+      ]
+    },
+    "c2a": {
+      "id": "c2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A ring color that is too close to the surface in one theme changes too few pixels, so that theme fails."
+        }
+      ],
+      "children": []
+    },
+    "c3": {
+      "id": "c3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Any indicator counts",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "c3a"
+      ]
+    },
+    "c3a": {
+      "id": "c3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "An outline, a box-shadow ring, a border color or a background change passes when it changes enough pixels near the control."
+        }
+      ],
+      "children": []
+    },
+    "h-measures": {
+      "id": "h-measures",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "How It Measures"
+        }
+      ],
+      "children": []
+    },
+    "m-lead": {
+      "id": "m-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The focus pass drives the real keyboard in Chromium. It takes these steps in order."
+        }
+      ],
+      "children": []
+    },
+    "m1": {
+      "id": "m1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "scripts/design-score/run.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/run.ts",
+              "symbol": "Focus"
+            }
+          }
+        },
+        {
+          "insert": " calls "
+        },
+        {
+          "insert": "focusPass",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " once per theme, in the first viewport, after the probes and axe."
+        }
+      ],
+      "children": []
+    },
+    "m2": {
+      "id": "m2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "focusPass",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/focus.ts",
+              "symbol": "focusPass"
+            }
+          }
+        },
+        {
+          "insert": " turns off every transition and animation, then blurs the focused element. It focuses the body once, so the first Tab starts at the top of the page."
+        }
+      ],
+      "children": []
+    },
+    "m3": {
+      "id": "m3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "For each Tab stop, the pass screenshots a clip of the control plus 6px on each side, while the control has focus."
+        }
+      ],
+      "children": []
+    },
+    "m4": {
+      "id": "m4",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The pass presses Tab and screenshots the same clip again, now without focus. "
+        },
+        {
+          "insert": "changedPixels",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/focus.ts",
+              "symbol": "changedPixels"
+            }
+          }
+        },
+        {
+          "insert": " counts the pixels that differ between the two clips."
+        }
+      ],
+      "children": []
+    },
+    "m5": {
+      "id": "m5",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "A stop with too few changed pixels is a finding. The pass keeps a crop of the focused clip for the report."
+        }
+      ],
+      "children": []
+    },
+    "m-moved": {
+      "id": "m-moved",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Focus can scroll the page between the two clips. When the control moved, the pass reads the computed style instead. A set outline or a changed box-shadow then counts as visible."
+        }
+      ],
+      "children": []
+    },
+    "m-stop": {
+      "id": "m-stop",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The pass stops after 30 Tab stops, when focus cycles back to the first stop, or when focus leaves the page. It also stops at an iframe or a contenteditable element, because Tab can edit text there."
+        }
+      ],
+      "children": []
+    },
+    "h-thresholds": {
+      "id": "h-thresholds",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Thresholds"
+        }
+      ],
+      "children": []
+    },
+    "t-lead": {
+      "id": "t-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A pixel counts as changed when one color channel moves by more than 24 of 255. The number of changed pixels needed grows with the control's size."
+        }
+      ],
+      "children": []
+    },
+    "t-table": {
+      "id": "t-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Measure",
+          "Value"
+        ],
+        "rows": [
+          [
+            "Tab stops per page",
+            "30"
+          ],
+          [
+            "Clip padding",
+            "6px on each side"
+          ],
+          [
+            "Changed pixel",
+            "One channel differs by more than 24"
+          ],
+          [
+            "Pixels needed",
+            "12, or 10% of the perimeter if that is more"
+          ],
+          [
+            "Severity",
+            "Fail"
+          ]
+        ],
+        "title": "R-focus-visible thresholds"
+      },
+      "children": []
+    },
+    "t-after": {
+      "id": "t-after",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A 100 by 32px button has a perimeter of 264px, so it needs 26 changed pixels. A 2px outline around it changes more than 500."
+        }
+      ],
+      "children": []
+    },
+    "h-example": {
+      "id": "h-example",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Example"
+        }
+      ],
+      "children": []
+    },
+    "e-lead": {
+      "id": "e-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The fixture pair is "
+        },
+        {
+          "insert": "design-score/fixtures/R-focus-visible/",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/fixtures/R-focus-visible"
+            }
+          }
+        },
+        {
+          "insert": ". Both pages show a toolbar with three buttons and a link. "
+        },
+        {
+          "insert": "fixture.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " presses Tab once before the screenshot, so the first button has focus in each shot."
+        }
+      ],
+      "children": []
+    },
+    "e-grid": {
+      "id": "e-grid",
+      "type": "image-grid",
+      "props": {
+        "columns": 2,
+        "images": [
+          {
+            "src": "./assets/images/good.png",
+            "heading": "Good: pass",
+            "alt": "A toolbar with Bold, Italic and Code buttons and a Shortcuts link. The Bold button has focus and shows a blue ring.",
+            "caption": "good.html, 0 findings"
+          },
+          {
+            "src": "./assets/images/bad.png",
+            "heading": "Bad: fail",
+            "alt": "The same toolbar. The Bold button has focus but shows no ring. Magenta boxes mark all three buttons.",
+            "caption": "bad.html, 3 fail findings"
+          }
+        ]
+      },
+      "children": []
+    },
+    "e-key": {
+      "id": "e-key",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The good page draws "
+        },
+        {
+          "insert": "--ds-color-focus-ring",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " as an outline on "
+        },
+        {
+          "insert": ":focus-visible",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The bad page sets "
+        },
+        {
+          "insert": "button:focus { outline: none }",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", so each button changes 0 pixels on focus. The link keeps the browser's own ring, so it passes on both pages."
+        }
+      ],
+      "children": []
+    },
+    "e-callout": {
+      "id": "e-callout",
+      "type": "callout",
+      "props": {
+        "title": "Screenshots, not live pages",
+        "tone": "info"
+      },
+      "text": [
+        {
+          "insert": "The docs hub has no app host, so an "
+        },
+        {
+          "insert": "app-embed",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " block shows \"App not available here\" in it. These images come from "
+        },
+        {
+          "insert": "bun run design:score --fixture R-focus-visible",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", which writes them to the fixture's "
+        },
+        {
+          "insert": "shots/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " folder."
+        }
+      ],
+      "children": []
+    },
+    "h-rules": {
+      "id": "h-rules",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules Behind It"
+        }
+      ],
+      "children": []
+    },
+    "r-lead": {
+      "id": "r-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "One rule in "
+        },
+        {
+          "insert": "design-score/rules/accessibility.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/accessibility.json"
+            }
+          }
+        },
+        {
+          "insert": " names this check. Every finding carries its id in "
+        },
+        {
+          "insert": "rules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "r-table": {
+      "id": "r-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity",
+          "Measured"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "a11y-visible-focus-indicator",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Visible focus",
+            "Fail",
+            "Yes"
+          ]
+        ],
+        "title": "Rules decided by R-focus-visible"
+      },
+      "children": []
+    },
+    "r-gap": {
+      "id": "r-gap",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check proves that focus is visible, not that the ring has enough contrast. "
+        },
+        {
+          "insert": "a11y-focus-ring-contrast",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " asks for 3:1, and no check measures it yet."
+        }
+      ],
+      "children": []
+    },
+    "h-fp": {
+      "id": "h-fp",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Known False Positives"
+        }
+      ],
+      "children": []
+    },
+    "fp-lead": {
+      "id": "fp-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check looks only at the control's own clip, so an indicator outside the clip does not count."
+        }
+      ],
+      "children": []
+    },
+    "fp1": {
+      "id": "fp1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Indicators outside the clip",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "fp1a"
+      ]
+    },
+    "fp1a": {
+      "id": "fp1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A wrapper that draws the ring with "
+        },
+        {
+          "insert": ":focus-within",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " more than 6px from the control fails, though the user sees it."
+        }
+      ],
+      "children": []
+    },
+    "fp2": {
+      "id": "fp2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Scrolled controls",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "fp2a"
+      ]
+    },
+    "fp2a": {
+      "id": "fp2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A control that scrolls between the two clips is judged by its style. A focus style that changes only the background then fails."
+        }
+      ],
+      "children": []
+    },
+    "fp3": {
+      "id": "fp3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix it in the app config",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "fp3a"
+      ]
+    },
+    "fp3a": {
+      "id": "fp3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Skip the check on one page with "
+        },
+        {
+          "insert": "skip",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "skipReason",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "design-score/apps/<app>.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Run with "
+        },
+        {
+          "insert": "--no-focus",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " to skip the focus pass for a whole run."
+        }
+      ],
+      "children": []
+    },
+    "fp-miss": {
+      "id": "fp-miss",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check can also miss a problem. The next control's ring can reach into the clip, so a control with no ring of its own can pass."
+        }
+      ],
+      "children": []
+    },
+    "h-debug": {
+      "id": "h-debug",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Debug It"
+        }
+      ],
+      "children": []
+    },
+    "d-lead": {
+      "id": "d-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Run these commands in the design-system checkout. Each run writes a folder under "
+        },
+        {
+          "insert": ".design-score/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and one crop per finding."
+        }
+      ],
+      "children": []
+    },
+    "d1": {
+      "id": "d1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run the fixture pair. The command exits 1 unless the bad page fails and the good page passes."
+        }
+      ],
+      "children": []
+    },
+    "d1c": {
+      "id": "d1c",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --fixture R-focus-visible"
+        }
+      ],
+      "children": []
+    },
+    "d2": {
+      "id": "d2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Score one page of an app in one theme and one viewport."
+        }
+      ],
+      "children": []
+    },
+    "d2c": {
+      "id": "d2c",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --app knowledge-system --pages session --quick"
+        }
+      ],
+      "children": []
+    },
+    "d3": {
+      "id": "d3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Open the crops in "
+        },
+        {
+          "insert": "crops/<page>/R-focus-visible-*.png",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Each crop is the focused clip, so a missing ring shows as a plain control."
+        }
+      ],
+      "children": []
+    }
+  }
+}

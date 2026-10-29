@@ -1,0 +1,1369 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-e7c9af69567647eb44495cfb61d80869",
+  "title": "M-layout-props: Animating Layout Properties",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b6",
+        "b9",
+        "b11",
+        "b12",
+        "b13",
+        "b14",
+        "b15",
+        "b16",
+        "b17",
+        "b18",
+        "b19",
+        "b20",
+        "b21",
+        "b22",
+        "b23",
+        "b24",
+        "b27",
+        "b30",
+        "b31",
+        "b32",
+        "b33",
+        "b34",
+        "b35",
+        "b36",
+        "b37",
+        "b38",
+        "b39",
+        "b40",
+        "b42",
+        "b44",
+        "b46",
+        "b47",
+        "b48",
+        "b49",
+        "b50",
+        "b51",
+        "b52"
+      ]
+    },
+    "b1": {
+      "id": "b1",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "M-layout-props",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " finds transitions and animations on layout properties, such as width, height, top, margin and padding. The browser lays out the page again on every frame of such an animation, and the text inside reflows. It is a motion check: an animation seen running fails, and a transition that is only declared warns."
+        }
+      ],
+      "children": []
+    },
+    "b2": {
+      "id": "b2",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "What It Catches"
+        }
+      ],
+      "children": []
+    },
+    "b3": {
+      "id": "b3",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check reports layout motion from two kinds of evidence, and the app config can allow some of it."
+        }
+      ],
+      "children": []
+    },
+    "b4": {
+      "id": "b4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Seen running",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b5"
+      ]
+    },
+    "b5": {
+      "id": "b5",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "An animation on a layout property fails when the recorder sees it run longer than 0ms. The page's actions or a forced hover or press must start it."
+        }
+      ],
+      "children": []
+    },
+    "b6": {
+      "id": "b6",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Declared only",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b7",
+        "b8"
+      ]
+    },
+    "b7": {
+      "id": "b7",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A visible element whose computed "
+        },
+        {
+          "insert": "transition-property",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " lists a layout property with a duration over 0 warns, though nothing ran."
+        }
+      ],
+      "children": []
+    },
+    "b8": {
+      "id": "b8",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "transition-property: all",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is not read here. "
+        },
+        {
+          "insert": "S-transition-all",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " reports it."
+        }
+      ],
+      "children": []
+    },
+    "b9": {
+      "id": "b9",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Allowed by the app config",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b10"
+      ]
+    },
+    "b10": {
+      "id": "b10",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A "
+        },
+        {
+          "insert": "motionAllow",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " entry names a selector, the layout properties allowed on it and a reason. A finding it covers shows in the report but does not count."
+        }
+      ],
+      "children": []
+    },
+    "b11": {
+      "id": "b11",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "How It Measures"
+        }
+      ],
+      "children": []
+    },
+    "b12": {
+      "id": "b12",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check uses the same recorder and hover pass as "
+        },
+        {
+          "insert": "M-duration",
+          "attributes": {
+            "code": true,
+            "link": "10-design-score/50-motion/30-m-duration"
+          }
+        },
+        {
+          "insert": ". It takes these steps in order."
+        }
+      ],
+      "children": []
+    },
+    "b13": {
+      "id": "b13",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "scripts/design-score/run.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/run.ts",
+              "symbol": "Motion"
+            }
+          }
+        },
+        {
+          "insert": " records every animation during the page's actions, then hovers and presses up to 24 controls."
+        }
+      ],
+      "children": []
+    },
+    "b14": {
+      "id": "b14",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "analyzeMotion",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/motion.ts",
+              "symbol": "analyzeMotion"
+            }
+          }
+        },
+        {
+          "insert": " keeps each record's properties that match "
+        },
+        {
+          "insert": "LAYOUT_PROP",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/motion.ts",
+              "symbol": "LAYOUT_PROP"
+            }
+          }
+        },
+        {
+          "insert": ", and moves the ones "
+        },
+        {
+          "insert": "motionAllow",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " allows to the allowed list."
+        }
+      ],
+      "children": []
+    },
+    "b15": {
+      "id": "b15",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "After the hover pass, "
+        },
+        {
+          "insert": "declaredLayoutTransitions",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/motion.ts",
+              "symbol": "declaredLayoutTransitions"
+            }
+          }
+        },
+        {
+          "insert": " walks every element in the body and reads its computed "
+        },
+        {
+          "insert": "transitionProperty",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "transitionDuration",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b16": {
+      "id": "b16",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The declared pass",
+          "attributes": {
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/motion.ts",
+              "symbol": "analyzeMotion"
+            }
+          }
+        },
+        {
+          "insert": " drops a declared finding when the same selector already has a running finding."
+        }
+      ],
+      "children": []
+    },
+    "b17": {
+      "id": "b17",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each selector and property list reports once, so repeated rows report once per component."
+        }
+      ],
+      "children": []
+    },
+    "b18": {
+      "id": "b18",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Thresholds"
+        }
+      ],
+      "children": []
+    },
+    "b19": {
+      "id": "b19",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Any layout motion counts, whatever its size or duration. The evidence decides the severity."
+        }
+      ],
+      "children": []
+    },
+    "b20": {
+      "id": "b20",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Evidence",
+          "Condition",
+          "Severity"
+        ],
+        "rows": [
+          [
+            "Seen running",
+            "A recorded animation on a layout property, longer than 0ms",
+            "Fail"
+          ],
+          [
+            "Declared only",
+            "A computed transition on a layout property, longer than 0ms, on a visible element",
+            "Warn"
+          ],
+          [
+            "Allowed",
+            [
+              {
+                "insert": "A "
+              },
+              {
+                "insert": "motionAllow",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " entry matches the element and the property"
+              }
+            ],
+            "Shown, not counted"
+          ]
+        ],
+        "title": "M-layout-props severities"
+      },
+      "children": []
+    },
+    "b21": {
+      "id": "b21",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Group",
+          "Properties"
+        ],
+        "rows": [
+          [
+            "Size",
+            [
+              {
+                "insert": "width",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "height",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "min-width",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "min-height",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "max-width",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "max-height",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Position",
+            [
+              {
+                "insert": "top",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "left",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "right",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "bottom",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "inset",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and its longhands"
+              }
+            ]
+          ],
+          [
+            "Spacing",
+            [
+              {
+                "insert": "margin",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "padding",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " with their longhands, "
+              },
+              {
+                "insert": "gap",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "row-gap",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "column-gap",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Grid and flex",
+            [
+              {
+                "insert": "grid-template-columns",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "grid-template-rows",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "flex",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "flex-basis",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "flex-grow",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ]
+        ],
+        "title": "Layout properties"
+      },
+      "children": []
+    },
+    "b22": {
+      "id": "b22",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Example"
+        }
+      ],
+      "children": []
+    },
+    "b23": {
+      "id": "b23",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The fixture pair is "
+        },
+        {
+          "insert": "design-score/fixtures/M-layout-props/",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/fixtures/M-layout-props"
+            }
+          }
+        },
+        {
+          "insert": ". Both pages show a file view, and "
+        },
+        {
+          "insert": "fixture.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " clicks Show details to open a details panel."
+        }
+      ],
+      "children": []
+    },
+    "b24": {
+      "id": "b24",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Good page",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b25",
+        "b26"
+      ]
+    },
+    "b25": {
+      "id": "b25",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The panel is always 192px wide. It slides in with "
+        },
+        {
+          "insert": "transform",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "opacity",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " over "
+        },
+        {
+          "insert": "duration.slow",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b26": {
+      "id": "b26",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The button transitions only "
+        },
+        {
+          "insert": "background-color",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b27": {
+      "id": "b27",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Bad page",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b28",
+        "b29"
+      ]
+    },
+    "b28": {
+      "id": "b28",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The panel opens by animating "
+        },
+        {
+          "insert": "width",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " from 0 to 192px, which fails."
+        }
+      ],
+      "children": []
+    },
+    "b29": {
+      "id": "b29",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The button also lists "
+        },
+        {
+          "insert": "padding",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in its transition, which warns, because nothing on the page changes it."
+        }
+      ],
+      "children": []
+    },
+    "b30": {
+      "id": "b30",
+      "type": "image-grid",
+      "props": {
+        "columns": 2,
+        "images": [
+          {
+            "src": "./assets/images/good.png",
+            "heading": "Good: pass",
+            "alt": "The file view with the details panel open on the right. No boxes are drawn.",
+            "caption": "good.html, 0 findings"
+          },
+          {
+            "src": "./assets/images/bad.png",
+            "heading": "Bad: fail",
+            "alt": "The same open panel. Magenta boxes mark the panel and the Show details button.",
+            "caption": "bad.html, 1 fail and 1 warn finding"
+          }
+        ]
+      },
+      "children": []
+    },
+    "b31": {
+      "id": "b31",
+      "type": "image-grid",
+      "props": {
+        "columns": 1,
+        "images": [
+          {
+            "src": "./assets/images/good-frames.png",
+            "heading": "Good frames",
+            "alt": "Five frames of the panel opening. The panel slides in from the right, and its text keeps one line per field.",
+            "caption": "Frames at 0, 20, 40, 70 and 260ms after the click."
+          },
+          {
+            "src": "./assets/images/bad-frames.png",
+            "heading": "Bad frames",
+            "alt": "The same five frames. The panel grows from the right edge, and its text wraps one word per line before it settles.",
+            "caption": "Frames at 0, 20, 40, 70 and 260ms after the click."
+          }
+        ]
+      },
+      "children": []
+    },
+    "b32": {
+      "id": "b32",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The frames show the reflow. The bad panel is a few pixels wide at 20ms, so \"Ford Lascari\" and \"2 hours ago\" wrap one word per line. The good panel moves as one piece, and its text never wraps."
+        }
+      ],
+      "children": []
+    },
+    "b33": {
+      "id": "b33",
+      "type": "callout",
+      "props": {
+        "title": "How the frames are made",
+        "tone": "info"
+      },
+      "text": [
+        {
+          "insert": "bun scripts/design-score/frames.ts M-layout-props",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " writes these strips from the fixture's "
+        },
+        {
+          "insert": "frames.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". It stops the page's animation clock, clicks Show details, and seeks every animation to each frame time."
+        }
+      ],
+      "children": []
+    },
+    "b34": {
+      "id": "b34",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules Behind It"
+        }
+      ],
+      "children": []
+    },
+    "b35": {
+      "id": "b35",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Two rules in "
+        },
+        {
+          "insert": "design-score/rules/motion.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/motion.json"
+            }
+          }
+        },
+        {
+          "insert": " name this check. Every finding carries their ids in "
+        },
+        {
+          "insert": "rules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b36": {
+      "id": "b36",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity",
+          "Measured"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "05-composite-only-animation",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Compositor-only animation",
+            "Fail",
+            "Yes"
+          ],
+          [
+            [
+              {
+                "insert": "03-animate-gradient-cheaply",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Animate gradients cheaply",
+            "Warn",
+            "No"
+          ]
+        ],
+        "title": "Rules decided by M-layout-props"
+      },
+      "children": []
+    },
+    "b37": {
+      "id": "b37",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check reads only layout properties. A "
+        },
+        {
+          "insert": "background-image",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " animation that changes a gradient's color stops passes."
+        }
+      ],
+      "children": []
+    },
+    "b38": {
+      "id": "b38",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Known False Positives"
+        }
+      ],
+      "children": []
+    },
+    "b39": {
+      "id": "b39",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Some layout motion is the intended design, and the check cannot tell it from a mistake."
+        }
+      ],
+      "children": []
+    },
+    "b40": {
+      "id": "b40",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Measured height morphs",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b41"
+      ]
+    },
+    "b41": {
+      "id": "b41",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A container that animates its measured height between steps fails. The rule "
+        },
+        {
+          "insert": "12-height-animates-between-steps",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " asks for that morph, and the rule notes say it must warn."
+        }
+      ],
+      "children": []
+    },
+    "b42": {
+      "id": "b42",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Shell layout",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b43"
+      ]
+    },
+    "b43": {
+      "id": "b43",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A sidebar that collapses by animating a grid column fails. The knowledge-system config allows "
+        },
+        {
+          "insert": ".ds-shell",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with "
+        },
+        {
+          "insert": "grid-template-columns",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " for this reason."
+        }
+      ],
+      "children": []
+    },
+    "b44": {
+      "id": "b44",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix it in the app config",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b45"
+      ]
+    },
+    "b45": {
+      "id": "b45",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Add a "
+        },
+        {
+          "insert": "motionAllow",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " entry with "
+        },
+        {
+          "insert": "name",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "selector",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "props",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "reason",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " to "
+        },
+        {
+          "insert": "design-score/apps/<app>.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The report then lists the finding under its name and reason."
+        }
+      ],
+      "children": []
+    },
+    "b46": {
+      "id": "b46",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Debug It"
+        }
+      ],
+      "children": []
+    },
+    "b47": {
+      "id": "b47",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Run these commands in the design-system checkout. Each run writes a folder under "
+        },
+        {
+          "insert": ".design-score/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and one crop per finding."
+        }
+      ],
+      "children": []
+    },
+    "b48": {
+      "id": "b48",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run the fixture pair. The command exits 1 unless the bad page fails and the good page passes."
+        }
+      ],
+      "children": []
+    },
+    "b49": {
+      "id": "b49",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --fixture M-layout-props"
+        }
+      ],
+      "children": []
+    },
+    "b50": {
+      "id": "b50",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Score one page of an app in one theme and one viewport."
+        }
+      ],
+      "children": []
+    },
+    "b51": {
+      "id": "b51",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --app knowledge-system --pages session --quick"
+        }
+      ],
+      "children": []
+    },
+    "b52": {
+      "id": "b52",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Read the "
+        },
+        {
+          "insert": "measured",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " text of each finding. \"animates width (260ms)\" ran, and \"declared, not seen running\" only warns."
+        }
+      ],
+      "children": []
+    }
+  }
+}

@@ -1,0 +1,1137 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-778fcdc4d10b373c6cb909e2429e0a9d",
+  "title": "R-state-shift: State Shift",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "ss1",
+        "ss2",
+        "ss3",
+        "ss4",
+        "ss6",
+        "ss8",
+        "ss10",
+        "ss12",
+        "ss14",
+        "ss15",
+        "ss16",
+        "ss17",
+        "ss18",
+        "ss19",
+        "ss20",
+        "ss20b",
+        "ss21",
+        "ss22",
+        "ss23",
+        "ss24",
+        "ss25",
+        "ss26",
+        "ss27",
+        "ss29",
+        "ss31",
+        "ss32",
+        "ss33",
+        "ss34",
+        "ss35",
+        "ss36",
+        "ss37",
+        "ss38",
+        "ss39",
+        "ss40",
+        "ss42",
+        "ss44",
+        "ss46",
+        "ss47",
+        "ss48",
+        "ss49",
+        "ss50",
+        "ss51",
+        "ss52",
+        "ss53"
+      ]
+    },
+    "ss1": {
+      "id": "ss1",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "R-state-shift",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " hovers, focuses, opens and selects controls, and fails when that moves or resizes the layout. It is a runtime check in the interaction area. It runs once per page, in the first theme and viewport, after the other runtime checks."
+        }
+      ],
+      "children": []
+    },
+    "ss2": {
+      "id": "ss2",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "What It Catches"
+        }
+      ],
+      "children": []
+    },
+    "ss3": {
+      "id": "ss3",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check makes four kinds of state change on each control. A change fails when a visible neighbor, or the control itself, changes its layout box by 1px or more."
+        }
+      ],
+      "children": []
+    },
+    "ss4": {
+      "id": "ss4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Hover",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ss5"
+      ]
+    },
+    "ss5": {
+      "id": "ss5",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The real mouse moves to the control's center, so JS hover handlers run too."
+        }
+      ],
+      "children": []
+    },
+    "ss6": {
+      "id": "ss6",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Focus",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ss7"
+      ]
+    },
+    "ss7": {
+      "id": "ss7",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check calls "
+        },
+        {
+          "insert": "element.focus({ preventScroll: true })",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and then blurs the control."
+        }
+      ],
+      "children": []
+    },
+    "ss8": {
+      "id": "ss8",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Open",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ss9"
+      ]
+    },
+    "ss9": {
+      "id": "ss9",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check clicks an "
+        },
+        {
+          "insert": "[aria-haspopup]",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " control or a "
+        },
+        {
+          "insert": "shift.open",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " selector from the app config, then presses Escape."
+        }
+      ],
+      "children": []
+    },
+    "ss10": {
+      "id": "ss10",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Select",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ss11"
+      ]
+    },
+    "ss11": {
+      "id": "ss11",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check clicks an unselected "
+        },
+        {
+          "insert": "role=\"tab\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", then clicks the tab that was selected before."
+        }
+      ],
+      "children": []
+    },
+    "ss12": {
+      "id": "ss12",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Watched elements",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ss13"
+      ]
+    },
+    "ss13": {
+      "id": "ss13",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A page's "
+        },
+        {
+          "insert": "shiftWatch",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " elements must keep their boxes while the page's own actions run."
+        }
+      ],
+      "children": []
+    },
+    "ss14": {
+      "id": "ss14",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "How It Measures"
+        }
+      ],
+      "children": []
+    },
+    "ss15": {
+      "id": "ss15",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The pass drives the page with Playwright and reads boxes inside it. It takes these steps in order."
+        }
+      ],
+      "children": []
+    },
+    "ss16": {
+      "id": "ss16",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "stateShiftPass",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/state-shift.ts",
+              "symbol": "stateShiftPass"
+            }
+          }
+        },
+        {
+          "insert": " adds "
+        },
+        {
+          "insert": "NO_MOTION",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/state-shift.ts",
+              "symbol": "NO_MOTION"
+            }
+          }
+        },
+        {
+          "insert": ", a style that turns off every transition and animation, so each box is read at its end state."
+        }
+      ],
+      "children": []
+    },
+    "ss17": {
+      "id": "ss17",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "shiftCandidates",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/state-shift.ts",
+              "symbol": "shiftCandidates"
+            }
+          }
+        },
+        {
+          "insert": " picks up to 16 controls, one per class signature, that sit fully in the viewport. It also picks popup controls and up to 3 tab lists."
+        }
+      ],
+      "children": []
+    },
+    "ss18": {
+      "id": "ss18",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "shiftStability",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/state-shift.ts",
+              "symbol": "shiftStability"
+            }
+          }
+        },
+        {
+          "insert": " reads every box twice, 300ms apart, and leaves out the elements that move on their own."
+        }
+      ],
+      "children": []
+    },
+    "ss19": {
+      "id": "ss19",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "measure",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/state-shift.ts",
+              "symbol": "measure"
+            }
+          }
+        },
+        {
+          "insert": " reads up to 300 elements around the control, makes the change, waits 90ms and reads them again. The area is the control's ancestor up to 3 levels up."
+        }
+      ],
+      "children": []
+    },
+    "ss20": {
+      "id": "ss20",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "diffShift",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/state-shift.ts",
+              "symbol": "diffShift"
+            }
+          }
+        },
+        {
+          "insert": " counts a move only when the client rect and the layout box both change by 1px or more."
+        }
+      ],
+      "children": []
+    },
+    "ss20b": {
+      "id": "ss20b",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "dropScrollbarMoves",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/state-shift.ts",
+              "symbol": "dropScrollbarMoves"
+            }
+          }
+        },
+        {
+          "insert": " drops a move that a classic scrollbar explains."
+        }
+      ],
+      "children": []
+    },
+    "ss21": {
+      "id": "ss21",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "An element that is hidden before or after the change, such as the menu that opens, is left out. Each finding stands for one verb and one component, so 12 rows of the same button report once."
+        }
+      ],
+      "children": []
+    },
+    "ss22": {
+      "id": "ss22",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Thresholds"
+        }
+      ],
+      "children": []
+    },
+    "ss23": {
+      "id": "ss23",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Every counted move fails. The check has no warn band, because Ford set the limit at 1px in "
+        },
+        {
+          "insert": "ks-no-state-shift",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "ss24": {
+      "id": "ss24",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Change",
+          "Condition",
+          "Result"
+        ],
+        "rows": [
+          [
+            "A neighbor's box",
+            "Client rect and layout box both change by 1px or more",
+            "Fail"
+          ],
+          [
+            "The control's own size",
+            "Width or height changes by 1px or more",
+            "Fail"
+          ],
+          [
+            "A transform or a scroll",
+            "Only the client rect changes",
+            "Not counted"
+          ],
+          [
+            "A classic scrollbar",
+            "A move by the scrollbar's width or half of it",
+            "Not counted"
+          ],
+          [
+            "An element that moves alone",
+            "It moves within 300ms with no change made",
+            "Not counted"
+          ]
+        ],
+        "title": "R-state-shift thresholds"
+      },
+      "children": []
+    },
+    "ss25": {
+      "id": "ss25",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Example"
+        }
+      ],
+      "children": []
+    },
+    "ss26": {
+      "id": "ss26",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The fixture pair is "
+        },
+        {
+          "insert": "design-score/fixtures/R-state-shift/",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/fixtures/R-state-shift"
+            }
+          }
+        },
+        {
+          "insert": ". Both pages show a task list under a Sort button with "
+        },
+        {
+          "insert": "aria-haspopup=\"menu\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The top row shows each page closed, and the bottom row shows it after a click on Sort."
+        }
+      ],
+      "children": []
+    },
+    "ss27": {
+      "id": "ss27",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "bad.html",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ss28"
+      ]
+    },
+    "ss28": {
+      "id": "ss28",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The menu opens in the flow, so the header grows by 110px and pushes the list down."
+        }
+      ],
+      "children": []
+    },
+    "ss29": {
+      "id": "ss29",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "good.html",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ss30"
+      ]
+    },
+    "ss30": {
+      "id": "ss30",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The menu has "
+        },
+        {
+          "insert": "position: absolute",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and opens over the list. Nothing moves."
+        }
+      ],
+      "children": []
+    },
+    "ss31": {
+      "id": "ss31",
+      "type": "image-grid",
+      "props": {
+        "columns": 2,
+        "images": [
+          {
+            "src": "./assets/images/good.png",
+            "heading": "Good closed: pass",
+            "alt": "The task list under a closed Sort button. No boxes are drawn.",
+            "caption": "good.html before the click, 0 findings"
+          },
+          {
+            "src": "./assets/images/bad.png",
+            "heading": "Bad closed: fail",
+            "alt": "The same closed list. A cyan box marks the header, and a magenta box marks the 110px taller header after the click.",
+            "caption": "bad.html before the click, 1 fail finding"
+          },
+          {
+            "src": "./assets/images/good-open.png",
+            "heading": "Good open",
+            "alt": "The Sort menu is open over the right side of the list. The list rows stay where they were.",
+            "caption": "good.html after the click"
+          },
+          {
+            "src": "./assets/images/bad-open.png",
+            "heading": "Bad open",
+            "alt": "The Sort menu is open under its button and the list starts below the menu.",
+            "caption": "bad.html after the click"
+          }
+        ]
+      },
+      "children": []
+    },
+    "ss32": {
+      "id": "ss32",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Cyan boxes the moved element before the change, and magenta boxes it after the change. The open shots come from "
+        },
+        {
+          "insert": "bun scripts/design-score/frames.ts R-state-shift",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", which clicks Sort and shoots the page at once. Its 0ms label is the time after the click."
+        }
+      ],
+      "children": []
+    },
+    "ss33": {
+      "id": "ss33",
+      "type": "callout",
+      "props": {
+        "title": "Screenshots, not live pages",
+        "tone": "info"
+      },
+      "text": [
+        {
+          "insert": "The closed shots come from "
+        },
+        {
+          "insert": "bun run design:score --fixture R-state-shift",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Both commands write to the fixture's "
+        },
+        {
+          "insert": "shots/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " folder."
+        }
+      ],
+      "children": []
+    },
+    "ss34": {
+      "id": "ss34",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules Behind It"
+        }
+      ],
+      "children": []
+    },
+    "ss35": {
+      "id": "ss35",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Two rules in "
+        },
+        {
+          "insert": "design-score/rules/interaction.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/interaction.json"
+            }
+          }
+        },
+        {
+          "insert": " name this check. Every finding carries their ids in "
+        },
+        {
+          "insert": "rules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "ss36": {
+      "id": "ss36",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity",
+          "Measured"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "break-states",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Stable states",
+            "Warn",
+            "Partly"
+          ],
+          [
+            [
+              {
+                "insert": "ks-no-state-shift",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "State changes never shift layout",
+            "Fail",
+            "Partly"
+          ]
+        ],
+        "title": "Rules decided by R-state-shift"
+      },
+      "children": []
+    },
+    "ss37": {
+      "id": "ss37",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check makes hover, focus, select and open changes only. Loading, error, disabled and copied states are not made, so a shift in them is not found."
+        }
+      ],
+      "children": []
+    },
+    "ss38": {
+      "id": "ss38",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Known False Positives"
+        }
+      ],
+      "children": []
+    },
+    "ss39": {
+      "id": "ss39",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check cannot tell a shift that a designer wants from one that is a mistake."
+        }
+      ],
+      "children": []
+    },
+    "ss40": {
+      "id": "ss40",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Controls meant to push content",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ss41"
+      ]
+    },
+    "ss41": {
+      "id": "ss41",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A disclosure named in "
+        },
+        {
+          "insert": "shift.open",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " that opens in the flow on purpose fails."
+        }
+      ],
+      "children": []
+    },
+    "ss42": {
+      "id": "ss42",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Hover that adds content",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ss43"
+      ]
+    },
+    "ss43": {
+      "id": "ss43",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A hover handler that shows an inline preview, and so moves the rows under it, fails."
+        }
+      ],
+      "children": []
+    },
+    "ss44": {
+      "id": "ss44",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix it in the app config",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "ss45"
+      ]
+    },
+    "ss45": {
+      "id": "ss45",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Add the element's selector to "
+        },
+        {
+          "insert": "ignore",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "design-score/apps/<app>.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or skip the check on one page with "
+        },
+        {
+          "insert": "skip",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "skipReason",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "ss46": {
+      "id": "ss46",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Debug It"
+        }
+      ],
+      "children": []
+    },
+    "ss47": {
+      "id": "ss47",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Run these commands in the design-system checkout. Each run writes a folder under "
+        },
+        {
+          "insert": ".design-score/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and one crop per finding."
+        }
+      ],
+      "children": []
+    },
+    "ss48": {
+      "id": "ss48",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run the fixture pair. The command exits 1 unless the bad page fails and the good page passes."
+        }
+      ],
+      "children": []
+    },
+    "ss49": {
+      "id": "ss49",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --fixture R-state-shift"
+        }
+      ],
+      "children": []
+    },
+    "ss50": {
+      "id": "ss50",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Score one page of an app in one theme and one viewport."
+        }
+      ],
+      "children": []
+    },
+    "ss51": {
+      "id": "ss51",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --app knowledge-system --pages session --quick"
+        }
+      ],
+      "children": []
+    },
+    "ss52": {
+      "id": "ss52",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Open the crops in "
+        },
+        {
+          "insert": "crops/<page>/R-state-shift-*.png",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Each crop is shot at the moment of the shift, with the before and after boxes."
+        }
+      ],
+      "children": []
+    },
+    "ss53": {
+      "id": "ss53",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Read the check's note in "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". It counts the state changes made and the elements left out."
+        }
+      ],
+      "children": []
+    }
+  }
+}

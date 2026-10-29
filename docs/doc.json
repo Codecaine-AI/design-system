@@ -4,6 +4,92 @@
   "title": "Design System",
   "root": "root",
   "blocks": {
-    "root": { "id": "root", "type": "paragraph", "props": {}, "children": [] }
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "intro",
+        "sections"
+      ]
+    },
+    "intro": {
+      "id": "intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "These pages document the tools in the workspace design system, "
+        },
+        {
+          "insert": "@codecaine-ai/design-system",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The token and layout rules live in the "
+        },
+        {
+          "insert": "guide/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " folder and in "
+        },
+        {
+          "insert": "AGENTS.md",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "AGENTS.md"
+            }
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "sections": {
+      "id": "sections",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Design Score",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "10-design-score"
+            }
+          }
+        }
+      ],
+      "children": [
+        "sections-a"
+      ]
+    },
+    "sections-a": {
+      "id": "sections-a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "design:score",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " scores every page of an app against the design rules in a real browser. The section covers how to run it, every check, and how to fix a check that acts strangely."
+        }
+      ],
+      "children": []
+    }
   }
 }

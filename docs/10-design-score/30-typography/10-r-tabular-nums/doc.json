@@ -1,0 +1,1025 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-5163fd927edd06899915dc3e07229395",
+  "title": "R-tabular-nums: Tabular Numbers",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b6",
+        "b8",
+        "b11",
+        "b12",
+        "b13",
+        "b14",
+        "b15",
+        "b16",
+        "b17",
+        "b18",
+        "b19",
+        "b20",
+        "b21",
+        "b22",
+        "b23",
+        "b24",
+        "b25",
+        "b26",
+        "b27",
+        "b28",
+        "b29",
+        "b30",
+        "b31",
+        "b32",
+        "b33",
+        "b34",
+        "b36",
+        "b38",
+        "b40",
+        "b41",
+        "b42",
+        "b43",
+        "b44",
+        "b45",
+        "b46"
+      ]
+    },
+    "b1": {
+      "id": "b1",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "R-tabular-nums",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " finds number text set with proportional digits, so a column of numbers drifts as its digits change. It is a runtime check in the typography area, so it runs in a browser on every page, theme and viewport. Each finding warns and never fails the page."
+        }
+      ],
+      "children": []
+    },
+    "b2": {
+      "id": "b2",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "What It Catches"
+        }
+      ],
+      "children": []
+    },
+    "b3": {
+      "id": "b3",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check reports a text element that holds only a number and uses proportional digits."
+        }
+      ],
+      "children": []
+    },
+    "b4": {
+      "id": "b4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Number-only text",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b5"
+      ]
+    },
+    "b5": {
+      "id": "b5",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The element's own text holds 2 digits or more, and no character other than digits, spaces and "
+        },
+        {
+          "insert": ". , : % + - − – / $ € £ ×",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b6": {
+      "id": "b6",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Proportional digits",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b7"
+      ]
+    },
+    "b7": {
+      "id": "b7",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Its computed "
+        },
+        {
+          "insert": "font-variant-numeric",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " has no "
+        },
+        {
+          "insert": "tabular-nums",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and its "
+        },
+        {
+          "insert": "font-feature-settings",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " has no "
+        },
+        {
+          "insert": "tnum",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b8": {
+      "id": "b8",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Not reported",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b9",
+        "b10"
+      ]
+    },
+    "b9": {
+      "id": "b9",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A font family whose name contains \"mono\" already has digits of one width, so the check skips it."
+        }
+      ],
+      "children": []
+    },
+    "b10": {
+      "id": "b10",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Text with a letter in it, such as \"3 files\", counts as prose and keeps proportional digits."
+        }
+      ],
+      "children": []
+    },
+    "b11": {
+      "id": "b11",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "How It Measures"
+        }
+      ],
+      "children": []
+    },
+    "b12": {
+      "id": "b12",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The probe runs inside the page and reads each element's styles with "
+        },
+        {
+          "insert": "getComputedStyle",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". It takes these steps in order."
+        }
+      ],
+      "children": []
+    },
+    "b13": {
+      "id": "b13",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "scripts/design-score/run.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/run.ts",
+              "symbol": "runScore"
+            }
+          }
+        },
+        {
+          "insert": " calls "
+        },
+        {
+          "insert": "probePage",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " once per theme and viewport, after the page's actions and settle time."
+        }
+      ],
+      "children": []
+    },
+    "b14": {
+      "id": "b14",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "probePage",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/probes.ts",
+              "symbol": "textEls"
+            }
+          }
+        },
+        {
+          "insert": " collects each visible text element that has its own text node. It drops an element whose first line is more than half hidden by a clipping ancestor."
+        }
+      ],
+      "children": []
+    },
+    "b15": {
+      "id": "b15",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The tabular pass",
+          "attributes": {
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/probes.ts",
+              "symbol": "R-tabular-nums"
+            }
+          }
+        },
+        {
+          "insert": " joins the element's own text nodes and tests the result against the number pattern."
+        }
+      ],
+      "children": []
+    },
+    "b16": {
+      "id": "b16",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The pass reads "
+        },
+        {
+          "insert": "font-variant-numeric",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "font-feature-settings",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "font-family",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and skips an element that already has digits of one width."
+        }
+      ],
+      "children": []
+    },
+    "b17": {
+      "id": "b17",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The pass reports what is left as a warn finding, with the text and its "
+        },
+        {
+          "insert": "font-variant-numeric",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " value."
+        }
+      ],
+      "children": []
+    },
+    "b18": {
+      "id": "b18",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each finding has a key made from the element's class signature: its tag and first 2 classes, and those of 2 parents. Number cells with the same classes report once."
+        }
+      ],
+      "children": []
+    },
+    "b19": {
+      "id": "b19",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Thresholds"
+        }
+      ],
+      "children": []
+    },
+    "b20": {
+      "id": "b20",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check has no distance or size limit. It tests the text and 3 computed styles."
+        }
+      ],
+      "children": []
+    },
+    "b21": {
+      "id": "b21",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Measure",
+          "Passes When",
+          "Severity"
+        ],
+        "rows": [
+          [
+            "Digits",
+            "Fewer than 2 digits",
+            "Skipped"
+          ],
+          [
+            "Characters",
+            "Any letter or other character outside the number pattern",
+            "Skipped"
+          ],
+          [
+            "Digit widths",
+            [
+              {
+                "insert": "tabular-nums",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " or "
+              },
+              {
+                "insert": "tnum",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " is set"
+              }
+            ],
+            "Pass"
+          ],
+          [
+            "Font family",
+            "The name contains mono",
+            "Skipped"
+          ],
+          [
+            "Anything else",
+            "Never",
+            "Warn"
+          ]
+        ],
+        "title": "R-tabular-nums thresholds"
+      },
+      "children": []
+    },
+    "b22": {
+      "id": "b22",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Example"
+        }
+      ],
+      "children": []
+    },
+    "b23": {
+      "id": "b23",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The fixture pair is "
+        },
+        {
+          "insert": "design-score/fixtures/R-tabular-nums/",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/fixtures/R-tabular-nums"
+            }
+          }
+        },
+        {
+          "insert": ". Both pages show the same table of build counts and median times for 4 apps."
+        }
+      ],
+      "children": []
+    },
+    "b24": {
+      "id": "b24",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The good page adds "
+        },
+        {
+          "insert": "td.num { font-variant-numeric: tabular-nums }",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The bad page leaves the digits proportional, so the narrow 1 in 1,111 and 11.1 moves those numbers off the column grid."
+        }
+      ],
+      "children": []
+    },
+    "b25": {
+      "id": "b25",
+      "type": "image-grid",
+      "props": {
+        "columns": 2,
+        "images": [
+          {
+            "src": "./assets/images/good.png",
+            "heading": "Good: pass",
+            "alt": "A table of 4 apps with build counts and median times. Every digit has the same width, so the digits line up in their columns. No boxes are drawn.",
+            "caption": "good.html, 0 findings"
+          },
+          {
+            "src": "./assets/images/bad.png",
+            "heading": "Bad: warn",
+            "alt": "The same table with proportional digits. The narrow 1s in 1,111 and 11.1 make those numbers shorter than the others. A magenta box marks the 1,111 cell.",
+            "caption": "bad.html, 1 warn finding"
+          }
+        ]
+      },
+      "children": []
+    },
+    "b26": {
+      "id": "b26",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Magenta boxes the element a finding is about. Only the first cell is boxed, because every number cell has the same class signature."
+        }
+      ],
+      "children": []
+    },
+    "b27": {
+      "id": "b27",
+      "type": "callout",
+      "props": {
+        "title": "Screenshots, not live pages",
+        "tone": "info"
+      },
+      "text": [
+        {
+          "insert": "The docs hub has no app host, so an "
+        },
+        {
+          "insert": "app-embed",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " block shows \"App not available here\" in it. These images come from "
+        },
+        {
+          "insert": "bun run design:score --fixture R-tabular-nums",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", which writes them to the fixture's "
+        },
+        {
+          "insert": "shots/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " folder."
+        }
+      ],
+      "children": []
+    },
+    "b28": {
+      "id": "b28",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules Behind It"
+        }
+      ],
+      "children": []
+    },
+    "b29": {
+      "id": "b29",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Two rules in "
+        },
+        {
+          "insert": "design-score/rules/typography.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/typography.json"
+            }
+          }
+        },
+        {
+          "insert": " name this check. Every finding carries their ids in "
+        },
+        {
+          "insert": "rules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b30": {
+      "id": "b30",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity",
+          "Measured"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "typo-tabular-nums",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Tabular numbers",
+            "Warn",
+            "Yes"
+          ],
+          [
+            [
+              {
+                "insert": "layout-numbers-align-end",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Numbers align end",
+            "Warn",
+            "No"
+          ]
+        ],
+        "title": "Rules decided by R-tabular-nums"
+      },
+      "children": []
+    },
+    "b31": {
+      "id": "b31",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The probe never reads "
+        },
+        {
+          "insert": "text-align",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", so a left-aligned number column passes. "
+        },
+        {
+          "insert": "typo-tabular-nums",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " keeps prose figures proportional, and the check meets that part by skipping any text with a letter."
+        }
+      ],
+      "children": []
+    },
+    "b32": {
+      "id": "b32",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Known False Positives"
+        }
+      ],
+      "children": []
+    },
+    "b33": {
+      "id": "b33",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check sees the characters, not what the number means."
+        }
+      ],
+      "children": []
+    },
+    "b34": {
+      "id": "b34",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Numbers that never change",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b35"
+      ]
+    },
+    "b35": {
+      "id": "b35",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A year, a version such as 2.4 or a page number does not change in place. The check still warns when the digits are proportional."
+        }
+      ],
+      "children": []
+    },
+    "b36": {
+      "id": "b36",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Numbers in a sentence",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b37"
+      ]
+    },
+    "b37": {
+      "id": "b37",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A number in its own "
+        },
+        {
+          "insert": "span",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " inside a sentence counts as number-only text. The rule wants that figure to stay proportional."
+        }
+      ],
+      "children": []
+    },
+    "b38": {
+      "id": "b38",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix it in the app config",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b39"
+      ]
+    },
+    "b39": {
+      "id": "b39",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Add the element's selector to "
+        },
+        {
+          "insert": "ignore",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "design-score/apps/<app>.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or skip the check on one page with "
+        },
+        {
+          "insert": "skip",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "skipReason",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b40": {
+      "id": "b40",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Debug It"
+        }
+      ],
+      "children": []
+    },
+    "b41": {
+      "id": "b41",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Run these commands in the design-system checkout. Each run writes a folder under "
+        },
+        {
+          "insert": ".design-score/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and one crop per finding."
+        }
+      ],
+      "children": []
+    },
+    "b42": {
+      "id": "b42",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run the fixture pair. The command exits 1 unless the bad page gets its expected result and the good page passes."
+        }
+      ],
+      "children": []
+    },
+    "b43": {
+      "id": "b43",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --fixture R-tabular-nums"
+        }
+      ],
+      "children": []
+    },
+    "b44": {
+      "id": "b44",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Score one page of an app in one theme and one viewport."
+        }
+      ],
+      "children": []
+    },
+    "b45": {
+      "id": "b45",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --app knowledge-system --pages session --quick"
+        }
+      ],
+      "children": []
+    },
+    "b46": {
+      "id": "b46",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Open the crops in "
+        },
+        {
+          "insert": "crops/<page>/R-tabular-nums-*.png",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Each crop shows the number text with its finding box."
+        }
+      ],
+      "children": []
+    }
+  }
+}

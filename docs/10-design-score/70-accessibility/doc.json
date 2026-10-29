@@ -11,7 +11,14 @@
       "children": [
         "intro",
         "h-checks",
-        "h-rules"
+        "checks-lead",
+        "checks-table",
+        "h-rules",
+        "a11y-rules-lead",
+        "a11y-rules-r-axe",
+        "a11y-rules-r-focus-visible",
+        "a11y-rules-none-lead",
+        "a11y-rules-none"
       ]
     },
     "intro": {
@@ -25,11 +32,7 @@
         {
           "insert": "design-score/rules/accessibility.json",
           "attributes": {
-            "code": true,
-            "reference": {
-              "kind": "source",
-              "path": "design-score/rules/accessibility.json"
-            }
+            "code": true
           }
         },
         {
@@ -51,6 +54,58 @@
       ],
       "children": []
     },
+    "checks-lead": {
+      "id": "checks-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each check has its own page with its thresholds, a good and bad fixture pair and its known false positives. Both are runtime checks, and both fail the page."
+        }
+      ],
+      "children": []
+    },
+    "checks-table": {
+      "id": "checks-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Check",
+          "Result",
+          "What It Finds"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "R-axe",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/70-accessibility/10-r-axe"
+                }
+              }
+            ],
+            "Fail",
+            "An axe-core violation of WCAG 2.2 AA"
+          ],
+          [
+            [
+              {
+                "insert": "R-focus-visible",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/70-accessibility/20-r-focus-visible"
+                }
+              }
+            ],
+            "Fail",
+            "A control that changes no pixels when it has keyboard focus"
+          ]
+        ],
+        "title": "Accessibility checks"
+      },
+      "children": []
+    },
     "h-rules": {
       "id": "h-rules",
       "type": "heading",
@@ -62,6 +117,754 @@
           "insert": "Rules"
         }
       ],
+      "children": []
+    },
+    "a11y-rules-lead": {
+      "id": "a11y-rules-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each rule in "
+        },
+        {
+          "insert": "design-score/rules/accessibility.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " names the check that decides it, or no check. A check's page says which of its rules the check measures."
+        }
+      ],
+      "children": []
+    },
+    "a11y-rules-r-axe": {
+      "id": "a11y-rules-r-axe",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "a11y-no-redundant-role",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No redundant roles",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-no-aria-label-on-generic",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No aria-label on generic elements",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-aria-refs-resolve",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "ARIA references resolve",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-no-positive-tabindex",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No positive tabindex",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-custom-dialog-semantics",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Dialog semantics",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-input-has-label",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Inputs have labels",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-autocomplete-tokens",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Autocomplete tokens",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-icon-button-name",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Every control has a name",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-label-in-name",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Visible label in the name",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-aria-hidden-not-focusable",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "aria-hidden is not focusable",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-img-alt-present",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Images have alt",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-svg-semantics",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "SVG semantics",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-one-main",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "One main",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-skip-link",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Skip link",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-heading-outline",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Heading outline",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-landmarks-labelled",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Labelled landmarks",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "typo-lang-dir",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "lang and dir",
+            "Warn"
+          ]
+        ],
+        "title": "Rules decided by R-axe"
+      },
+      "children": []
+    },
+    "a11y-rules-r-focus-visible": {
+      "id": "a11y-rules-r-focus-visible",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "a11y-visible-focus-indicator",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Visible focus",
+            "Fail"
+          ]
+        ],
+        "title": "Rules decided by R-focus-visible"
+      },
+      "children": []
+    },
+    "a11y-rules-none-lead": {
+      "id": "a11y-rules-none-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "38 rules name no check yet. No finding carries their ids, so a run never scores them."
+        }
+      ],
+      "children": []
+    },
+    "a11y-rules-none": {
+      "id": "a11y-rules-none",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "a11y-native-controls",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Native controls",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-role-needs-keyboard",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Interactive roles need keyboard",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-no-menu-role-on-nav",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Navigation is not a menu",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-disabled-not-both",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "One disabled mechanism",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-no-tooltip-on-disabled",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No tooltip on disabled controls",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-focus-visible-selector",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Style :focus-visible",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-forced-colors-focus",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Forced-colors edges",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-focus-not-obscured",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Focus not obscured",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-scroll-offset-sticky",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Sticky header offset",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-keyboard-path-for-pointer",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Keyboard path for everything",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-escape-closes-overlays",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Escape closes overlays",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-roving-tabindex",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Composite widgets are one Tab stop",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-apg-arrow-keys",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "APG key map",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-dialog-focus-trap-restore",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Dialog focus",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "12-headless-dialog-primitive",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Headless primitives for overlays",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-destructive-dialog-focus-safe",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Safe default focus",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-spa-route-focus-and-title",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Route change focus and title",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-title-specific-first",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Specific title first",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-decorative-layers-pass-through",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Decorative layers pass clicks",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-drag-alternative",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Drag has a single-pointer alternative",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-input-type",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Right input type",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-no-paste-block",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Never block paste",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-validate-on-submit",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Validate on submit",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-errors-announce",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Errors are announced",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-no-input-filtering",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No keystroke filtering",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-pending-submit",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Pending submit",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-unsaved-changes-warning",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Unsaved changes",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-pause-moving-content",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Pause moving content",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-toasts-persist-when-actionable",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Toast timing",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-live-region-status",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Polite status announcements",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-assertive-only-urgent",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Assertive only when urgent",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-no-focus-to-toast",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Never focus a toast",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-media-captions-no-sound-autoplay",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Media captions",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-rem-media-queries",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "rem media queries",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "12-toggle-pressed-state",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Toggle state exposed",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "iface-prefer-delete",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Prefer delete",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "review-removed-signals",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No removed signals",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "18-accessibility-baseline",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Accessibility is release work",
+            "Human"
+          ]
+        ],
+        "title": "Rules no check decides yet"
+      },
       "children": []
     }
   }

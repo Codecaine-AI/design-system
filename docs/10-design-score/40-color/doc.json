@@ -11,7 +11,14 @@
       "children": [
         "intro",
         "h-checks",
-        "h-rules"
+        "checks-lead",
+        "checks-table",
+        "h-rules",
+        "color-rules-lead",
+        "color-rules-s-color-literal",
+        "color-rules-r-contrast",
+        "color-rules-none-lead",
+        "color-rules-none"
       ]
     },
     "intro": {
@@ -25,11 +32,7 @@
         {
           "insert": "design-score/rules/color.json",
           "attributes": {
-            "code": true,
-            "reference": {
-              "kind": "source",
-              "path": "design-score/rules/color.json"
-            }
+            "code": true
           }
         },
         {
@@ -51,6 +54,61 @@
       ],
       "children": []
     },
+    "checks-lead": {
+      "id": "checks-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each check has its own page with its thresholds, a good and bad fixture pair and its known false positives. R-contrast runs its fixture in light and dark, because a color pair can pass in one theme and fail in the other."
+        }
+      ],
+      "children": []
+    },
+    "checks-table": {
+      "id": "checks-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Check",
+          "Layer",
+          "Result",
+          "What It Finds"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "S-color-literal",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/40-color/10-s-color-literal"
+                }
+              }
+            ],
+            "Static",
+            "Fail and warn",
+            "A hard-coded color in the source, or a palette value in a definition"
+          ],
+          [
+            [
+              {
+                "insert": "R-contrast",
+                "attributes": {
+                  "code": true,
+                  "link": "10-design-score/40-color/20-r-contrast"
+                }
+              }
+            ],
+            "Runtime",
+            "Fail",
+            "Text under 4.5:1, or under 3:1 for large text"
+          ]
+        ],
+        "title": "Color checks"
+      },
+      "children": []
+    },
     "h-rules": {
       "id": "h-rules",
       "type": "heading",
@@ -62,6 +120,538 @@
           "insert": "Rules"
         }
       ],
+      "children": []
+    },
+    "color-rules-lead": {
+      "id": "color-rules-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each rule in "
+        },
+        {
+          "insert": "design-score/rules/color.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " names the check that decides it, or no check. A check's page says which of its rules the check measures."
+        }
+      ],
+      "children": []
+    },
+    "color-rules-s-color-literal": {
+      "id": "color-rules-s-color-literal",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "color-no-literals",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No color literals",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "ui-icon-currentcolor",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Icons use currentColor",
+            "Warn"
+          ]
+        ],
+        "title": "Rules decided by S-color-literal"
+      },
+      "children": []
+    },
+    "color-rules-r-contrast": {
+      "id": "color-rules-r-contrast",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "a11y-focus-ring-contrast",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Focus ring contrast",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-text-contrast",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Text contrast",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "a11y-non-text-contrast",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Non-text contrast",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "color-apca-secondary",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "APCA report",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "color-placeholder-disabled-legible",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Legible placeholder and disabled text",
+            "Warn"
+          ]
+        ],
+        "title": "Rules decided by R-contrast"
+      },
+      "children": []
+    },
+    "color-rules-none-lead": {
+      "id": "color-rules-none-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "31 rules name no check yet. No finding carries their ids, so a run never scores them."
+        }
+      ],
+      "children": []
+    },
+    "color-rules-none": {
+      "id": "color-rules-none",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "color-consistent-notation",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "One color notation",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "color-no-primitives-in-components",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Semantic tokens in components",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "color-semantic-names-by-role",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Token names by role",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "color-primary-reserved",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Accent is the brand word",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "color-token-in-role",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Tokens in their role",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "color-one-word-per-concept",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "One word per concept",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "color-ramp-constant-hue",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Ramps hold one hue",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "color-ramp-light-end-fine",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Fine light end",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "color-ramp-adjacent-distinct",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Distinct steps",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "color-ramp-chroma-peaks-mid",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Chroma peaks mid-ramp",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "color-ramp-ends-not-pure",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Ramp ends not pure",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "color-ramps-match-across-hues",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Sibling hues match",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "color-status-hue-distance",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Status hues apart from accent",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "color-one-meaning",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "One color, one meaning",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "color-one-filled-action",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "One filled action",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "color-no-unused-ramps",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No unused steps",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "color-no-near-duplicates",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No near-duplicate colors",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "color-dark-not-reversed",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Real dark palette",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "color-one-theme-mechanism",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "One theme mechanism",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "color-dark-variant-coverage",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Dark coverage",
+            "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "color-prefers-contrast-per-appearance",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "prefers-contrast per appearance",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "color-gamut-safe",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "In-gamut colors",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "color-neutral-tint-consistent",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Consistent neutral tint",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "color-role-inventory",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Full role inventory",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "color-gradient-space",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Gradient interpolation space",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "03-radial-shape-explicit",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Round glows are circles",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "color-locale-meaning",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Locale color meaning",
+            "Human"
+          ],
+          [
+            [
+              {
+                "insert": "03-gradient-techniques",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Gradient techniques",
+            "Human"
+          ],
+          [
+            [
+              {
+                "insert": "ui-shadow-ring-keeps-border",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Shadow ring keeps a border",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "ui-image-outline",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Image outline",
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": "td-theme-before-first-paint",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Theme before first paint",
+            "Fail"
+          ]
+        ],
+        "title": "Rules no check decides yet"
+      },
       "children": []
     }
   }

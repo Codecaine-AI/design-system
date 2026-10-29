@@ -1,0 +1,1131 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-9d9adaadf2636876d82290c978b00f86",
+  "title": "R-min-font: Minimum Font Size",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b6",
+        "b9",
+        "b11",
+        "b12",
+        "b13",
+        "b14",
+        "b15",
+        "b16",
+        "b17",
+        "b18",
+        "b19",
+        "b20",
+        "b21",
+        "b22",
+        "b23",
+        "b24",
+        "b25",
+        "b26",
+        "b27",
+        "b28",
+        "b29",
+        "b30",
+        "b31",
+        "b34",
+        "b36",
+        "b37",
+        "b38",
+        "b40",
+        "b42",
+        "b44",
+        "b45",
+        "b46",
+        "b47",
+        "b48",
+        "b49",
+        "b50"
+      ]
+    },
+    "b1": {
+      "id": "b1",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "R-min-font",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " finds visible text set under 12px. It is a runtime check in the typography area, so it runs in a browser on every page, theme and viewport. Text under 12px fails, and an uppercase label from 10px up to 12px only warns."
+        }
+      ],
+      "children": []
+    },
+    "b2": {
+      "id": "b2",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "What It Catches"
+        }
+      ],
+      "children": []
+    },
+    "b3": {
+      "id": "b3",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check reads the computed "
+        },
+        {
+          "insert": "font-size",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " of each visible text element and reports three cases."
+        }
+      ],
+      "children": []
+    },
+    "b4": {
+      "id": "b4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Small text",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b5"
+      ]
+    },
+    "b5": {
+      "id": "b5",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Text under 12px fails. This includes text set with the design system's own "
+        },
+        {
+          "insert": "--ds-font-size-ui-2xs",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " (11px) and "
+        },
+        {
+          "insert": "--ds-font-size-micro",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " (10px)."
+        }
+      ],
+      "children": []
+    },
+    "b6": {
+      "id": "b6",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Small uppercase labels",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b7",
+        "b8"
+      ]
+    },
+    "b7": {
+      "id": "b7",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Uppercase text from 10px up to 12px warns, because capitals stay readable at a smaller size. Uppercase text under 10px fails."
+        }
+      ],
+      "children": []
+    },
+    "b8": {
+      "id": "b8",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Text counts as uppercase when its "
+        },
+        {
+          "insert": "text-transform",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is "
+        },
+        {
+          "insert": "uppercase",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or when all of its letters are capitals."
+        }
+      ],
+      "children": []
+    },
+    "b9": {
+      "id": "b9",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Not reported",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b10"
+      ]
+    },
+    "b10": {
+      "id": "b10",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Text inside "
+        },
+        {
+          "insert": "sup",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "sub",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "svg",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is skipped. So is text at 1px or less, which is hidden text."
+        }
+      ],
+      "children": []
+    },
+    "b11": {
+      "id": "b11",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "How It Measures"
+        }
+      ],
+      "children": []
+    },
+    "b12": {
+      "id": "b12",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The probe runs inside the page and reads each element's styles with "
+        },
+        {
+          "insert": "getComputedStyle",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". It takes these steps in order."
+        }
+      ],
+      "children": []
+    },
+    "b13": {
+      "id": "b13",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "scripts/design-score/run.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/run.ts",
+              "symbol": "runScore"
+            }
+          }
+        },
+        {
+          "insert": " calls "
+        },
+        {
+          "insert": "probePage",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " once per theme and viewport, after the page's actions and settle time."
+        }
+      ],
+      "children": []
+    },
+    "b14": {
+      "id": "b14",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "probePage",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/probes.ts",
+              "symbol": "textEls"
+            }
+          }
+        },
+        {
+          "insert": " collects each visible text element that has its own text node. It drops an element whose first line is more than half hidden by a clipping ancestor."
+        }
+      ],
+      "children": []
+    },
+    "b15": {
+      "id": "b15",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The size pass",
+          "attributes": {
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/probes.ts",
+              "symbol": "R-min-font"
+            }
+          }
+        },
+        {
+          "insert": " reads "
+        },
+        {
+          "insert": "font-size",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in pixels and passes a size of 12px or more."
+        }
+      ],
+      "children": []
+    },
+    "b16": {
+      "id": "b16",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The pass joins the element's own text and tests whether it is uppercase."
+        }
+      ],
+      "children": []
+    },
+    "b17": {
+      "id": "b17",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The pass reports a warn for uppercase text at 10px or more, and a fail for everything else."
+        }
+      ],
+      "children": []
+    },
+    "b18": {
+      "id": "b18",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each finding has a key made from the element's class signature and its size. A component reports once for each size it uses."
+        }
+      ],
+      "children": []
+    },
+    "b19": {
+      "id": "b19",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Thresholds"
+        }
+      ],
+      "children": []
+    },
+    "b20": {
+      "id": "b20",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The computed size is the size after "
+        },
+        {
+          "insert": "rem",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "em",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " resolve, so a "
+        },
+        {
+          "insert": "0.6875rem",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " label reads as 11px."
+        }
+      ],
+      "children": []
+    },
+    "b21": {
+      "id": "b21",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Font Size",
+          "Case",
+          "Result"
+        ],
+        "rows": [
+          [
+            "12px or more",
+            "Any",
+            "Pass"
+          ],
+          [
+            "10px up to 12px",
+            "Uppercase",
+            "Warn"
+          ],
+          [
+            "10px up to 12px",
+            "Mixed or lower case",
+            "Fail"
+          ],
+          [
+            "Under 10px",
+            "Any",
+            "Fail"
+          ],
+          [
+            "1px or less",
+            "Any",
+            "Skipped"
+          ]
+        ],
+        "title": "R-min-font thresholds"
+      },
+      "children": []
+    },
+    "b22": {
+      "id": "b22",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Example"
+        }
+      ],
+      "children": []
+    },
+    "b23": {
+      "id": "b23",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The fixture pair is "
+        },
+        {
+          "insert": "design-score/fixtures/R-min-font/",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/fixtures/R-min-font"
+            }
+          }
+        },
+        {
+          "insert": ". Both pages show 2 deploy rows, each with a title, a meta line and an uppercase status label."
+        }
+      ],
+      "children": []
+    },
+    "b24": {
+      "id": "b24",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The bad page sets the meta line to "
+        },
+        {
+          "insert": "--ds-font-size-ui-2xs",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " (11px) and the label to "
+        },
+        {
+          "insert": "--ds-font-size-micro",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " (10px). The good page sets both to "
+        },
+        {
+          "insert": "--ds-font-size-ui-xs",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " (12px)."
+        }
+      ],
+      "children": []
+    },
+    "b25": {
+      "id": "b25",
+      "type": "image-grid",
+      "props": {
+        "columns": 2,
+        "images": [
+          {
+            "src": "./assets/images/good.png",
+            "heading": "Good: pass",
+            "alt": "Two deploy rows. Each row has a title, a 12px meta line and a 12px uppercase status label. No boxes are drawn.",
+            "caption": "good.html, 0 findings"
+          },
+          {
+            "src": "./assets/images/bad.png",
+            "heading": "Bad: fail",
+            "alt": "The same rows with smaller type. One magenta box marks the 11px meta line, and another marks the 10px LIVE label.",
+            "caption": "bad.html, 1 fail and 1 warn finding"
+          }
+        ]
+      },
+      "children": []
+    },
+    "b26": {
+      "id": "b26",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Magenta boxes the element a finding is about. Only the first row is boxed, because the second row has the same class signatures and sizes."
+        }
+      ],
+      "children": []
+    },
+    "b27": {
+      "id": "b27",
+      "type": "callout",
+      "props": {
+        "title": "Screenshots, not live pages",
+        "tone": "info"
+      },
+      "text": [
+        {
+          "insert": "The docs hub has no app host, so an "
+        },
+        {
+          "insert": "app-embed",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " block shows \"App not available here\" in it. These images come from "
+        },
+        {
+          "insert": "bun run design:score --fixture R-min-font",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", which writes them to the fixture's "
+        },
+        {
+          "insert": "shots/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " folder."
+        }
+      ],
+      "children": []
+    },
+    "b28": {
+      "id": "b28",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules Behind It"
+        }
+      ],
+      "children": []
+    },
+    "b29": {
+      "id": "b29",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Two rules in "
+        },
+        {
+          "insert": "design-score/rules/typography.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/typography.json"
+            }
+          }
+        },
+        {
+          "insert": " name this check. Every finding carries their ids in "
+        },
+        {
+          "insert": "rules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b30": {
+      "id": "b30",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity",
+          "Measured"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "typo-size-floors",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Font size floors",
+            "Warn",
+            "Partly, the 12px floor only"
+          ],
+          [
+            [
+              {
+                "insert": "typo-weight-floor",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Weight floor",
+            "Warn",
+            "No"
+          ]
+        ],
+        "title": "Rules decided by R-min-font"
+      },
+      "children": []
+    },
+    "b31": {
+      "id": "b31",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The size floors are only partly measured",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b32",
+        "b33"
+      ]
+    },
+    "b32": {
+      "id": "b32",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "typo-size-floors",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " also asks for 16px long-form body, 14px UI text and 13px captions. No pass reads a text's role, so only the 12px floor is tested."
+        }
+      ],
+      "children": []
+    },
+    "b33": {
+      "id": "b33",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The rule's note says each use of "
+        },
+        {
+          "insert": "micro",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "ui-2xs",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " warns. The check fails mixed-case text at those sizes."
+        }
+      ],
+      "children": []
+    },
+    "b34": {
+      "id": "b34",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The weight floor is not measured",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b35"
+      ]
+    },
+    "b35": {
+      "id": "b35",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "No pass reads "
+        },
+        {
+          "insert": "font-weight",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", so a 300 weight under 18px passes."
+        }
+      ],
+      "children": []
+    },
+    "b36": {
+      "id": "b36",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Known False Positives"
+        }
+      ],
+      "children": []
+    },
+    "b37": {
+      "id": "b37",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check reads the size and the case, so it cannot tell a badge from a paragraph."
+        }
+      ],
+      "children": []
+    },
+    "b38": {
+      "id": "b38",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Count badges and key hints",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b39"
+      ]
+    },
+    "b39": {
+      "id": "b39",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A count badge such as 3, or a key hint such as ⌘K in mixed case, fails at 11px. A number has no letters, so it never counts as uppercase."
+        }
+      ],
+      "children": []
+    },
+    "b40": {
+      "id": "b40",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Small capitals",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b41"
+      ]
+    },
+    "b41": {
+      "id": "b41",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A label with "
+        },
+        {
+          "insert": "font-variant: small-caps",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " fails at 11px. The case test reads only "
+        },
+        {
+          "insert": "text-transform",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and the letters."
+        }
+      ],
+      "children": []
+    },
+    "b42": {
+      "id": "b42",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix it in the app config",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b43"
+      ]
+    },
+    "b43": {
+      "id": "b43",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Add the element's selector to "
+        },
+        {
+          "insert": "ignore",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "design-score/apps/<app>.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or skip the check on one page with "
+        },
+        {
+          "insert": "skip",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "skipReason",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b44": {
+      "id": "b44",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Debug It"
+        }
+      ],
+      "children": []
+    },
+    "b45": {
+      "id": "b45",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Run these commands in the design-system checkout. Each run writes a folder under "
+        },
+        {
+          "insert": ".design-score/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and one crop per finding."
+        }
+      ],
+      "children": []
+    },
+    "b46": {
+      "id": "b46",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run the fixture pair. The command exits 1 unless the bad page gets its expected result and the good page passes."
+        }
+      ],
+      "children": []
+    },
+    "b47": {
+      "id": "b47",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --fixture R-min-font"
+        }
+      ],
+      "children": []
+    },
+    "b48": {
+      "id": "b48",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Score one page of an app in one theme and one viewport."
+        }
+      ],
+      "children": []
+    },
+    "b49": {
+      "id": "b49",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --app knowledge-system --pages session --quick"
+        }
+      ],
+      "children": []
+    },
+    "b50": {
+      "id": "b50",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Open the crops in "
+        },
+        {
+          "insert": "crops/<page>/R-min-font-*.png",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Each crop shows the small text with its finding box."
+        }
+      ],
+      "children": []
+    }
+  }
+}

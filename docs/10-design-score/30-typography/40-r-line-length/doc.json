@@ -1,0 +1,943 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-10d0cee87f6742e41da968afde0f0ea8",
+  "title": "R-line-length: Line Length",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b6",
+        "b8",
+        "b10",
+        "b11",
+        "b12",
+        "b13",
+        "b14",
+        "b15",
+        "b16",
+        "b17",
+        "b18",
+        "b19",
+        "b20",
+        "b21",
+        "b22",
+        "b23",
+        "b24",
+        "b25",
+        "b26",
+        "b27",
+        "b28",
+        "b29",
+        "b30",
+        "b31",
+        "b32",
+        "b33",
+        "b34",
+        "b35",
+        "b37",
+        "b39",
+        "b41",
+        "b42",
+        "b43",
+        "b44",
+        "b45",
+        "b46",
+        "b47"
+      ]
+    },
+    "b1": {
+      "id": "b1",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "R-line-length",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " finds wrapped prose whose lines hold more than 80 characters. It is a runtime check in the typography area, so it runs in a browser on every page, theme and viewport. Each finding warns and never fails the page."
+        }
+      ],
+      "children": []
+    },
+    "b2": {
+      "id": "b2",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "What It Catches"
+        }
+      ],
+      "children": []
+    },
+    "b3": {
+      "id": "b3",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check reports a block of wrapped prose whose lines are too long for the eye to find the start of the next line."
+        }
+      ],
+      "children": []
+    },
+    "b4": {
+      "id": "b4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Wrapped prose",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b5"
+      ]
+    },
+    "b5": {
+      "id": "b5",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The element is not "
+        },
+        {
+          "insert": "display: inline",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", its own text sits on 2 lines or more, and its full text holds 120 characters or more."
+        }
+      ],
+      "children": []
+    },
+    "b6": {
+      "id": "b6",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Too many characters per line",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b7"
+      ]
+    },
+    "b7": {
+      "id": "b7",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Its content width holds more than 80 average characters of its own font."
+        }
+      ],
+      "children": []
+    },
+    "b8": {
+      "id": "b8",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Not reported",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b9"
+      ]
+    },
+    "b9": {
+      "id": "b9",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Monospace text and text inside "
+        },
+        {
+          "insert": "pre",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "code",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "table",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " are skipped, because code and data tables set their own widths."
+        }
+      ],
+      "children": []
+    },
+    "b10": {
+      "id": "b10",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "How It Measures"
+        }
+      ],
+      "children": []
+    },
+    "b11": {
+      "id": "b11",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The probe estimates the characters per line from the font and the box width. It does not count the characters on a rendered line. It takes these steps in order."
+        }
+      ],
+      "children": []
+    },
+    "b12": {
+      "id": "b12",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "scripts/design-score/run.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/run.ts",
+              "symbol": "runScore"
+            }
+          }
+        },
+        {
+          "insert": " calls "
+        },
+        {
+          "insert": "probePage",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " once per theme and viewport, after the page's actions and settle time."
+        }
+      ],
+      "children": []
+    },
+    "b13": {
+      "id": "b13",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "probePage",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/probes.ts",
+              "symbol": "textEls"
+            }
+          }
+        },
+        {
+          "insert": " collects each visible text element that has its own text node. It drops an element whose first line is more than half hidden by a clipping ancestor."
+        }
+      ],
+      "children": []
+    },
+    "b14": {
+      "id": "b14",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The line pass",
+          "attributes": {
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/probes.ts",
+              "symbol": "R-line-length"
+            }
+          }
+        },
+        {
+          "insert": " counts the distinct tops of the element's own text rects, and skips an element with fewer than 2 lines."
+        }
+      ],
+      "children": []
+    },
+    "b15": {
+      "id": "b15",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The pass sets a canvas 2D context to the element's font and measures the first 400 characters of its text. The width divided by the character count is the average character width."
+        }
+      ],
+      "children": []
+    },
+    "b16": {
+      "id": "b16",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The pass divides the content width, the box width less padding and borders, by that average character width."
+        }
+      ],
+      "children": []
+    },
+    "b17": {
+      "id": "b17",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each finding has a key made from the element's class signature, so paragraphs with the same classes report once."
+        }
+      ],
+      "children": []
+    },
+    "b18": {
+      "id": "b18",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Thresholds"
+        }
+      ],
+      "children": []
+    },
+    "b19": {
+      "id": "b19",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A text must pass three gates before the check measures it. The limit is in average characters of the text's own font."
+        }
+      ],
+      "children": []
+    },
+    "b20": {
+      "id": "b20",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Measure",
+          "Threshold",
+          "Result"
+        ],
+        "rows": [
+          [
+            "Lines",
+            "Fewer than 2",
+            "Skipped"
+          ],
+          [
+            "Text length",
+            "Under 120 characters",
+            "Skipped"
+          ],
+          [
+            "Characters per line",
+            "80 or fewer",
+            "Pass"
+          ],
+          [
+            "Characters per line",
+            "More than 80",
+            "Warn"
+          ]
+        ],
+        "title": "R-line-length thresholds"
+      },
+      "children": []
+    },
+    "b21": {
+      "id": "b21",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "typo-measure",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " asks for 60 to 75 characters. The check warns only above 80, so a line of 76 to 80 characters passes."
+        }
+      ],
+      "children": []
+    },
+    "b22": {
+      "id": "b22",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Example"
+        }
+      ],
+      "children": []
+    },
+    "b23": {
+      "id": "b23",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The fixture pair is "
+        },
+        {
+          "insert": "design-score/fixtures/R-line-length/",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/fixtures/R-line-length"
+            }
+          }
+        },
+        {
+          "insert": ". Both pages show a short article of 2 paragraphs in 13.5px Inter."
+        }
+      ],
+      "children": []
+    },
+    "b24": {
+      "id": "b24",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The bad page lets the article fill the 752px content width, about 119 characters per line. The good page caps it at 448px with "
+        },
+        {
+          "insert": "calc(var(--ds-space-16) * 7)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", about 71 characters per line."
+        }
+      ],
+      "children": []
+    },
+    "b25": {
+      "id": "b25",
+      "type": "image-grid",
+      "props": {
+        "columns": 2,
+        "images": [
+          {
+            "src": "./assets/images/good.png",
+            "heading": "Good: pass",
+            "alt": "A short article in a 448px column. Each line holds about 71 characters. No boxes are drawn.",
+            "caption": "good.html, 0 findings"
+          },
+          {
+            "src": "./assets/images/bad.png",
+            "heading": "Bad: warn",
+            "alt": "The same article across the full 752px width. Each line holds about 119 characters. A magenta box marks the first paragraph.",
+            "caption": "bad.html, 1 warn finding"
+          }
+        ]
+      },
+      "children": []
+    },
+    "b26": {
+      "id": "b26",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Magenta boxes the element a finding is about. Only the first paragraph is boxed, because both paragraphs have the same class signature."
+        }
+      ],
+      "children": []
+    },
+    "b27": {
+      "id": "b27",
+      "type": "callout",
+      "props": {
+        "title": "Screenshots, not live pages",
+        "tone": "info"
+      },
+      "text": [
+        {
+          "insert": "The docs hub has no app host, so an "
+        },
+        {
+          "insert": "app-embed",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " block shows \"App not available here\" in it. These images come from "
+        },
+        {
+          "insert": "bun run design:score --fixture R-line-length",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", which writes them to the fixture's "
+        },
+        {
+          "insert": "shots/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " folder."
+        }
+      ],
+      "children": []
+    },
+    "b28": {
+      "id": "b28",
+      "type": "callout",
+      "props": {
+        "title": "The 60ch text lane sits at the limit",
+        "tone": "info"
+      },
+      "text": [
+        {
+          "insert": "--ds-layout-lane-text",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is 60ch, and 1ch is the width of the 0 digit. An average Inter character is narrower, so a 60ch column at 13.5px holds about 80 characters. That is just under the warn limit and over the rule's 75."
+        }
+      ],
+      "children": []
+    },
+    "b29": {
+      "id": "b29",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules Behind It"
+        }
+      ],
+      "children": []
+    },
+    "b30": {
+      "id": "b30",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "One rule in "
+        },
+        {
+          "insert": "design-score/rules/typography.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/typography.json"
+            }
+          }
+        },
+        {
+          "insert": " names this check. Every finding carries its id in "
+        },
+        {
+          "insert": "rules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b31": {
+      "id": "b31",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity",
+          "Measured"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "typo-measure",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Line length",
+            "Warn",
+            "Partly, with an 80-character limit"
+          ]
+        ],
+        "title": "Rules decided by R-line-length"
+      },
+      "children": []
+    },
+    "b32": {
+      "id": "b32",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check never tests the rule's 60-character lower bound, so a narrow column passes. The rule's note says the 60ch lane is inside the 60 to 75 band, but the fixture measures about 80."
+        }
+      ],
+      "children": []
+    },
+    "b33": {
+      "id": "b33",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Known False Positives"
+        }
+      ],
+      "children": []
+    },
+    "b34": {
+      "id": "b34",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check estimates the line from the box width and an average character, so it cannot see where lines really break."
+        }
+      ],
+      "children": []
+    },
+    "b35": {
+      "id": "b35",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Forced line breaks",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b36"
+      ]
+    },
+    "b36": {
+      "id": "b36",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A text with "
+        },
+        {
+          "insert": "<br>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " breaks wraps early, but the check still measures the full box width."
+        }
+      ],
+      "children": []
+    },
+    "b37": {
+      "id": "b37",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Lists in one element",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b38"
+      ]
+    },
+    "b38": {
+      "id": "b38",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A wrapped run of tags or names in one element counts as prose and warns when the box is wide."
+        }
+      ],
+      "children": []
+    },
+    "b39": {
+      "id": "b39",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix it in the app config",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b40"
+      ]
+    },
+    "b40": {
+      "id": "b40",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Add the element's selector to "
+        },
+        {
+          "insert": "ignore",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "design-score/apps/<app>.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or skip the check on one page with "
+        },
+        {
+          "insert": "skip",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "skipReason",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b41": {
+      "id": "b41",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Debug It"
+        }
+      ],
+      "children": []
+    },
+    "b42": {
+      "id": "b42",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Run these commands in the design-system checkout. Each run writes a folder under "
+        },
+        {
+          "insert": ".design-score/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and one crop per finding."
+        }
+      ],
+      "children": []
+    },
+    "b43": {
+      "id": "b43",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run the fixture pair. The command exits 1 unless the bad page gets its expected result and the good page passes."
+        }
+      ],
+      "children": []
+    },
+    "b44": {
+      "id": "b44",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --fixture R-line-length"
+        }
+      ],
+      "children": []
+    },
+    "b45": {
+      "id": "b45",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Score one page of an app in one theme and one viewport."
+        }
+      ],
+      "children": []
+    },
+    "b46": {
+      "id": "b46",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --app knowledge-system --pages session --quick"
+        }
+      ],
+      "children": []
+    },
+    "b47": {
+      "id": "b47",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Open the crops in "
+        },
+        {
+          "insert": "crops/<page>/R-line-length-*.png",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Each crop shows the wide text block with its finding box."
+        }
+      ],
+      "children": []
+    }
+  }
+}

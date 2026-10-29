@@ -1,0 +1,1691 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-d93533b063eba7c751bdf89ae7c8bcc2",
+  "title": "S-motion-literal: Motion Literals",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b6",
+        "b8",
+        "b10",
+        "b13",
+        "b14",
+        "b15",
+        "b16",
+        "b17",
+        "b18",
+        "b19",
+        "b20",
+        "b21",
+        "b22",
+        "b23",
+        "b24",
+        "b25",
+        "b26",
+        "b27",
+        "b28",
+        "b29",
+        "b30",
+        "b31",
+        "b32",
+        "b33",
+        "b34",
+        "b35",
+        "b36",
+        "b37",
+        "b38",
+        "b40",
+        "b42",
+        "b44",
+        "b46",
+        "b47",
+        "b48",
+        "b49",
+        "b50",
+        "b51",
+        "b52"
+      ]
+    },
+    "b1": {
+      "id": "b1",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "S-motion-literal",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " finds durations and easing curves written as literals instead of the motion tokens. It is a static check in the motion area, so it reads the app's source files with no browser. Every finding fails the check, and the result counts once on every page."
+        }
+      ],
+      "children": []
+    },
+    "b2": {
+      "id": "b2",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "What It Catches"
+        }
+      ],
+      "children": []
+    },
+    "b3": {
+      "id": "b3",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check reports four source patterns. Each one sets a timing that must come from a motion token."
+        }
+      ],
+      "children": []
+    },
+    "b4": {
+      "id": "b4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A literal duration in CSS",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b5"
+      ]
+    },
+    "b5": {
+      "id": "b5",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A transition or animation declaration with a time other than 0, such as "
+        },
+        {
+          "insert": "150ms",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "1s",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", fails."
+        }
+      ],
+      "children": []
+    },
+    "b6": {
+      "id": "b6",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A literal easing curve in CSS",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b7"
+      ]
+    },
+    "b7": {
+      "id": "b7",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A "
+        },
+        {
+          "insert": "cubic-bezier()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "steps()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in the same declarations fails. Keywords such as "
+        },
+        {
+          "insert": "ease",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "ease-out",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " pass."
+        }
+      ],
+      "children": []
+    },
+    "b8": {
+      "id": "b8",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A Tailwind timing class",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b9"
+      ]
+    },
+    "b9": {
+      "id": "b9",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "In a TS or JS string, "
+        },
+        {
+          "insert": "duration-150",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "delay-75",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "duration-[250ms]",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "ease-[cubic-bezier(...)]",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " fails, with or without a variant."
+        }
+      ],
+      "children": []
+    },
+    "b10": {
+      "id": "b10",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "An inline style object",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b11",
+        "b12"
+      ]
+    },
+    "b11": {
+      "id": "b11",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A "
+        },
+        {
+          "insert": "transition",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " string with a time other than 0 or a "
+        },
+        {
+          "insert": "cubic-bezier()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " fails."
+        }
+      ],
+      "children": []
+    },
+    "b12": {
+      "id": "b12",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A "
+        },
+        {
+          "insert": "transitionDuration",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "animationDuration",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "transitionTimingFunction",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " string fails unless it holds a "
+        },
+        {
+          "insert": "var()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or is 0."
+        }
+      ],
+      "children": []
+    },
+    "b13": {
+      "id": "b13",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "How It Measures"
+        }
+      ],
+      "children": []
+    },
+    "b14": {
+      "id": "b14",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check parses source text, as "
+        },
+        {
+          "insert": "S-transition-all",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " does. It takes these steps in order."
+        }
+      ],
+      "children": []
+    },
+    "b15": {
+      "id": "b15",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "scripts/design-score/run.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/run.ts",
+              "symbol": "Static checks"
+            }
+          }
+        },
+        {
+          "insert": " calls "
+        },
+        {
+          "insert": "runStaticChecks",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/static-checks.ts",
+              "symbol": "runStaticChecks"
+            }
+          }
+        },
+        {
+          "insert": " once per run, over the app config's "
+        },
+        {
+          "insert": "sourceDirs",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " minus its "
+        },
+        {
+          "insert": "excludes",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b16": {
+      "id": "b16",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "cssFindings",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/static-checks.ts",
+              "symbol": "cssFindings"
+            }
+          }
+        },
+        {
+          "insert": " reads 8 properties in each CSS rule: "
+        },
+        {
+          "insert": "transition",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "animation",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", plus the "
+        },
+        {
+          "insert": "-duration",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "-delay",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "-timing-function",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " longhands of each ("
+        },
+        {
+          "insert": "MOTION_PROPS",
+          "attributes": {
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/static-checks.ts",
+              "symbol": "MOTION_PROPS"
+            }
+          }
+        },
+        {
+          "insert": ")."
+        }
+      ],
+      "children": []
+    },
+    "b17": {
+      "id": "b17",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "withoutVars",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/static-checks.ts",
+              "symbol": "withoutVars"
+            }
+          }
+        },
+        {
+          "insert": " removes every "
+        },
+        {
+          "insert": "var()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " from the value first, so a literal in a "
+        },
+        {
+          "insert": "var()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " fallback passes."
+        }
+      ],
+      "children": []
+    },
+    "b18": {
+      "id": "b18",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The check then looks for a number with "
+        },
+        {
+          "insert": "ms",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "s",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " other than 0, and for "
+        },
+        {
+          "insert": "cubic-bezier()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "steps()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b19": {
+      "id": "b19",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "jsFindings",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/static-checks.ts",
+              "symbol": "jsFindings"
+            }
+          }
+        },
+        {
+          "insert": " reads the string literals and inline style objects of each TS and JS file."
+        }
+      ],
+      "children": []
+    },
+    "b20": {
+      "id": "b20",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check skips a rule inside "
+        },
+        {
+          "insert": "@media (prefers-reduced-motion: reduce)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and a rule inside "
+        },
+        {
+          "insert": "@theme",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". A rule inside "
+        },
+        {
+          "insert": "@media (prefers-reduced-motion: no-preference)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is checked."
+        }
+      ],
+      "children": []
+    },
+    "b21": {
+      "id": "b21",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Thresholds"
+        }
+      ],
+      "children": []
+    },
+    "b22": {
+      "id": "b22",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check has no numeric threshold. Any literal fails, and the run keeps the first 25 findings."
+        }
+      ],
+      "children": []
+    },
+    "b23": {
+      "id": "b23",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Source",
+          "Pattern",
+          "Passes"
+        ],
+        "rows": [
+          [
+            "CSS declaration",
+            [
+              {
+                "insert": "A time other than 0, "
+              },
+              {
+                "insert": "cubic-bezier()",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " or "
+              },
+              {
+                "insert": "steps()",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "var(--ds-motion-*)",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", a "
+              },
+              {
+                "insert": "var()",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " fallback, a keyword easing"
+              }
+            ]
+          ],
+          [
+            "TS or JS string",
+            [
+              {
+                "insert": "duration-*",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "delay-*",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " with a number or brackets, "
+              },
+              {
+                "insert": "ease-[...]",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "duration-(--ds-motion-duration-base)",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "TS or JS "
+              },
+              {
+                "insert": "transition",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " string"
+              }
+            ],
+            [
+              {
+                "insert": "A time other than 0, or "
+              },
+              {
+                "insert": "cubic-bezier()",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Token "
+              },
+              {
+                "insert": "var()",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " timing"
+              }
+            ]
+          ],
+          [
+            "TS or JS timing longhand",
+            [
+              {
+                "insert": "Any value without "
+              },
+              {
+                "insert": "var()",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " that is not 0"
+              }
+            ],
+            [
+              {
+                "insert": "A "
+              },
+              {
+                "insert": "var()",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ]
+        ],
+        "title": "S-motion-literal patterns"
+      },
+      "children": []
+    },
+    "b24": {
+      "id": "b24",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The tokens are the target. "
+        },
+        {
+          "insert": "--ds-motion-duration-fast",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "-base",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "-slow",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " are 100, 150 and 260ms. "
+        },
+        {
+          "insert": "--ds-motion-easing-standard",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "-emphasized",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "-decelerate",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " are "
+        },
+        {
+          "insert": "ease",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "cubic-bezier(0.32, 0.72, 0, 1)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "ease-out",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b25": {
+      "id": "b25",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Example"
+        }
+      ],
+      "children": []
+    },
+    "b26": {
+      "id": "b26",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The fixture pair is "
+        },
+        {
+          "insert": "design-score/fixtures/S-motion-literal/",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/fixtures/S-motion-literal"
+            }
+          }
+        },
+        {
+          "insert": ". Both pages show a settings row with a spinner and a switch, and each loads its own CSS file."
+        }
+      ],
+      "children": []
+    },
+    "b27": {
+      "id": "b27",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Line",
+          "Selector",
+          "Declaration"
+        ],
+        "rows": [
+          [
+            "13",
+            [
+              {
+                "insert": ".switch",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "transition: background-color 150ms ease",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "15",
+            [
+              {
+                "insert": ".knob",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "transition: transform 600ms cubic-bezier(0.68, -0.6, 0.32, 1.6)",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "17",
+            [
+              {
+                "insert": ".spinner",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "animation: spin 1s linear infinite",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ]
+        ],
+        "title": "Findings on bad.css"
+      },
+      "children": []
+    },
+    "b28": {
+      "id": "b28",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "In "
+        },
+        {
+          "insert": "good.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", every timing is a token. The spinner uses "
+        },
+        {
+          "insert": "calc(var(--ds-motion-duration-slow, 260ms) * 4)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and a reduced-motion rule sets "
+        },
+        {
+          "insert": "0.01ms",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The check skips both, so the good page gets 0 findings."
+        }
+      ],
+      "children": []
+    },
+    "b29": {
+      "id": "b29",
+      "type": "image-grid",
+      "props": {
+        "columns": 1,
+        "images": [
+          {
+            "src": "./assets/images/good-frames.png",
+            "heading": "Good: pass",
+            "alt": "Six frames of the switch turning on. The knob reaches the right end by 150ms and stays there.",
+            "caption": "good.css, 0 findings. Frames at 0, 75, 150, 300, 450 and 600ms after the switch turns on."
+          },
+          {
+            "src": "./assets/images/bad-frames.png",
+            "heading": "Bad: fail",
+            "alt": "The same six frames. The knob is still at the left at 150ms and reaches the right end only at 600ms.",
+            "caption": "bad.css, 3 fail findings. Frames at 0, 75, 150, 300, 450 and 600ms after the switch turns on."
+          }
+        ]
+      },
+      "children": []
+    },
+    "b30": {
+      "id": "b30",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The frames show what the literals do. The good knob uses "
+        },
+        {
+          "insert": "duration.base",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with "
+        },
+        {
+          "insert": "ease-out",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and is done at 150ms. The bad knob takes 600ms, and its curve first pulls it back, so it has barely moved at 150ms."
+        }
+      ],
+      "children": []
+    },
+    "b31": {
+      "id": "b31",
+      "type": "callout",
+      "props": {
+        "title": "Frames, not boxes",
+        "tone": "info"
+      },
+      "text": [
+        {
+          "insert": "A static finding has a file and a line but no box on the page, so the fixture's "
+        },
+        {
+          "insert": "good.png",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "bad.png",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " look the same. "
+        },
+        {
+          "insert": "bun scripts/design-score/frames.ts S-motion-literal",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " writes these strips from the fixture's "
+        },
+        {
+          "insert": "frames.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b32": {
+      "id": "b32",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules Behind It"
+        }
+      ],
+      "children": []
+    },
+    "b33": {
+      "id": "b33",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Two rules in "
+        },
+        {
+          "insert": "design-score/rules/motion.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/motion.json"
+            }
+          }
+        },
+        {
+          "insert": " name this check. Every finding carries their ids in "
+        },
+        {
+          "insert": "rules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b34": {
+      "id": "b34",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity",
+          "Measured"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "ks-motion-tokens",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Motion from tokens",
+            "Fail",
+            "Yes, for durations and easings"
+          ],
+          [
+            [
+              {
+                "insert": "ui-bounce-zero",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "No bounce",
+            "Warn",
+            "No"
+          ]
+        ],
+        "title": "Rules decided by S-motion-literal"
+      },
+      "children": []
+    },
+    "b35": {
+      "id": "b35",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check does not read spring options, so it never sees a "
+        },
+        {
+          "insert": "bounce",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " value. "
+        },
+        {
+          "insert": "ks-motion-tokens",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " also covers springs and the press scale, which the check does not read either."
+        }
+      ],
+      "children": []
+    },
+    "b36": {
+      "id": "b36",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Known False Positives"
+        }
+      ],
+      "children": []
+    },
+    "b37": {
+      "id": "b37",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check matches text, so a few token-safe values fail and a few literals pass."
+        }
+      ],
+      "children": []
+    },
+    "b38": {
+      "id": "b38",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Keyword easings in style objects",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b39"
+      ]
+    },
+    "b39": {
+      "id": "b39",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "transitionTimingFunction: \"ease-out\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " fails in TS or JS, though the same keyword passes in CSS."
+        }
+      ],
+      "children": []
+    },
+    "b40": {
+      "id": "b40",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Zero Tailwind classes",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b41"
+      ]
+    },
+    "b41": {
+      "id": "b41",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "duration-0",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "delay-0",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " fail, though a 0 in CSS passes."
+        }
+      ],
+      "children": []
+    },
+    "b42": {
+      "id": "b42",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Literals it misses",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b43"
+      ]
+    },
+    "b43": {
+      "id": "b43",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A "
+        },
+        {
+          "insert": "steps()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " easing in a TS or JS "
+        },
+        {
+          "insert": "transition",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " string passes, and so does a "
+        },
+        {
+          "insert": "linear()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " easing anywhere."
+        }
+      ],
+      "children": []
+    },
+    "b44": {
+      "id": "b44",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix it in the source or the app config",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "b45"
+      ]
+    },
+    "b45": {
+      "id": "b45",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Replace the literal with a "
+        },
+        {
+          "insert": "var(--ds-motion-*)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " token. To skip a whole file, add it to "
+        },
+        {
+          "insert": "excludes",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "design-score/apps/<app>.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b46": {
+      "id": "b46",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Debug It"
+        }
+      ],
+      "children": []
+    },
+    "b47": {
+      "id": "b47",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Run these commands in the design-system checkout. Each run writes a folder under "
+        },
+        {
+          "insert": ".design-score/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "b48": {
+      "id": "b48",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run the fixture pair. The command exits 1 unless the bad page fails and the good page passes."
+        }
+      ],
+      "children": []
+    },
+    "b49": {
+      "id": "b49",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --fixture S-motion-literal"
+        }
+      ],
+      "children": []
+    },
+    "b50": {
+      "id": "b50",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Score one page of an app in one theme and one viewport. The static checks still read every source folder."
+        }
+      ],
+      "children": []
+    },
+    "b51": {
+      "id": "b51",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --app knowledge-system --pages session --quick"
+        }
+      ],
+      "children": []
+    },
+    "b52": {
+      "id": "b52",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Open "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and read each finding's "
+        },
+        {
+          "insert": "file",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "line",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "measured",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " declaration."
+        }
+      ],
+      "children": []
+    }
+  }
+}

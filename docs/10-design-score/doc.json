@@ -10,6 +10,7 @@
       "props": {},
       "children": [
         "b1",
+        "b1-guides",
         "b2",
         "b3",
         "b4",
@@ -48,6 +49,65 @@
         },
         {
           "insert": " scores every page of an app against the design rules in a real browser. It runs 24 checks, and each check belongs to one area and one layer. Each check has its own page that explains what it measures and shows a good and a bad example. Each example pair is also a test that the check must pass."
+        }
+      ],
+      "children": []
+    },
+    "b1-guides": {
+      "id": "b1-guides",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Start with "
+        },
+        {
+          "insert": "Run and Read a Score",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "10-design-score/10-run-and-read"
+            }
+          }
+        },
+        {
+          "insert": " for the commands, the report and the hill-climb loop. "
+        },
+        {
+          "insert": "Troubleshooting",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "10-design-score/90-troubleshooting"
+            }
+          }
+        },
+        {
+          "insert": " lists the problems seen so far and their fixes. "
+        },
+        {
+          "insert": "Writing",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "10-design-score/80-writing"
+            }
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "Screenshot Judge",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "10-design-score/85-screenshot-judge"
+            }
+          }
+        },
+        {
+          "insert": " cover the rules that no check decides yet."
         }
       ],
       "children": []
@@ -173,7 +233,7 @@
             "code": true,
             "reference": {
               "kind": "source",
-              "path": "scripts/design-score/run.ts"
+              "path": "scripts/design-score"
             }
           }
         },
@@ -270,7 +330,7 @@
             "code": true,
             "reference": {
               "kind": "source",
-              "path": "design-score/RULES.md"
+              "path": "design-score/rules"
             }
           }
         },

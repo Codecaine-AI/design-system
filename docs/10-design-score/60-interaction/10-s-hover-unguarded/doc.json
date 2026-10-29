@@ -1,0 +1,1217 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-3fbcaacc112c74f530c89a01304ead23",
+  "title": "S-hover-unguarded: Hover Outside (hover: hover)",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "hu1",
+        "hu2",
+        "hu3",
+        "hu4",
+        "hu7",
+        "hu11",
+        "hu12",
+        "hu13",
+        "hu14",
+        "hu15",
+        "hu16",
+        "hu17",
+        "hu18",
+        "hu19",
+        "hu20",
+        "hu21",
+        "hu22",
+        "hu24",
+        "hu26",
+        "hu27",
+        "hu28",
+        "hu29",
+        "hu30",
+        "hu31",
+        "hu32",
+        "hu33",
+        "hu34",
+        "hu35",
+        "hu37",
+        "hu39",
+        "hu41",
+        "hu42",
+        "hu43",
+        "hu44",
+        "hu45",
+        "hu46",
+        "hu47"
+      ]
+    },
+    "hu1": {
+      "id": "hu1",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "S-hover-unguarded",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " finds CSS "
+        },
+        {
+          "insert": ":hover",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " rules that sit outside "
+        },
+        {
+          "insert": "@media (hover: hover)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". It is a static check in the interaction area, so it reads source files and never opens a browser. Each rule it finds warns, and the check never fails a page."
+        }
+      ],
+      "children": []
+    },
+    "hu2": {
+      "id": "hu2",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "What It Catches"
+        }
+      ],
+      "children": []
+    },
+    "hu3": {
+      "id": "hu3",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A touch screen applies a "
+        },
+        {
+          "insert": ":hover",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " style on tap and keeps it until the next tap elsewhere. The check reports the rules that cause this stuck look."
+        }
+      ],
+      "children": []
+    },
+    "hu4": {
+      "id": "hu4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "An unguarded hover rule",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "hu5",
+        "hu6"
+      ]
+    },
+    "hu5": {
+      "id": "hu5",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A style rule in a "
+        },
+        {
+          "insert": ".css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": ".scss",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " file has "
+        },
+        {
+          "insert": ":hover",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in its selector and at least one declaration."
+        }
+      ],
+      "children": []
+    },
+    "hu6": {
+      "id": "hu6",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "None of its enclosing at-rules holds "
+        },
+        {
+          "insert": "(hover: hover)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "(any-hover: hover)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "hu7": {
+      "id": "hu7",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Code it does not read",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "hu8",
+        "hu9",
+        "hu10"
+      ]
+    },
+    "hu8": {
+      "id": "hu8",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Tailwind v4 "
+        },
+        {
+          "insert": "hover:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " classes are not read, because Tailwind v4 already wraps them in "
+        },
+        {
+          "insert": "@media (hover: hover)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "hu9": {
+      "id": "hu9",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Hover styles in JS, TSX or inline style objects are not read."
+        }
+      ],
+      "children": []
+    },
+    "hu10": {
+      "id": "hu10",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Rules inside "
+        },
+        {
+          "insert": "@theme",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and keyframe steps are skipped."
+        }
+      ],
+      "children": []
+    },
+    "hu11": {
+      "id": "hu11",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "How It Measures"
+        }
+      ],
+      "children": []
+    },
+    "hu12": {
+      "id": "hu12",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check parses each source file with its own CSS parser. It takes these steps in order."
+        }
+      ],
+      "children": []
+    },
+    "hu13": {
+      "id": "hu13",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "runStaticChecks",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/static-checks.ts",
+              "symbol": "runStaticChecks"
+            }
+          }
+        },
+        {
+          "insert": " collects the files under the app's "
+        },
+        {
+          "insert": "sourceDirs",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". It uses the skips of "
+        },
+        {
+          "insert": "scan-literals",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", such as "
+        },
+        {
+          "insert": "node_modules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "dist",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", tests and generated files."
+        }
+      ],
+      "children": []
+    },
+    "hu14": {
+      "id": "hu14",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "parseCss",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/static-checks.ts",
+              "symbol": "parseCss"
+            }
+          }
+        },
+        {
+          "insert": " turns each "
+        },
+        {
+          "insert": ".css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": ".scss",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " file into style rules. Nested selectors resolve through "
+        },
+        {
+          "insert": "&",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and each rule keeps the preludes of its enclosing at-rules."
+        }
+      ],
+      "children": []
+    },
+    "hu15": {
+      "id": "hu15",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "The hover pass",
+          "attributes": {
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/static-checks.ts",
+              "symbol": "S-hover-unguarded"
+            }
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "cssFindings",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " adds one warning for each rule that has "
+        },
+        {
+          "insert": ":hover",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", a declaration, and no hover media query in its at-rule chain."
+        }
+      ],
+      "children": []
+    },
+    "hu16": {
+      "id": "hu16",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each finding carries the file and line of the rule, with the selector as "
+        },
+        {
+          "insert": "measured",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". A static finding has no position on the page, so no box is drawn for it. Static findings count on every page of the app."
+        }
+      ],
+      "children": []
+    },
+    "hu17": {
+      "id": "hu17",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Thresholds"
+        }
+      ],
+      "children": []
+    },
+    "hu18": {
+      "id": "hu18",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check has no count or size threshold. One unguarded rule makes the check warn."
+        }
+      ],
+      "children": []
+    },
+    "hu19": {
+      "id": "hu19",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Result"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": ":hover",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " inside "
+              },
+              {
+                "insert": "@media (hover: hover)",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Pass"
+          ],
+          [
+            [
+              {
+                "insert": ":hover",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " inside "
+              },
+              {
+                "insert": "@media (any-hover: hover)",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Pass"
+          ],
+          [
+            [
+              {
+                "insert": ":hover",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " with no hover media query"
+              }
+            ],
+            "Warn"
+          ],
+          [
+            [
+              {
+                "insert": ":hover",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " with no declarations"
+              }
+            ],
+            "Not checked"
+          ],
+          [
+            [
+              {
+                "insert": "Tailwind v4 "
+              },
+              {
+                "insert": "hover:",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " class"
+              }
+            ],
+            "Not checked"
+          ]
+        ],
+        "title": "S-hover-unguarded results"
+      },
+      "children": []
+    },
+    "hu20": {
+      "id": "hu20",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Example"
+        }
+      ],
+      "children": []
+    },
+    "hu21": {
+      "id": "hu21",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The fixture pair is "
+        },
+        {
+          "insert": "design-score/fixtures/S-hover-unguarded/",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/fixtures/S-hover-unguarded"
+            }
+          }
+        },
+        {
+          "insert": ". Both pages show the same inbox list with the first row hovered. Each page loads its own stylesheet and prints the hover rules from it with line numbers."
+        }
+      ],
+      "children": []
+    },
+    "hu22": {
+      "id": "hu22",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "bad.css",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "hu23"
+      ]
+    },
+    "hu23": {
+      "id": "hu23",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The rules "
+        },
+        {
+          "insert": ".row:hover",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": ".btn:hover",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " sit at the top level, on lines 12 and 13."
+        }
+      ],
+      "children": []
+    },
+    "hu24": {
+      "id": "hu24",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "good.css",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "hu25"
+      ]
+    },
+    "hu25": {
+      "id": "hu25",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The same two rules sit inside "
+        },
+        {
+          "insert": "@media (hover: hover)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "hu26": {
+      "id": "hu26",
+      "type": "image-grid",
+      "props": {
+        "columns": 2,
+        "images": [
+          {
+            "src": "./assets/images/good.png",
+            "heading": "Good: pass",
+            "alt": "An inbox list with the first row hovered. Below it, good.css wraps both hover rules in a hover media query.",
+            "caption": "good.html, 0 findings"
+          },
+          {
+            "src": "./assets/images/bad.png",
+            "heading": "Bad: warn",
+            "alt": "The same hovered list. Below it, bad.css lists the row and button hover rules with no media query around them.",
+            "caption": "bad.html, 2 warn findings"
+          }
+        ]
+      },
+      "children": []
+    },
+    "hu27": {
+      "id": "hu27",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Both lists look the same, because the test browser has a mouse. The difference shows only on a touch screen, so the check reads the source and not the screen."
+        }
+      ],
+      "children": []
+    },
+    "hu28": {
+      "id": "hu28",
+      "type": "callout",
+      "props": {
+        "title": "Screenshots, not live pages",
+        "tone": "info"
+      },
+      "text": [
+        {
+          "insert": "These images come from "
+        },
+        {
+          "insert": "bun run design:score --fixture S-hover-unguarded",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", which writes them to the fixture's "
+        },
+        {
+          "insert": "shots/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " folder. The docs hub has no app host for a live embed."
+        }
+      ],
+      "children": []
+    },
+    "hu29": {
+      "id": "hu29",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules Behind It"
+        }
+      ],
+      "children": []
+    },
+    "hu30": {
+      "id": "hu30",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "One rule in "
+        },
+        {
+          "insert": "design-score/rules/interaction.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "design-score/rules/interaction.json"
+            }
+          }
+        },
+        {
+          "insert": " names this check. Every finding carries its id in "
+        },
+        {
+          "insert": "rules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "hu31": {
+      "id": "hu31",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Rule",
+          "Title",
+          "Severity",
+          "Measured"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "ui-hover-capable-only",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Hover behind a media query",
+            "Warn",
+            "Partly"
+          ]
+        ],
+        "title": "Rules decided by S-hover-unguarded"
+      },
+      "children": []
+    },
+    "hu32": {
+      "id": "hu32",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The rule asks for "
+        },
+        {
+          "insert": "(hover: hover) and (pointer: fine)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The check accepts "
+        },
+        {
+          "insert": "(hover: hover)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " alone and never looks for "
+        },
+        {
+          "insert": "(pointer: fine)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "hu33": {
+      "id": "hu33",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Known False Positives"
+        }
+      ],
+      "children": []
+    },
+    "hu34": {
+      "id": "hu34",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check reads selectors only, so it cannot tell whether a stuck hover look matters."
+        }
+      ],
+      "children": []
+    },
+    "hu35": {
+      "id": "hu35",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Desktop-only apps",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "hu36"
+      ]
+    },
+    "hu36": {
+      "id": "hu36",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "An Electron app that nobody uses by touch still warns. The rule keeps it at warn, because laptop touch screens still latch hover."
+        }
+      ],
+      "children": []
+    },
+    "hu37": {
+      "id": "hu37",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Harmless hover rules",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "hu38"
+      ]
+    },
+    "hu38": {
+      "id": "hu38",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A "
+        },
+        {
+          "insert": ":hover",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " rule that changes only the cursor, or that repeats the rest look, warns too."
+        }
+      ],
+      "children": []
+    },
+    "hu39": {
+      "id": "hu39",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix it in the app config",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "hu40"
+      ]
+    },
+    "hu40": {
+      "id": "hu40",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Add the file to "
+        },
+        {
+          "insert": "excludes",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "design-score/apps/<app>.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or skip the check on one page with "
+        },
+        {
+          "insert": "skip",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "skipReason",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "hu41": {
+      "id": "hu41",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Debug It"
+        }
+      ],
+      "children": []
+    },
+    "hu42": {
+      "id": "hu42",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Run these commands in the design-system checkout. Each run writes a folder under "
+        },
+        {
+          "insert": ".design-score/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "hu43": {
+      "id": "hu43",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run the fixture pair. The command exits 1 unless the bad page warns and the good page passes."
+        }
+      ],
+      "children": []
+    },
+    "hu44": {
+      "id": "hu44",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --fixture S-hover-unguarded"
+        }
+      ],
+      "children": []
+    },
+    "hu45": {
+      "id": "hu45",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Score one page of an app. The static checks read the app's whole "
+        },
+        {
+          "insert": "sourceDirs",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on every run."
+        }
+      ],
+      "children": []
+    },
+    "hu46": {
+      "id": "hu46",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "bun run design:score --app knowledge-system --pages session --quick --no-motion"
+        }
+      ],
+      "children": []
+    },
+    "hu47": {
+      "id": "hu47",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Open "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and filter "
+        },
+        {
+          "insert": "findings",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " by "
+        },
+        {
+          "insert": "check",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Each finding has the "
+        },
+        {
+          "insert": "file",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "line",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " of the rule."
+        }
+      ],
+      "children": []
+    }
+  }
+}

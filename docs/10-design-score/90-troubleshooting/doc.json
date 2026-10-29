@@ -1,0 +1,1245 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-88882e66db6e27362bf02936dec9ea00",
+  "title": "Troubleshooting",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "intro",
+        "h-known",
+        "known-lead",
+        "h-p1",
+        "p1-what",
+        "p1c",
+        "p1f",
+        "h-p2",
+        "p2-what",
+        "p2c",
+        "p2f",
+        "p2-code",
+        "h-p3",
+        "p3-what",
+        "p3c",
+        "p3f",
+        "h-p4",
+        "p4-what",
+        "p4c",
+        "p4f",
+        "h-p5",
+        "p5-what",
+        "p5c",
+        "p5f",
+        "h-p6",
+        "p6-what",
+        "p6c",
+        "p6f",
+        "h-p7",
+        "p7-what",
+        "p7c",
+        "p7f",
+        "h-strange",
+        "st-lead",
+        "st1",
+        "st2",
+        "st3",
+        "st4",
+        "st5"
+      ]
+    },
+    "intro": {
+      "id": "intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "This page lists the problems already seen in "
+        },
+        {
+          "insert": "design:score",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " runs, each with its cause and its fix. The last section is a procedure for a check that acts strangely. Run the commands in the design-system checkout unless a step names another folder."
+        }
+      ],
+      "children": []
+    },
+    "h-known": {
+      "id": "h-known",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Known Problems"
+        }
+      ],
+      "children": []
+    },
+    "known-lead": {
+      "id": "known-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Seven problems came up during the first runs on Knowledge System, on 2026-10-29. Each heading names what you see."
+        }
+      ],
+      "children": []
+    },
+    "h-p1": {
+      "id": "h-p1",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "The Report Names a Cached Chromium"
+        }
+      ],
+      "children": []
+    },
+    "p1-what": {
+      "id": "p1-what",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The provenance line in "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " says that "
+        },
+        {
+          "insert": "chromium_headless_shell-1243",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is not installed and that the run uses the cached "
+        },
+        {
+          "insert": "chromium_headless_shell-1234",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "p1c": {
+      "id": "p1c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Cause",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "p1c1",
+        "p1c2"
+      ]
+    },
+    "p1c1": {
+      "id": "p1c1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Core's Playwright wants headless shell r1243, but "
+        },
+        {
+          "insert": "~/Library/Caches/ms-playwright/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " holds only r1228 and r1234."
+        }
+      ],
+      "children": []
+    },
+    "p1c2": {
+      "id": "p1c2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "design:score",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " installs nothing. "
+        },
+        {
+          "insert": "launch",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/browser.ts",
+              "symbol": "launch"
+            }
+          }
+        },
+        {
+          "insert": " falls back to the newest cached shell, Chromium 151.0.7922.34."
+        }
+      ],
+      "children": []
+    },
+    "p1f": {
+      "id": "p1f",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "p1f1",
+        "p1f2"
+      ]
+    },
+    "p1f1": {
+      "id": "p1f1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Compare only runs with the same "
+        },
+        {
+          "insert": "provenance.browser.version",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "scorecard.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". All runs on 2026-10-29 used r1234, so their deltas hold."
+        }
+      ],
+      "children": []
+    },
+    "p1f2": {
+      "id": "p1f2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "To move to r1243, run "
+        },
+        {
+          "insert": "bunx playwright install chromium-headless-shell",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in "
+        },
+        {
+          "insert": "codecaine/core",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Then rerun both runs that you compare."
+        }
+      ],
+      "children": []
+    },
+    "h-p2": {
+      "id": "h-p2",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "The Docs Editor Pages Are Skipped"
+        }
+      ],
+      "children": []
+    },
+    "p2-what": {
+      "id": "p2-what",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "docs-editor-hover",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "project-spec-editor",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and the other editor pages show \"skipped: the docs editor needs the docs hub to know this knowledge root\" and score no value."
+        }
+      ],
+      "children": []
+    },
+    "p2c": {
+      "id": "p2c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Cause",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "p2c1",
+        "p2c2"
+      ]
+    },
+    "p2c1": {
+      "id": "p2c1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The docs editor loads only when the docs hub has registered the server's "
+        },
+        {
+          "insert": "KNOWLEDGE_ROOT",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The hub knows "
+        },
+        {
+          "insert": "/Users/Ford/workspace/codebases/lascari-ai/knowledge-system/sample-knowledge",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and no worktree copy of it."
+        }
+      ],
+      "children": []
+    },
+    "p2c2": {
+      "id": "p2c2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Only one server can run on a knowledge root. The server holds "
+        },
+        {
+          "insert": "<root>/.index/ks-server.pid",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and a second server refuses to start with \"Another Knowledge System server is already running\"."
+        }
+      ],
+      "children": []
+    },
+    "p2f": {
+      "id": "p2f",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "p2f1",
+        "p2f2",
+        "p2f3"
+      ]
+    },
+    "p2f1": {
+      "id": "p2f1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Start the checkout under test on the registered sample data, with the command below in that checkout. Then score it with "
+        },
+        {
+          "insert": "--base-url http://127.0.0.1:4961",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "p2f2": {
+      "id": "p2f2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Score a before and an after checkout one after the other. Stop the first server before you start the second."
+        }
+      ],
+      "children": []
+    },
+    "p2f3": {
+      "id": "p2f3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "If no server runs and the start still fails, delete the pid file that the message names."
+        }
+      ],
+      "children": []
+    },
+    "p2-code": {
+      "id": "p2-code",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "KNOWLEDGE_ROOT=/Users/Ford/workspace/codebases/lascari-ai/knowledge-system/sample-knowledge \\\n  PORT=4960 KS_API_URL=http://127.0.0.1:4960 KS_APP_PORT=4961 bun run dev"
+        }
+      ],
+      "children": []
+    },
+    "h-p3": {
+      "id": "h-p3",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "A Page Scores No Value"
+        }
+      ],
+      "children": []
+    },
+    "p3-what": {
+      "id": "p3-what",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The Pages grid shows a dash in the score column, and the console prints "
+        },
+        {
+          "insert": "-",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " for the page."
+        }
+      ],
+      "children": []
+    },
+    "p3c": {
+      "id": "p3c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Cause",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "p3c1",
+        "p3c2"
+      ]
+    },
+    "p3c1": {
+      "id": "p3c1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The page's "
+        },
+        {
+          "insert": "waitFor",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or an action timed out. "
+        },
+        {
+          "insert": "open-library",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " failed with \"waitForSelector: Timeout 10000ms exceeded\" on its Library section."
+        }
+      ],
+      "children": []
+    },
+    "p3c2": {
+      "id": "p3c2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Or no browser check ran on the page. The run then gives no score, because the static checks alone would raise the app score."
+        }
+      ],
+      "children": []
+    },
+    "p3f": {
+      "id": "p3f",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "p3f1",
+        "p3f2"
+      ]
+    },
+    "p3f1": {
+      "id": "p3f1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Read the errors in the page's section of "
+        },
+        {
+          "insert": "report.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and open its state screenshot to see what the page showed."
+        }
+      ],
+      "children": []
+    },
+    "p3f2": {
+      "id": "p3f2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix the selector or the app state, then rerun with "
+        },
+        {
+          "insert": "--pages <id> --quick",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-p4": {
+      "id": "h-p4",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "A Selector Broke After a UI Refactor"
+        }
+      ],
+      "children": []
+    },
+    "p4-what": {
+      "id": "p4-what",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A page that scored before now errors on a "
+        },
+        {
+          "insert": "waitFor",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "click",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "scrollTo",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " step."
+        }
+      ],
+      "children": []
+    },
+    "p4c": {
+      "id": "p4c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Cause",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "p4c1"
+      ]
+    },
+    "p4c1": {
+      "id": "p4c1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Config selectors point at app markup. Knowledge System main 0a3581e dropped the Library section's "
+        },
+        {
+          "insert": "aria-label",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", so "
+        },
+        {
+          "insert": "section[aria-label=\"Library\"]",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " matched nothing."
+        }
+      ],
+      "children": []
+    },
+    "p4f": {
+      "id": "p4f",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "p4f1",
+        "p4f2"
+      ]
+    },
+    "p4f1": {
+      "id": "p4f1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Commit 55e7f01 finds the section by its heading, "
+        },
+        {
+          "insert": "section.owp-section:has(h2:has-text(\"Library\"))",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Visible heading text breaks less often than a label or a class name."
+        }
+      ],
+      "children": []
+    },
+    "p4f2": {
+      "id": "p4f2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "After the app merges a UI change, run every page with "
+        },
+        {
+          "insert": "--quick",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and fix each page error first."
+        }
+      ],
+      "children": []
+    },
+    "h-p5": {
+      "id": "h-p5",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "R-state-shift Fails on a Scrollbar"
+        }
+      ],
+      "children": []
+    },
+    "p5-what": {
+      "id": "p5-what",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "R-state-shift reports that a panel narrowed by 15px, or moved 7.5px, when a popup opened. On Ford's Mac nothing moves."
+        }
+      ],
+      "children": []
+    },
+    "p5c": {
+      "id": "p5c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Cause",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "p5c1"
+      ]
+    },
+    "p5c1": {
+      "id": "p5c1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Headless Chromium draws classic 15px scrollbars, and macOS draws overlay scrollbars. When content grows, a scrollbar appears and takes 15px of width."
+        }
+      ],
+      "children": []
+    },
+    "p5f": {
+      "id": "p5f",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "p5f1",
+        "p5f2"
+      ]
+    },
+    "p5f1": {
+      "id": "p5f1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "dropScrollbarMoves",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/state-shift.ts",
+              "symbol": "dropScrollbarMoves"
+            }
+          }
+        },
+        {
+          "insert": " drops a move or width change equal to a scroller's scrollbar width, or half of it, within 0.6px."
+        }
+      ],
+      "children": []
+    },
+    "p5f2": {
+      "id": "p5f2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The check's note counts them as \"changes only toggled a classic scrollbar\". "
+        },
+        {
+          "insert": "shiftWatch",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " elements get no such filter."
+        }
+      ],
+      "children": []
+    },
+    "h-p6": {
+      "id": "h-p6",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "The Page Changed in the Middle of a Run"
+        }
+      ],
+      "children": []
+    },
+    "p6-what": {
+      "id": "p6-what",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Findings on one page disagree between themes or viewports, or a screenshot shows a half-loaded page."
+        }
+      ],
+      "children": []
+    },
+    "p6c": {
+      "id": "p6c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Cause",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "p6c1"
+      ]
+    },
+    "p6c1": {
+      "id": "p6c1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The Vite dev app reloads when a source file changes. Another agent that edits the same checkout reloads the page while the run measures it."
+        }
+      ],
+      "children": []
+    },
+    "p6f": {
+      "id": "p6f",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "p6f1",
+        "p6f2"
+      ]
+    },
+    "p6f1": {
+      "id": "p6f1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Score a worktree that no other agent edits. The provenance line shows \"+N changed files\" when the checkout was dirty."
+        }
+      ],
+      "children": []
+    },
+    "p6f2": {
+      "id": "p6f2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Rerun the page after the other edits stop."
+        }
+      ],
+      "children": []
+    },
+    "h-p7": {
+      "id": "h-p7",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Files Are Missing From "
+        },
+        {
+          "insert": "guide/screenshots",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "children": []
+    },
+    "p7-what": {
+      "id": "p7-what",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "git status",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in the design-system worktree shows deleted PNG files under "
+        },
+        {
+          "insert": "guide/screenshots/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "p7c": {
+      "id": "p7c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Cause",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "p7c1"
+      ]
+    },
+    "p7c1": {
+      "id": "p7c1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A "
+        },
+        {
+          "insert": "bun run test",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " run in the worktree deleted tracked files there. The test that does it is not pinned down yet."
+        }
+      ],
+      "children": []
+    },
+    "p7f": {
+      "id": "p7f",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "p7f1",
+        "p7f2"
+      ]
+    },
+    "p7f1": {
+      "id": "p7f1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Restore the files with "
+        },
+        {
+          "insert": "git checkout -- guide/screenshots",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and never commit the deletions."
+        }
+      ],
+      "children": []
+    },
+    "p7f2": {
+      "id": "p7f2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Run "
+        },
+        {
+          "insert": "git status --short guide/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " after every test run."
+        }
+      ],
+      "children": []
+    },
+    "h-strange": {
+      "id": "h-strange",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "When a Check Acts Strangely"
+        }
+      ],
+      "children": []
+    },
+    "st-lead": {
+      "id": "st-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A check acts strangely when it fails a page that looks right, or passes a page that looks wrong. These steps find whether the check, the config or the app is at fault."
+        }
+      ],
+      "children": []
+    },
+    "st1": {
+      "id": "st1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run the check's fixture pair with "
+        },
+        {
+          "insert": "bun run design:score --fixture <check-id>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". If the pair fails, the check itself is broken."
+        }
+      ],
+      "children": []
+    },
+    "st2": {
+      "id": "st2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Open the check's page from the Checks table in "
+        },
+        {
+          "insert": "Design Score",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "10-design-score"
+            }
+          }
+        },
+        {
+          "insert": ", and follow its Debug It steps."
+        }
+      ],
+      "children": []
+    },
+    "st3": {
+      "id": "st3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Open the finding's crop in "
+        },
+        {
+          "insert": "crops/<page>/<check>-<theme>-<viewport>-<n>.png",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Compare its measured value with its expected value."
+        }
+      ],
+      "children": []
+    },
+    "st4": {
+      "id": "st4",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Read the check's code at the line that its check page links."
+        }
+      ],
+      "children": []
+    },
+    "st5": {
+      "id": "st5",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Fix the check and add the case to its fixture pair. For a deliberate design choice, add the element to "
+        },
+        {
+          "insert": "ignore",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "skip",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in the app config instead."
+        }
+      ],
+      "children": []
+    }
+  }
+}
