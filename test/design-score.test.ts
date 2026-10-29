@@ -253,12 +253,13 @@ describe.skipIf(!!process.env.DS_SKIP_BROWSER)("design:score v2 in a browser", (
   });
 
   test("R-state-shift: the shift pass runs on the view the page state left, not where the focus pass scrolled", async () => {
-    await page.setContent(`<style>body { margin: 20px; } button { display: block; height: 32px; margin: 8px 0; border: 1px solid #888; } .grow:hover { border-width: 4px; }</style>
+    await page.setContent(`<style>html { scroll-behavior: smooth; } body { margin: 20px; } button { display: block; height: 32px; margin: 8px 0; border: 1px solid #888; } .grow:hover { border-width: 4px; }</style>
       <body><button class="grow">Grow</button>${Array.from({ length: 40 }, (_, i) => `<button class="b">B${i}</button>`).join("")}</body>`);
     const restoreView = await keepScroll(page);
     await focusPass(page, 30);
     expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
     await restoreView();
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
     const { hits } = await stateShiftPass(page, { ignore: [], open: [], max: 8 });
     expect(hits.map((h) => h.finding.measured)).toContainEqual(expect.stringMatching(/^hovering button\.grow "Grow": moves or resizes the control/));
   });

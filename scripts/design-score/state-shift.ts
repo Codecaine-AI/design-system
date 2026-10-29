@@ -434,11 +434,9 @@ export async function keepScroll(page: any): Promise<() => Promise<void>> {
       (document.activeElement as HTMLElement | null)?.blur?.();
       const st = (window as unknown as { __dsScroll?: { x: number; y: number; saved: Array<[Element, number, number]> } }).__dsScroll;
       if (!st) return;
-      for (const [el, left, top] of st.saved) {
-        el.scrollLeft = left;
-        el.scrollTop = top;
-      }
-      window.scrollTo(st.x, st.y);
+      // Instant, so a page with scroll-behavior: smooth is back in place before the shift pass picks controls.
+      for (const [el, left, top] of st.saved) el.scrollTo({ left, top, behavior: "instant" });
+      window.scrollTo({ left: st.x, top: st.y, behavior: "instant" });
     });
   };
 }
