@@ -247,9 +247,9 @@ describe("literals", () => {
     const tw = check("unconnected", "literals")
       .violations.filter((v) => v.message.startsWith("Tailwind default-scale class "))
       .map((v) => `${v.file}:${v.line} ${v.message.split(" ")[3]}`);
-    // Widget.tsx line 6 also holds text-ui-sm, rounded-pill and font-medium; line 9 holds "opacity 150ms ease-out".
+    // Widget.tsx line 6 also holds text-ui-sm, rounded-pill and font-medium. Line 9 holds "opacity 150ms ease-out", and line 10 holds the design-system ease-out.
     expect(tw.sort()).toEqual([
-      "apps/unconnected/src/Widget.tsx:10 ease-out",
+      "apps/unconnected/src/Widget.tsx:10 ease-in",
       "apps/unconnected/src/Widget.tsx:6 bg-red-500",
       "apps/unconnected/src/Widget.tsx:6 rounded-lg",
       "apps/unconnected/src/Widget.tsx:6 text-sm",
