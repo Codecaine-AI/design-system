@@ -1,0 +1,655 @@
+{
+  "area": "typography",
+  "rules": [
+    {
+      "id": "a11y-text-resize-200",
+      "area": "typography",
+      "title": "200% text resize",
+      "rule": "All content and controls survive 200% text resize.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-text-resize-200"
+      ],
+      "check": "R-text-clip"
+    },
+    {
+      "id": "layout-numbers-align-end",
+      "area": "typography",
+      "title": "Numbers align end",
+      "rule": "Numbers in tables are text-align: end; text is start.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "layout-numbers-align-end"
+      ],
+      "notes": "Same numeric-cell scan as R-tabular-nums.",
+      "check": "R-tabular-nums"
+    },
+    {
+      "id": "layout-min-height-not-height",
+      "area": "typography",
+      "title": "min-height for text boxes",
+      "rule": "Boxes holding text use min-height (or max-height with overflow auto), never a fixed height.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "layout-min-height-not-height"
+      ],
+      "check": "R-text-clip"
+    },
+    {
+      "id": "layout-minmax-0",
+      "area": "typography",
+      "title": "Tracks can shrink",
+      "rule": "Grid tracks with long content use minmax(0, 1fr) and flex children min-width: 0.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "layout-minmax-0"
+      ],
+      "check": "R-text-clip"
+    },
+    {
+      "id": "layout-text-growth",
+      "area": "typography",
+      "title": "Text can grow",
+      "rule": "Labels and buttons have no fixed widths and rows wrap, so longer strings fit.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "layout-text-growth"
+      ],
+      "check": "R-text-clip"
+    },
+    {
+      "id": "typo-few-fonts",
+      "area": "typography",
+      "title": "Three font families at most",
+      "rule": "Use at most three font families; fewer is better.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "maxFamilies": 3
+      },
+      "sources": [
+        "typo-few-fonts",
+        "14-max-three-fonts"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-weight-floor",
+      "area": "typography",
+      "title": "Weight floor",
+      "rule": "Below 18px use weight 400 or heavier; weights 100-300 only at 28px and up.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "minWeightBelow18px": 400,
+        "lightWeightsFromPx": 28
+      },
+      "sources": [
+        "typo-weight-floor"
+      ],
+      "notes": "Read from the same computed-font inventory as R-min-font.",
+      "check": "R-min-font"
+    },
+    {
+      "id": "typo-load-used-faces",
+      "area": "typography",
+      "title": "No synthesized faces",
+      "rule": "Load every weight and style the design uses so the browser never synthesizes one.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-load-used-faces",
+        "14-no-faux-bold-italic"
+      ],
+      "notes": "Issue 14 suggests font-synthesis: none; the skill forbids it globally (see typo-no-global-synthesis-none). Skill wins.",
+      "check": null
+    },
+    {
+      "id": "typo-no-global-synthesis-none",
+      "area": "typography",
+      "title": "No global font-synthesis: none",
+      "rule": "Never set font-synthesis: none on body or interface text.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "typo-no-global-synthesis-none"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-properties-over-raw-tags",
+      "area": "typography",
+      "title": "Properties over feature tags",
+      "rule": "Use font-weight and font-variant-* where a property exists, not font-variation-settings or font-feature-settings.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "typo-properties-over-raw-tags",
+        "14-properties-over-feature-settings"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-small-type-scale",
+      "area": "typography",
+      "title": "Small type scale",
+      "rule": "Use a small type scale, each size paired with its line-height and weight, with few sizes and weights in use.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-small-type-scale",
+        "14-few-sizes-weights"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-heading-sizes-descend",
+      "area": "typography",
+      "title": "Headings descend",
+      "rule": "Heading sizes descend with level and a heading is never smaller than body text.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-heading-sizes-descend"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-unitless-line-height",
+      "area": "typography",
+      "title": "Unitless line-height",
+      "rule": "line-height is unitless.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "typo-unitless-line-height"
+      ],
+      "notes": "DS line-height.code (21px) and line-height.row (28px) are px on purpose: they set row heights. They are exempt.",
+      "check": null
+    },
+    {
+      "id": "typo-line-height-by-role",
+      "area": "typography",
+      "title": "Line height by role",
+      "rule": "Display 1.1, headings 1.2-1.3, body 1.5-1.6.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "display": 1.1,
+        "heading": [
+          1.2,
+          1.3
+        ],
+        "body": [
+          1.5,
+          1.6
+        ]
+      },
+      "sources": [
+        "typo-line-height-by-role",
+        "15-line-height-by-role"
+      ],
+      "notes": "DS line-height.reading is 1.45, under the 1.5 floor. See token proposals.",
+      "check": null
+    },
+    {
+      "id": "typo-wrapping-text-leading",
+      "area": "typography",
+      "title": "Wrapping text leading",
+      "rule": "Text that wraps to three or more lines has line-height 1.4 or more.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "min": 1.4,
+        "fromLines": 3
+      },
+      "sources": [
+        "typo-wrapping-text-leading"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-letter-spacing-by-size",
+      "area": "typography",
+      "title": "Letter spacing by size",
+      "rule": "Headings 24px+ take -0.01em to -0.02em, uppercase labels 14px and under take about 0.05em, body stays 0.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "headingEm": [
+          -0.02,
+          -0.01
+        ],
+        "headingFromPx": 24,
+        "uppercaseEm": 0.05,
+        "uppercaseMaxPx": 14
+      },
+      "sources": [
+        "typo-letter-spacing-by-size",
+        "15-letter-spacing-by-role"
+      ],
+      "notes": "DS uppercase labels use 0.09em and 0.14em. See token proposals.",
+      "check": null
+    },
+    {
+      "id": "typo-letter-spacing-em",
+      "area": "typography",
+      "title": "Letter spacing in em",
+      "rule": "letter-spacing is set in em, not px.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "typo-letter-spacing-em"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-no-kerning-off",
+      "area": "typography",
+      "title": "Kerning on",
+      "rule": "Never set font-kerning: none.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "typo-no-kerning-off"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-measure",
+      "area": "typography",
+      "title": "Line length",
+      "rule": "Long-form text is capped at 60-75 characters per line.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "minCh": 60,
+        "maxCh": 75
+      },
+      "sources": [
+        "typo-measure",
+        "15-measure-60-75ch"
+      ],
+      "notes": "DS layout.lane.text is 60ch, inside the band.",
+      "check": "R-line-length"
+    },
+    {
+      "id": "typo-balance-headings",
+      "area": "typography",
+      "title": "Balance headings",
+      "rule": "Headings and titles use text-wrap: balance.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-balance-headings",
+        "09-heading-text-wrap-balance"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-no-balance-on-paragraphs",
+      "area": "typography",
+      "title": "No balance on paragraphs",
+      "rule": "Never use text-wrap: balance on paragraphs.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-no-balance-on-paragraphs",
+        "15-no-balance-on-longform"
+      ],
+      "notes": "Issue 15 also bans pretty on long-form; the skill allows pretty on paragraphs. Skill wins (see typo-pretty-body).",
+      "check": null
+    },
+    {
+      "id": "typo-pretty-body",
+      "area": "typography",
+      "title": "Pretty paragraphs",
+      "rule": "Body paragraphs and short descriptions use text-wrap: pretty.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-pretty-body",
+        "09-description-text-wrap-pretty"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-break-long-strings",
+      "area": "typography",
+      "title": "Break long strings",
+      "rule": "Where a long word, URL or ID could escape its container, set overflow-wrap: break-word.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-break-long-strings",
+        "15-overflow-wrap-long-tokens"
+      ],
+      "check": "R-text-clip"
+    },
+    {
+      "id": "typo-nowrap-labels",
+      "area": "typography",
+      "title": "Labels do not wrap",
+      "rule": "Labels and badges that look broken when wrapped use white-space: nowrap.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-nowrap-labels",
+        "15-nowrap-badges"
+      ],
+      "check": "R-text-clip"
+    },
+    {
+      "id": "typo-no-justify",
+      "area": "typography",
+      "title": "No justify",
+      "rule": "Interface text is text-align: start; never justify.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-no-justify",
+        "15-avoid-justify"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-tabular-nums",
+      "area": "typography",
+      "title": "Tabular numbers",
+      "rule": "Timers, counters, prices and numeric columns use tabular-nums; prose figures stay proportional.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-tabular-nums",
+        "09-tabular-nums-changing"
+      ],
+      "check": "R-tabular-nums"
+    },
+    {
+      "id": "typo-line-clamp-complete",
+      "area": "typography",
+      "title": "Complete line clamp",
+      "rule": "-webkit-line-clamp is paired with display: -webkit-box and -webkit-box-orient: vertical.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "typo-line-clamp-complete"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-natural-case",
+      "area": "typography",
+      "title": "Natural case",
+      "rule": "Store text in natural case and set case with text-transform.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "typo-natural-case",
+        "15-case-via-text-transform"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-smart-punctuation",
+      "area": "typography",
+      "title": "Typographic punctuation",
+      "rule": "Rendered text uses the ellipsis character, en dashes in ranges and curly quotes; code keeps straight quotes.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-smart-punctuation",
+        "15-smart-punctuation"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-underline-from-font",
+      "area": "typography",
+      "title": "Tuned underlines",
+      "rule": "Underlines use from-font position and thickness, or a tuned offset and 1-2px thickness, with skip-ink auto.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "offsetPx": 3,
+        "thicknessPx": [
+          1,
+          2
+        ]
+      },
+      "sources": [
+        "typo-underline-from-font",
+        "15-underline-styling"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-no-skip-ink-none",
+      "area": "typography",
+      "title": "Skip-ink on",
+      "rule": "Never set text-decoration-skip-ink: none.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "typo-no-skip-ink-none"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-size-floors",
+      "area": "typography",
+      "title": "Font size floors",
+      "rule": "Long-form body starts at 16px, UI text about 14px (13px in dense tools), captions 13px, rarely below 12px.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "bodyLongformPx": 16,
+        "uiPx": 14,
+        "denseUiPx": 13,
+        "captionPx": 13,
+        "warnBelowPx": 12
+      },
+      "sources": [
+        "typo-size-floors",
+        "15-min-text-sizes"
+      ],
+      "notes": "DS micro (10px) and ui-2xs (11px) sit under the 12px floor; each use warns.",
+      "check": "R-min-font"
+    },
+    {
+      "id": "typo-rem-font-size",
+      "area": "typography",
+      "title": "rem font sizes",
+      "rule": "font-size is set in rem so the reader's browser font size applies.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "typo-rem-font-size"
+      ],
+      "notes": "DS font sizes are px except title. Low impact in desktop Electron apps.",
+      "check": null
+    },
+    {
+      "id": "typo-font-smoothing-root",
+      "area": "typography",
+      "title": "Smoothing on the root",
+      "rule": "Set -webkit-font-smoothing: antialiased and -moz-osx-font-smoothing: grayscale once on the root.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-font-smoothing-root",
+        "09-antialiased-root"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-text-box-trim",
+      "area": "typography",
+      "title": "Trim text boxes",
+      "rule": "In buttons and badges, trim text boxes (text-box: trim-both cap alphabetic) so labels center optically.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "typo-text-box-trim"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-selectable-text",
+      "area": "typography",
+      "title": "Content selectable, chrome not",
+      "rule": "Content text stays selectable; user-select: none only on control chrome and drag surfaces.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-selectable-text",
+        "12-no-select-on-controls"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-woff2",
+      "area": "typography",
+      "title": "woff2 fonts",
+      "rule": "Serve web fonts as woff2.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-woff2",
+        "14-woff2-fonts"
+      ],
+      "check": null
+    },
+    {
+      "id": "14-self-host-fonts",
+      "area": "typography",
+      "title": "Self-host fonts",
+      "rule": "Self-host fonts instead of loading them from a third-party CDN.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "14-self-host-fonts"
+      ],
+      "check": null
+    },
+    {
+      "id": "14-font-display-swap",
+      "area": "typography",
+      "title": "font-display swap",
+      "rule": "Set font-display: swap with a similar system fallback stack.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "14-font-display-swap"
+      ],
+      "check": null
+    },
+    {
+      "id": "15-selection-styled-readable",
+      "area": "typography",
+      "title": "Readable selection",
+      "rule": "Style ::selection to match the brand and keep selected text readable.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "15-selection-styled-readable"
+      ],
+      "notes": "DS color.selection covers it.",
+      "check": null
+    },
+    {
+      "id": "typo-display-text-cuts",
+      "area": "typography",
+      "title": "Display and Text cuts",
+      "rule": "Use a family's Display cut at large sizes and its Text cut at small ones.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "typo-display-text-cuts"
+      ],
+      "taste": true,
+      "check": null
+    },
+    {
+      "id": "typo-emphasis-weight-step",
+      "area": "typography",
+      "title": "Emphasis is one weight step",
+      "rule": "Emphasis within a role is one weight step up, not a size change.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "typo-emphasis-weight-step"
+      ],
+      "taste": true,
+      "check": null
+    },
+    {
+      "id": "break-content-length",
+      "area": "typography",
+      "title": "Content length",
+      "rule": "Components survive empty, one-word, several-sentence and one unbreakable 60-character string.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "unbreakableChars": 60
+      },
+      "sources": [
+        "break-content-length"
+      ],
+      "check": "R-text-clip"
+    },
+    {
+      "id": "break-container",
+      "area": "typography",
+      "title": "Container squeeze",
+      "rule": "Components survive a narrow container, being squeezed by a sibling, and a very wide container.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "break-container"
+      ],
+      "notes": "Container widths, not viewport (the 320px value is kept as a container test).",
+      "check": "R-text-clip"
+    }
+  ]
+}

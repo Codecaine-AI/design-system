@@ -6,6 +6,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 
 import { CHECKS } from "./checks";
+import { loadRules } from "./rules";
 import { AREAS, appAreas, pageAreas } from "./score";
 import type { AllowedFinding, CheckStatus, Finding, Scorecard } from "./types";
 
@@ -114,13 +115,12 @@ export function writeReport(dir: string, card: Scorecard, designSystem: string):
   }
   parts.push(`</tbody></table></div>`);
 
-  // Checks, with the design rules design-score/rules.json maps to each (when that file exists).
+  // Checks, with the design rules design-score/rules/ maps to each (when that folder exists).
   const mapped = new Map<string, string[]>();
   try {
-    const rules = JSON.parse(readFileSync(join(designSystem, "design-score/rules.json"), "utf8")) as { rules?: Array<{ id: string; title?: string; check?: string | string[] | null }> };
-    for (const r of rules.rules ?? []) for (const c of [r.check ?? []].flat()) mapped.set(c, [...(mapped.get(c) ?? []), `${r.id} (${r.title ?? r.id})`]);
+    for (const r of loadRules(designSystem).rules) for (const c of [r.check ?? []].flat()) mapped.set(c, [...(mapped.get(c) ?? []), `${r.id} (${r.title ?? r.id})`]);
   } catch {
-    // no rules.json yet
+    // a rules file that does not parse: the table shows no rules
   }
   parts.push(`<h2>Checks</h2><table><thead><tr><th>check</th><th>area</th><th>rule</th><th class="num">pass</th><th class="num">warn</th><th class="num">fail</th><th class="num">n/a</th></tr></thead><tbody>`);
   for (const c of CHECKS) {

@@ -6,6 +6,7 @@
  *                        [--themes light,dark] [--viewports 1440x900,1024x768] [--jobs 2] [--no-motion] [--no-focus]
  *                        [--no-static] [--config <file>] [--out <dir>] [--root <dir>] [--json]
  *   bun run design:score --app <id> --list-pages
+ *   bun run design:score --fixture <check-id>[,<check-id>...] [--root <dir>]
  *
  * --pages takes page ids or globs (`*`); an unknown id is an error. --quick scores one theme (the first)
  * at one viewport (the first): about a third of the time, for hill-climbing; a full run is what counts.
@@ -21,6 +22,10 @@
  * "<app>/latest" and "<app>/previous") and writes an HTML page with both runs' screenshots side by side
  * per page and the score delta per check.
  *
+ * --fixture runs one check against design-score/fixtures/<check-id>/good.html and bad.html (scripts/design-score/fixture.ts),
+ * prints each page's status, and writes shots/good.png and shots/bad.png there with the findings boxed.
+ * It exits 1 unless the bad page fails (warns, for a warn-only check) and the good page passes.
+ *
  * Exit: 0 when the run finished (whatever the score), 1 when a page errored, 2 on bad arguments.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
@@ -31,6 +36,7 @@ import { cleanupRuns, installSignalHandlers, startApp, validateLoadedRegistry, t
 import { pinPlaywright } from "../lib/playwright";
 import { DESIGN_SYSTEM_ROOT, getApp, loadRegistry, REGISTRY_PATH, workspaceRoot } from "../lib/registry";
 import { CHECKS } from "./checks";
+import { judgeFixture, runFixture } from "./fixture";
 import { writeCompare } from "./report";
 import { AREAS } from "./score";
 import { runScore, selectPages } from "./run";
@@ -89,6 +95,26 @@ if (has("--compare")) {
   console.log(`${ca.app}: ${ca.score} → ${cb.score} (${cb.score - ca.score >= 0 ? "+" : ""}${Math.round((cb.score - ca.score) * 10) / 10})`);
   console.log(path);
   process.exit(0);
+}
+
+if (has("--fixture")) {
+  const ids = list(flag("--fixture")) ?? fail("--fixture <check-id> is required");
+  const root = resolve(flag("--root") ?? workspaceRoot());
+  pinPlaywright(root);
+  let ok = true;
+  for (const id of ids!) {
+    try {
+      const res = await runFixture(id, { designSystem: DESIGN_SYSTEM_ROOT, root });
+      const judged = judgeFixture(id, res);
+      ok &&= judged.ok;
+      console.log(judged.lines.join("\n"));
+      console.log(`  run: ${res.bad?.runDir ?? res.good?.runDir}`);
+    } catch (error) {
+      ok = false;
+      console.log(`${id}: ${error instanceof Error ? error.message : error}`);
+    }
+  }
+  process.exit(ok ? 0 : 1);
 }
 
 const appId = flag("--app") ?? fail("--app <id> is required (a design-score/apps/<id>.json)");

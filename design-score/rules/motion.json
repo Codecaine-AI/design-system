@@ -1,0 +1,665 @@
+{
+  "area": "motion",
+  "rules": [
+    {
+      "id": "a11y-reduced-motion-gate",
+      "area": "motion",
+      "title": "Reduced-motion gate",
+      "rule": "Every keyframe or enter animation is opt-in under prefers-reduced-motion: no-preference (motion-safe:), with one app-wide MotionConfig reducedMotion=\"user\".",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "a11y-reduced-motion-gate",
+        "01-css-animation-reduced-motion",
+        "16-motion-safe-over-motion-reduce",
+        "16-reduced-motion-global"
+      ],
+      "notes": "Ford's decision: reduced-motion rules are warnings only.",
+      "check": "M-reduced-motion"
+    },
+    {
+      "id": "ui-reduced-motion-runtime",
+      "area": "motion",
+      "title": "Reduced motion keeps the fade",
+      "rule": "Under reduce, movement, scale and blur become an opacity cross-fade; feedback stays, and the press scale stays as functional feedback.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "ui-reduced-motion-runtime",
+        "20-reduced-motion-keep-fade"
+      ],
+      "notes": "Skills conflict 1 (press scale under reduce) resolved: keep it.",
+      "check": "M-reduced-motion"
+    },
+    {
+      "id": "ks-motion-tokens",
+      "area": "motion",
+      "title": "Motion from tokens",
+      "rule": "Durations, easings, springs and press scale come from design-system motion tokens, defined once (MotionConfig or the token), never as ms or cubic-bezier literals.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "ui-one-way-per-detail",
+        "12-shared-motionconfig",
+        "17-easing-by-purpose"
+      ],
+      "notes": "DS rule 2 forbids duration literals; Jakub's values become tokens (token proposals).",
+      "check": "S-motion-literal"
+    },
+    {
+      "id": "ui-transitions-for-state",
+      "area": "motion",
+      "title": "Transitions for state",
+      "rule": "Interactive state changes use transitions or springs so they reverse mid-way; keyframes only for one-shot sequences.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "ui-transitions-for-state",
+        "09-transitions-for-interactions"
+      ],
+      "check": null
+    },
+    {
+      "id": "ui-high-frequency-instant",
+      "area": "motion",
+      "title": "Frequent interactions are instant",
+      "rule": "Keystrokes, row and menu-item hovers and tab switches are instant or 150ms or less of opacity or background-color, with no entrance animation.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "maxMs": 150
+      },
+      "sources": [
+        "ui-high-frequency-instant",
+        "19-frequent-interactions-instant"
+      ],
+      "check": "M-duration"
+    },
+    {
+      "id": "13-no-open-animation-frequent-menus",
+      "area": "motion",
+      "title": "No open animation on frequent menus",
+      "rule": "Surfaces opened many times a day (context menus) do not animate open; animate the close only, if at all.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "example": "200 opens/day x 300ms = about 1 min/day"
+      },
+      "sources": [
+        "13-no-open-animation-frequent-menus"
+      ],
+      "check": "M-duration"
+    },
+    {
+      "id": "13-no-animate-data-tab-swap",
+      "area": "motion",
+      "title": "No animated data swaps",
+      "rule": "Content swaps between data tabs show the new data at once.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "13-no-animate-data-tab-swap"
+      ],
+      "check": "M-duration"
+    },
+    {
+      "id": "17-duration-by-size",
+      "area": "motion",
+      "title": "Duration by size",
+      "rule": "Duration scales with what moves: small 150ms, menus and tabs 250ms, modals, drawers and panels 350-450ms.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "smallMs": 150,
+        "mediumMs": 250,
+        "largeMs": [
+          350,
+          450
+        ]
+      },
+      "sources": [
+        "17-duration-by-size"
+      ],
+      "notes": "DS durations are 100/150/260ms. See token proposals.",
+      "check": "M-duration"
+    },
+    {
+      "id": "17-easing-by-purpose",
+      "area": "motion",
+      "title": "Easing by purpose",
+      "rule": "ease-out for enter and exit, linear for loading and continuous motion, a no-bounce spring for morphs; never ease-in on UI.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "easeOut": "cubic-bezier(0, 0, 0.2, 1)",
+        "skillCurve": "cubic-bezier(0.2, 0, 0, 1)"
+      },
+      "sources": [
+        "17-easing-by-purpose"
+      ],
+      "notes": "M-duration reads easing from the same getAnimations() record.",
+      "check": "M-duration"
+    },
+    {
+      "id": "ui-exit-subtle",
+      "area": "motion",
+      "title": "Exits shorter and smaller",
+      "rule": "Exits are shorter and smaller than enters: opacity, 4px blur, a fixed 12px move or a 0.99 scale over 150ms ease-out, never the full container height.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "exitMs": 150,
+        "enterMsExample": 250,
+        "translatePx": 12,
+        "blurPx": 4,
+        "exitScale": 0.99
+      },
+      "sources": [
+        "ui-exit-subtle",
+        "09-subtle-exit",
+        "17-exit-scale-subtle",
+        "17-enter-longer-than-exit"
+      ],
+      "notes": "Issue 09 slides to -70%; the skill's fixed 12px is stricter and wins.",
+      "check": "M-duration"
+    },
+    {
+      "id": "ui-stagger-entrances",
+      "area": "motion",
+      "title": "Staggered entrances",
+      "rule": "Infrequent staged entrances split into chunks staggered 100ms, each opacity + 4px blur + 12px translateY over 300ms ease-out; never stagger routine interactions.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "staggerMs": 100,
+        "durationMs": 300,
+        "blurPx": 4,
+        "translatePx": 12
+      },
+      "sources": [
+        "ui-stagger-entrances",
+        "09-split-stagger-enter"
+      ],
+      "notes": "Issue 09's hero uses 800ms, 8px and 8px blur; product UI uses the skill's values.",
+      "check": "M-duration"
+    },
+    {
+      "id": "17-scale-inverse-to-size",
+      "area": "motion",
+      "title": "Scale inverse to size",
+      "rule": "Small elements scale in from 0.96-0.97, large ones from 0.98-0.99.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "small": [
+          0.96,
+          0.97
+        ],
+        "large": [
+          0.98,
+          0.99
+        ]
+      },
+      "sources": [
+        "17-scale-inverse-to-size"
+      ],
+      "check": null
+    },
+    {
+      "id": "17-transform-origin-trigger",
+      "area": "motion",
+      "title": "Scale from the trigger",
+      "rule": "Popovers, menus, tooltips and anchored badges scale from their trigger or anchor corner, not the center.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "badgeScaleFrom": 0.75
+      },
+      "sources": [
+        "17-transform-origin-trigger",
+        "07-indicator-origin"
+      ],
+      "check": null
+    },
+    {
+      "id": "17-movement-range",
+      "area": "motion",
+      "title": "Small travel",
+      "rule": "Travel stays small: 4px for text swaps, about 8px for page transitions, 8-32px for most elements, up to 70% for sheets.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "textPx": 4,
+        "pagePx": 8,
+        "elementPx": [
+          8,
+          32
+        ],
+        "sheetMaxPct": 70
+      },
+      "sources": [
+        "17-movement-range"
+      ],
+      "check": null
+    },
+    {
+      "id": "17-direction-from-source",
+      "area": "motion",
+      "title": "Direction from source",
+      "rule": "Motion shows where things come from: menus from the trigger, panels from their side, indicators between positions, nav dropdowns shift about 8px in the direction of travel.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "navShiftPx": 8
+      },
+      "sources": [
+        "17-direction-from-source",
+        "20-nav-dropdown-height-direction"
+      ],
+      "check": null
+    },
+    {
+      "id": "ui-motion-not-only-cue",
+      "area": "motion",
+      "title": "Motion is not the only cue",
+      "rule": "Every animated state change leaves a static cue.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "ui-motion-not-only-cue"
+      ],
+      "check": null
+    },
+    {
+      "id": "ui-no-state-animation-on-mount",
+      "area": "motion",
+      "title": "No animation on mount",
+      "rule": "State swaps and page elements do not animate on first render unless it is an intended entrance (initial={false}).",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "ui-no-state-animation-on-mount",
+        "19-no-animate-on-load"
+      ],
+      "check": null
+    },
+    {
+      "id": "ui-icon-crossfade-values",
+      "area": "motion",
+      "title": "Icon swap cross-fade",
+      "rule": "Icon swaps cross-fade with scale 0.25 to 1, opacity 0 to 1, blur 4px to 0 over 300ms (spring bounce 0 or cubic-bezier(0.2, 0, 0, 1)).",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "scaleFrom": 0.25,
+        "blurPx": 4,
+        "durationMs": 300,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)"
+      },
+      "sources": [
+        "ui-icon-crossfade-values",
+        "19-icon-swap-crossfade"
+      ],
+      "check": null
+    },
+    {
+      "id": "ui-bounce-zero",
+      "area": "motion",
+      "title": "No bounce",
+      "rule": "Springs, gesture springs included, have bounce 0.",
+      "severity": "warn",
+      "layer": "static",
+      "values": {
+        "bounce": 0
+      },
+      "sources": [
+        "ui-bounce-zero",
+        "17-subtle-bounce",
+        "08-spring-gestures"
+      ],
+      "notes": "Issue 17 allows a subtle bounce; the skill's 0 is stricter and wins.",
+      "check": "S-motion-literal"
+    },
+    {
+      "id": "ui-theme-switch-no-transitions",
+      "area": "motion",
+      "title": "No transitions on theme switch",
+      "rule": "Transitions are suppressed while the theme switches.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "ui-theme-switch-no-transitions",
+        "19-no-transitions-on-theme-switch"
+      ],
+      "check": null
+    },
+    {
+      "id": "ui-no-transition-all",
+      "area": "motion",
+      "title": "No transition: all",
+      "rule": "Transitions name exact properties, never all.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "ui-no-transition-all",
+        "19-no-transition-all"
+      ],
+      "check": "S-transition-all"
+    },
+    {
+      "id": "ui-will-change-scoped",
+      "area": "motion",
+      "title": "Scoped will-change",
+      "rule": "will-change names transform, opacity or filter, only on elements that animate, never all or broad selectors.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "ui-will-change-scoped",
+        "05-will-change-scoped",
+        "05-will-change-valid-props"
+      ],
+      "check": null
+    },
+    {
+      "id": "05-composite-only-animation",
+      "area": "motion",
+      "title": "Compositor-only animation",
+      "rule": "Animate transform, opacity and filter, never left, top, width, height or margin.",
+      "severity": "fail",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "05-composite-only-animation"
+      ],
+      "notes": "Measured container height morphs (12-height-animates-between-steps) and Motion layout animations warn instead of fail.",
+      "check": "M-layout-props"
+    },
+    {
+      "id": "03-animate-gradient-cheaply",
+      "area": "motion",
+      "title": "Animate gradients cheaply",
+      "rule": "Animate a gradient's position, angle or size, not its color stops.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "03-animate-gradient-cheaply"
+      ],
+      "check": "M-layout-props"
+    },
+    {
+      "id": "05-will-change-fix-jitter",
+      "area": "motion",
+      "title": "No jitter while animating",
+      "rule": "Text and icons never shift 1-2px while an element animates (add will-change: transform).",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "maxShiftPx": 0.5
+      },
+      "sources": [
+        "05-will-change-fix-jitter"
+      ],
+      "check": null
+    },
+    {
+      "id": "ui-animation-fill-mode",
+      "area": "motion",
+      "title": "Fill mode for hidden starts",
+      "rule": "Hidden start states live in the from keyframe with animation-fill-mode: both.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "ui-animation-fill-mode"
+      ],
+      "check": null
+    },
+    {
+      "id": "04-shared-layoutid",
+      "area": "motion",
+      "title": "Shared element moves",
+      "rule": "An element that moves between states (tab pill, card to dialog) animates with a shared layoutId, not a cut.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "04-shared-layoutid"
+      ],
+      "check": null
+    },
+    {
+      "id": "04-layoutid-unique-per-state",
+      "area": "motion",
+      "title": "Unique layoutId",
+      "rule": "Never render two elements with the same layoutId in one state.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "04-layoutid-unique-per-state"
+      ],
+      "check": null
+    },
+    {
+      "id": "04-layoutid-outside-presence",
+      "area": "motion",
+      "title": "layoutId outside AnimatePresence",
+      "rule": "Keep layoutId elements outside AnimatePresence.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "04-layoutid-outside-presence"
+      ],
+      "check": null
+    },
+    {
+      "id": "04-presence-keyed-blur-fade",
+      "area": "motion",
+      "title": "Keyed presence fade",
+      "rule": "Content that appears with a layout change uses AnimatePresence with a stable key and opacity plus 4px blur.",
+      "severity": "warn",
+      "layer": "static",
+      "values": {
+        "blurPx": 4
+      },
+      "sources": [
+        "04-presence-keyed-blur-fade"
+      ],
+      "check": null
+    },
+    {
+      "id": "04-radius-via-animate",
+      "area": "motion",
+      "title": "Radius through animate",
+      "rule": "Radius that differs between layout states goes through Motion's animate or style, not className.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "04-radius-via-animate"
+      ],
+      "check": null
+    },
+    {
+      "id": "08-inview-blur-reveal",
+      "area": "motion",
+      "title": "Scroll reveal",
+      "rule": "Scroll reveals start from a defined state (blur 8px to 0) once half the element is visible.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "blurPx": 8,
+        "viewportAmount": 0.5
+      },
+      "sources": [
+        "08-inview-blur-reveal"
+      ],
+      "check": null
+    },
+    {
+      "id": "11-fade-labels-with-resize",
+      "area": "motion",
+      "title": "Labels fade with resize",
+      "rule": "When a container resizes (sidebar collapse), its labels fade in step, never appear or vanish instantly.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "11-fade-labels-with-resize"
+      ],
+      "check": null
+    },
+    {
+      "id": "12-no-animate-height-auto",
+      "area": "motion",
+      "title": "No height: auto animation",
+      "rule": "Never animate height to or from auto; measure and animate to a number.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "12-no-animate-height-auto"
+      ],
+      "check": null
+    },
+    {
+      "id": "12-height-animates-between-steps",
+      "area": "motion",
+      "title": "Height morphs between steps",
+      "rule": "When a container's content changes size, interpolate its height (spring bounce 0, 0.3s) instead of jumping.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "durationS": 0.3,
+        "bounce": 0
+      },
+      "sources": [
+        "12-height-animates-between-steps"
+      ],
+      "check": null
+    },
+    {
+      "id": "12-measure-inner-wrapper",
+      "area": "motion",
+      "title": "Measure the inner wrapper",
+      "rule": "The measuring ref sits on an inner wrapper, never on the animated element.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "12-measure-inner-wrapper"
+      ],
+      "check": null
+    },
+    {
+      "id": "12-initial-height-no-zero-frame",
+      "area": "motion",
+      "title": "No zero-height first frame",
+      "rule": "The first state has a known height so a dialog never opens by growing from 0.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "12-initial-height-no-zero-frame"
+      ],
+      "check": null
+    },
+    {
+      "id": "12-step-crossfade-poplayout",
+      "area": "motion",
+      "title": "Step cross-fade",
+      "rule": "Swapped step content cross-fades with AnimatePresence mode popLayout, initial false, opacity and scale 0.95 to 1.",
+      "severity": "warn",
+      "layer": "static",
+      "values": {
+        "scaleFrom": 0.95
+      },
+      "sources": [
+        "12-step-crossfade-poplayout"
+      ],
+      "check": null
+    },
+    {
+      "id": "12-loader-linear-infinite",
+      "area": "motion",
+      "title": "Linear loaders",
+      "rule": "Looping loaders rotate linearly and stop under reduced motion.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "periodS": 1.25
+      },
+      "sources": [
+        "12-loader-linear-infinite"
+      ],
+      "check": "M-reduced-motion"
+    },
+    {
+      "id": "12-lazy-motion-bundle",
+      "area": "motion",
+      "title": "LazyMotion",
+      "rule": "Use m components inside LazyMotion to keep Motion's full bundle out of the main chunk.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "12-lazy-motion-bundle"
+      ],
+      "check": null
+    },
+    {
+      "id": "05-scroll-contents-hints",
+      "area": "motion",
+      "title": "Narrow will-change hints",
+      "rule": "Use will-change: scroll-position or contents only for their narrow cases.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "05-scroll-contents-hints"
+      ],
+      "taste": true,
+      "check": null
+    },
+    {
+      "id": "08-slider-springs",
+      "area": "motion",
+      "title": "Slider springs",
+      "rule": "Animate slider thumb and fill with springs.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "08-slider-springs"
+      ],
+      "taste": true,
+      "check": null
+    },
+    {
+      "id": "11-slow-motion-review",
+      "area": "motion",
+      "title": "Slow-motion review",
+      "rule": "Review every animation at 1x, 0.5x, 0.25x and 0.125x before shipping.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "11-slow-motion-review"
+      ],
+      "taste": true,
+      "check": null
+    }
+  ]
+}

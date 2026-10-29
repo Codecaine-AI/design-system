@@ -76,6 +76,19 @@ export function cropPng(src: RgbaImage, spec: CropSpec): Uint8Array | null {
       out.data[di + 3] = 255;
     }
   }
+  const draw = painter(out, x0, y0, scale);
+  if (spec.guides) {
+    draw.guide(spec.guides.axis, spec.guides.a, MAGENTA);
+    draw.guide(spec.guides.axis, spec.guides.b, CYAN);
+  } else {
+    if (spec.box) draw.rect(spec.box, MAGENTA);
+    if (spec.other) draw.rect(spec.other, CYAN);
+  }
+  return encodePng(out);
+}
+
+/** Box and guide drawing on `out`, an image of the source region from (x0, y0) scaled by `scale`. */
+function painter(out: RgbaImage, x0: number, y0: number, scale: number) {
   const set = (x: number, y: number, c: [number, number, number]) => {
     if (x < 0 || y < 0 || x >= out.width || y >= out.height) return;
     const i = (y * out.width + x) * 4;
@@ -102,7 +115,7 @@ export function cropPng(src: RgbaImage, spec: CropSpec): Uint8Array | null {
       }
     }
   };
-  // A dashed guide across the crop at one CSS px position.
+  // A dashed guide across the image at one CSS px position.
   const guide = (axis: "x" | "y", at: number, c: [number, number, number]) => {
     const p = Math.round((at - (axis === "x" ? x0 : y0)) * scale);
     const len = axis === "x" ? out.height : out.width;
@@ -115,12 +128,61 @@ export function cropPng(src: RgbaImage, spec: CropSpec): Uint8Array | null {
       }
     }
   };
-  if (spec.guides) {
-    guide(spec.guides.axis, spec.guides.a, MAGENTA);
-    guide(spec.guides.axis, spec.guides.b, CYAN);
-  } else {
-    if (spec.box) rect(spec.box, MAGENTA);
-    if (spec.other) rect(spec.other, CYAN);
+  return { rect, guide };
+}
+
+/**
+ * A whole screenshot with every finding boxed (magenta, the second element cyan), scaled up, trimmed to
+ * the painted content plus `margin` CSS px (pixels that differ from the top-left corner's color).
+ */
+export function markPng(src: RgbaImage, marks: Array<{ box: Box | null; other?: { box: Box } | null }>, opts: { scale?: number; margin?: number } = {}): Uint8Array {
+  const scale = opts.scale ?? 2;
+  const margin = opts.margin ?? 24;
+  const bg = [src.data[0], src.data[1], src.data[2]];
+  let minX = src.width, minY = src.height, maxX = -1, maxY = -1;
+  for (let y = 0; y < src.height; y++) {
+    for (let x = 0; x < src.width; x++) {
+      const i = (y * src.width + x) * 4;
+      if (src.data[i] === bg[0] && src.data[i + 1] === bg[1] && src.data[i + 2] === bg[2]) continue;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    }
+  }
+  for (const m of marks) for (const b of [m.box, m.other?.box]) if (b) {
+    minX = Math.min(minX, b.x);
+    minY = Math.min(minY, b.y);
+    maxX = Math.max(maxX, b.x + b.w);
+    maxY = Math.max(maxY, b.y + b.h);
+  }
+  if (maxX < 0) {
+    minX = minY = 0;
+    maxX = src.width - 1;
+    maxY = src.height - 1;
+  }
+  const x0 = Math.max(0, Math.floor(minX - margin));
+  const y0 = Math.max(0, Math.floor(minY - margin));
+  const x1 = Math.min(src.width, Math.ceil(maxX + 1 + margin));
+  const y1 = Math.min(src.height, Math.ceil(maxY + 1 + margin));
+  const w = x1 - x0;
+  const h = y1 - y0;
+  const out: RgbaImage = { width: w * scale, height: h * scale, data: new Uint8Array(w * scale * h * scale * 4) };
+  for (let y = 0; y < out.height; y++) {
+    const si0 = ((y0 + Math.floor(y / scale)) * src.width + x0) * 4;
+    for (let x = 0; x < out.width; x++) {
+      const si = si0 + Math.floor(x / scale) * 4;
+      const di = (y * out.width + x) * 4;
+      out.data[di] = src.data[si]!;
+      out.data[di + 1] = src.data[si + 1]!;
+      out.data[di + 2] = src.data[si + 2]!;
+      out.data[di + 3] = 255;
+    }
+  }
+  const draw = painter(out, x0, y0, scale);
+  for (const m of marks) {
+    if (m.box) draw.rect(m.box, MAGENTA);
+    if (m.other) draw.rect(m.other.box, CYAN);
   }
   return encodePng(out);
 }

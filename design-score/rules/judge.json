@@ -1,0 +1,445 @@
+{
+  "area": "judge",
+  "rules": [
+    {
+      "id": "a11y-color-not-only-cue",
+      "area": "judge",
+      "title": "Not color alone",
+      "rule": "Status and meaning are never carried by color alone; pair with an icon, text or underline.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "a11y-color-not-only-cue",
+        "16-not-color-alone"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "a11y-alt-by-purpose",
+      "area": "judge",
+      "title": "Alt by purpose",
+      "rule": "Alt text says what the image communicates or does; decorative images use alt=\"\".",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "a11y-alt-by-purpose",
+        "16-alt-describes-content"
+      ],
+      "notes": "Text-only judge over extracted alt strings.",
+      "check": "V-judge"
+    },
+    {
+      "id": "layout-separators-last",
+      "area": "judge",
+      "title": "Separators last",
+      "rule": "Use a separator only where space cannot carry structure, as a low-contrast hairline, never beside a large gap that already did the job.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "layout-separators-last"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "layout-static-not-control-shaped",
+      "area": "judge",
+      "title": "Static is not control-shaped",
+      "rule": "A non-clickable badge never looks exactly like the buttons beside it.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "layout-static-not-control-shaped"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "layout-rtl-mirror",
+      "area": "judge",
+      "title": "RTL mirror",
+      "rule": "Under dir=rtl the layout mirrors cleanly, progression included.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "layout-rtl-mirror"
+      ],
+      "notes": "Only when the app supports RTL.",
+      "check": "V-judge"
+    },
+    {
+      "id": "layout-importance-order",
+      "area": "judge",
+      "title": "Importance order",
+      "rule": "The most important content sits top and leading; identity leads, metadata and actions trail.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "layout-importance-order"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "layout-content-bleeds-controls-float",
+      "area": "judge",
+      "title": "Content bleeds, controls stay inside",
+      "rule": "Backgrounds and media may bleed to the edges; controls and text stay inside layout margins.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "layout-content-bleeds-controls-float"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "typo-no-text-images",
+      "area": "judge",
+      "title": "No text images",
+      "rule": "Decorative text is CSS, not images.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "typo-no-text-images"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "14-pair-for-contrast",
+      "area": "judge",
+      "title": "Pair fonts for contrast",
+      "rule": "Pair fonts for contrast, never two near-identical sans-serifs.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "14-pair-for-contrast"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "color-semantic-not-against-meaning",
+      "area": "judge",
+      "title": "Semantic color keeps its meaning",
+      "rule": "A semantic color is never used against its meaning.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "color-semantic-not-against-meaning"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "03-oklch-unintended-hues",
+      "area": "judge",
+      "title": "No hue detours",
+      "rule": "oklch gradients show no intermediate hues you never defined.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "03-oklch-unintended-hues"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "ui-optical-asymmetric-glyphs",
+      "area": "judge",
+      "title": "Optical glyph alignment",
+      "rule": "Asymmetric icons (play, star) are aligned optically, preferably fixed in the SVG.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "ui-optical-asymmetric-glyphs",
+        "09-optical-align-icons"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "ui-shadow-for-depth",
+      "area": "judge",
+      "title": "Shadows for depth",
+      "rule": "A border that only creates depth (cards over images or colored backgrounds) becomes a layered transparent shadow; structural, input, divider and selected borders stay.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": {
+        "light": "0 0 0 1px rgba(0,0,0,.06), 0 1px 2px -1px rgba(0,0,0,.06), 0 2px 4px 0 rgba(0,0,0,.04)",
+        "dark": "0 0 0 1px rgba(255,255,255,.08)"
+      },
+      "sources": [
+        "ui-shadow-for-depth",
+        "09-shadow-instead-of-border"
+      ],
+      "notes": "The DS draws frames with hairline borders, so the DS wins; this applies only where a border fights an image or colored backdrop.",
+      "check": "V-judge"
+    },
+    {
+      "id": "20-avatar-outline-matches-ui",
+      "area": "judge",
+      "title": "Images match the UI",
+      "rule": "Outline avatars when neighbouring controls have borders, not when they don't.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "20-avatar-outline-matches-ui"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "ui-icon-outline-fill-states",
+      "area": "judge",
+      "title": "Outline default, fill active",
+      "rule": "Outline is the default icon variant; fill marks the active state only.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "ui-icon-outline-fill-states"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "08-focus-motion-subtle",
+      "area": "judge",
+      "title": "Subtle focus motion",
+      "rule": "Focus animations stay subtle; no complex motion during keyboard navigation.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "08-focus-motion-subtle"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "13-subtle-not-over-animated",
+      "area": "judge",
+      "title": "Not over-animated",
+      "rule": "Feedback animation stays subtle; no stacking of several effects on one interaction.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "13-subtle-not-over-animated"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "13-low-cognitive-load",
+      "area": "judge",
+      "title": "Low cognitive load",
+      "rule": "Screens are simple and predictable.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "13-low-cognitive-load"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "copy-consistent-terms",
+      "area": "judge",
+      "title": "Consistent terms",
+      "rule": "Each object and action has one name across the product.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "copy-consistent-terms"
+      ],
+      "notes": "Text-only judge over extracted strings.",
+      "check": "V-judge"
+    },
+    {
+      "id": "copy-tone-by-stakes",
+      "area": "judge",
+      "title": "Tone by stakes",
+      "rule": "Tone flexes with stakes: warm for success, neutral for routine, calm for errors, serious for data loss.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "copy-tone-by-stakes"
+      ],
+      "notes": "Text-only judge.",
+      "check": "V-judge"
+    },
+    {
+      "id": "copy-plain-words",
+      "area": "judge",
+      "title": "Plain words",
+      "rule": "Plain words a tired reader gets on first pass; no idioms; match the device verb (click on desktop).",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "copy-plain-words"
+      ],
+      "notes": "Text-only judge.",
+      "check": "V-judge"
+    },
+    {
+      "id": "copy-requirements-before-input",
+      "area": "judge",
+      "title": "Requirements up front",
+      "rule": "Known requirements show as helper text before input, phrased positively.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "copy-requirements-before-input"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "copy-status-parallel",
+      "area": "judge",
+      "title": "Parallel status copy",
+      "rule": "Status copy follows patterns: '-ing + object…' in progress, 'object + past tense' when done.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "copy-status-parallel"
+      ],
+      "notes": "Text-only judge.",
+      "check": "V-judge"
+    },
+    {
+      "id": "break-content-shape",
+      "area": "judge",
+      "title": "Content shape",
+      "rule": "User text survives emoji, RTL, mixed direction, tall scripts and aligned numbers.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "break-content-shape"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "bd-rounding-threshold",
+      "area": "judge",
+      "title": "Rounding threshold",
+      "rule": "Rounding a design value to a token is fine up to 2px on size and within one color step; beyond that is a deviation.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": {
+        "maxPx": 2
+      },
+      "sources": [
+        "bd-rounding-threshold"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "bd-fidelity-compare",
+      "area": "judge",
+      "title": "Fidelity compare",
+      "rule": "A build is compared side by side with its design at every frame width before it is done.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "bd-fidelity-compare"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "review-sibling-parity",
+      "area": "judge",
+      "title": "Sibling parity",
+      "rule": "A control added to one surface is added to siblings that carry its peers.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "review-sibling-parity"
+      ],
+      "taste": true,
+      "check": null
+    },
+    {
+      "id": "bd-diff-scope",
+      "area": "judge",
+      "title": "Diff scope",
+      "rule": "A design build touches only what the frames show.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "bd-diff-scope"
+      ],
+      "taste": true,
+      "check": null
+    },
+    {
+      "id": "variant-floor",
+      "area": "judge",
+      "title": "Variant floor",
+      "rule": "Every candidate design clears the escalation floor before it is shown.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "variant-floor"
+      ],
+      "taste": true,
+      "notes": "Process rule for design variants, not a page property.",
+      "check": null
+    },
+    {
+      "id": "ei-evidence-tiers",
+      "area": "judge",
+      "title": "Evidence tiers",
+      "rule": "Every claimed value is tagged measured, derived or inferred.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "ei-evidence-tiers"
+      ],
+      "taste": true,
+      "notes": "Applies to the verifier's own reports.",
+      "check": null
+    },
+    {
+      "id": "12-dogfood-the-flow",
+      "area": "judge",
+      "title": "Dogfood the flow",
+      "rule": "Use what you build end to end before calling it done.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "12-dogfood-the-flow"
+      ],
+      "taste": true,
+      "check": null
+    },
+    {
+      "id": "13-justify-each-addition",
+      "area": "judge",
+      "title": "Justify each addition",
+      "rule": "Add an element, animation or feature only when it clearly improves the result.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "13-justify-each-addition"
+      ],
+      "taste": true,
+      "check": null
+    }
+  ]
+}

@@ -7,7 +7,7 @@ import { launch } from "../scripts/design-score/browser";
 import { CHECK_IDS, CHECKS } from "../scripts/design-score/checks";
 import { analyzeMotion, type MotionRecord } from "../scripts/design-score/motion";
 import { probePage } from "../scripts/design-score/probes";
-import { loadRuleMap, rulesByCheck } from "../scripts/design-score/rules";
+import { loadRuleMap, loadRules, RULE_AREAS, rulesByCheck } from "../scripts/design-score/rules";
 import { selectPages } from "../scripts/design-score/run";
 import { AREAS, appAreas, appScore, pageAreas, pageScore, statusOf } from "../scripts/design-score/score";
 import { diffShift, dropScrollbarMoves, stateShiftPass, type ShiftBox } from "../scripts/design-score/state-shift";
@@ -106,15 +106,26 @@ describe("design:score v2 logic", () => {
     expect(() => selectPages(pages, ["inbox", "nope"])).toThrow(/unknown page ids: nope/);
   });
 
-  test("rules.json links each check to its rules (string, list or null)", () => {
+  test("design-score/rules/ links each check to its rules (string, list or null)", () => {
     const map = rulesByCheck({ rules: [{ id: "a", check: "R-x" }, { id: "b", check: ["R-x", "R-y"] }, { id: "c", check: null }] });
     expect(map.get("R-x")).toEqual(["a", "b"]);
     expect(map.get("R-y")).toEqual(["b"]);
     expect(map.size).toBe(2);
-    // The shipped rules.json names R-state-shift for ks-no-state-shift, and every check id it names exists.
+    // The shipped rules name R-state-shift for ks-no-state-shift, and every check id they name exists.
     const shipped = loadRuleMap(DESIGN_SYSTEM_ROOT).map;
     expect(shipped.get("R-state-shift")).toContain("ks-no-state-shift");
     for (const id of shipped.keys()) expect(CHECK_IDS).toContain(id);
+  });
+
+  test("every rule sits in one area file, and a rule with a check sits in its check's area", () => {
+    const { rules } = loadRules(DESIGN_SYSTEM_ROOT);
+    expect(rules.length).toBe(303);
+    expect(new Set(rules.map((r) => r.id)).size).toBe(rules.length);
+    const areaOf = new Map(CHECKS.map((c) => [c.id, c.area ?? "judge"]));
+    for (const r of rules) {
+      expect(RULE_AREAS as readonly string[]).toContain(r.area!);
+      for (const c of [r.check ?? []].flat()) expect(`${r.id}: ${r.area}`).toBe(`${r.id}: ${areaOf.get(c)}`);
+    }
   });
 
   test("area sub-scores use the page formula over each area's checks", () => {

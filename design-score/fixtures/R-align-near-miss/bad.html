@@ -1,0 +1,33 @@
+<!doctype html>
+<!-- R-align-near-miss, bad: the same rows with two near misses. Each grip sits 6px below its row's first text line (fail), and each meta line starts 2px right of its title (fail). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>R-align-near-miss: bad</title>
+<link rel="stylesheet" href="../../../css/fonts.css">
+<link rel="stylesheet" href="../../../dist/css/tokens.css">
+<style>
+  body { margin: 0; padding: var(--ds-space-6); background: var(--ds-color-surface-page); color: var(--ds-color-text-body); font-family: var(--ds-font-family-sans); }
+  h2 { margin: 0 0 var(--ds-space-2); font-size: var(--ds-font-size-ui-lg); font-weight: var(--ds-font-weight-semibold); }
+  ul { margin: 0; padding: 0; list-style: none; width: calc(var(--ds-space-16) * 6); border: 1px solid var(--ds-color-border-default); border-radius: var(--ds-radius-base); background: var(--ds-color-surface-panel); }
+  li { display: flex; align-items: flex-start; gap: var(--ds-space-2); padding: var(--ds-space-2) var(--ds-space-3); }
+  li + li { border-top: 1px solid var(--ds-color-border-subtle); }
+  /* The grip is one first-line tall, so its mark sits on the first line's center. */
+  .grip { display: flex; align-items: center; height: calc(var(--ds-font-size-ui-md) * var(--ds-line-height-ui)); color: var(--ds-color-text-faint); }
+  .title { font-size: var(--ds-font-size-ui-md); line-height: var(--ds-line-height-ui); }
+  .meta { font-size: var(--ds-font-size-ui-sm); line-height: var(--ds-line-height-ui); color: var(--ds-color-text-muted); }
+  /* Miss 1: the grip is pushed 6px down, off the first line's center. */
+  .grip { margin-top: var(--ds-space-1-5); }
+  /* Miss 2: the meta line starts 2px right of the title. */
+  .meta { padding-left: var(--ds-space-0-5); }
+</style>
+</head>
+<body>
+  <h2>Today</h2>
+  <ul>
+    <li><span class="grip" data-drag-handle><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><g fill="currentColor"><circle cx="4" cy="2" r="1"/><circle cx="8" cy="2" r="1"/><circle cx="4" cy="6" r="1"/><circle cx="8" cy="6" r="1"/><circle cx="4" cy="10" r="1"/><circle cx="8" cy="10" r="1"/></g></svg></span><div class="body"><div class="title">Review the spacing pass</div><div class="meta">Layout · due Friday</div></div></li>
+    <li><span class="grip" data-drag-handle><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><g fill="currentColor"><circle cx="4" cy="2" r="1"/><circle cx="8" cy="2" r="1"/><circle cx="4" cy="6" r="1"/><circle cx="8" cy="6" r="1"/><circle cx="4" cy="10" r="1"/><circle cx="8" cy="10" r="1"/></g></svg></span><div class="body"><div class="title">Write the release notes</div><div class="meta">Writing · due Monday</div></div></li>
+    <li><span class="grip" data-drag-handle><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><g fill="currentColor"><circle cx="4" cy="2" r="1"/><circle cx="8" cy="2" r="1"/><circle cx="4" cy="6" r="1"/><circle cx="8" cy="6" r="1"/><circle cx="4" cy="10" r="1"/><circle cx="8" cy="10" r="1"/></g></svg></span><div class="body"><div class="title">Fix the focus ring in dark mode</div><div class="meta">Accessibility · no date</div></div></li>
+  </ul>
+</body>
+</html>

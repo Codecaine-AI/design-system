@@ -1,5 +1,5 @@
 /**
- * The design:score check catalog. Ids are stable: design-score/rules.json maps Jakub Krehel's rules to them.
+ * The design:score check catalog. Ids are stable: design-score/rules/<area>.json maps Jakub Krehel's rules to them.
  */
 import type { CheckDef } from "./types";
 

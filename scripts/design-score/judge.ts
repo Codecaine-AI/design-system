@@ -4,7 +4,7 @@
  * What it will need is already captured per run: shots/<page>__<theme>__<viewport>.png (the page state
  * after its actions), plus the motion shots and every finding's crop. A later version reads those, asks a
  * model to rate hierarchy, grouping, rhythm and polish against the rules mapped to V-judge in
- * design-score/rules.json, and returns findings in the same shape as every other check
+ * design-score/rules/judge.json, and returns findings in the same shape as every other check
  * ({ check: "V-judge", severity, page, theme, viewport, box, measured, expected }).
  */
 import type { PageResult, Scorecard } from "./types";

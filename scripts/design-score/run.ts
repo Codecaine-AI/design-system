@@ -485,7 +485,7 @@ export async function runScore(opts: RunOptions): Promise<{ dir: string; scoreca
   // Static findings, once, with page "*".
   if (staticRun) for (const id of STATIC_IDS) for (const raw of staticRun.results[id]!.findings) findings.push({ ...raw, page: "*", theme: null, viewport: null });
 
-  // Every finding carries the rules.json rules behind its check.
+  // Every finding carries the design-score/rules/ rules behind its check.
   for (const f of [...findings, ...allowedAll]) {
     const ids = ruleMap.map.get(f.check);
     if (ids?.length) f.rules = ids;

@@ -1,13 +1,18 @@
 # Design score rules
 
-`rules.json` is one merged list of Jakub Krehel's design rules, deduplicated from two catalogs: the skills (248 rules) and the magazine (171 rules). Source catalogs: `knowledge-base/sessions/design-principle-verification-across-apps/outputs/`.
+`rules/` holds one merged list of Jakub Krehel's design rules, deduplicated from two catalogs: the skills (248 rules) and the magazine (171 rules). Source catalogs: `knowledge-base/sessions/design-principle-verification-across-apps/outputs/`.
+
+- One file per area: `rules/<area>.json`, each `{ "area", "rules": [...] }`. The areas are the six check areas (layout, typography, color, motion, interaction, accessibility), `writing` (copy rules) and `judge` (taste and process rules for the screenshot judge).
+- A rule with a check takes its check's area from `scripts/design-score/checks.ts`. A `V-judge` rule is in `judge`.
+- `decisions.json` holds Ford's decisions, the source catalogs and the dropped rules.
+- `scripts/design-score/rules.ts` (`loadRules`) reads the folder.
 
 - 303 rules. All 419 source ids are covered: 402 merge into a rule's `sources`, and 17 are dropped (mobile only).
 - 13 new `ks-` rules cover "clunky": alignment, control heights, spacing and layout shift.
-- Each rule has `id`, `title`, `rule`, `severity`, `layer`, `values`, `sources` and `check`. Some also have `notes`. Taste-only rules also have `taste: true`.
+- Each rule has `id`, `area`, `title`, `rule`, `severity`, `layer`, `values`, `sources` and `check`. Some also have `notes`. Taste-only rules also have `taste: true`.
 - `check` is the verifier check that decides the rule, or `null` when no check exists yet.
 
-## Ford's decisions (`decisions` in rules.json)
+## Ford's decisions (`decisions` in decisions.json)
 
 1. Desktop only. Mobile rules are dropped: 44px touch targets, 16px mobile inputs, 320px reflow, touch-only gestures.
 2. Press scale passes anywhere from 0.95 to 0.98.
@@ -27,6 +32,19 @@
 
 - `judge` means a model judge decides it from screenshots, or from extracted text for copy rules (the notes say which).
 - `human` means taste or process. These rules are marked `taste: true` and never block a score.
+
+## Areas
+
+| Area | File | Rules |
+| --- | --- | --- |
+| layout | `rules/layout.json` | 43 |
+| typography | `rules/typography.json` | 44 |
+| color | `rules/color.json` | 38 |
+| motion | `rules/motion.json` | 43 |
+| interaction | `rules/interaction.json` | 28 |
+| accessibility | `rules/accessibility.json` | 56 |
+| writing | `rules/writing.json` | 19 |
+| judge | `rules/judge.json` | 32 |
 
 ## Check map
 

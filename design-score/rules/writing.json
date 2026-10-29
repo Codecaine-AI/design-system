@@ -1,0 +1,264 @@
+{
+  "area": "writing",
+  "rules": [
+    {
+      "id": "copy-flow-vocabulary",
+      "area": "writing",
+      "title": "One flow vocabulary",
+      "rule": "A multi-step flow uses one forward label at every step (Continue, not Continue/Next/Proceed), then Done.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "copy-flow-vocabulary",
+        "19-consistent-next-label"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-address-reader",
+      "area": "writing",
+      "title": "Address the reader",
+      "rule": "Write 'you', not 'the user'; avoid 'we' in errors.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "copy-address-reader",
+        "19-address-you"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-whole-strings",
+      "area": "writing",
+      "title": "Whole strings",
+      "rule": "Never assemble sentences from fragments or hand-roll plurals; use one ICU message.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "copy-whole-strings"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-intl-formatting",
+      "area": "writing",
+      "title": "Intl formatting",
+      "rule": "Numbers, dates, times, prices and lists go through Intl with the user's locale and time zone.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "copy-intl-formatting",
+        "18-locale-aware-formatting"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-verb-first-buttons",
+      "area": "writing",
+      "title": "Verb-first buttons",
+      "rule": "Button labels start with a verb naming the action ('Delete project' beside 'Cancel'), never OK, Yes or No.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "copy-verb-first-buttons",
+        "19-buttons-start-with-verb",
+        "19-confirm-says-what-happens"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-icon-name-is-action",
+      "area": "writing",
+      "title": "Names state the action",
+      "rule": "A control's name states the action ('Copy link'), never the glyph ('Chain icon', 'X').",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "copy-icon-name-is-action",
+        "16-label-names-action"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-descriptive-links",
+      "area": "writing",
+      "title": "Descriptive links",
+      "rule": "Link text makes sense out of context; no 'Click here'.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "copy-descriptive-links",
+        "19-descriptive-links"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-capitalization-policy",
+      "area": "writing",
+      "title": "One capitalization policy",
+      "rule": "One capitalization policy per element type, sentence case by default.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "copy-capitalization-policy",
+        "19-consistent-capitalization"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-toggle-on-state",
+      "area": "writing",
+      "title": "Toggles name the on state",
+      "rule": "Toggle labels describe the ON state; never start with Don't, Disable or Hide.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "copy-toggle-on-state",
+        "19-toggle-label-positive"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-link-to-setting",
+      "area": "writing",
+      "title": "Link to settings",
+      "rule": "Link straight to a referenced setting instead of describing a path.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "copy-link-to-setting"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-error-says-fix",
+      "area": "writing",
+      "title": "Errors say the fix",
+      "rule": "Every error says what failed and how to fix it, beside the field that broke.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "copy-error-says-fix"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-no-oops",
+      "area": "writing",
+      "title": "No Oops",
+      "rule": "No blame, 'Oops', 'Something went wrong' or exclamation marks in errors.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "copy-no-oops"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-undo-or-confirm",
+      "area": "writing",
+      "title": "Undo or confirm",
+      "rule": "Destructive actions act and offer undo when frequent and reversible, or confirm first when irreversible, shared or bulk.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "copy-undo-or-confirm"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-confirm-dialog-shape",
+      "area": "writing",
+      "title": "Confirmation shape",
+      "rule": "Confirmation titles name the action and object (never 'Are you sure?'); buttons are verb + object.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "copy-confirm-dialog-shape"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-empty-state-forward",
+      "area": "writing",
+      "title": "Empty states move forward",
+      "rule": "Empty states say what belongs there and offer one next action; filtered empties name the query and offer Clear filters.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "copy-empty-state-forward",
+        "19-empty-state-explains"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-placeholder-example",
+      "area": "writing",
+      "title": "Placeholder is an example",
+      "rule": "Placeholders show a realistic example in the accepted format, never an instruction.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "copy-placeholder-example"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-no-successfully-please",
+      "area": "writing",
+      "title": "Cut 'successfully'",
+      "rule": "Cut 'successfully' and routine 'Please'.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "copy-no-successfully-please"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-type-to-confirm",
+      "area": "writing",
+      "title": "Type to confirm",
+      "rule": "Deleting an account, workspace or repository asks for its name typed.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "copy-type-to-confirm"
+      ],
+      "taste": true,
+      "check": null
+    },
+    {
+      "id": "review-strings-in-catalog",
+      "area": "writing",
+      "title": "Strings in the catalogue",
+      "rule": "A new user-facing string has a translation catalogue entry.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "review-strings-in-catalog"
+      ],
+      "notes": "Only for apps with a catalogue.",
+      "check": null
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "decisions": {
+    "platform": "desktop-only",
+    "droppedMobileRules": [
+      "44px touch targets",
+      "16px mobile inputs",
+      "320px reflow",
+      "touch-only gestures"
+    ],
+    "pressScale": {
+      "min": 0.95,
+      "max": 0.98
+    },
+    "hitTarget": {
+      "failBelowPx": 24,
+      "warnBelowPx": 32
+    },
+    "reducedMotion": "warn-only"
+  },
+  "sources": {
+    "skills": "outputs/skills-rule-catalog.json (248 rules)",
+    "magazine": "outputs/magazine-rule-catalog.json (171 rules)"
+  },
+  "dropped": [
+    {
+      "id": "a11y-reflow-320",
+      "reason": "320px reflow (mobile)."
+    },
+    {
+      "id": "a11y-no-zoom-block",
+      "reason": "Viewport-meta pinch zoom (mobile); Electron and desktop browsers ignore it."
+    },
+    {
+      "id": "a11y-touch-action-scoped",
+      "reason": "touch-action (touch-only gesture)."
+    },
+    {
+      "id": "typo-input-16px-mobile",
+      "reason": "16px mobile inputs (iOS zoom)."
+    },
+    {
+      "id": "15-ios-input-16px",
+      "reason": "16px mobile inputs (iOS zoom)."
+    },
+    {
+      "id": "ui-tap-highlight",
+      "reason": "-webkit-tap-highlight-color (touch only)."
+    },
+    {
+      "id": "layout-dvh-not-vh",
+      "reason": "dvh vs vh only differs on mobile browsers."
+    },
+    {
+      "id": "20-dvh-not-vh",
+      "reason": "dvh vs vh only differs on mobile browsers."
+    },
+    {
+      "id": "layout-safe-area-viewport-fit",
+      "reason": "Safe-area insets (notched phones)."
+    },
+    {
+      "id": "layout-inset-buttons",
+      "reason": "Full-width button inset is a mobile value (16px on phones)."
+    },
+    {
+      "id": "07-swipe-container-overflow-clip",
+      "reason": "Swipe rows (touch-only gesture)."
+    },
+    {
+      "id": "07-axis-locked-drag",
+      "reason": "Swipe rows (touch-only gesture)."
+    },
+    {
+      "id": "07-constraints-low-elastic",
+      "reason": "Swipe rows (touch-only gesture)."
+    },
+    {
+      "id": "07-no-momentum-swipe",
+      "reason": "Swipe rows (touch-only gesture)."
+    },
+    {
+      "id": "07-snap-threshold",
+      "reason": "Swipe rows (touch-only gesture)."
+    },
+    {
+      "id": "07-progressive-action-reveal",
+      "reason": "Swipe rows (touch-only gesture)."
+    },
+    {
+      "id": "07-swipe-actions-keyboard",
+      "reason": "Swipe rows (touch-only gesture); a11y-keyboard-path-for-pointer still covers any drag UI."
+    }
+  ]
+}

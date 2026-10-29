@@ -135,7 +135,7 @@ export interface Finding {
   line?: number;
   /** Crop with the element boxed, relative to the run folder. */
   crop?: string;
-  /** Ids of the design-score/rules.json rules this check decides. */
+  /** Ids of the design-score/rules/ rules this check decides. */
   rules?: string[];
   /** Grouped findings: how many elements (or rows) it stands for, and the group key (component class list). */
   count?: number;
