@@ -50,6 +50,12 @@ export interface PageSpec {
   optional?: string;
   /** R-state-shift: elements whose boxes must not change while this page's actions run. */
   shiftWatch?: string;
+  /**
+   * GET responses this page sees changed, for states the app's data has none of (a Session with a
+   * live thread, an open Session under a Library Topic): each JSON response whose URL path is
+   * `path` gets `merge`'s top-level keys, and `append`'s items pushed onto its top-level arrays.
+   */
+  mock?: Array<{ path: string; merge?: Record<string, unknown>; append?: Record<string, unknown[]> }>;
 }
 
 /** A layout-property animation the app may keep: reported as allowed, never counted (M-layout-props). */

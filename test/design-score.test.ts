@@ -164,6 +164,23 @@ describe.skipIf(!!process.env.DS_SKIP_BROWSER)("design:score v2 in a browser", (
     expect(hits.map((f: { severity: string; count: number; group: string }) => `${f.severity} ${f.count} ${f.group}`)).toEqual(["fail 5 fail|a.crumb", "warn 1 warn-band|button.tool"]);
   });
 
+  test("R-hit-target exempts an inline-flex link in a line of words, not a row of breadcrumbs", async () => {
+    await page.setContent(`<body style="margin:0;font:12px/18px sans-serif">
+      <p class="meta">YouTube · captured Oct 3 · <a class="src" href="#s" style="display:inline-flex">youtube.com · Theo</a></p>
+      <nav style="margin-top:40px"><a class="crumb" href="#a" style="display:inline-flex">Areas</a> / <a class="crumb" href="#b" style="display:inline-flex">Making</a></nav></body>`);
+    const hits = (await probe()).findings.filter((f: { check: string }) => f.check === "R-hit-target");
+    expect(hits.map((f: { group: string }) => f.group.split("|")[1])).toEqual(["a.crumb"]);
+  });
+
+  test("R-control-height skips a link that spans a row, and still flags two buttons", async () => {
+    await page.setContent(`<style>.row:hover, .row { background: #ddd; } button { border: 1px solid #888; }</style>
+      <body style="margin:20px;font:14px sans-serif"><div style="display:flex;gap:8px;align-items:center"><a class="row" href="#r" style="display:block;width:600px;height:32px">Session</a><button style="height:28px">Open</button></div>
+      <div style="display:flex;gap:8px;margin-top:40px"><button style="height:32px">A</button><button style="height:28px">B</button></div></body>`);
+    const heights = (await probe()).findings.filter((f: { check: string }) => f.check === "R-control-height");
+    expect(heights.map((f: { selector: string }) => f.selector).every((sel: string) => !sel.includes("a.row"))).toBe(true);
+    expect(heights.length).toBeGreaterThan(0);
+  });
+
   test("R-concentric-radius: a nested pair both on a base radius passes", async () => {
     await page.setContent(`<body style="margin:0;background:#fff"><div style="margin:20px;padding:8px;width:200px;border:1px solid #888;border-radius:6px"><div style="height:40px;border:1px solid #888;border-radius:6px;background:#eee"></div></div></body>`);
     const radius = (r: { findings: Array<{ check: string }> }) => r.findings.filter((f) => f.check === "R-concentric-radius").length;

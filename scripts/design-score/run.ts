@@ -206,6 +206,16 @@ export async function runScore(opts: RunOptions): Promise<{ dir: string; scoreca
 
   const open = async (ctx: any, spec: PageSpec, theme: ThemeSpec) => {
     const page = await ctx.newPage();
+    for (const m of spec.mock ?? []) {
+      // Page routes run before the context's write guard; anything but a GET falls through to it.
+      await page.route((url: URL) => url.pathname === m.path, async (route: any) => {
+        if (route.request().method() !== "GET") return route.fallback();
+        const response = await route.fetch();
+        const json = { ...(await response.json()), ...m.merge };
+        for (const [key, items] of Object.entries(m.append ?? {})) json[key] = [...(Array.isArray(json[key]) ? json[key] : []), ...items];
+        await route.fulfill({ response, json });
+      });
+    }
     await page.goto(urlFor(opts.baseUrl, spec.path, theme), { waitUntil: "load", timeout: 30_000 });
     if (spec.waitFor) await page.waitForSelector(spec.waitFor, { state: "visible", timeout: 15_000 });
     if (config.loading?.length) {

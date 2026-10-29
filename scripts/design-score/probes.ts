@@ -346,6 +346,16 @@ export function probePage(o: ProbeOptions): { findings: ProbeFinding[]; stats: R
     }
     return { el, r };
   });
+  function inTextLine(el: Element, r: DOMRect): boolean {
+    const block = el.parentElement;
+    if (!block) return false;
+    const bs = cs(block);
+    const line = bs.lineHeight === "normal" ? px(bs.fontSize) * 1.25 : px(bs.lineHeight);
+    if (r.height > line + 1) return false;
+    let words = block.textContent ?? "";
+    for (const target of block.querySelectorAll("a, button, input, select, textarea, [role=button]")) words = words.replace(target.textContent ?? "", "");
+    return (words.match(/[\p{L}\p{N}]/gu) ?? []).length >= 4;
+  }
   // One finding per component (tag + class list) and band: 140 identical breadcrumbs are one finding.
   type HitGroup = { band: "fail" | "spaced" | "warn-band"; first: Element; r: DOMRect; n: number; minW: number; maxW: number; minH: number; maxH: number; label: string };
   const hitGroups = new Map<string, HitGroup>();
@@ -356,6 +366,9 @@ export function probePage(o: ProbeOptions): { findings: ProbeFinding[]; stats: R
       const block = el.parentElement;
       if (block && (block.textContent ?? "").trim().length > (el.textContent ?? "").trim().length + 3) continue;
     }
+    // So is an inline-flex or inline-block link set in a line of words and no taller than that line
+    // (a meta line under a title): WCAG 2.5.8's line-height exception. Separators alone (breadcrumbs) are not words.
+    if (el.matches("a") && s.display.startsWith("inline-") && inTextLine(el, r)) continue;
     const w = r.width;
     const h = r.height;
     const min = Math.min(w, h);
@@ -616,6 +629,8 @@ export function probePage(o: ProbeOptions): { findings: ProbeFinding[]; stats: R
     const r = rectOf(el);
     if (r.height < 16 || r.height > 64 || srOnly(r)) return false;
     if (el.matches("a[href]") && cs(el).display === "inline") return false;
+    // A link that spans a row (a list row with a hover fill) is a row, not a control.
+    if (el.matches("a[href]") && r.width > 12 * r.height) return false;
     return hasChrome(el) && unclipped(el, r);
   });
   const lca = (a: Element, b: Element) => {
