@@ -1,0 +1,154 @@
+{
+  "app": "meal-planning",
+  "name": "Meal Planning",
+  "repo": "life/meal-planning",
+  "baseUrl": "http://127.0.0.1:47661",
+  "sourceDirs": [
+    "apps/web/src"
+  ],
+  "themes": {
+    "light": {
+      "localStorage": {
+        "meal-planning.theme": "light"
+      },
+      "colorScheme": "light",
+      "assert": "html[data-theme=\"light\"]"
+    },
+    "dark": {
+      "localStorage": {
+        "meal-planning.theme": "dark"
+      },
+      "colorScheme": "dark",
+      "assert": "html[data-theme=\"dark\"]"
+    }
+  },
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "width": 1024,
+      "height": 768
+    }
+  ],
+  "settleMs": 700,
+  "loading": [
+    "Loading recipes",
+    "Loading recipe",
+    "Loading week",
+    "Loading this week",
+    "Loading the prep day",
+    "Loading list"
+  ],
+  "cap": 6,
+  "pages": [
+    {
+      "id": "recipes",
+      "path": "/#/recipes",
+      "waitFor": ".recipes-gallery-grid",
+      "note": "The Recipes view: the recipe gallery. Home: / redirects here. The data is fixtures/recipes in a temp copy."
+    },
+    {
+      "id": "recipe",
+      "path": "/#/recipes/rcp_01M5QY11KKC63DE8R3NCZ3V2PS",
+      "waitFor": ".recipe-page",
+      "note": "One recipe card (Korean Beef, the fixture with times, macros, prep and cook blocks)."
+    },
+    {
+      "id": "recipe-plain",
+      "path": "/#/recipes/rcp_01M5QY11JTHSDDZ36FKZDXCE5S",
+      "waitFor": ".recipe-page",
+      "note": "A recipe with no recipe-card fields (the French toast fixture)."
+    },
+    {
+      "id": "this-week",
+      "path": "/#/weeks/current",
+      "waitFor": ".week-board",
+      "note": "The This Week view: the week holding today. Needs a seeded week (see the seed note on weeks)."
+    },
+    {
+      "id": "week-picker",
+      "path": "/#/weeks/current",
+      "waitFor": ".day-card-pick",
+      "actions": [
+        {
+          "click": ".day-card-pick >> nth=0"
+        },
+        {
+          "waitFor": "dialog.recipe-picker[open]"
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "note": "This Week with the recipe picker open on an empty night."
+    },
+    {
+      "id": "weeks",
+      "path": "/#/weeks",
+      "waitFor": ".weeks-list",
+      "note": "The week list. Seed: a temp MEAL_DATA_DIR with the week of 2026-10-26 (4 dinners), the week of 2026-11-02, a shopping list from the first week and one cart from it with 3 items."
+    },
+    {
+      "id": "prep",
+      "path": "/#/weeks/current",
+      "waitFor": ".week-board",
+      "actions": [
+        {
+          "click": "a.week-button[href$=\"/prep\"]"
+        },
+        {
+          "waitFor": ".prep-page"
+        }
+      ],
+      "note": "The Prep Day sheet of this week, opened from its Prep day link."
+    },
+    {
+      "id": "shopping",
+      "path": "/#/shopping",
+      "waitFor": ".list-link",
+      "note": "Every shopping list."
+    },
+    {
+      "id": "shopping-list",
+      "path": "/#/shopping",
+      "waitFor": ".list-link",
+      "actions": [
+        {
+          "click": ".list-link >> nth=0"
+        },
+        {
+          "waitFor": ".list-view-stores"
+        }
+      ],
+      "note": "One shopping list by store and aisle, opened from the list index."
+    },
+    {
+      "id": "stores",
+      "path": "/#/stores",
+      "waitFor": ".stores-page",
+      "note": "Stores and the store map (the seeded stores)."
+    },
+    {
+      "id": "carts",
+      "path": "/#/carts",
+      "waitFor": ".carts-board",
+      "note": "The carts board."
+    },
+    {
+      "id": "cart",
+      "path": "/#/carts",
+      "waitFor": ".cart-card",
+      "actions": [
+        {
+          "click": ".cart-card >> nth=0"
+        },
+        {
+          "waitFor": ".cart-view-items"
+        }
+      ],
+      "note": "One cart, opened from the carts board."
+    }
+  ]
+}
