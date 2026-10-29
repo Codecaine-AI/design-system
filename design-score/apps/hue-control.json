@@ -1,0 +1,111 @@
+{
+  "app": "hue-control",
+  "name": "Hue Control",
+  "repo": "life/hue-control",
+  "baseUrl": "http://127.0.0.1:47680",
+  "sourceDirs": [
+    "apps/web/src"
+  ],
+  "themes": {
+    "light": {
+      "localStorage": {
+        "hue-control.theme": "light"
+      },
+      "colorScheme": "light",
+      "assert": "html[data-theme=\"light\"]"
+    },
+    "dark": {
+      "localStorage": {
+        "hue-control.theme": "dark"
+      },
+      "colorScheme": "dark",
+      "assert": "html[data-theme=\"dark\"]"
+    }
+  },
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "width": 1024,
+      "height": 768
+    }
+  ],
+  "settleMs": 700,
+  "cap": 6,
+  "pages": [
+    {
+      "id": "rooms",
+      "path": "/#/rooms",
+      "waitFor": ".home-page",
+      "note": "Home: every room and zone. / redirects here. Run on the mock API (bun run dev:mock)."
+    },
+    {
+      "id": "room",
+      "path": "/#/rooms/2ffd0000-7c1e-4b2a-9d3f-000000000021",
+      "waitFor": ".group-page",
+      "note": "The Living room: its color, scenes and lights."
+    },
+    {
+      "id": "zone",
+      "path": "/#/rooms/afee0000-7c1e-4b2a-9d3f-000000000029",
+      "waitFor": ".group-page",
+      "note": "A zone (TV area)."
+    },
+    {
+      "id": "room-plan",
+      "path": "/#/rooms/2ffd0000-7c1e-4b2a-9d3f-000000000021/plan",
+      "waitFor": ".room-planner",
+      "note": "The Living room plan. The scorer aborts POST /api/palette/plan, so the page shows its plan error state."
+    },
+    {
+      "id": "light",
+      "path": "/#/rooms/2ffd0000-7c1e-4b2a-9d3f-000000000021/lights/19784000-7c1e-4b2a-9d3f-000000000001",
+      "waitFor": ".light-page",
+      "note": "One light (Floor lamp) inside its room."
+    },
+    {
+      "id": "light-gradient",
+      "path": "/#/rooms/2ffd0000-7c1e-4b2a-9d3f-000000000021/lights/19784000-7c1e-4b2a-9d3f-000000000003",
+      "waitFor": ".light-page",
+      "note": "A gradient light (Sofa lightstrip)."
+    },
+    {
+      "id": "scenes",
+      "path": "/#/scenes",
+      "waitFor": ".scenes-page",
+      "note": "Every scene."
+    },
+    {
+      "id": "scene-new",
+      "path": "/#/scenes/new",
+      "waitFor": ".new-scene-page",
+      "note": "The new palette scene editor."
+    },
+    {
+      "id": "automations",
+      "path": "/#/automations",
+      "waitFor": ".automations-page",
+      "note": "Every automation."
+    },
+    {
+      "id": "automation",
+      "path": "/#/automations/beba1000-7c1e-4b2a-9d3f-00000000003e",
+      "waitFor": ".automation-page",
+      "note": "An editable schedule automation (Evening living room)."
+    },
+    {
+      "id": "automation-new",
+      "path": "/#/automations/new",
+      "waitFor": ".new-automation-page",
+      "note": "The new automation form."
+    },
+    {
+      "id": "settings",
+      "path": "/#/settings",
+      "waitFor": ".settings-page",
+      "note": "Settings."
+    }
+  ]
+}
