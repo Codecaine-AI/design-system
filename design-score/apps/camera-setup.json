@@ -1,0 +1,92 @@
+{
+  "app": "camera-setup",
+  "name": "Camera Setup",
+  "repo": "lascari-ai/content/camera-setup",
+  "baseUrl": "http://127.0.0.1:47700",
+  "sourceDirs": [
+    "web/src"
+  ],
+  "themes": {
+    "light": {
+      "localStorage": {
+        "camera-setup.theme": "light"
+      },
+      "colorScheme": "light",
+      "assert": "html[data-theme=\"light\"]"
+    },
+    "dark": {
+      "localStorage": {
+        "camera-setup.theme": "dark"
+      },
+      "colorScheme": "dark",
+      "assert": "html[data-theme=\"dark\"]"
+    }
+  },
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "width": 1024,
+      "height": 768
+    }
+  ],
+  "settleMs": 700,
+  "cap": 6,
+  "motionAllow": [
+    {
+      "name": "ds-shell-sidebar",
+      "selector": ".ds-shell",
+      "props": [
+        "grid-template-columns"
+      ],
+      "reason": "The design-system app shell animates its sidebar column when it collapses (css/layout.css .ds-shell). The shell owns it; allowed by Ford for Knowledge System, the same shell here."
+    }
+  ],
+  "pages": [
+    {
+      "id": "align",
+      "path": "/?view=align",
+      "waitFor": ".align-grid",
+      "note": "Align, the default view: readouts, feed and settings. design:score closes every WebSocket, so the page shows its engine-down state (the Server not running banner, no feed, empty readouts)."
+    },
+    {
+      "id": "lights",
+      "path": "/?view=lights",
+      "waitFor": ".lights-grid",
+      "note": "Lights: the top-down plan of key, fill and rim, with the light cards and inspector. GET /api/rig gets no plan from the mock, so the default plan shows."
+    },
+    {
+      "id": "lights-card-open",
+      "path": "/?view=lights",
+      "waitFor": ".lights-grid",
+      "actions": [
+        {
+          "click": ".light-card-head >> nth=0"
+        },
+        {
+          "waitFor": ".light-card-head[aria-expanded=\"true\"]"
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "note": "Lights with the first light card open, so its fields and the side view show."
+    },
+    {
+      "id": "sidebar-collapsed",
+      "path": "/?view=align",
+      "waitFor": ".align-grid",
+      "actions": [
+        {
+          "click": ".ds-sidebar-toggle"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "note": "Align with the sidebar collapsed."
+    }
+  ]
+}
