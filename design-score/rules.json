@@ -1,0 +1,4207 @@
+{
+  "version": 1,
+  "decisions": {
+    "platform": "desktop-only",
+    "droppedMobileRules": [
+      "44px touch targets",
+      "16px mobile inputs",
+      "320px reflow",
+      "touch-only gestures"
+    ],
+    "pressScale": {
+      "min": 0.95,
+      "max": 0.98
+    },
+    "hitTarget": {
+      "failBelowPx": 24,
+      "warnBelowPx": 32
+    },
+    "reducedMotion": "warn-only"
+  },
+  "sources": {
+    "skills": "outputs/skills-rule-catalog.json (248 rules)",
+    "magazine": "outputs/magazine-rule-catalog.json (171 rules)"
+  },
+  "dropped": [
+    {
+      "id": "a11y-reflow-320",
+      "reason": "320px reflow (mobile)."
+    },
+    {
+      "id": "a11y-no-zoom-block",
+      "reason": "Viewport-meta pinch zoom (mobile); Electron and desktop browsers ignore it."
+    },
+    {
+      "id": "a11y-touch-action-scoped",
+      "reason": "touch-action (touch-only gesture)."
+    },
+    {
+      "id": "typo-input-16px-mobile",
+      "reason": "16px mobile inputs (iOS zoom)."
+    },
+    {
+      "id": "15-ios-input-16px",
+      "reason": "16px mobile inputs (iOS zoom)."
+    },
+    {
+      "id": "ui-tap-highlight",
+      "reason": "-webkit-tap-highlight-color (touch only)."
+    },
+    {
+      "id": "layout-dvh-not-vh",
+      "reason": "dvh vs vh only differs on mobile browsers."
+    },
+    {
+      "id": "20-dvh-not-vh",
+      "reason": "dvh vs vh only differs on mobile browsers."
+    },
+    {
+      "id": "layout-safe-area-viewport-fit",
+      "reason": "Safe-area insets (notched phones)."
+    },
+    {
+      "id": "layout-inset-buttons",
+      "reason": "Full-width button inset is a mobile value (16px on phones)."
+    },
+    {
+      "id": "07-swipe-container-overflow-clip",
+      "reason": "Swipe rows (touch-only gesture)."
+    },
+    {
+      "id": "07-axis-locked-drag",
+      "reason": "Swipe rows (touch-only gesture)."
+    },
+    {
+      "id": "07-constraints-low-elastic",
+      "reason": "Swipe rows (touch-only gesture)."
+    },
+    {
+      "id": "07-no-momentum-swipe",
+      "reason": "Swipe rows (touch-only gesture)."
+    },
+    {
+      "id": "07-snap-threshold",
+      "reason": "Swipe rows (touch-only gesture)."
+    },
+    {
+      "id": "07-progressive-action-reveal",
+      "reason": "Swipe rows (touch-only gesture)."
+    },
+    {
+      "id": "07-swipe-actions-keyboard",
+      "reason": "Swipe rows (touch-only gesture); a11y-keyboard-path-for-pointer still covers any drag UI."
+    }
+  ],
+  "rules": [
+    {
+      "id": "a11y-native-controls",
+      "title": "Native controls",
+      "rule": "Actions are <button>, navigation is <a href>; never a <div> or <span> with onClick.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-native-button-not-div",
+        "a11y-link-vs-button",
+        "16-native-elements-first"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-role-needs-keyboard",
+      "title": "Interactive roles need keyboard",
+      "rule": "An element with an interactive ARIA role implements that role's full keyboard model.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-role-needs-keyboard"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-no-redundant-role",
+      "title": "No redundant roles",
+      "rule": "Do not add a role that repeats native semantics (<button role=\"button\">).",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-no-redundant-role"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-no-aria-label-on-generic",
+      "title": "No aria-label on generic elements",
+      "rule": "Never put aria-label on a <div> or <span> with no role.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-no-aria-label-on-generic"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-aria-refs-resolve",
+      "title": "ARIA references resolve",
+      "rule": "aria-labelledby and aria-describedby point at IDs that exist.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-aria-refs-resolve"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-no-menu-role-on-nav",
+      "title": "Navigation is not a menu",
+      "rule": "Site navigation is <nav> with a list, never role=\"menu\".",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-no-menu-role-on-nav"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-disabled-not-both",
+      "title": "One disabled mechanism",
+      "rule": "Never set both disabled and aria-disabled; aria-disabled controls block activation in code.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-disabled-not-both"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-no-tooltip-on-disabled",
+      "title": "No tooltip on disabled controls",
+      "rule": "A natively disabled control carries no tooltip; show the reason as text or use aria-disabled.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-no-tooltip-on-disabled"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-focus-visible-selector",
+      "title": "Style :focus-visible",
+      "rule": "Style focus with :focus-visible, not bare :focus.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-focus-visible-selector"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-no-outline-none-without-replacement",
+      "title": "No outline removal without replacement",
+      "rule": "Never remove the outline (outline: none, outline-none, outline-0) without a verified :focus-visible replacement.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-no-outline-none-without-replacement",
+        "16-focus-visible-indicator"
+      ],
+      "check": "S-outline-none"
+    },
+    {
+      "id": "a11y-visible-focus-indicator",
+      "title": "Visible focus",
+      "rule": "Every keyboard-reachable control shows a visible focus indicator.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": {
+        "outlineWidthPx": 2,
+        "offsetPx": 2
+      },
+      "sources": [
+        "a11y-visible-focus-indicator",
+        "16-focus-visible-indicator"
+      ],
+      "check": "R-focus-visible",
+      "notes": "DS tokens border.width.focus (2px) and focus.ring.offset (2px) already match the magazine's 2px/2px."
+    },
+    {
+      "id": "a11y-focus-ring-contrast",
+      "title": "Focus ring contrast",
+      "rule": "A focus ring reaches 3:1 against every adjacent color it crosses.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": {
+        "minRatio": 3
+      },
+      "sources": [
+        "a11y-focus-ring-contrast",
+        "16-focus-ring-contrast"
+      ],
+      "check": "R-contrast"
+    },
+    {
+      "id": "a11y-forced-colors-focus",
+      "title": "Forced-colors edges",
+      "rule": "Focus and control edges stay visible in forced-colors mode.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-forced-colors-focus"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-focus-not-obscured",
+      "title": "Focus not obscured",
+      "rule": "A focused element is never fully hidden behind sticky headers, footers or banners.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-focus-not-obscured"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-scroll-offset-sticky",
+      "title": "Sticky header offset",
+      "rule": "With a sticky header, anchors and focused elements land below it (scroll-padding-block-start or scroll-margin-block-start equal to its height).",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-scroll-margin-anchors",
+        "layout-scroll-padding-sticky",
+        "19-scroll-margin-top"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-keyboard-path-for-pointer",
+      "title": "Keyboard path for everything",
+      "rule": "Every pointer interaction has a keyboard path; the whole interface works from the keyboard.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-keyboard-path-for-pointer",
+        "16-keyboard-operable"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-escape-closes-overlays",
+      "title": "Escape closes overlays",
+      "rule": "Escape closes the most recently opened overlay (tooltip, then menu, then dialog).",
+      "severity": "fail",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "a11y-escape-closes-overlays"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-no-positive-tabindex",
+      "title": "No positive tabindex",
+      "rule": "Never use tabindex above 0.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-no-positive-tabindex",
+        "16-no-positive-tabindex"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-roving-tabindex",
+      "title": "Composite widgets are one Tab stop",
+      "rule": "Tabs, menus, toolbars and radio groups occupy one Tab stop.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-roving-tabindex"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-apg-arrow-keys",
+      "title": "APG key map",
+      "rule": "Custom composite widgets implement the APG keys: arrows move, Home/End jump, Enter/Space activate.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "a11y-apg-arrow-keys"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-dialog-focus-trap-restore",
+      "title": "Dialog focus",
+      "rule": "Dialogs make the background inert, move focus inside on open and return it to the trigger on close.",
+      "severity": "fail",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "a11y-dialog-focus-trap-restore"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-custom-dialog-semantics",
+      "title": "Dialog semantics",
+      "rule": "A custom overlay has role=dialog, aria-modal=true and a name, or is a native <dialog>.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-custom-dialog-semantics"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "12-headless-dialog-primitive",
+      "title": "Headless primitives for overlays",
+      "rule": "Build dialogs, selects and menus on a headless primitive (Base UI or Radix), not from scratch.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "12-headless-dialog-primitive"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-destructive-dialog-focus-safe",
+      "title": "Safe default focus",
+      "rule": "A destructive confirmation focuses the least destructive action on open.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "a11y-destructive-dialog-focus-safe"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-spa-route-focus-and-title",
+      "title": "Route change focus and title",
+      "rule": "On a client-side route change, update document.title and move focus to the new view's <h1> or <main>.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "a11y-spa-route-focus-and-title"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-title-specific-first",
+      "title": "Specific title first",
+      "rule": "<title> names the current context, most specific first (Billing · Settings · App).",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-title-specific-first"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-hit-target",
+      "title": "Hit target size",
+      "rule": "Every interactive target is at least 32x32 CSS px (fail under 24px, warn under 32px), extending a small visual with a pseudo-element hit area.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": {
+        "failBelowPx": 24,
+        "warnBelowPx": 32,
+        "pseudoInsetPx": -8
+      },
+      "sources": [
+        "a11y-target-size-24",
+        "a11y-target-size-44-40",
+        "16-hit-area-minimum"
+      ],
+      "check": "R-hit-target",
+      "notes": "Ford's decision. The 44px touch and 40px dense-desktop aims are dropped; the 24px WCAG spacing exception still applies to the fail tier."
+    },
+    {
+      "id": "a11y-hit-areas-no-overlap",
+      "title": "Hit areas never overlap",
+      "rule": "Extended hit areas of neighbouring controls never overlap.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-hit-areas-no-overlap",
+        "16-hit-areas-no-overlap"
+      ],
+      "check": "R-hit-target"
+    },
+    {
+      "id": "16-no-dead-zones",
+      "title": "No dead zones",
+      "rule": "Adjacent list and menu items, and a checkbox or radio with its label, share hit area with no dead gap between them.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "exampleGapPx": 2
+      },
+      "sources": [
+        "16-no-dead-zones",
+        "a11y-label-shares-hit-target"
+      ],
+      "check": "R-hit-target"
+    },
+    {
+      "id": "a11y-decorative-layers-pass-through",
+      "title": "Decorative layers pass clicks",
+      "rule": "Decorative overlays (glows, scrims, full-bleed ::after) have pointer-events: none.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-decorative-layers-pass-through"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-drag-alternative",
+      "title": "Drag has a single-pointer alternative",
+      "rule": "Every drag (block reorder, resize) has a click or keyboard alternative.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-drag-alternative"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-input-has-label",
+      "title": "Inputs have labels",
+      "rule": "Every input has a programmatic label; a placeholder never stands in for one.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-input-has-label",
+        "a11y-placeholder-not-label"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-autocomplete-tokens",
+      "title": "Autocomplete tokens",
+      "rule": "Fields about the user carry a valid autocomplete token.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-autocomplete-tokens"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-input-type",
+      "title": "Right input type",
+      "rule": "Inputs use the matching type, and spellcheck=false on emails, codes and usernames.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-input-type-inputmode"
+      ],
+      "check": null,
+      "notes": "The inputmode (mobile keyboard) half is dropped for desktop."
+    },
+    {
+      "id": "a11y-no-paste-block",
+      "title": "Never block paste",
+      "rule": "Never block paste into a field.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-no-paste-block"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-validate-on-submit",
+      "title": "Validate on submit",
+      "rule": "Validate on submit; never natively disable submit to gate validation (use aria-disabled plus a handler guard when a step needs input).",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-validate-on-submit",
+        "12-disable-until-input"
+      ],
+      "check": null,
+      "notes": "Conflict: issue 12 keeps Continue disabled until input. Resolved to the skill's stricter rule with aria-disabled."
+    },
+    {
+      "id": "a11y-errors-announce",
+      "title": "Errors are announced",
+      "rule": "Failing fields get aria-invalid=true and aria-describedby to inline error text, and focus moves to the first invalid field.",
+      "severity": "fail",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "a11y-errors-announce"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-no-input-filtering",
+      "title": "No keystroke filtering",
+      "rule": "Accept free text and validate after; never block or filter characters while typing.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "a11y-no-input-filtering"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-pending-submit",
+      "title": "Pending submit",
+      "rule": "While submitting, show a spinner beside the original label and mark the button aria-disabled.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "a11y-pending-submit"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-unsaved-changes-warning",
+      "title": "Unsaved changes",
+      "rule": "Warn on unsaved changes before navigation; re-renders never reset typed values or steal focus.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "a11y-unsaved-changes-warning"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-icon-button-name",
+      "title": "Every control has a name",
+      "rule": "Every interactive control, icon-only ones included, has an accessible name.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-icon-button-name",
+        "16-icon-button-name"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-label-in-name",
+      "title": "Visible label in the name",
+      "rule": "The visible label appears in the accessible name, ideally at its start; no aria-label where visible text already names the control.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-label-in-name",
+        "16-name-matches-visible"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-aria-hidden-not-focusable",
+      "title": "aria-hidden is not focusable",
+      "rule": "aria-hidden is never on or above a focusable element.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-aria-hidden-not-focusable"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-color-not-only-cue",
+      "title": "Not color alone",
+      "rule": "Status and meaning are never carried by color alone; pair with an icon, text or underline.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "a11y-color-not-only-cue",
+        "16-not-color-alone"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "a11y-text-contrast",
+      "title": "Text contrast",
+      "rule": "Text reaches 4.5:1 (large text, 24px+ or 18.67px+ bold, 3:1) against the background it actually renders on, in light and dark, including translucent surfaces.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": {
+        "normal": 4.5,
+        "large": 3,
+        "largePx": 24,
+        "largeBoldPx": 18.67
+      },
+      "sources": [
+        "a11y-text-contrast",
+        "15-contrast-aa",
+        "color-contrast-both-appearances",
+        "19-contrast-actual-backdrop",
+        "color-no-alpha-under-text",
+        "color-white-on-500"
+      ],
+      "check": "R-contrast"
+    },
+    {
+      "id": "a11y-non-text-contrast",
+      "title": "Non-text contrast",
+      "rule": "Control boundaries, states and meaningful graphics reach 3:1 against adjacent colors.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": {
+        "minRatio": 3
+      },
+      "sources": [
+        "a11y-non-text-contrast"
+      ],
+      "check": "R-contrast"
+    },
+    {
+      "id": "color-apca-secondary",
+      "title": "APCA report",
+      "rule": "Report APCA Lc alongside WCAG 2 (body Lc 75, labels 60, large 45, icons 30-45); gate on WCAG 2 only.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "bodyLc": 75,
+        "labelLc": 60,
+        "largeLc": 45,
+        "iconLc": [
+          30,
+          45
+        ]
+      },
+      "sources": [
+        "color-apca-secondary"
+      ],
+      "check": "R-contrast"
+    },
+    {
+      "id": "color-placeholder-disabled-legible",
+      "title": "Legible placeholder and disabled text",
+      "rule": "Disabled and placeholder text aims for APCA Lc 30.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "minLc": 30
+      },
+      "sources": [
+        "color-placeholder-disabled-legible"
+      ],
+      "check": "R-contrast"
+    },
+    {
+      "id": "a11y-reduced-motion-gate",
+      "title": "Reduced-motion gate",
+      "rule": "Every keyframe or enter animation is opt-in under prefers-reduced-motion: no-preference (motion-safe:), with one app-wide MotionConfig reducedMotion=\"user\".",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "a11y-reduced-motion-gate",
+        "01-css-animation-reduced-motion",
+        "16-motion-safe-over-motion-reduce",
+        "16-reduced-motion-global"
+      ],
+      "check": "M-reduced-motion",
+      "notes": "Ford's decision: reduced-motion rules are warnings only."
+    },
+    {
+      "id": "ui-reduced-motion-runtime",
+      "title": "Reduced motion keeps the fade",
+      "rule": "Under reduce, movement, scale and blur become an opacity cross-fade; feedback stays, and the press scale stays as functional feedback.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "ui-reduced-motion-runtime",
+        "20-reduced-motion-keep-fade"
+      ],
+      "check": "M-reduced-motion",
+      "notes": "Skills conflict 1 (press scale under reduce) resolved: keep it."
+    },
+    {
+      "id": "a11y-pause-moving-content",
+      "title": "Pause moving content",
+      "rule": "Anything moving or auto-updating for more than 5s has a visible pause control.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "maxSeconds": 5
+      },
+      "sources": [
+        "a11y-pause-moving-content"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-toasts-persist-when-actionable",
+      "title": "Toast timing",
+      "rule": "Toasts with an action or error stay until dismissed; timed toasts last 5s or more and pause on hover or focus.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "minSeconds": 5
+      },
+      "sources": [
+        "a11y-toasts-persist-when-actionable"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-live-region-status",
+      "title": "Polite status announcements",
+      "rule": "Status changes without a focus move (copied, saved) go through a polite live region rendered empty before the update.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-live-region-preexists",
+        "16-live-region-status"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-assertive-only-urgent",
+      "title": "Assertive only when urgent",
+      "rule": "role=alert or aria-live=assertive only for urgent errors; success and status use role=status.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-assertive-only-urgent",
+        "16-assertive-only-urgent"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-no-focus-to-toast",
+      "title": "Never focus a toast",
+      "rule": "Never move focus to a toast.",
+      "severity": "fail",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "a11y-no-focus-to-toast"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-img-alt-present",
+      "title": "Images have alt",
+      "rule": "Every <img> has an alt attribute.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-img-alt-present"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-alt-by-purpose",
+      "title": "Alt by purpose",
+      "rule": "Alt text says what the image communicates or does; decorative images use alt=\"\".",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "a11y-alt-by-purpose",
+        "16-alt-describes-content"
+      ],
+      "check": "V-judge",
+      "notes": "Text-only judge over extracted alt strings."
+    },
+    {
+      "id": "a11y-svg-semantics",
+      "title": "SVG semantics",
+      "rule": "Decorative SVGs and icons inside labelled controls are aria-hidden; meaningful standalone SVGs have role=img and a name.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-svg-semantics",
+        "16-decorative-icons-hidden"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-media-captions-no-sound-autoplay",
+      "title": "Media captions",
+      "rule": "Prerecorded video has captions, audio a transcript, and nothing autoplays with sound.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-media-captions-no-sound-autoplay"
+      ],
+      "check": null
+    },
+    {
+      "id": "a11y-one-main",
+      "title": "One main",
+      "rule": "Expose exactly one visible primary <main> landmark.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-one-main"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-skip-link",
+      "title": "Skip link",
+      "rule": "When repeated navigation precedes <main>, a skip link is the first focusable element.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-skip-link"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-heading-outline",
+      "title": "Heading outline",
+      "rule": "Headings describe their sections and form a coherent outline.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-heading-outline"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-landmarks-labelled",
+      "title": "Labelled landmarks",
+      "rule": "Several landmarks of one type carry distinguishing labels.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-landmarks-labelled"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "a11y-text-resize-200",
+      "title": "200% text resize",
+      "rule": "All content and controls survive 200% text resize.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "a11y-text-resize-200"
+      ],
+      "check": "R-text-clip"
+    },
+    {
+      "id": "a11y-rem-media-queries",
+      "title": "rem media queries",
+      "rule": "Write media queries in rem or em.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "a11y-rem-media-queries"
+      ],
+      "check": null
+    },
+    {
+      "id": "12-toggle-pressed-state",
+      "title": "Toggle state exposed",
+      "rule": "Tab and toggle buttons expose aria-pressed or aria-selected; non-submit buttons have type=button.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "12-toggle-pressed-state"
+      ],
+      "check": null
+    },
+    {
+      "id": "16-shortcut-sequences",
+      "title": "Safe shortcuts",
+      "rule": "Shortcuts use sequences (G then I) or modifiers, avoid browser-reserved combos, and never put a destructive action on one key.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "16-shortcut-sequences"
+      ],
+      "check": null
+    },
+    {
+      "id": "16-shortcuts-ignore-fields",
+      "title": "Shortcuts ignore fields",
+      "rule": "Shortcuts ignore keystrokes in form fields, IME composition and key repeat.",
+      "severity": "fail",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "16-shortcuts-ignore-fields"
+      ],
+      "check": null
+    },
+    {
+      "id": "12-enter-advances-form",
+      "title": "Enter submits",
+      "rule": "Fields and their submit button sit in a <form>, so Enter advances or submits each step.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "12-enter-advances-form",
+        "16-form-wraps-fields"
+      ],
+      "check": null
+    },
+    {
+      "id": "12-focus-primary-when-no-input",
+      "title": "Focus the primary action",
+      "rule": "On a step with no input, focus moves to the primary button so Enter still works.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "12-focus-primary-when-no-input"
+      ],
+      "check": null
+    },
+    {
+      "id": "12-escape-steps-back",
+      "title": "Escape steps back",
+      "rule": "In a multi-step dialog, Escape goes back one step and closes only from the first step.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "12-escape-steps-back"
+      ],
+      "check": null
+    },
+    {
+      "id": "12-autofocus-next-input",
+      "title": "Autofocus the next input",
+      "rule": "Autofocus the next input the user must fill.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "12-autofocus-next-input"
+      ],
+      "check": null
+    },
+    {
+      "id": "layout-group-gap-ratio",
+      "title": "Groups by space",
+      "rule": "The gap between groups is at least 2x the gap within a group.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "minRatio": 2,
+        "exampleItemGapPx": 8,
+        "exampleGroupGapPx": 16
+      },
+      "sources": [
+        "layout-group-gap-ratio",
+        "19-group-spacing-2x"
+      ],
+      "check": "R-spacing-grid"
+    },
+    {
+      "id": "layout-separators-last",
+      "title": "Separators last",
+      "rule": "Use a separator only where space cannot carry structure, as a low-contrast hairline, never beside a large gap that already did the job.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "layout-separators-last"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "layout-controls-distinct",
+      "title": "Controls look like controls",
+      "rule": "Every interactive element has a shape, border, underline or consistent placement zone; a control never looks like static text.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "layout-controls-distinct"
+      ],
+      "check": null
+    },
+    {
+      "id": "layout-static-not-control-shaped",
+      "title": "Static is not control-shaped",
+      "rule": "A non-clickable badge never looks exactly like the buttons beside it.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "layout-static-not-control-shaped"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "layout-shared-edges",
+      "title": "Shared edges",
+      "rule": "Content aligns to a small set of shared edges, with one spacing step per nesting level.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "layout-shared-edges"
+      ],
+      "check": "R-align-near-miss"
+    },
+    {
+      "id": "layout-numbers-align-end",
+      "title": "Numbers align end",
+      "rule": "Numbers in tables are text-align: end; text is start.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "layout-numbers-align-end"
+      ],
+      "check": "R-tabular-nums",
+      "notes": "Same numeric-cell scan as R-tabular-nums."
+    },
+    {
+      "id": "layout-logical-properties",
+      "title": "Logical properties",
+      "rule": "Direction-dependent layout uses logical properties (margin-inline-start, text-align: start).",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "layout-logical-properties"
+      ],
+      "check": null
+    },
+    {
+      "id": "layout-rtl-no-logical-form",
+      "title": "RTL overrides",
+      "rule": "float uses inline-start; translateX and background-position on mirrored UI have a [dir=rtl] override.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "layout-rtl-no-logical-form"
+      ],
+      "check": null,
+      "notes": "Only when the app supports RTL."
+    },
+    {
+      "id": "layout-rtl-mirror",
+      "title": "RTL mirror",
+      "rule": "Under dir=rtl the layout mirrors cleanly, progression included.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "layout-rtl-mirror"
+      ],
+      "check": "V-judge",
+      "notes": "Only when the app supports RTL."
+    },
+    {
+      "id": "layout-dom-order-matches-visual",
+      "title": "DOM order is visual order",
+      "rule": "Visual order matches DOM order; never reorder with order, row-reverse or grid placement.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "layout-dom-order-matches-visual"
+      ],
+      "check": null
+    },
+    {
+      "id": "layout-importance-order",
+      "title": "Importance order",
+      "rule": "The most important content sits top and leading; identity leads, metadata and actions trail.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "layout-importance-order"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "layout-secondary-actions-in-menu",
+      "title": "One primary, few secondaries",
+      "rule": "Each view has one primary action; more than 3 secondary actions go behind a menu.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "maxSecondary": 3
+      },
+      "sources": [
+        "layout-secondary-actions-in-menu"
+      ],
+      "check": null
+    },
+    {
+      "id": "layout-hidden-content-cue",
+      "title": "Hidden content has a cue",
+      "rule": "Off-screen or collapsed content has a visible cue: a peeking item, scroll affordance or disclosure.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "layout-hidden-content-cue"
+      ],
+      "check": null
+    },
+    {
+      "id": "layout-truncation-way-back",
+      "title": "Truncation has a way back",
+      "rule": "Truncated text the user needs has a way to the full text (expand, detail view, keyboard-reachable tooltip); a hover-only title does not count.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "layout-truncation-way-back",
+        "15-truncation-has-full-text"
+      ],
+      "check": null,
+      "notes": "Skill is stricter than issue 15 (any tooltip); skill wins."
+    },
+    {
+      "id": "layout-disclosure-names-content",
+      "title": "Disclosures name content",
+      "rule": "Disclosure controls name what is hidden ('Show 12 more results', not 'More').",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "layout-disclosure-names-content"
+      ],
+      "check": null
+    },
+    {
+      "id": "layout-control-clearance",
+      "title": "Control clearance",
+      "rule": "Leave about 12px between bordered or filled controls and about 24px between borderless text or icon controls, unless an established density says otherwise.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "filledPx": 12,
+        "borderlessPx": 24
+      },
+      "sources": [
+        "layout-control-clearance"
+      ],
+      "check": "R-spacing-grid"
+    },
+    {
+      "id": "layout-content-bleeds-controls-float",
+      "title": "Content bleeds, controls stay inside",
+      "rule": "Backgrounds and media may bleed to the edges; controls and text stay inside layout margins.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "layout-content-bleeds-controls-float"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "layout-no-page-h-scroll",
+      "title": "No horizontal page scroll",
+      "rule": "At every supported desktop window width the page never scrolls horizontally (width: 100%, never 100vw).",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "layout-no-100vw",
+        "18-responsive-layout"
+      ],
+      "check": "R-h-scroll",
+      "notes": "Desktop widths only (Ford's decision)."
+    },
+    {
+      "id": "layout-min-height-not-height",
+      "title": "min-height for text boxes",
+      "rule": "Boxes holding text use min-height (or max-height with overflow auto), never a fixed height.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "layout-min-height-not-height"
+      ],
+      "check": "R-text-clip"
+    },
+    {
+      "id": "layout-minmax-0",
+      "title": "Tracks can shrink",
+      "rule": "Grid tracks with long content use minmax(0, 1fr) and flex children min-width: 0.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "layout-minmax-0"
+      ],
+      "check": "R-text-clip"
+    },
+    {
+      "id": "layout-container-queries",
+      "title": "Container queries",
+      "rule": "Reusable components adapt with @container, not viewport @media.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "layout-container-queries"
+      ],
+      "check": null
+    },
+    {
+      "id": "layout-container-type-sized",
+      "title": "Container has a definite width",
+      "rule": "An element with container-type: inline-size has a definite width.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "layout-container-type-sized"
+      ],
+      "check": null
+    },
+    {
+      "id": "layout-text-growth",
+      "title": "Text can grow",
+      "rule": "Labels and buttons have no fixed widths and rows wrap, so longer strings fit.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "layout-text-growth"
+      ],
+      "check": "R-text-clip"
+    },
+    {
+      "id": "layout-critical-action-reachable",
+      "title": "Critical actions reachable",
+      "rule": "Critical actions never get clipped by resize, zoom or scroll; modals cap at the viewport height with actions outside the scroll area.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "layout-critical-action-reachable"
+      ],
+      "check": null
+    },
+    {
+      "id": "layout-breakpoints-from-content",
+      "title": "Breakpoints from content",
+      "rule": "Breakpoints come from where the layout stops fitting, not device presets.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "layout-breakpoints-from-content"
+      ],
+      "check": null,
+      "taste": true
+    },
+    {
+      "id": "typo-few-fonts",
+      "title": "Three font families at most",
+      "rule": "Use at most three font families; fewer is better.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "maxFamilies": 3
+      },
+      "sources": [
+        "typo-few-fonts",
+        "14-max-three-fonts"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-weight-floor",
+      "title": "Weight floor",
+      "rule": "Below 18px use weight 400 or heavier; weights 100-300 only at 28px and up.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "minWeightBelow18px": 400,
+        "lightWeightsFromPx": 28
+      },
+      "sources": [
+        "typo-weight-floor"
+      ],
+      "check": "R-min-font",
+      "notes": "Read from the same computed-font inventory as R-min-font."
+    },
+    {
+      "id": "typo-load-used-faces",
+      "title": "No synthesized faces",
+      "rule": "Load every weight and style the design uses so the browser never synthesizes one.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-load-used-faces",
+        "14-no-faux-bold-italic"
+      ],
+      "check": null,
+      "notes": "Issue 14 suggests font-synthesis: none; the skill forbids it globally (see typo-no-global-synthesis-none). Skill wins."
+    },
+    {
+      "id": "typo-no-global-synthesis-none",
+      "title": "No global font-synthesis: none",
+      "rule": "Never set font-synthesis: none on body or interface text.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "typo-no-global-synthesis-none"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-properties-over-raw-tags",
+      "title": "Properties over feature tags",
+      "rule": "Use font-weight and font-variant-* where a property exists, not font-variation-settings or font-feature-settings.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "typo-properties-over-raw-tags",
+        "14-properties-over-feature-settings"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-small-type-scale",
+      "title": "Small type scale",
+      "rule": "Use a small type scale, each size paired with its line-height and weight, with few sizes and weights in use.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-small-type-scale",
+        "14-few-sizes-weights"
+      ],
+      "check": null
+    },
+    {
+      "id": "ks-no-size-literals",
+      "title": "Sizes from tokens",
+      "rule": "Font sizes, spacing, radii, shadows and fonts come from design-system tokens; no arbitrary values (w-[343px], p-[13px]).",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "15-type-scale-tokens",
+        "bd-no-arbitrary-values"
+      ],
+      "check": null,
+      "notes": "Already gated by lint:apps (scan-literals). No design-score check id yet."
+    },
+    {
+      "id": "typo-heading-sizes-descend",
+      "title": "Headings descend",
+      "rule": "Heading sizes descend with level and a heading is never smaller than body text.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-heading-sizes-descend"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-unitless-line-height",
+      "title": "Unitless line-height",
+      "rule": "line-height is unitless.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "typo-unitless-line-height"
+      ],
+      "check": null,
+      "notes": "DS line-height.code (21px) and line-height.row (28px) are px on purpose: they set row heights. They are exempt."
+    },
+    {
+      "id": "typo-line-height-by-role",
+      "title": "Line height by role",
+      "rule": "Display 1.1, headings 1.2-1.3, body 1.5-1.6.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "display": 1.1,
+        "heading": [
+          1.2,
+          1.3
+        ],
+        "body": [
+          1.5,
+          1.6
+        ]
+      },
+      "sources": [
+        "typo-line-height-by-role",
+        "15-line-height-by-role"
+      ],
+      "check": null,
+      "notes": "DS line-height.reading is 1.45, under the 1.5 floor. See token proposals."
+    },
+    {
+      "id": "typo-wrapping-text-leading",
+      "title": "Wrapping text leading",
+      "rule": "Text that wraps to three or more lines has line-height 1.4 or more.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "min": 1.4,
+        "fromLines": 3
+      },
+      "sources": [
+        "typo-wrapping-text-leading"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-letter-spacing-by-size",
+      "title": "Letter spacing by size",
+      "rule": "Headings 24px+ take -0.01em to -0.02em, uppercase labels 14px and under take about 0.05em, body stays 0.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "headingEm": [
+          -0.02,
+          -0.01
+        ],
+        "headingFromPx": 24,
+        "uppercaseEm": 0.05,
+        "uppercaseMaxPx": 14
+      },
+      "sources": [
+        "typo-letter-spacing-by-size",
+        "15-letter-spacing-by-role"
+      ],
+      "check": null,
+      "notes": "DS uppercase labels use 0.09em and 0.14em. See token proposals."
+    },
+    {
+      "id": "typo-letter-spacing-em",
+      "title": "Letter spacing in em",
+      "rule": "letter-spacing is set in em, not px.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "typo-letter-spacing-em"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-no-kerning-off",
+      "title": "Kerning on",
+      "rule": "Never set font-kerning: none.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "typo-no-kerning-off"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-measure",
+      "title": "Line length",
+      "rule": "Long-form text is capped at 60-75 characters per line.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "minCh": 60,
+        "maxCh": 75
+      },
+      "sources": [
+        "typo-measure",
+        "15-measure-60-75ch"
+      ],
+      "check": "R-line-length",
+      "notes": "DS layout.lane.text is 60ch, inside the band."
+    },
+    {
+      "id": "typo-balance-headings",
+      "title": "Balance headings",
+      "rule": "Headings and titles use text-wrap: balance.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-balance-headings",
+        "09-heading-text-wrap-balance"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-no-balance-on-paragraphs",
+      "title": "No balance on paragraphs",
+      "rule": "Never use text-wrap: balance on paragraphs.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-no-balance-on-paragraphs",
+        "15-no-balance-on-longform"
+      ],
+      "check": null,
+      "notes": "Issue 15 also bans pretty on long-form; the skill allows pretty on paragraphs. Skill wins (see typo-pretty-body)."
+    },
+    {
+      "id": "typo-pretty-body",
+      "title": "Pretty paragraphs",
+      "rule": "Body paragraphs and short descriptions use text-wrap: pretty.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-pretty-body",
+        "09-description-text-wrap-pretty"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-break-long-strings",
+      "title": "Break long strings",
+      "rule": "Where a long word, URL or ID could escape its container, set overflow-wrap: break-word.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-break-long-strings",
+        "15-overflow-wrap-long-tokens"
+      ],
+      "check": "R-text-clip"
+    },
+    {
+      "id": "typo-nowrap-labels",
+      "title": "Labels do not wrap",
+      "rule": "Labels and badges that look broken when wrapped use white-space: nowrap.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-nowrap-labels",
+        "15-nowrap-badges"
+      ],
+      "check": "R-text-clip"
+    },
+    {
+      "id": "typo-no-justify",
+      "title": "No justify",
+      "rule": "Interface text is text-align: start; never justify.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-no-justify",
+        "15-avoid-justify"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-tabular-nums",
+      "title": "Tabular numbers",
+      "rule": "Timers, counters, prices and numeric columns use tabular-nums; prose figures stay proportional.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-tabular-nums",
+        "09-tabular-nums-changing"
+      ],
+      "check": "R-tabular-nums"
+    },
+    {
+      "id": "typo-line-clamp-complete",
+      "title": "Complete line clamp",
+      "rule": "-webkit-line-clamp is paired with display: -webkit-box and -webkit-box-orient: vertical.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "typo-line-clamp-complete"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-natural-case",
+      "title": "Natural case",
+      "rule": "Store text in natural case and set case with text-transform.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "typo-natural-case",
+        "15-case-via-text-transform"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-smart-punctuation",
+      "title": "Typographic punctuation",
+      "rule": "Rendered text uses the ellipsis character, en dashes in ranges and curly quotes; code keeps straight quotes.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-smart-punctuation",
+        "15-smart-punctuation"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-underline-from-font",
+      "title": "Tuned underlines",
+      "rule": "Underlines use from-font position and thickness, or a tuned offset and 1-2px thickness, with skip-ink auto.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "offsetPx": 3,
+        "thicknessPx": [
+          1,
+          2
+        ]
+      },
+      "sources": [
+        "typo-underline-from-font",
+        "15-underline-styling"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-no-skip-ink-none",
+      "title": "Skip-ink on",
+      "rule": "Never set text-decoration-skip-ink: none.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "typo-no-skip-ink-none"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-size-floors",
+      "title": "Font size floors",
+      "rule": "Long-form body starts at 16px, UI text about 14px (13px in dense tools), captions 13px, rarely below 12px.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "bodyLongformPx": 16,
+        "uiPx": 14,
+        "denseUiPx": 13,
+        "captionPx": 13,
+        "warnBelowPx": 12
+      },
+      "sources": [
+        "typo-size-floors",
+        "15-min-text-sizes"
+      ],
+      "check": "R-min-font",
+      "notes": "DS micro (10px) and ui-2xs (11px) sit under the 12px floor; each use warns."
+    },
+    {
+      "id": "typo-rem-font-size",
+      "title": "rem font sizes",
+      "rule": "font-size is set in rem so the reader's browser font size applies.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "typo-rem-font-size"
+      ],
+      "check": null,
+      "notes": "DS font sizes are px except title. Low impact in desktop Electron apps."
+    },
+    {
+      "id": "typo-font-smoothing-root",
+      "title": "Smoothing on the root",
+      "rule": "Set -webkit-font-smoothing: antialiased and -moz-osx-font-smoothing: grayscale once on the root.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-font-smoothing-root",
+        "09-antialiased-root"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-lang-dir",
+      "title": "lang and dir",
+      "rule": "Set lang on the document and dir wherever direction changes.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-lang-dir",
+        "15-lang-and-dir"
+      ],
+      "check": "R-axe"
+    },
+    {
+      "id": "typo-text-box-trim",
+      "title": "Trim text boxes",
+      "rule": "In buttons and badges, trim text boxes (text-box: trim-both cap alphabetic) so labels center optically.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "typo-text-box-trim"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-no-text-images",
+      "title": "No text images",
+      "rule": "Decorative text is CSS, not images.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "typo-no-text-images"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "typo-selectable-text",
+      "title": "Content selectable, chrome not",
+      "rule": "Content text stays selectable; user-select: none only on control chrome and drag surfaces.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-selectable-text",
+        "12-no-select-on-controls"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-woff2",
+      "title": "woff2 fonts",
+      "rule": "Serve web fonts as woff2.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-woff2",
+        "14-woff2-fonts"
+      ],
+      "check": null
+    },
+    {
+      "id": "14-self-host-fonts",
+      "title": "Self-host fonts",
+      "rule": "Self-host fonts instead of loading them from a third-party CDN.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "14-self-host-fonts"
+      ],
+      "check": null
+    },
+    {
+      "id": "14-font-display-swap",
+      "title": "font-display swap",
+      "rule": "Set font-display: swap with a similar system fallback stack.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "14-font-display-swap"
+      ],
+      "check": null
+    },
+    {
+      "id": "14-pair-for-contrast",
+      "title": "Pair fonts for contrast",
+      "rule": "Pair fonts for contrast, never two near-identical sans-serifs.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "14-pair-for-contrast"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "15-selection-styled-readable",
+      "title": "Readable selection",
+      "rule": "Style ::selection to match the brand and keep selected text readable.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "15-selection-styled-readable"
+      ],
+      "check": null,
+      "notes": "DS color.selection covers it."
+    },
+    {
+      "id": "typo-display-text-cuts",
+      "title": "Display and Text cuts",
+      "rule": "Use a family's Display cut at large sizes and its Text cut at small ones.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "typo-display-text-cuts"
+      ],
+      "check": null,
+      "taste": true
+    },
+    {
+      "id": "typo-emphasis-weight-step",
+      "title": "Emphasis is one weight step",
+      "rule": "Emphasis within a role is one weight step up, not a size change.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "typo-emphasis-weight-step"
+      ],
+      "check": null,
+      "taste": true
+    },
+    {
+      "id": "color-no-literals",
+      "title": "No color literals",
+      "rule": "Components hold no hex, rgb(), hsl() or oklch() literals, and a change never swaps a token for a literal or a lighter token without remeasuring.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-no-literals",
+        "bd-no-arbitrary-values",
+        "review-token-not-swapped-for-literal"
+      ],
+      "check": "S-color-literal"
+    },
+    {
+      "id": "color-consistent-notation",
+      "title": "One color notation",
+      "rule": "Write colors in the project's notation (DS: lowercase hex).",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-consistent-notation"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-no-primitives-in-components",
+      "title": "Semantic tokens in components",
+      "rule": "Components use semantic role tokens; hue tokens only for categorical color.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-no-primitives-in-components",
+        "19-semantic-tokens-in-components"
+      ],
+      "check": null,
+      "notes": "Matches DS rule 4."
+    },
+    {
+      "id": "color-semantic-names-by-role",
+      "title": "Token names by role",
+      "rule": "Semantic token names describe a role, never a hue, component or position.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-semantic-names-by-role",
+        "19-token-names-by-purpose"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-primary-reserved",
+      "title": "Accent is the brand word",
+      "rule": "Call the brand color 'accent' so 'primary' never means two things.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-primary-reserved",
+        "19-accent-for-brand"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-token-in-role",
+      "title": "Tokens in their role",
+      "rule": "Use a token only in its role: no border token in color:, no text token in background:, no accent on text.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-token-in-role"
+      ],
+      "check": null,
+      "notes": "DS rule 5: text uses color.link, never color.accent."
+    },
+    {
+      "id": "color-one-word-per-concept",
+      "title": "One word per concept",
+      "rule": "Pick one word per concept (text, bg, border, accent) and never mix synonyms.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-one-word-per-concept"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-ramp-constant-hue",
+      "title": "Ramps hold one hue",
+      "rule": "A ramp steps lightness at one perceived hue.",
+      "severity": "warn",
+      "layer": "static",
+      "values": {
+        "maxHueSpreadDeg": 8,
+        "minChroma": 0.03
+      },
+      "sources": [
+        "color-ramp-constant-hue",
+        "02-shades-by-lightness-only"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-ramp-light-end-fine",
+      "title": "Fine light end",
+      "rule": "Light-end steps sit about 0.04-0.05 OKLCH L apart; mid-ramp 0.07-0.10.",
+      "severity": "warn",
+      "layer": "static",
+      "values": {
+        "lightStepL": [
+          0.04,
+          0.05
+        ],
+        "midStepL": [
+          0.07,
+          0.1
+        ]
+      },
+      "sources": [
+        "color-ramp-light-end-fine"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-ramp-adjacent-distinct",
+      "title": "Distinct steps",
+      "rule": "No two adjacent ramp steps are within 0.03 OKLCH L.",
+      "severity": "warn",
+      "layer": "static",
+      "values": {
+        "minStepL": 0.03
+      },
+      "sources": [
+        "color-ramp-adjacent-distinct"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-ramp-chroma-peaks-mid",
+      "title": "Chroma peaks mid-ramp",
+      "rule": "Vividness peaks mid-ramp and falls off at both ends.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-ramp-chroma-peaks-mid"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-ramp-ends-not-pure",
+      "title": "Ramp ends not pure",
+      "rule": "Ramps stop short of pure black and white.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-ramp-ends-not-pure"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-ramps-match-across-hues",
+      "title": "Sibling hues match",
+      "rule": "Sibling hues share OKLCH lightness and relative chroma so the same step reads equally bright.",
+      "severity": "warn",
+      "layer": "static",
+      "values": {
+        "maxLSpread": 0.05,
+        "maxCSpread": 0.04
+      },
+      "sources": [
+        "color-ramps-match-across-hues",
+        "02-equal-lightness-hue-family"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-status-hue-distance",
+      "title": "Status hues apart from accent",
+      "rule": "Every status hue sits 15 degrees or more of OKLCH hue from the accent.",
+      "severity": "warn",
+      "layer": "static",
+      "values": {
+        "minDeg": 15
+      },
+      "sources": [
+        "color-status-hue-distance"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-one-meaning",
+      "title": "One color, one meaning",
+      "rule": "A color (within 15 degrees of hue) has one purpose across the interface.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "hueWindowDeg": 15
+      },
+      "sources": [
+        "color-one-meaning"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-one-filled-action",
+      "title": "One filled action",
+      "rule": "One primary action per view gets the filled accent; peers stay neutral.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "color-one-filled-action"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-semantic-not-against-meaning",
+      "title": "Semantic color keeps its meaning",
+      "rule": "A semantic color is never used against its meaning.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "color-semantic-not-against-meaning"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "color-no-unused-ramps",
+      "title": "No unused steps",
+      "rule": "Every palette step has a purpose; remove ramps and steps nothing renders.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-no-unused-ramps",
+        "19-palette-steps-used"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-no-near-duplicates",
+      "title": "No near-duplicate colors",
+      "rule": "Colors within 0.02 OKLab deltaE are one drifted color; collapse them.",
+      "severity": "warn",
+      "layer": "static",
+      "values": {
+        "maxDeltaE": 0.02
+      },
+      "sources": [
+        "color-no-near-duplicates"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-dark-not-reversed",
+      "title": "Real dark palette",
+      "rule": "Dark tokens are a separate palette, not the light ramp reversed.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-dark-not-reversed",
+        "19-separate-dark-palette"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-one-theme-mechanism",
+      "title": "One theme mechanism",
+      "rule": "Switch themes one way only.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-one-theme-mechanism",
+        "19-one-theme-mechanism"
+      ],
+      "check": null,
+      "notes": "DS uses data-theme=\"dark\" with .dark as an alias of the same selector; that counts as one mechanism."
+    },
+    {
+      "id": "color-dark-variant-coverage",
+      "title": "Dark coverage",
+      "rule": "When dark ships, every custom color has a dark variant.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-dark-variant-coverage"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-prefers-contrast-per-appearance",
+      "title": "prefers-contrast per appearance",
+      "rule": "prefers-contrast: more gets its own value per appearance, widening the gap by 0.15 L or more.",
+      "severity": "warn",
+      "layer": "static",
+      "values": {
+        "minDeltaL": 0.15
+      },
+      "sources": [
+        "color-prefers-contrast-per-appearance"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-gamut-safe",
+      "title": "In-gamut colors",
+      "rule": "oklch() colors stay in the target gamut, with an sRGB value first and vivid values inside @media (color-gamut: p3).",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-gamut-fallback",
+        "02-no-out-of-gamut-chroma",
+        "02-oklch-supports-fallback"
+      ],
+      "check": null,
+      "notes": "DS colors are hex today, so this applies only to new oklch values."
+    },
+    {
+      "id": "color-neutral-tint-consistent",
+      "title": "Consistent neutral tint",
+      "rule": "A neutral's tint is held across its ramp.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-neutral-tint-consistent"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-role-inventory",
+      "title": "Full role inventory",
+      "rule": "The token set covers every role: surfaces, text levels, borders, focus, accent and shipped statuses.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-role-inventory"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-gradient-space",
+      "title": "Gradient interpolation space",
+      "rule": "Multi-hue gradients declare their space: oklab by default, oklch only for vivid midpoints checked for detours; keep text off gradients.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "color-gradient-space",
+        "02-gradient-oklab-straight",
+        "03-gradient-interpolation-space"
+      ],
+      "check": null,
+      "notes": "Skill calls this taste; magazine states it. Kept as warn with oklab default."
+    },
+    {
+      "id": "03-oklch-unintended-hues",
+      "title": "No hue detours",
+      "rule": "oklch gradients show no intermediate hues you never defined.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "03-oklch-unintended-hues"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "03-radial-shape-explicit",
+      "title": "Round glows are circles",
+      "rule": "Set circle explicitly when a radial glow must stay round.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "03-radial-shape-explicit"
+      ],
+      "check": null
+    },
+    {
+      "id": "color-locale-meaning",
+      "title": "Locale color meaning",
+      "rule": "Gain/loss colors that change meaning across locales are per-locale tokens.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "color-locale-meaning"
+      ],
+      "check": null,
+      "taste": true
+    },
+    {
+      "id": "03-gradient-techniques",
+      "title": "Gradient techniques",
+      "rule": "Hard edges with same-position stops, textures with repeating gradients, midpoints with color hints, richness with a low-alpha blended layer.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "03-hard-stops",
+        "03-repeating-patterns",
+        "03-color-hints",
+        "03-layer-blend-modes"
+      ],
+      "check": null,
+      "taste": true
+    },
+    {
+      "id": "ui-concentric-radius",
+      "title": "Concentric radius",
+      "rule": "Nested rounded surfaces use outer radius = inner radius + padding (+ border width), up to a 24px inset.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "maxInsetPx": 24,
+        "example": "12 + 8 = 20"
+      },
+      "sources": [
+        "ui-concentric-radius",
+        "09-concentric-radius"
+      ],
+      "check": "R-concentric-radius",
+      "notes": "DS has one 2px radius. Skip pairs where both radii are radius.base; check when either radius is above 4px."
+    },
+    {
+      "id": "16-focus-ring-concentric",
+      "title": "Concentric focus ring",
+      "rule": "An offset focus ring's radius equals the element radius plus the offset.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "example": "12 + 4 = 16"
+      },
+      "sources": [
+        "16-focus-ring-concentric"
+      ],
+      "check": "R-concentric-radius"
+    },
+    {
+      "id": "ui-optical-icon-padding",
+      "title": "Less padding on the icon side",
+      "rule": "A button with an icon and text takes 2-4px less padding on its icon side.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "iconSideLessPx": [
+          2,
+          4
+        ],
+        "example": "20px icon side, 24px text side"
+      },
+      "sources": [
+        "ui-optical-icon-padding",
+        "09-icon-side-padding"
+      ],
+      "check": "R-spacing-grid",
+      "notes": "Skill says about 2px; issue 09 shows 4px. Both pass."
+    },
+    {
+      "id": "ui-optical-asymmetric-glyphs",
+      "title": "Optical glyph alignment",
+      "rule": "Asymmetric icons (play, star) are aligned optically, preferably fixed in the SVG.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "ui-optical-asymmetric-glyphs",
+        "09-optical-align-icons"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "ui-shadow-for-depth",
+      "title": "Shadows for depth",
+      "rule": "A border that only creates depth (cards over images or colored backgrounds) becomes a layered transparent shadow; structural, input, divider and selected borders stay.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": {
+        "light": "0 0 0 1px rgba(0,0,0,.06), 0 1px 2px -1px rgba(0,0,0,.06), 0 2px 4px 0 rgba(0,0,0,.04)",
+        "dark": "0 0 0 1px rgba(255,255,255,.08)"
+      },
+      "sources": [
+        "ui-shadow-for-depth",
+        "09-shadow-instead-of-border"
+      ],
+      "check": "V-judge",
+      "notes": "The DS draws frames with hairline borders, so the DS wins; this applies only where a border fights an image or colored backdrop."
+    },
+    {
+      "id": "09-shadow-hover-darker",
+      "title": "Darker shadow on hover",
+      "rule": "On hover use the same shadow slightly darker and transition only box-shadow.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "lightAlphas": [
+          [
+            0.06,
+            0.06,
+            0.04
+          ],
+          [
+            0.08,
+            0.08,
+            0.06
+          ]
+        ],
+        "darkRing": [
+          0.08,
+          0.12
+        ]
+      },
+      "sources": [
+        "09-shadow-hover-darker"
+      ],
+      "check": null
+    },
+    {
+      "id": "ui-shadow-ring-keeps-border",
+      "title": "Shadow ring keeps a border",
+      "rule": "A box-shadow ring keeps border: 1px solid transparent for forced-colors mode.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "ui-shadow-ring-keeps-border"
+      ],
+      "check": null
+    },
+    {
+      "id": "ui-image-outline",
+      "title": "Image outline",
+      "rule": "Content images get a 1px outline inset 1px in pure black at 10% (light) or pure white at 10% (dark).",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "widthPx": 1,
+        "offsetPx": -1,
+        "lightAlpha": 0.1,
+        "darkAlpha": 0.1
+      },
+      "sources": [
+        "ui-image-outline",
+        "09-image-outline"
+      ],
+      "check": null,
+      "notes": "Issue 19 says 8%; issues 09 and the skill say 10%. 10% wins. Needs a DS token (see token proposals)."
+    },
+    {
+      "id": "20-avatar-outline-matches-ui",
+      "title": "Images match the UI",
+      "rule": "Outline avatars when neighbouring controls have borders, not when they don't.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "20-avatar-outline-matches-ui"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "ui-icon-stroke-matches-text",
+      "title": "Icon stroke matches text",
+      "rule": "An icon's rendered stroke tracks the adjacent text weight: 1.5px at 400, 2px at 500-600, 2.5px at 700.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "w400": 1.5,
+        "w500_600": 2,
+        "w700": 2.5
+      },
+      "sources": [
+        "ui-icon-stroke-matches-text",
+        "19-icon-stroke-matches-text"
+      ],
+      "check": null
+    },
+    {
+      "id": "ui-one-icon-library",
+      "title": "One icon library",
+      "rule": "Use one icon library per surface.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "ui-one-icon-library"
+      ],
+      "check": null
+    },
+    {
+      "id": "ui-icon-currentcolor",
+      "title": "Icons use currentColor",
+      "rule": "Icons use currentColor and get states from CSS color and opacity, never hardcoded fills.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "ui-icon-currentcolor"
+      ],
+      "check": "S-color-literal"
+    },
+    {
+      "id": "ui-icon-outline-fill-states",
+      "title": "Outline default, fill active",
+      "rule": "Outline is the default icon variant; fill marks the active state only.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "ui-icon-outline-fill-states"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "ui-icon-rtl-mirroring",
+      "title": "Icon mirroring",
+      "rule": "Under dir=rtl mirror only icons whose meaning follows reading direction.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "ui-icon-rtl-mirroring"
+      ],
+      "check": null,
+      "notes": "Only when the app supports RTL."
+    },
+    {
+      "id": "ui-icon-inline-size",
+      "title": "Inline icon size",
+      "rule": "Inline icons are 1em-1.25em of the adjacent font size.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "em": [
+          1,
+          1.25
+        ]
+      },
+      "sources": [
+        "ui-icon-inline-size"
+      ],
+      "check": null
+    },
+    {
+      "id": "ui-icons-svg-not-raster",
+      "title": "SVG icons",
+      "rule": "Icons are SVG, never raster, on the grid that matches their render size.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "ui-icons-svg-not-raster"
+      ],
+      "check": null,
+      "notes": "Knowledge System's Better Creating icons are 96x96 PNG masks; each warns until they move to SVG or Ford accepts them."
+    },
+    {
+      "id": "ui-one-way-per-detail",
+      "title": "One way per detail",
+      "rule": "The same detail (radius, shadow, motion curve) is done one way across the project.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "ui-one-way-per-detail"
+      ],
+      "check": null
+    },
+    {
+      "id": "ks-motion-tokens",
+      "title": "Motion from tokens",
+      "rule": "Durations, easings, springs and press scale come from design-system motion tokens, defined once (MotionConfig or the token), never as ms or cubic-bezier literals.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "ui-one-way-per-detail",
+        "12-shared-motionconfig",
+        "17-easing-by-purpose"
+      ],
+      "check": "S-motion-literal",
+      "notes": "DS rule 2 forbids duration literals; Jakub's values become tokens (token proposals)."
+    },
+    {
+      "id": "ui-transitions-for-state",
+      "title": "Transitions for state",
+      "rule": "Interactive state changes use transitions or springs so they reverse mid-way; keyframes only for one-shot sequences.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "ui-transitions-for-state",
+        "09-transitions-for-interactions"
+      ],
+      "check": null
+    },
+    {
+      "id": "ui-press-scale",
+      "title": "Press scale",
+      "rule": "Buttons scale to 0.95-0.98 while pressed, over about 150ms ease-out, with an opt-out.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "min": 0.95,
+        "max": 0.98,
+        "durationMs": 150
+      },
+      "sources": [
+        "ui-press-scale-value",
+        "ui-press-scale-present",
+        "19-press-scale"
+      ],
+      "check": "M-press-scale",
+      "notes": "Ford's decision replaces the skill's exact 0.96. Duration: skill 150ms, issue 19 200ms; the shorter wins."
+    },
+    {
+      "id": "ui-press-scale-not-disabled",
+      "title": "Disabled never scales",
+      "rule": "A disabled button never scales on press.",
+      "severity": "fail",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "ui-press-scale-not-disabled"
+      ],
+      "check": "M-press-scale"
+    },
+    {
+      "id": "08-tap-keyboard-parity",
+      "title": "Keyboard press feedback",
+      "rule": "Press feedback also fires on keyboard activation.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "08-tap-keyboard-parity"
+      ],
+      "check": "M-press-scale"
+    },
+    {
+      "id": "ui-high-frequency-instant",
+      "title": "Frequent interactions are instant",
+      "rule": "Keystrokes, row and menu-item hovers and tab switches are instant or 150ms or less of opacity or background-color, with no entrance animation.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "maxMs": 150
+      },
+      "sources": [
+        "ui-high-frequency-instant",
+        "19-frequent-interactions-instant"
+      ],
+      "check": "M-duration"
+    },
+    {
+      "id": "13-no-open-animation-frequent-menus",
+      "title": "No open animation on frequent menus",
+      "rule": "Surfaces opened many times a day (context menus) do not animate open; animate the close only, if at all.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "example": "200 opens/day x 300ms = about 1 min/day"
+      },
+      "sources": [
+        "13-no-open-animation-frequent-menus"
+      ],
+      "check": "M-duration"
+    },
+    {
+      "id": "13-no-animate-data-tab-swap",
+      "title": "No animated data swaps",
+      "rule": "Content swaps between data tabs show the new data at once.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "13-no-animate-data-tab-swap"
+      ],
+      "check": "M-duration"
+    },
+    {
+      "id": "17-duration-by-size",
+      "title": "Duration by size",
+      "rule": "Duration scales with what moves: small 150ms, menus and tabs 250ms, modals, drawers and panels 350-450ms.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "smallMs": 150,
+        "mediumMs": 250,
+        "largeMs": [
+          350,
+          450
+        ]
+      },
+      "sources": [
+        "17-duration-by-size"
+      ],
+      "check": "M-duration",
+      "notes": "DS durations are 100/150/260ms. See token proposals."
+    },
+    {
+      "id": "17-easing-by-purpose",
+      "title": "Easing by purpose",
+      "rule": "ease-out for enter and exit, linear for loading and continuous motion, a no-bounce spring for morphs; never ease-in on UI.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "easeOut": "cubic-bezier(0, 0, 0.2, 1)",
+        "skillCurve": "cubic-bezier(0.2, 0, 0, 1)"
+      },
+      "sources": [
+        "17-easing-by-purpose"
+      ],
+      "check": "M-duration",
+      "notes": "M-duration reads easing from the same getAnimations() record."
+    },
+    {
+      "id": "ui-exit-subtle",
+      "title": "Exits shorter and smaller",
+      "rule": "Exits are shorter and smaller than enters: opacity, 4px blur, a fixed 12px move or a 0.99 scale over 150ms ease-out, never the full container height.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "exitMs": 150,
+        "enterMsExample": 250,
+        "translatePx": 12,
+        "blurPx": 4,
+        "exitScale": 0.99
+      },
+      "sources": [
+        "ui-exit-subtle",
+        "09-subtle-exit",
+        "17-exit-scale-subtle",
+        "17-enter-longer-than-exit"
+      ],
+      "check": "M-duration",
+      "notes": "Issue 09 slides to -70%; the skill's fixed 12px is stricter and wins."
+    },
+    {
+      "id": "ui-stagger-entrances",
+      "title": "Staggered entrances",
+      "rule": "Infrequent staged entrances split into chunks staggered 100ms, each opacity + 4px blur + 12px translateY over 300ms ease-out; never stagger routine interactions.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "staggerMs": 100,
+        "durationMs": 300,
+        "blurPx": 4,
+        "translatePx": 12
+      },
+      "sources": [
+        "ui-stagger-entrances",
+        "09-split-stagger-enter"
+      ],
+      "check": "M-duration",
+      "notes": "Issue 09's hero uses 800ms, 8px and 8px blur; product UI uses the skill's values."
+    },
+    {
+      "id": "17-scale-inverse-to-size",
+      "title": "Scale inverse to size",
+      "rule": "Small elements scale in from 0.96-0.97, large ones from 0.98-0.99.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "small": [
+          0.96,
+          0.97
+        ],
+        "large": [
+          0.98,
+          0.99
+        ]
+      },
+      "sources": [
+        "17-scale-inverse-to-size"
+      ],
+      "check": null
+    },
+    {
+      "id": "17-transform-origin-trigger",
+      "title": "Scale from the trigger",
+      "rule": "Popovers, menus, tooltips and anchored badges scale from their trigger or anchor corner, not the center.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "badgeScaleFrom": 0.75
+      },
+      "sources": [
+        "17-transform-origin-trigger",
+        "07-indicator-origin"
+      ],
+      "check": null
+    },
+    {
+      "id": "17-movement-range",
+      "title": "Small travel",
+      "rule": "Travel stays small: 4px for text swaps, about 8px for page transitions, 8-32px for most elements, up to 70% for sheets.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "textPx": 4,
+        "pagePx": 8,
+        "elementPx": [
+          8,
+          32
+        ],
+        "sheetMaxPct": 70
+      },
+      "sources": [
+        "17-movement-range"
+      ],
+      "check": null
+    },
+    {
+      "id": "17-direction-from-source",
+      "title": "Direction from source",
+      "rule": "Motion shows where things come from: menus from the trigger, panels from their side, indicators between positions, nav dropdowns shift about 8px in the direction of travel.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "navShiftPx": 8
+      },
+      "sources": [
+        "17-direction-from-source",
+        "20-nav-dropdown-height-direction"
+      ],
+      "check": null
+    },
+    {
+      "id": "ui-motion-not-only-cue",
+      "title": "Motion is not the only cue",
+      "rule": "Every animated state change leaves a static cue.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "ui-motion-not-only-cue"
+      ],
+      "check": null
+    },
+    {
+      "id": "ui-no-state-animation-on-mount",
+      "title": "No animation on mount",
+      "rule": "State swaps and page elements do not animate on first render unless it is an intended entrance (initial={false}).",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "ui-no-state-animation-on-mount",
+        "19-no-animate-on-load"
+      ],
+      "check": null
+    },
+    {
+      "id": "ui-icon-crossfade-values",
+      "title": "Icon swap cross-fade",
+      "rule": "Icon swaps cross-fade with scale 0.25 to 1, opacity 0 to 1, blur 4px to 0 over 300ms (spring bounce 0 or cubic-bezier(0.2, 0, 0, 1)).",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "scaleFrom": 0.25,
+        "blurPx": 4,
+        "durationMs": 300,
+        "easing": "cubic-bezier(0.2, 0, 0, 1)"
+      },
+      "sources": [
+        "ui-icon-crossfade-values",
+        "19-icon-swap-crossfade"
+      ],
+      "check": null
+    },
+    {
+      "id": "ui-bounce-zero",
+      "title": "No bounce",
+      "rule": "Springs, gesture springs included, have bounce 0.",
+      "severity": "warn",
+      "layer": "static",
+      "values": {
+        "bounce": 0
+      },
+      "sources": [
+        "ui-bounce-zero",
+        "17-subtle-bounce",
+        "08-spring-gestures"
+      ],
+      "check": "S-motion-literal",
+      "notes": "Issue 17 allows a subtle bounce; the skill's 0 is stricter and wins."
+    },
+    {
+      "id": "ui-theme-switch-no-transitions",
+      "title": "No transitions on theme switch",
+      "rule": "Transitions are suppressed while the theme switches.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "ui-theme-switch-no-transitions",
+        "19-no-transitions-on-theme-switch"
+      ],
+      "check": null
+    },
+    {
+      "id": "ui-no-transition-all",
+      "title": "No transition: all",
+      "rule": "Transitions name exact properties, never all.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "ui-no-transition-all",
+        "19-no-transition-all"
+      ],
+      "check": "S-transition-all"
+    },
+    {
+      "id": "ui-will-change-scoped",
+      "title": "Scoped will-change",
+      "rule": "will-change names transform, opacity or filter, only on elements that animate, never all or broad selectors.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "ui-will-change-scoped",
+        "05-will-change-scoped",
+        "05-will-change-valid-props"
+      ],
+      "check": null
+    },
+    {
+      "id": "05-composite-only-animation",
+      "title": "Compositor-only animation",
+      "rule": "Animate transform, opacity and filter, never left, top, width, height or margin.",
+      "severity": "fail",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "05-composite-only-animation"
+      ],
+      "check": "M-layout-props",
+      "notes": "Measured container height morphs (12-height-animates-between-steps) and Motion layout animations warn instead of fail."
+    },
+    {
+      "id": "03-animate-gradient-cheaply",
+      "title": "Animate gradients cheaply",
+      "rule": "Animate a gradient's position, angle or size, not its color stops.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "03-animate-gradient-cheaply"
+      ],
+      "check": "M-layout-props"
+    },
+    {
+      "id": "05-will-change-fix-jitter",
+      "title": "No jitter while animating",
+      "rule": "Text and icons never shift 1-2px while an element animates (add will-change: transform).",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "maxShiftPx": 0.5
+      },
+      "sources": [
+        "05-will-change-fix-jitter"
+      ],
+      "check": null
+    },
+    {
+      "id": "ui-hover-capable-only",
+      "title": "Hover behind a media query",
+      "rule": "Hover-only styling sits behind @media (hover: hover) and (pointer: fine).",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "ui-hover-capable-only",
+        "20-hover-behind-media-query"
+      ],
+      "check": "S-hover-unguarded",
+      "notes": "Desktop-only apps: kept as warn because touch screens on laptops still latch hover."
+    },
+    {
+      "id": "ui-overscroll-contain",
+      "title": "Contained overscroll",
+      "rule": "Scrollable dialogs, drawers, menus and side panels use overscroll-behavior: contain.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "ui-overscroll-contain"
+      ],
+      "check": null
+    },
+    {
+      "id": "ui-animation-fill-mode",
+      "title": "Fill mode for hidden starts",
+      "rule": "Hidden start states live in the from keyframe with animation-fill-mode: both.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "ui-animation-fill-mode"
+      ],
+      "check": null
+    },
+    {
+      "id": "04-shared-layoutid",
+      "title": "Shared element moves",
+      "rule": "An element that moves between states (tab pill, card to dialog) animates with a shared layoutId, not a cut.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "04-shared-layoutid"
+      ],
+      "check": null
+    },
+    {
+      "id": "04-layoutid-unique-per-state",
+      "title": "Unique layoutId",
+      "rule": "Never render two elements with the same layoutId in one state.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "04-layoutid-unique-per-state"
+      ],
+      "check": null
+    },
+    {
+      "id": "04-layoutid-outside-presence",
+      "title": "layoutId outside AnimatePresence",
+      "rule": "Keep layoutId elements outside AnimatePresence.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "04-layoutid-outside-presence"
+      ],
+      "check": null
+    },
+    {
+      "id": "04-presence-keyed-blur-fade",
+      "title": "Keyed presence fade",
+      "rule": "Content that appears with a layout change uses AnimatePresence with a stable key and opacity plus 4px blur.",
+      "severity": "warn",
+      "layer": "static",
+      "values": {
+        "blurPx": 4
+      },
+      "sources": [
+        "04-presence-keyed-blur-fade"
+      ],
+      "check": null
+    },
+    {
+      "id": "04-radius-via-animate",
+      "title": "Radius through animate",
+      "rule": "Radius that differs between layout states goes through Motion's animate or style, not className.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "04-radius-via-animate"
+      ],
+      "check": null
+    },
+    {
+      "id": "06-cn-not-template-literals",
+      "title": "cn for classes",
+      "rule": "Compose class names with a cn utility, not template literals.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "06-cn-not-template-literals"
+      ],
+      "check": null
+    },
+    {
+      "id": "08-tap-cancels-on-move",
+      "title": "Tap cancels on move",
+      "rule": "A tap cancels when the pointer moves more than 3px, so taps never fire during drags.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "maxMovePx": 3
+      },
+      "sources": [
+        "08-tap-cancels-on-move"
+      ],
+      "check": null
+    },
+    {
+      "id": "08-drag-in-container",
+      "title": "Drag stays in its container",
+      "rule": "Free-drag elements are constrained to their container.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "08-drag-in-container"
+      ],
+      "check": null
+    },
+    {
+      "id": "08-focus-motion-subtle",
+      "title": "Subtle focus motion",
+      "rule": "Focus animations stay subtle; no complex motion during keyboard navigation.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "08-focus-motion-subtle"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "08-inview-blur-reveal",
+      "title": "Scroll reveal",
+      "rule": "Scroll reveals start from a defined state (blur 8px to 0) once half the element is visible.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "blurPx": 8,
+        "viewportAmount": 0.5
+      },
+      "sources": [
+        "08-inview-blur-reveal"
+      ],
+      "check": null
+    },
+    {
+      "id": "11-fade-labels-with-resize",
+      "title": "Labels fade with resize",
+      "rule": "When a container resizes (sidebar collapse), its labels fade in step, never appear or vanish instantly.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "11-fade-labels-with-resize"
+      ],
+      "check": null
+    },
+    {
+      "id": "12-no-animate-height-auto",
+      "title": "No height: auto animation",
+      "rule": "Never animate height to or from auto; measure and animate to a number.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "12-no-animate-height-auto"
+      ],
+      "check": null
+    },
+    {
+      "id": "12-height-animates-between-steps",
+      "title": "Height morphs between steps",
+      "rule": "When a container's content changes size, interpolate its height (spring bounce 0, 0.3s) instead of jumping.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "durationS": 0.3,
+        "bounce": 0
+      },
+      "sources": [
+        "12-height-animates-between-steps"
+      ],
+      "check": null
+    },
+    {
+      "id": "12-measure-inner-wrapper",
+      "title": "Measure the inner wrapper",
+      "rule": "The measuring ref sits on an inner wrapper, never on the animated element.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "12-measure-inner-wrapper"
+      ],
+      "check": null
+    },
+    {
+      "id": "12-initial-height-no-zero-frame",
+      "title": "No zero-height first frame",
+      "rule": "The first state has a known height so a dialog never opens by growing from 0.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "12-initial-height-no-zero-frame"
+      ],
+      "check": null
+    },
+    {
+      "id": "12-step-crossfade-poplayout",
+      "title": "Step cross-fade",
+      "rule": "Swapped step content cross-fades with AnimatePresence mode popLayout, initial false, opacity and scale 0.95 to 1.",
+      "severity": "warn",
+      "layer": "static",
+      "values": {
+        "scaleFrom": 0.95
+      },
+      "sources": [
+        "12-step-crossfade-poplayout"
+      ],
+      "check": null
+    },
+    {
+      "id": "12-tab-label-above-indicator",
+      "title": "Tab label above indicator",
+      "rule": "Tab labels sit above the moving active indicator so it never covers them.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "12-tab-label-above-indicator"
+      ],
+      "check": null
+    },
+    {
+      "id": "12-loader-linear-infinite",
+      "title": "Linear loaders",
+      "rule": "Looping loaders rotate linearly and stop under reduced motion.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": {
+        "periodS": 1.25
+      },
+      "sources": [
+        "12-loader-linear-infinite"
+      ],
+      "check": "M-reduced-motion"
+    },
+    {
+      "id": "12-lazy-motion-bundle",
+      "title": "LazyMotion",
+      "rule": "Use m components inside LazyMotion to keep Motion's full bundle out of the main chunk.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "12-lazy-motion-bundle"
+      ],
+      "check": null
+    },
+    {
+      "id": "13-subtle-not-over-animated",
+      "title": "Not over-animated",
+      "rule": "Feedback animation stays subtle; no stacking of several effects on one interaction.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "13-subtle-not-over-animated"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "13-low-cognitive-load",
+      "title": "Low cognitive load",
+      "rule": "Screens are simple and predictable.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "13-low-cognitive-load"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "18-fast-action-feedback",
+      "title": "Fast action feedback",
+      "rule": "Common actions show their result fast, optimistically when the server is slow.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "18-fast-action-feedback"
+      ],
+      "check": null
+    },
+    {
+      "id": "18-fast-page-load",
+      "title": "Fast page load",
+      "rule": "Entry pages load as fast as possible.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "18-fast-page-load"
+      ],
+      "check": null
+    },
+    {
+      "id": "20-copy-feedback-keeps-width",
+      "title": "Copy feedback keeps width",
+      "rule": "Copy feedback swaps the icon and keeps the label so the button keeps its width.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "20-copy-feedback-keeps-width"
+      ],
+      "check": null
+    },
+    {
+      "id": "20-tooltip-skip-delay",
+      "title": "Tooltip skip delay",
+      "rule": "Once a tooltip shows, neighbours show instantly for a short window, from one app-wide provider.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "20-tooltip-skip-delay"
+      ],
+      "check": null
+    },
+    {
+      "id": "td-theme-before-first-paint",
+      "title": "Theme before first paint",
+      "rule": "The resolved theme applies before first paint; the app follows the system with a Light, Dark and System choice.",
+      "severity": "fail",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "td-theme-before-first-paint"
+      ],
+      "check": null
+    },
+    {
+      "id": "05-scroll-contents-hints",
+      "title": "Narrow will-change hints",
+      "rule": "Use will-change: scroll-position or contents only for their narrow cases.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "05-scroll-contents-hints"
+      ],
+      "check": null,
+      "taste": true
+    },
+    {
+      "id": "08-slider-springs",
+      "title": "Slider springs",
+      "rule": "Animate slider thumb and fill with springs.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "08-slider-springs"
+      ],
+      "check": null,
+      "taste": true
+    },
+    {
+      "id": "copy-consistent-terms",
+      "title": "Consistent terms",
+      "rule": "Each object and action has one name across the product.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "copy-consistent-terms"
+      ],
+      "check": "V-judge",
+      "notes": "Text-only judge over extracted strings."
+    },
+    {
+      "id": "copy-flow-vocabulary",
+      "title": "One flow vocabulary",
+      "rule": "A multi-step flow uses one forward label at every step (Continue, not Continue/Next/Proceed), then Done.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "copy-flow-vocabulary",
+        "19-consistent-next-label"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-tone-by-stakes",
+      "title": "Tone by stakes",
+      "rule": "Tone flexes with stakes: warm for success, neutral for routine, calm for errors, serious for data loss.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "copy-tone-by-stakes"
+      ],
+      "check": "V-judge",
+      "notes": "Text-only judge."
+    },
+    {
+      "id": "copy-address-reader",
+      "title": "Address the reader",
+      "rule": "Write 'you', not 'the user'; avoid 'we' in errors.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "copy-address-reader",
+        "19-address-you"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-plain-words",
+      "title": "Plain words",
+      "rule": "Plain words a tired reader gets on first pass; no idioms; match the device verb (click on desktop).",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "copy-plain-words"
+      ],
+      "check": "V-judge",
+      "notes": "Text-only judge."
+    },
+    {
+      "id": "copy-whole-strings",
+      "title": "Whole strings",
+      "rule": "Never assemble sentences from fragments or hand-roll plurals; use one ICU message.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "copy-whole-strings"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-intl-formatting",
+      "title": "Intl formatting",
+      "rule": "Numbers, dates, times, prices and lists go through Intl with the user's locale and time zone.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "copy-intl-formatting",
+        "18-locale-aware-formatting"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-verb-first-buttons",
+      "title": "Verb-first buttons",
+      "rule": "Button labels start with a verb naming the action ('Delete project' beside 'Cancel'), never OK, Yes or No.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "copy-verb-first-buttons",
+        "19-buttons-start-with-verb",
+        "19-confirm-says-what-happens"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-icon-name-is-action",
+      "title": "Names state the action",
+      "rule": "A control's name states the action ('Copy link'), never the glyph ('Chain icon', 'X').",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "copy-icon-name-is-action",
+        "16-label-names-action"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-descriptive-links",
+      "title": "Descriptive links",
+      "rule": "Link text makes sense out of context; no 'Click here'.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "copy-descriptive-links",
+        "19-descriptive-links"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-capitalization-policy",
+      "title": "One capitalization policy",
+      "rule": "One capitalization policy per element type, sentence case by default.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "copy-capitalization-policy",
+        "19-consistent-capitalization"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-toggle-on-state",
+      "title": "Toggles name the on state",
+      "rule": "Toggle labels describe the ON state; never start with Don't, Disable or Hide.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "copy-toggle-on-state",
+        "19-toggle-label-positive"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-link-to-setting",
+      "title": "Link to settings",
+      "rule": "Link straight to a referenced setting instead of describing a path.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "copy-link-to-setting"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-error-says-fix",
+      "title": "Errors say the fix",
+      "rule": "Every error says what failed and how to fix it, beside the field that broke.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "copy-error-says-fix"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-no-oops",
+      "title": "No Oops",
+      "rule": "No blame, 'Oops', 'Something went wrong' or exclamation marks in errors.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "copy-no-oops"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-requirements-before-input",
+      "title": "Requirements up front",
+      "rule": "Known requirements show as helper text before input, phrased positively.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "copy-requirements-before-input"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "copy-undo-or-confirm",
+      "title": "Undo or confirm",
+      "rule": "Destructive actions act and offer undo when frequent and reversible, or confirm first when irreversible, shared or bulk.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "copy-undo-or-confirm"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-confirm-dialog-shape",
+      "title": "Confirmation shape",
+      "rule": "Confirmation titles name the action and object (never 'Are you sure?'); buttons are verb + object.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "copy-confirm-dialog-shape"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-empty-state-forward",
+      "title": "Empty states move forward",
+      "rule": "Empty states say what belongs there and offer one next action; filtered empties name the query and offer Clear filters.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "copy-empty-state-forward",
+        "19-empty-state-explains"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-placeholder-example",
+      "title": "Placeholder is an example",
+      "rule": "Placeholders show a realistic example in the accepted format, never an instruction.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "copy-placeholder-example"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-no-successfully-please",
+      "title": "Cut 'successfully'",
+      "rule": "Cut 'successfully' and routine 'Please'.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "copy-no-successfully-please"
+      ],
+      "check": null
+    },
+    {
+      "id": "copy-status-parallel",
+      "title": "Parallel status copy",
+      "rule": "Status copy follows patterns: '-ing + object…' in progress, 'object + past tense' when done.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "copy-status-parallel"
+      ],
+      "check": "V-judge",
+      "notes": "Text-only judge."
+    },
+    {
+      "id": "copy-type-to-confirm",
+      "title": "Type to confirm",
+      "rule": "Deleting an account, workspace or repository asks for its name typed.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "copy-type-to-confirm"
+      ],
+      "check": null,
+      "taste": true
+    },
+    {
+      "id": "iface-project-idiom",
+      "title": "Project idiom",
+      "rule": "Fixes use the project's own styling system and components (the design system), never a second one.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "iface-project-idiom"
+      ],
+      "check": null
+    },
+    {
+      "id": "iface-cover-all-states",
+      "title": "Every state renders",
+      "rule": "Every surface renders its empty, loading, error and narrow states, and every reachable data state, with product-shaped mock data and real-use edge cases.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "iface-cover-all-states",
+        "sm-every-state-renders",
+        "18-real-use-edge-cases"
+      ],
+      "check": null
+    },
+    {
+      "id": "iface-prefer-delete",
+      "title": "Prefer delete",
+      "rule": "When code adds what deletion would fix (redundant ARIA, a separator space would carry), that is a finding.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "iface-prefer-delete"
+      ],
+      "check": null
+    },
+    {
+      "id": "review-removed-signals",
+      "title": "No removed signals",
+      "rule": "A change never removes accessibility, motion, direction or typography signals.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "review-removed-signals"
+      ],
+      "check": null
+    },
+    {
+      "id": "review-variant-states-complete",
+      "title": "Complete variant states",
+      "rule": "A new variant, size or theme covers hover, focus, active, disabled, loading and selected.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "review-variant-states-complete"
+      ],
+      "check": null
+    },
+    {
+      "id": "review-strings-in-catalog",
+      "title": "Strings in the catalogue",
+      "rule": "A new user-facing string has a translation catalogue entry.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "review-strings-in-catalog"
+      ],
+      "check": null,
+      "notes": "Only for apps with a catalogue."
+    },
+    {
+      "id": "break-content-length",
+      "title": "Content length",
+      "rule": "Components survive empty, one-word, several-sentence and one unbreakable 60-character string.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "unbreakableChars": 60
+      },
+      "sources": [
+        "break-content-length"
+      ],
+      "check": "R-text-clip"
+    },
+    {
+      "id": "break-content-shape",
+      "title": "Content shape",
+      "rule": "User text survives emoji, RTL, mixed direction, tall scripts and aligned numbers.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "break-content-shape"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "break-quantity",
+      "title": "Quantity",
+      "rule": "Repeating components handle zero, one, the realistic count and ten times it.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "multiplier": 10
+      },
+      "sources": [
+        "break-quantity"
+      ],
+      "check": null
+    },
+    {
+      "id": "break-container",
+      "title": "Container squeeze",
+      "rule": "Components survive a narrow container, being squeezed by a sibling, and a very wide container.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "break-container"
+      ],
+      "check": "R-text-clip",
+      "notes": "Container widths, not viewport (the 320px value is kept as a container test)."
+    },
+    {
+      "id": "break-states",
+      "title": "Stable states",
+      "rule": "Loading, error and disabled states do not shift layout, rely on color alone or collapse contrast.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "break-states"
+      ],
+      "check": "R-state-shift",
+      "notes": "R-state-shift decides the layout-shift part for hover, focus, tab selection and opened popups; loading, error and disabled states are not exercised yet."
+    },
+    {
+      "id": "break-environment",
+      "title": "Environment",
+      "rule": "Components hold in dark mode, browser zoom and reduced motion.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "break-environment"
+      ],
+      "check": null
+    },
+    {
+      "id": "sm-loading-holds",
+      "title": "Loading holds still",
+      "rule": "Loading and pending states hold until switched, never resolving on a timeout.",
+      "severity": "warn",
+      "layer": "motion",
+      "values": null,
+      "sources": [
+        "sm-loading-holds"
+      ],
+      "check": null
+    },
+    {
+      "id": "bd-rounding-threshold",
+      "title": "Rounding threshold",
+      "rule": "Rounding a design value to a token is fine up to 2px on size and within one color step; beyond that is a deviation.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": {
+        "maxPx": 2
+      },
+      "sources": [
+        "bd-rounding-threshold"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "bd-fidelity-compare",
+      "title": "Fidelity compare",
+      "rule": "A build is compared side by side with its design at every frame width before it is done.",
+      "severity": "judge",
+      "layer": "visual",
+      "values": null,
+      "sources": [
+        "bd-fidelity-compare"
+      ],
+      "check": "V-judge"
+    },
+    {
+      "id": "bd-no-figma-urls",
+      "title": "No Figma URLs",
+      "rule": "No Figma asset URL remains in code.",
+      "severity": "fail",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "bd-no-figma-urls"
+      ],
+      "check": null
+    },
+    {
+      "id": "td-svg-self-contained",
+      "title": "Self-contained SVG",
+      "rule": "SVG assets parse as XML with no duplicate IDs, unresolved url(#...) or external assets.",
+      "severity": "warn",
+      "layer": "static",
+      "values": null,
+      "sources": [
+        "td-svg-self-contained"
+      ],
+      "check": null
+    },
+    {
+      "id": "td-zoom-keeps-edges-reachable",
+      "title": "Zoomed artwork reachable",
+      "rule": "Zoomed artwork stays in a scrollable viewport with every edge reachable.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "td-zoom-keeps-edges-reachable"
+      ],
+      "check": null
+    },
+    {
+      "id": "review-sibling-parity",
+      "title": "Sibling parity",
+      "rule": "A control added to one surface is added to siblings that carry its peers.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "review-sibling-parity"
+      ],
+      "check": null,
+      "taste": true
+    },
+    {
+      "id": "bd-diff-scope",
+      "title": "Diff scope",
+      "rule": "A design build touches only what the frames show.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "bd-diff-scope"
+      ],
+      "check": null,
+      "taste": true
+    },
+    {
+      "id": "variant-floor",
+      "title": "Variant floor",
+      "rule": "Every candidate design clears the escalation floor before it is shown.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "variant-floor"
+      ],
+      "check": null,
+      "taste": true,
+      "notes": "Process rule for design variants, not a page property."
+    },
+    {
+      "id": "ei-evidence-tiers",
+      "title": "Evidence tiers",
+      "rule": "Every claimed value is tagged measured, derived or inferred.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "ei-evidence-tiers"
+      ],
+      "check": null,
+      "taste": true,
+      "notes": "Applies to the verifier's own reports."
+    },
+    {
+      "id": "11-slow-motion-review",
+      "title": "Slow-motion review",
+      "rule": "Review every animation at 1x, 0.5x, 0.25x and 0.125x before shipping.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "11-slow-motion-review"
+      ],
+      "check": null,
+      "taste": true
+    },
+    {
+      "id": "12-dogfood-the-flow",
+      "title": "Dogfood the flow",
+      "rule": "Use what you build end to end before calling it done.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "12-dogfood-the-flow"
+      ],
+      "check": null,
+      "taste": true
+    },
+    {
+      "id": "13-justify-each-addition",
+      "title": "Justify each addition",
+      "rule": "Add an element, animation or feature only when it clearly improves the result.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "13-justify-each-addition"
+      ],
+      "check": null,
+      "taste": true
+    },
+    {
+      "id": "18-accessibility-baseline",
+      "title": "Accessibility is release work",
+      "rule": "Accessibility issues are release work.",
+      "severity": "human",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "18-accessibility-baseline"
+      ],
+      "check": null,
+      "taste": true,
+      "notes": "Process rule; the a11y rules above carry the checks."
+    },
+    {
+      "id": "ks-align-near-miss",
+      "title": "No near-miss alignment",
+      "rule": "Related elements (a row's items, stacked labels and fields, a column of cards) share edges and centers exactly; an offset of 1-3px between them fails.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": {
+        "nearMissPx": [
+          1,
+          3
+        ],
+        "tolerancePx": 0.5
+      },
+      "sources": [
+        "layout-shared-edges",
+        "bd-rounding-threshold"
+      ],
+      "check": "R-align-near-miss",
+      "notes": "Offsets above 3px are treated as deliberate. Implied by shared edges and the 2px rounding threshold."
+    },
+    {
+      "id": "ks-handle-first-line",
+      "title": "Handles center on the first line",
+      "rule": "Drag handles, row icons, checkboxes, bullets and toggles beside text are vertically centered on the first line box of that text, not on the whole block.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": {
+        "tolerancePx": 1
+      },
+      "sources": [
+        "layout-shared-edges",
+        "ui-optical-asymmetric-glyphs",
+        "ui-icon-inline-size"
+      ],
+      "check": "R-align-near-miss",
+      "notes": "Ford's docs-editor complaint: the block grab bar does not line up with the block text."
+    },
+    {
+      "id": "ks-baseline-align",
+      "title": "Shared baselines",
+      "rule": "Text in one row (label and value, tabs, adjacent buttons, inline chips) shares one baseline.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": {
+        "tolerancePx": 1
+      },
+      "sources": [
+        "layout-shared-edges",
+        "typo-text-box-trim"
+      ],
+      "check": "R-align-near-miss"
+    },
+    {
+      "id": "ks-icon-optical-center",
+      "title": "Icons centered in their box",
+      "rule": "An icon in an icon button or beside a label is centered in its box within 0.5px, on the label's cap-height middle, after optical correction for asymmetric glyphs.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "tolerancePx": 0.5
+      },
+      "sources": [
+        "ui-optical-asymmetric-glyphs",
+        "09-optical-align-icons",
+        "typo-text-box-trim",
+        "ui-icon-inline-size"
+      ],
+      "check": "R-align-near-miss"
+    },
+    {
+      "id": "ks-row-control-height",
+      "title": "Equal control heights in a row",
+      "rule": "Buttons, inputs, selects, segmented controls and control chips in one row have the same height.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": {
+        "tolerancePx": 0.5
+      },
+      "sources": [
+        "ui-one-way-per-detail",
+        "layout-controls-distinct"
+      ],
+      "check": "R-control-height"
+    },
+    {
+      "id": "ks-control-height-scale",
+      "title": "Control heights from a scale",
+      "rule": "Control heights across the app come from a small token set on the 4px grid (for example 24, 28, 32px).",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "gridPx": 4,
+        "maxDistinctHeights": 4
+      },
+      "sources": [
+        "ui-one-way-per-detail",
+        "typo-small-type-scale"
+      ],
+      "check": "R-control-height",
+      "notes": "No control-height tokens exist yet; see token proposals."
+    },
+    {
+      "id": "ks-gap-grid",
+      "title": "Gaps on the 4px grid",
+      "rule": "Rendered gaps, padding and margins are values from the DS space scale (4px grid with 2px and 6px half steps).",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "allowedPx": [
+          0,
+          2,
+          4,
+          6,
+          8,
+          12,
+          16,
+          20,
+          24,
+          28,
+          32,
+          40,
+          48,
+          64
+        ],
+        "tolerancePx": 0.5
+      },
+      "sources": [
+        "layout-group-gap-ratio",
+        "layout-shared-edges",
+        "bd-no-arbitrary-values"
+      ],
+      "check": "R-spacing-grid"
+    },
+    {
+      "id": "ks-repeated-padding",
+      "title": "Same padding in repeated items",
+      "rule": "Repeated rows, cards, list and menu items of one kind have identical padding and inner gaps.",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": {
+        "tolerancePx": 0.5
+      },
+      "sources": [
+        "ui-one-way-per-detail",
+        "layout-shared-edges"
+      ],
+      "check": "R-spacing-grid"
+    },
+    {
+      "id": "ks-indent-step",
+      "title": "One indent step",
+      "rule": "Nested tree and outline levels indent by one constant step per level.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": {
+        "stepToken": "space.4 (16px)"
+      },
+      "sources": [
+        "layout-shared-edges"
+      ],
+      "check": "R-spacing-grid"
+    },
+    {
+      "id": "ks-no-state-shift",
+      "title": "State changes never shift layout",
+      "rule": "Hover, selection, focus, loading and copied states never change an element's size or move its neighbours (no border added on hover, no bolder text that widens a tab).",
+      "severity": "fail",
+      "layer": "runtime",
+      "values": {
+        "failAtPx": 1
+      },
+      "sources": [
+        "break-states",
+        "20-copy-feedback-keeps-width",
+        "05-will-change-fix-jitter"
+      ],
+      "check": "R-state-shift",
+      "notes": "R-state-shift: layout boxes before and after hover, focus, tab selection and opening a popup; a neighbour (or the control itself) moved or resized by 1px or more fails (Ford: >= 1px)."
+    },
+    {
+      "id": "ks-icon-size-consistent",
+      "title": "One icon size per role",
+      "rule": "Icons of one role on a surface (row icons, toolbar icons) render at one size.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "ui-one-way-per-detail",
+        "ui-icon-inline-size"
+      ],
+      "check": null
+    }
+  ]
+}
