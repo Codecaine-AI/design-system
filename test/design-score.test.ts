@@ -184,6 +184,18 @@ describe.skipIf(!!process.env.DS_SKIP_BROWSER)("design:score v2 in a browser", (
     expect(hits.map((f: { group: string }) => f.group.split("|")[1])).toEqual(["a.crumb"]);
   });
 
+  test("R-align-near-miss: a button grip labelled drag or reorder is a handle; a drag-labelled svg picture is not", async () => {
+    // Each grip is 16px tall at 7px down, so its center sits at 15px. The 20px first line centers at 10px: +5px, within half the line.
+    const grip = "width:16px;height:16px;margin-top:7px;padding:0;border:0;background:#888";
+    const row = (control: string, text: string) => `<div style="display:flex;gap:8px;align-items:flex-start;margin:20px">${control}<div>${text}</div></div>`;
+    await page.setContent(`<body style="margin:0;font:14px/20px sans-serif">
+      ${row(`<button aria-label="Drag to reorder" style="${grip}"></button>`, "Kitchen camera")}
+      ${row(`<span role="button" aria-label="Reorder" style="display:block;${grip}"></span>`, "Hallway camera")}
+      ${row(`<svg role="group" aria-label="Drag items to move them" style="${grip}"><rect width="16" height="16"/></svg>`, "Room plan")}</body>`);
+    const handles = (await probe()).findings.filter((f: { check: string; measured: string }) => f.check === "R-align-near-miss" && f.measured.startsWith("handle center"));
+    expect(handles.map((f: { measured: string }) => f.measured.replace(/^.*\((.+)\) (".*")$/, "$1 $2"))).toEqual(['+5px "Kitchen camera"', '+5px "Hallway camera"']);
+  });
+
   test("R-control-height skips a link that spans a row, and still flags two buttons", async () => {
     await page.setContent(`<style>.row:hover, .row { background: #ddd; } button { border: 1px solid #888; }</style>
       <body style="margin:20px;font:14px sans-serif"><div style="display:flex;gap:8px;align-items:center"><a class="row" href="#r" style="display:block;width:600px;height:32px">Session</a><button style="height:28px">Open</button></div>
