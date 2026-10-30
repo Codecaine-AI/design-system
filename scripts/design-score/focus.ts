@@ -77,7 +77,7 @@ interface Layer {
   pseudo: string;
   /** A pseudo-element is absolutely positioned, so it can paint over its holder's box. */
   floats: boolean;
-  /** Index of the nearest positioned layer at or above this one (the pseudo's containing block), or -1. */
+  /** Index of the nearest layer at or above this one that holds an absolute pseudo (its containing block), or -1. */
   holder: number;
 }
 
@@ -90,23 +90,33 @@ function layersOf(key: string): Layer[] | null {
     s.getPropertyValue(`${p}-style`) === "none" || s.getPropertyValue(`${p}-style`) === "hidden" || !(parseFloat(s.getPropertyValue(`${p}-width`)) > 0)
       ? "none"
       : `${s.getPropertyValue(`${p}-width`)} ${s.getPropertyValue(`${p}-style`)} ${s.getPropertyValue(`${p}-color`)}`;
-  const paintOf = (s: CSSStyleDeclaration) =>
-    [`${line(s, "outline")} ${line(s, "outline") === "none" ? "" : s.outlineOffset}`, ...["top", "right", "bottom", "left"].map((side) => line(s, `border-${side}`)), s.boxShadow, s.backgroundColor, s.backgroundImage, s.color, s.opacity, s.filter].join("|");
+  // `color` shows on a box only through its own text: a child that sets its own color hides the change.
+  const paintOf = (s: CSSStyleDeclaration, text: boolean) =>
+    [`${line(s, "outline")} ${line(s, "outline") === "none" ? "" : s.outlineOffset}`, ...["top", "right", "bottom", "left"].map((side) => line(s, `border-${side}`)), s.boxShadow, s.backgroundColor, s.backgroundImage, text ? s.color : "", s.opacity, s.filter].join("|");
+  const ownText = (e: Element) => [...e.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && n.textContent!.trim() !== "");
+  // The box an absolute descendant fills: Chromium makes one for each of these (checked in Chromium 153).
+  const holds = (s: CSSStyleDeclaration) =>
+    s.position !== "static" ||
+    ["transform", "translate", "rotate", "scale", "perspective", "filter", "backdrop-filter", "offset-path"].some((p) => !["", "none"].includes(s.getPropertyValue(p))) ||
+    s.transformStyle === "preserve-3d" ||
+    /layout|paint|strict|content/.test(s.contain) ||
+    s.contentVisibility !== "visible" ||
+    s.willChange.split(/,\s*/).some((p) => ["transform", "translate", "rotate", "scale", "perspective", "filter", "backdrop-filter", "contain", "position", "offset-path"].includes(p));
   const layers: Layer[] = [];
   let holder = -1;
   const chain: Element[] = [];
   for (let cur: Element | null = el; cur && cur !== document.body && cur !== document.documentElement; cur = cur.parentElement ?? ((cur.parentNode as ShadowRoot | null)?.host ?? null)) chain.push(cur);
-  // Walk from the top, so each layer knows its nearest positioned ancestor (or itself).
+  // Walk from the top, so each layer knows the nearest box at or above it that holds an absolute pseudo.
   for (let i = chain.length - 1; i >= 0; i--) {
     const e = chain[i]!;
     const s = getComputedStyle(e);
-    if (s.position !== "static" || s.transform !== "none") holder = i;
+    if (holds(s)) holder = i;
     const pseudos = ["::before", "::after"].map((p) => getComputedStyle(e, p));
     const r = e.getBoundingClientRect();
     layers[i] = {
       box: { x: r.left, y: r.top, w: r.width, h: r.height },
-      paint: paintOf(s),
-      pseudo: pseudos.map((p) => (p.content === "none" || p.display === "none" ? "none" : `${p.content}|${paintOf(p)}`)).join("||"),
+      paint: paintOf(s, ownText(e)),
+      pseudo: pseudos.map((p) => (p.content === "none" || p.display === "none" ? "none" : `${p.content}|${paintOf(p, p.content !== '""')}`)).join("||"),
       floats: pseudos.some((p) => p.content !== "none" && p.position === "absolute"),
       holder,
     };
