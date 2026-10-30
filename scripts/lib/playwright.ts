@@ -210,7 +210,9 @@ const HEADLESS_SHELL: Record<string, [string, string]> = {
 
 /** The headless shell executable inside a chromium_headless_shell-<rev> dir, for this platform. Throws on a platform Playwright has no build for. */
 export function headlessShellIn(dir: string): string {
-  const platform = `${process.platform}-${process.platform === "darwin" && process.arch !== "arm64" ? "x64" : process.arch}`;
+  // Playwright's names: every Windows host is win64, and a Mac that is not arm64 is mac-x64.
+  const arch = process.platform === "win32" || (process.platform === "darwin" && process.arch !== "arm64") ? "x64" : process.arch;
+  const platform = `${process.platform}-${arch}`;
   const shell = HEADLESS_SHELL[platform];
   if (!shell) throw new Error(`Playwright has no Chromium headless shell for ${platform}`);
   return join(dir, ...shell);
