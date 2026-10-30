@@ -6,6 +6,8 @@
  * the element again and press Tab from it. Transitions are switched off for the pass, so both captures
  * are settled. When the element moved between the captures, the computed style decides instead: an
  * outline or a changed box-shadow counts as visible.
+ * A ring drawn on a wrapper counts too: when an ancestor's paint (or a pseudo-element's, such as a ::after
+ * stretched over a tile) changes on blur, the clip grows to that box and is captured blurred, then focused again.
  * Tabbing stops at a contenteditable (Tab may edit there), when focus cycles, or after N stops.
  */
 import { decodePng } from "../lib/png";
@@ -65,6 +67,69 @@ function activeInfo(): Stop | null {
     frame: el.tagName === "IFRAME",
     key,
   };
+}
+
+/** One box in the focused element's chain: the element, then each ancestor up to the body. */
+interface Layer {
+  box: Box;
+  /** The paint of the element itself, and of its ::before and ::after. */
+  paint: string;
+  pseudo: string;
+  /** A pseudo-element is absolutely positioned, so it can paint over its holder's box. */
+  floats: boolean;
+  /** Index of the nearest positioned layer at or above this one (the pseudo's containing block), or -1. */
+  holder: number;
+}
+
+/** The paint of the focused element's chain, compared focused and blurred to find what the focus lights. Self-contained. */
+function layersOf(key: string): Layer[] | null {
+  const el = (window as unknown as { __dsFocus?: Element[] }).__dsFocus?.[Number(key)];
+  if (!el || !el.isConnected) return null;
+  const PROPS = ["outline-style", "outline-width", "outline-color", "outline-offset", "box-shadow", "border-color", "border-width", "background-color", "background-image", "color", "opacity", "filter"];
+  const paintOf = (s: CSSStyleDeclaration) => PROPS.map((p) => s.getPropertyValue(p)).join("|");
+  const layers: Layer[] = [];
+  let holder = -1;
+  const chain: Element[] = [];
+  for (let cur: Element | null = el; cur && cur !== document.body && cur !== document.documentElement; cur = cur.parentElement ?? ((cur.parentNode as ShadowRoot | null)?.host ?? null)) chain.push(cur);
+  // Walk from the top, so each layer knows its nearest positioned ancestor (or itself).
+  for (let i = chain.length - 1; i >= 0; i--) {
+    const e = chain[i]!;
+    const s = getComputedStyle(e);
+    if (s.position !== "static" || s.transform !== "none") holder = i;
+    const pseudos = ["::before", "::after"].map((p) => getComputedStyle(e, p));
+    const r = e.getBoundingClientRect();
+    layers[i] = {
+      box: { x: r.left, y: r.top, w: r.width, h: r.height },
+      paint: paintOf(s),
+      pseudo: pseudos.map((p) => `${p.content}|${p.display}|${paintOf(p)}`).join("||"),
+      floats: pseudos.some((p) => p.content !== "none" && p.position === "absolute"),
+      holder,
+    };
+  }
+  return layers;
+}
+
+/**
+ * The boxes the focus lights besides the control's own: an ancestor whose paint changes on blur, and the
+ * box an element's changed pseudo-element can cover. A change on an element outside the chain never counts.
+ */
+function litBoxes(focused: Layer[], blurred: Layer[]): Box[] {
+  const boxes: Box[] = [];
+  for (let i = 0; i < Math.min(focused.length, blurred.length); i++) {
+    const f = focused[i]!;
+    if (i > 0 && f.paint !== blurred[i]!.paint) boxes.push(f.box);
+    if (f.pseudo !== blurred[i]!.pseudo) {
+      if (i > 0) boxes.push(f.box);
+      if (f.floats && f.holder > 0) boxes.push(focused[f.holder]!.box);
+    }
+  }
+  return boxes;
+}
+
+function union(boxes: Box[]): Box {
+  const x = Math.min(...boxes.map((b) => b.x));
+  const y = Math.min(...boxes.map((b) => b.y));
+  return { x, y, w: Math.max(...boxes.map((b) => b.x + b.w)) - x, h: Math.max(...boxes.map((b) => b.y + b.h)) - y };
 }
 
 function styleOf(key: string): { box: Box; outline: string; shadow: string } | null {
@@ -146,25 +211,42 @@ export async function focusPass(page: any, max = 30): Promise<FocusResult> {
       if (current.frame) break;
       await page.waitForTimeout(40);
       const focusedNow = (await page.evaluate(styleOf, current.key)) ?? { box: current.box, outline: current.outline, shadow: current.shadow };
-      const clip = clipFor(focusedNow.box, vp.width, vp.height);
-      const focusedPng: Uint8Array | null = clip ? await page.screenshot({ clip }) : null;
+      const focusedLayers: Layer[] | null = await page.evaluate(layersOf, current.key);
+      let clip = clipFor(focusedNow.box, vp.width, vp.height);
+      let focusedPng: Uint8Array | null = clip ? await page.screenshot({ clip }) : null;
       // Never Tab inside an editor (Tab can indent there); its focus shows as the caret. Stop here.
       if (current.editable) break;
       // The unfocused capture has nothing focused (a neighbour's ring would change the same clip).
       await page.evaluate(blurActive);
       await page.waitForTimeout(40);
       const after = await page.evaluate(styleOf, current.key);
+      const blurredLayers: Layer[] | null = await page.evaluate(layersOf, current.key);
+      const lit = focusedLayers && blurredLayers ? litBoxes(focusedLayers, blurredLayers) : [];
+      let refocused = false;
       let visible: boolean | null = null;
       let measured = "";
       if (clip && focusedPng && after) {
         const moved = Math.abs(after.box.x - focusedNow.box.x) > 0.5 || Math.abs(after.box.y - focusedNow.box.y) > 0.5;
         if (!moved) {
-          const unfocusedPng: Uint8Array = await page.screenshot({ clip });
-          const diff = changedPixels(focusedPng, unfocusedPng);
+          let unfocusedPng: Uint8Array;
+          const region = lit.length ? clipFor(union([focusedNow.box, ...lit]), vp.width, vp.height) : null;
+          if (region) {
+            // The focus lights a box beyond the clip (a wrapper's ring): compare that region, blurred, then focused again.
+            clip = region;
+            unfocusedPng = await page.screenshot({ clip });
+            await page.evaluate(refocusBlurred);
+            refocused = true;
+            await page.waitForTimeout(40);
+            focusedPng = await page.screenshot({ clip });
+          } else {
+            unfocusedPng = await page.screenshot({ clip });
+          }
+          const diff = changedPixels(focusedPng!, unfocusedPng);
           const perimeter = 2 * (focusedNow.box.w + focusedNow.box.h);
           const need = Math.max(12, perimeter * 0.1);
           visible = diff.count >= need;
-          measured = `${diff.count === Number.POSITIVE_INFINITY ? "?" : diff.count} pixels change on focus (need ${Math.round(need)}); outline ${focusedNow.outline}, box-shadow ${focusedNow.shadow === "none" ? "none" : "set"}`;
+          const where = region ? ` on the control and ${lit.length} box${lit.length === 1 ? "" : "es"} its focus lights` : "";
+          measured = `${diff.count === Number.POSITIVE_INFINITY ? "?" : diff.count} pixels change on focus${where} (need ${Math.round(need)}); outline ${focusedNow.outline}, box-shadow ${focusedNow.shadow === "none" ? "none" : "set"}`;
         }
       }
       if (visible === null && after) {
@@ -172,7 +254,7 @@ export async function focusPass(page: any, max = 30): Promise<FocusResult> {
         measured = `element moved between captures; style: outline ${focusedNow.outline}, box-shadow ${focusedNow.shadow === after.shadow ? "unchanged" : "changes"}`;
       }
       // Focus the control again and Tab on from it, so the Tab order is the page's own.
-      await page.evaluate(refocusBlurred);
+      if (!refocused) await page.evaluate(refocusBlurred);
       await page.keyboard.press("Tab");
       const next: Stop | null = await page.evaluate(activeInfo);
       if (visible === false) {
