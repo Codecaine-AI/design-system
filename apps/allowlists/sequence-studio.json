@@ -1,12 +1,4 @@
 {
-  "literals": [
-    {
-      "file": "codecaine/core/sequence/packages/studio/src/_components/EditorPage/_components/DraftEditor/_components/StyleRail/_components/ColorControls/_components/ColorRow/utils.ts",
-      "match": "^#0{3}(0{3})?$",
-      "category": "hex",
-      "kind": "inline",
-      "reason": "color-input fallback in the style rail's color controls; owner decision: style engines hide their color controls but keep the code for now, and <input type=color> needs a hex value"
-    }
-  ],
+  "literals": [],
   "twClasses": []
 }

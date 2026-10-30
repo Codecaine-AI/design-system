@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -9,7 +9,7 @@ import { analyzeMotion, readScale, type MotionRecord } from "../scripts/design-s
 import { probePage } from "../scripts/design-score/probes";
 import { loadRuleMap, loadRules, RULE_AREAS, rulesByCheck } from "../scripts/design-score/rules";
 import { focusPass } from "../scripts/design-score/focus";
-import { guardReadOnly, selectPages } from "../scripts/design-score/run";
+import { guardReadOnly, runScore, selectPages } from "../scripts/design-score/run";
 import { AREAS, appAreas, appScore, pageAreas, pageScore, statusOf } from "../scripts/design-score/score";
 import { diffShift, dropScrollbarMoves, keepScroll, stateShiftPass, type ShiftBox } from "../scripts/design-score/state-shift";
 import { runStaticChecks } from "../scripts/design-score/static-checks";
@@ -75,6 +75,34 @@ describe("design:score scoring", () => {
 });
 
 describe("design:score v2 logic", () => {
+  test.each([0, -1, 1.5, "1000"])("runScore refuses waitForTimeoutMs %p before it opens a browser", async (bad) => {
+    const out = mkdtempSync(join(tmpdir(), "ds-score-bad-wait-"));
+    try {
+      const page = { id: "home", path: "/", waitFor: "main", waitForTimeoutMs: bad as number };
+      const run = runScore({
+        root: workspaceRoot(),
+        designSystem: DESIGN_SYSTEM_ROOT,
+        configPath: join(out, "bad-wait.json"),
+        config: { app: "bad-wait", sourceDirs: [], themes: { light: {} }, pages: [page] },
+        baseUrl: "http://127.0.0.1:9",
+        label: null,
+        outRoot: out,
+        pages: null,
+        themes: null,
+        viewports: null,
+        jobs: 1,
+        motion: false,
+        focus: false,
+        static: false,
+        quiet: true,
+      });
+      await expect(run).rejects.toThrow(`page "home": waitForTimeoutMs must be a whole number of ms above 0`);
+      expect(readdirSync(out)).toEqual([]);
+    } finally {
+      rmSync(out, { recursive: true, force: true });
+    }
+  });
+
   const box = (x: number, y: number, w: number, h: number) => ({ x, y, w, h });
   const sb = (rect: ReturnType<typeof box>, layout = rect, visible = true): ShiftBox => ({ rect, layout, visible });
 
@@ -168,6 +196,42 @@ describe.skipIf(!!process.env.DS_SKIP_BROWSER)("design:score v2 in a browser", (
   });
   const probe = (baseRadii: number[] = []) => page.evaluate(probePage, { ignore: [], handles: [], spaceTokens: [2, 6], baseRadii });
 
+  test("a page's waitForTimeoutMs sets how long the scorer waits for its waitFor selector", async () => {
+    // /never keeps #late hidden, so its page waits out its whole limit. / shows #late 800ms after load.
+    const html = (reveal: boolean) =>
+      `<body><p id="late" hidden>Ready</p>${reveal ? `<script>setTimeout(() => (document.getElementById("late").hidden = false), 800)</script>` : ""}</body>`;
+    const server = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch: (req) => new Response(html(new URL(req.url).pathname !== "/never"), { headers: { "content-type": "text/html" } }) });
+    const out = mkdtempSync(join(tmpdir(), "ds-score-wait-"));
+    const late = (id: string, path: string, waitForTimeoutMs: number) => ({ id, path, waitFor: "#late", waitForTimeoutMs, optional: "the page is late" });
+    const config = { app: "wait-test", sourceDirs: [], themes: { light: {} }, viewports: [{ width: 800, height: 600 }], settleMs: 0, pages: [late("short", "/never", 200), late("long", "/", 4000)] };
+    writeFileSync(join(out, "wait-test.json"), JSON.stringify(config));
+    try {
+      const { scorecard } = await runScore({
+        root: workspaceRoot(),
+        designSystem: DESIGN_SYSTEM_ROOT,
+        configPath: join(out, "wait-test.json"),
+        config,
+        baseUrl: `http://127.0.0.1:${server.port}`,
+        label: null,
+        outRoot: out,
+        pages: null,
+        themes: null,
+        viewports: null,
+        jobs: 1,
+        motion: false,
+        focus: false,
+        static: false,
+        quiet: true,
+      });
+      const [short, long] = scorecard.pages;
+      expect(short!.skipped).toContain("Timeout 200ms exceeded");
+      expect({ skipped: long!.skipped, scored: long!.score !== null, errors: long!.errors }).toEqual({ skipped: undefined, scored: true, errors: [] });
+    } finally {
+      server.stop(true);
+      rmSync(out, { recursive: true, force: true });
+    }
+  });
+
   test("R-hit-target groups one component into one finding with a count, and keeps the warn band apart", async () => {
     await page.setContent(`<body style="margin:0;font:14px sans-serif">
       <nav>${Array.from({ length: 5 }, (_, i) => `<a class="crumb" href="#${i}" style="display:inline-block;height:18px;width:16px;margin-right:2px">c${i}</a>`).join("")}</nav>
@@ -211,6 +275,18 @@ describe.skipIf(!!process.env.DS_SKIP_BROWSER)("design:score v2 in a browser", (
       expect(Number(cuts[i]![2])).toBeGreaterThanOrEqual(least);
       expect(Number(cuts[i]![2])).toBeLessThanOrEqual(most);
     });
+  });
+
+  test("R-align-near-miss: a button grip labelled drag or reorder is a handle; a drag-labelled svg picture is not", async () => {
+    // Each grip is 16px tall at 7px down, so its center sits at 15px. The 20px first line centers at 10px: +5px, within half the line.
+    const grip = "width:16px;height:16px;margin-top:7px;padding:0;border:0;background:#888";
+    const row = (control: string, text: string) => `<div style="display:flex;gap:8px;align-items:flex-start;margin:20px">${control}<div>${text}</div></div>`;
+    await page.setContent(`<body style="margin:0;font:14px/20px sans-serif">
+      ${row(`<button aria-label="Drag to reorder" style="${grip}"></button>`, "Kitchen camera")}
+      ${row(`<span role="button" aria-label="Reorder" style="display:block;${grip}"></span>`, "Hallway camera")}
+      ${row(`<svg role="group" aria-label="Drag items to move them" style="${grip}"><rect width="16" height="16"/></svg>`, "Room plan")}</body>`);
+    const handles = (await probe()).findings.filter((f: { check: string; measured: string }) => f.check === "R-align-near-miss" && f.measured.startsWith("handle center"));
+    expect(handles.map((f: { measured: string }) => f.measured.replace(/^.*\((.+)\) (".*")$/, "$1 $2"))).toEqual(['+5px "Kitchen camera"', '+5px "Hallway camera"']);
   });
 
   test("R-control-height skips a link that spans a row, and still flags two buttons", async () => {

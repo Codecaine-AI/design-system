@@ -31,7 +31,7 @@ export interface FixtureSpec {
   /** Default 800x600. */
   viewport?: { width: number; height: number };
   /** Page fields for both variants. */
-  page?: Pick<PageSpec, "waitFor" | "actions" | "settleMs" | "shiftWatch">;
+  page?: Pick<PageSpec, "waitFor" | "waitForTimeoutMs" | "actions" | "settleMs" | "shiftWatch">;
   /** App config fields (R-align-near-miss handles, R-state-shift shift.open, M-layout-props motionAllow). */
   config?: Pick<AppConfig, "handles" | "ignore" | "shift" | "motionAllow" | "settleMs">;
   /** V-judge: the verdicts an agent gave each variant's screenshot, by rule id. They are keyed to the run's hashes and folded in. */
