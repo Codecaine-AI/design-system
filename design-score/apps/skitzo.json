@@ -6,6 +6,9 @@
   "sourceDirs": [
     "apps/frontend/src/app"
   ],
+  "excludes": [
+    "**/(guest)/page.tsx"
+  ],
   "themes": {
     "dark": {
       "colorScheme": "dark",
