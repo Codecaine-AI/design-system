@@ -252,7 +252,7 @@
       "theme": {
         "rule": "light-dark"
       },
-      "literalFloor": 1,
+      "literalFloor": 0,
       "allowlist": "apps/allowlists/sequence-studio.json",
       "shell": true,
       "folderStandard": true,
@@ -416,10 +416,6 @@
         {
           "what": "the editor route opens an example",
           "reason": "opening an example seeds a draft in localStorage (the studio's only store); every capture uses a fresh browser context, so nothing persists and no file or service is written"
-        },
-        {
-          "what": "StyleRail.tsx color-input fallback #000000",
-          "reason": "owner decision: style engines hide their color controls but keep the code for now; <input type=color> needs a hex value"
         },
         {
           "what": "test:apps re-run under the round-3 sandbox (R3-C, 2026-10-05)",
@@ -887,7 +883,7 @@
       "theme": {
         "rule": "light-dark"
       },
-      "literalFloor": 7,
+      "literalFloor": 1,
       "allowlist": "apps/allowlists/canvas-studio.json",
       "shell": true,
       "folderStandard": true,
@@ -1123,7 +1119,7 @@
         },
         {
           "what": "allowlist",
-          "reason": "the swatch checkerboard in src/index.css:300-305 (transparency art behind color swatches, 5 hits) and the color-input fallback #000000 in src/style/StyleRail.tsx:514 (color-control code kept per owner decision; <input type=color> needs a hex value)"
+          "reason": "one hard literal, the max-w-[50vw] viewport clamp on the /view header board title (layout geometry with no token, decision 43); the swatch checkerboard and the #000000 color-input fallback left with Codecaine-AI/canvas#7 (b8fbb1b)"
         },
         {
           "what": "tests.safe through test:apps (R2-C, 2026-10-05)",
