@@ -8,10 +8,11 @@
  * outline or a changed box-shadow counts as visible.
  * A ring drawn on a wrapper counts too: when an ancestor's computed paint (or a pseudo-element's, such as a ::after
  * stretched over a tile) changes on blur, the clip grows to that box and is captured blurred, then focused again.
- * In that wider clip the pixels decide, not the styles: each state is captured again with everything outside the
- * control's chain hidden (the chain: its ancestors' own paint, the control, its subtree and their pseudo-elements),
- * and a changed pixel counts only where both captures match the chain's own. So a change a sibling paints, or wrapper
- * paint that cannot show (covered, zero-width), never rescues a control.
+ * In that wider clip the pixels decide, not the styles: each state is captured again with only the control's chain
+ * shown (its ancestors' own paint, the control, its subtree and their pseudo-elements), and the rest is captured alone
+ * over black and white to measure how much of the chain shows through it. A changed pixel counts only when it is the
+ * chain's own change seen through the rest. So a change a sibling paints, or wrapper paint that cannot show (covered,
+ * zero-width), never rescues a control, and a ring under a translucent layer still counts.
  * Tabbing stops at a contenteditable (Tab may edit there), when focus cycles, or after N stops.
  */
 import { decodePng } from "../lib/png";
@@ -173,29 +174,43 @@ function refocusBlurred(): void {
 }
 
 /**
- * With a key, hides everything but the element's chain: its ancestors keep their own paint, the element keeps its
- * subtree, and each keeps its pseudo-elements. With null, undoes it. An adopted sheet does it, so the page's DOM is
- * untouched. A Tab stop is always in the document (a shadow root's control stops as its host), so one sheet is enough.
- * Self-contained.
+ * Shows one part of the page for the wrapper-ring captures; null undoes it. The chain is the element, its subtree,
+ * each ancestor's own paint and all their pseudo-elements. "chain" shows only the chain (the rest gets opacity 0, which
+ * also hides its pseudo-elements and never blurs the control). "others" shows only the rest, over a plain `backdrop`
+ * root (the chain gets visibility: hidden, so call it blurred). One adopted sheet does it, so the page's DOM is untouched.
+ * Its paths hold for the DOM as it is now, so call it again after a focus change. A Tab stop is always in the document
+ * (a shadow root's control stops as its host), so one sheet is enough. Self-contained.
  */
-function isolate(key: string | null): void {
+function isolate(arg: { key: string; show: "chain" | "others"; backdrop?: string } | null): void {
   const w = window as unknown as { __dsFocus?: Element[]; __dsIsolated?: CSSStyleSheet };
   document.adoptedStyleSheets = document.adoptedStyleSheets.filter((s) => s !== w.__dsIsolated);
-  const el = key === null ? null : w.__dsFocus?.[Number(key)];
-  if (!el?.isConnected) return;
-  // Each chain element as a path from the root, which holds while the DOM is unchanged.
-  const paths: string[] = [];
-  for (let cur: Element | null = el; cur; cur = cur.parentElement) {
+  const el = arg && w.__dsFocus?.[Number(arg.key)];
+  if (!arg || !el?.isConnected) return;
+  const pathOf = (cur: Element) => {
     const steps = [];
     for (let e = cur; e.parentElement; e = e.parentElement) steps.unshift(`:nth-child(${[...e.parentElement.children].indexOf(e) + 1})`);
-    paths.push([":root", ...steps].join(" > "));
+    return [":root", ...steps].join(" > ");
+  };
+  const chain: Element[] = [];
+  for (let cur: Element | null = el; cur; cur = cur.parentElement) chain.push(cur);
+  const paths = chain.map(pathOf);
+  const own = [...paths, `${paths[0]} *`];
+  let css: string;
+  if (arg.show === "chain") {
+    css = `*:not(${own.join(", ")}) { opacity: 0 !important; }`;
+  } else {
+    // The rest keeps its own visibility: only a child of the chain that shows now is shown again under its hidden parent.
+    const rest = chain.slice(1).flatMap((p) => [...p.children].filter((c) => !chain.includes(c) && getComputedStyle(c).visibility === "visible"));
+    css = `${own.flatMap((p) => [p, `${p}::before`, `${p}::after`]).join(", ")} { visibility: hidden !important; }
+      ${rest.length ? `${rest.map(pathOf).join(", ")} { visibility: visible !important; }` : ""}
+      :root { visibility: visible !important; background: ${arg.backdrop} !important; }`;
   }
   const sheet = (w.__dsIsolated = new CSSStyleSheet());
-  sheet.replaceSync(`*:not(${paths.join(", ")}, ${paths[0]} *) { visibility: hidden !important; }`);
+  sheet.replaceSync(css);
   document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
 }
 
-const NO_MOTION ="*, *::before, *::after { transition: none !important; animation-duration: 0s !important; animation-delay: 0s !important; caret-color: transparent !important; scroll-behavior: auto !important; }";
+const NO_MOTION = "*, *::before, *::after { transition: none !important; animation-duration: 0s !important; animation-delay: 0s !important; caret-color: transparent !important; scroll-behavior: auto !important; }";
 
 function clipFor(box: Box, vw: number, vh: number, pad = 6) {
   const x = Math.max(0, Math.floor(box.x - pad));
@@ -205,19 +220,37 @@ function clipFor(box: Box, vw: number, vh: number, pad = 6) {
   return right - x >= 2 && bottom - y >= 2 ? { x, y, width: right - x, height: bottom - y } : null;
 }
 
+/** The wrapper-ring captures: the chain alone focused and blurred, and the rest alone (blurred) over black and over white. */
+interface Owned {
+  chain: [Uint8Array, Uint8Array];
+  others: [Uint8Array, Uint8Array];
+}
+
 /**
- * Pixels that differ between a and b. Given `own` (a and b captured again with only the chain shown), a pixel counts
- * only where each capture matches its own one: there the chain's paint is what shows, so the chain made the change.
+ * Pixels that differ between a (focused) and b (blurred). Given `owned`, a pixel counts only when the change is the
+ * chain's own: paint of the rest that lets a fraction t of the chain through (t = (white - black) / 255, from the rest
+ * alone over each) shows the chain's change as t times that change. A pixel the rest covers (t near 0) never counts,
+ * and neither does one where the chain alone does not change.
  */
-function changedPixels(a: Uint8Array, b: Uint8Array, own?: [Uint8Array, Uint8Array]): { count: number; width: number; height: number } {
+function changedPixels(a: Uint8Array, b: Uint8Array, owned?: Owned): { count: number; width: number; height: number } {
   const ia = decodePng(a);
   const ib = decodePng(b);
-  const io = own?.map(decodePng);
-  if ([ib, ...(io ?? [])].some((img) => img.width !== ia.width || img.height !== ia.height)) return { count: Number.POSITIVE_INFINITY, width: ia.width, height: ia.height };
-  const differs = (x: Uint8Array, y: Uint8Array, i: number) => Math.max(Math.abs(x[i]! - y[i]!), Math.abs(x[i + 1]! - y[i + 1]!), Math.abs(x[i + 2]! - y[i + 2]!)) > 24;
+  const extra = owned ? [...owned.chain, ...owned.others].map(decodePng) : [];
+  if ([ib, ...extra].some((img) => img.width !== ia.width || img.height !== ia.height)) return { count: Number.POSITIVE_INFINITY, width: ia.width, height: ia.height };
+  const [fa, fb, black, white] = extra.map((img) => img.data);
+  const channels = [0, 1, 2];
+  const delta = (x: Uint8Array, y: Uint8Array, i: number) => channels.map((c) => x[i + c]! - y[i + c]!);
+  const shows = (d: number[]) => d.some((v) => Math.abs(v) > 24);
   let count = 0;
   for (let i = 0; i < ia.data.length; i += 4) {
-    if (differs(ia.data, ib.data, i) && !(io && (differs(ia.data, io[0]!.data, i) || differs(ib.data, io[1]!.data, i)))) count++;
+    const seen = delta(ia.data, ib.data, i);
+    if (!shows(seen)) continue;
+    if (fa && fb && black && white) {
+      const own = delta(fa, fb, i);
+      const t = Math.min(1, Math.max(0, delta(white, black, i).reduce((sum, v) => sum + v, 0) / 765));
+      if (!shows(own) || shows(seen.map((v, c) => v - t * own[c]!))) continue;
+    }
+    count++;
   }
   return { count, width: ia.width, height: ia.height };
 }
@@ -275,25 +308,29 @@ export async function focusPass(page: any, max = 30): Promise<FocusResult> {
         const moved = Math.abs(after.box.x - focusedNow.box.x) > 0.5 || Math.abs(after.box.y - focusedNow.box.y) > 0.5;
         if (!moved) {
           let unfocusedPng: Uint8Array;
-          let own: [Uint8Array, Uint8Array] | undefined;
+          let owned: Owned | undefined;
           const region = lit.length ? clipFor(union([focusedNow.box, ...lit]), vp.width, vp.height) : null;
           if (region) {
             // The focus may light a box beyond the clip (a wrapper's ring): compare that region blurred, then focused
-            // again, each also with only the chain shown, so a pixel counts only where the chain's own paint shows.
+            // again. Blurred, also shoot the chain alone and the rest alone over black and white; focused, the chain
+            // alone again (isolated after the refocus, as focus may change the DOM). A pixel counts only for the chain.
             clip = region;
+            const key = current.key;
+            const shoot = async (arg: Parameters<typeof isolate>[0]): Promise<Uint8Array> => (await page.evaluate(isolate, arg), page.screenshot({ clip }));
             unfocusedPng = await page.screenshot({ clip });
-            await page.evaluate(isolate, current.key);
-            const ownBlurred: Uint8Array = await page.screenshot({ clip });
+            const chainBlurred = await shoot({ key, show: "chain" });
+            const others: Owned["others"] = [await shoot({ key, show: "others", backdrop: "#000" }), await shoot({ key, show: "others", backdrop: "#fff" })];
+            await page.evaluate(isolate, null);
             await page.evaluate(refocusBlurred);
             refocused = true;
             await page.waitForTimeout(40);
-            own = [await page.screenshot({ clip }), ownBlurred];
-            await page.evaluate(isolate, null);
             focusedPng = await page.screenshot({ clip });
+            owned = { chain: [await shoot({ key, show: "chain" }), chainBlurred], others };
+            await page.evaluate(isolate, null);
           } else {
             unfocusedPng = await page.screenshot({ clip });
           }
-          const diff = changedPixels(focusedPng!, unfocusedPng, own);
+          const diff = changedPixels(focusedPng!, unfocusedPng, owned);
           const perimeter = 2 * (focusedNow.box.w + focusedNow.box.h);
           const need = Math.max(12, perimeter * 0.1);
           visible = diff.count >= need;
