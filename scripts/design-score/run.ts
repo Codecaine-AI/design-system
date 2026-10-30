@@ -138,6 +138,11 @@ export async function guardReadOnly(ctx: any, blocked: string[]): Promise<void> 
 
 export async function runScore(opts: RunOptions): Promise<{ dir: string; scorecard: Scorecard }> {
   const { config } = opts;
+  // Playwright reads a timeout of 0 as no limit, so a page could hang the run. Checked here, where the CLI and the fixtures meet.
+  for (const p of config.pages) {
+    const ms = p.waitForTimeoutMs;
+    if (ms !== undefined && !(Number.isInteger(ms) && ms > 0)) throw new Error(`page "${p.id}": waitForTimeoutMs must be a whole number of ms above 0, not ${JSON.stringify(ms)}`);
+  }
   const startedAt = new Date();
   const runId = stamp(startedAt) + (opts.label ? `-${safe(opts.label)}` : "");
   const dir = join(opts.outRoot, safe(config.app), runId);
