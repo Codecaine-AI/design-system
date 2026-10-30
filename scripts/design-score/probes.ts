@@ -522,12 +522,14 @@ export function probePage(o: ProbeOptions): { findings: ProbeFinding[]; stats: R
           (set(["filter", "backdrop-filter"]) ||
             (as.display !== "inline" &&
               (as.transformStyle === "preserve-3d" ||
+                will.includes("transform-style") ||
                 set(["transform", "translate", "rotate", "scale", "perspective", "offset-path"]) ||
                 (!/^table-(row|column|header|footer)/.test(as.display) && (/layout|paint|strict|content/.test(as.contain) || as.contentVisibility !== "visible" || will.includes("contain"))))));
-        if (!holdsFixed && !(escape === "absolute" && (as.position !== "static" || will.includes("position")))) continue;
+        if (!holdsFixed && !(escape === "absolute" && as.display !== "contents" && (as.position !== "static" || will.includes("position")))) continue;
         escape = null;
       }
-      if (as.position === "absolute" || as.position === "fixed") escape = as.position;
+      // A display:contents box makes no box, so its position does not move its text out of anything.
+      if (as.display !== "contents" && (as.position === "absolute" || as.position === "fixed")) escape = as.position;
       // Overflow does not apply to an inline or display:contents box, so it never scrolls whatever it computes to.
       const scrollBox = as.display !== "inline" && as.display !== "contents";
       const scrollsX = scrollBox && (as.overflowX === "auto" || as.overflowX === "scroll");
