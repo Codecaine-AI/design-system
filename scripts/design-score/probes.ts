@@ -509,8 +509,16 @@ export function probePage(o: ProbeOptions): { findings: ProbeFinding[]; stats: R
     let textBottom = Math.max(...rects.map((r) => r.bottom));
     let cappedX = false;
     let cappedY = false;
+    let escape: string | null = null;
     for (let a: Element | null = el, depth = 0; a && depth < 4 && a !== document.body; a = a.parentElement, depth++) {
       const as = cs(a);
+      // An absolute or fixed box escapes the boxes between it and its containing block: they neither scroll nor clip it.
+      if (escape) {
+        const holdsFixed = as.transform !== "none" || as.perspective !== "none" || as.filter !== "none" || /paint|layout|strict|content/.test(as.contain);
+        if (!holdsFixed && !(escape === "absolute" && as.position !== "static")) continue;
+        escape = null;
+      }
+      if (as.position === "absolute" || as.position === "fixed") escape = as.position;
       // Overflow does not apply to an inline or display:contents box, so it never scrolls whatever it computes to.
       const scrollBox = as.display !== "inline" && as.display !== "contents";
       const scrollsX = scrollBox && (as.overflowX === "auto" || as.overflowX === "scroll");
@@ -518,10 +526,15 @@ export function probePage(o: ProbeOptions): { findings: ProbeFinding[]; stats: R
       if (scrollsX || scrollsY) {
         // The client box is in layout px and the rect in viewport px: scale by rect over offset size for a transformed box.
         const ar = rectOf(a);
-        const right = ar.left + (a.clientLeft + a.clientWidth) * (a instanceof HTMLElement && a.offsetWidth ? ar.width / a.offsetWidth : 1);
-        const bottom = ar.top + (a.clientTop + a.clientHeight) * (a instanceof HTMLElement && a.offsetHeight ? ar.height / a.offsetHeight : 1);
-        if (scrollsX && right < textRight) [textRight, cappedX] = [right, true];
-        if (scrollsY && bottom < textBottom) [textBottom, cappedY] = [bottom, true];
+        const sx = a instanceof HTMLElement && a.offsetWidth ? ar.width / a.offsetWidth : 1;
+        const sy = a instanceof HTMLElement && a.offsetHeight ? ar.height / a.offsetHeight : 1;
+        const right = ar.left + (a.clientLeft + a.clientWidth) * sx;
+        const bottom = ar.top + (a.clientTop + a.clientHeight) * sy;
+        // Scrolling reaches only the scrollable overflow. Text past it (a column-reverse box overflows the wrong way) stays cut.
+        const reachRight = right + (a.scrollWidth - a.clientWidth - a.scrollLeft) * sx;
+        const reachBottom = bottom + (a.scrollHeight - a.clientHeight - a.scrollTop) * sy;
+        if (scrollsX && right < textRight && textRight <= reachRight + 1) [textRight, cappedX] = [right, true];
+        if (scrollsY && bottom < textBottom && textBottom <= reachBottom + 2) [textBottom, cappedY] = [bottom, true];
       }
       const clipX = as.overflowX === "hidden" || as.overflowX === "clip";
       const clipY = as.overflowY === "hidden" || as.overflowY === "clip";
