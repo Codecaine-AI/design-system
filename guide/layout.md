@@ -178,7 +178,7 @@ Layout tokens live in [`tokens/base/app-shell.tokens.json`](../tokens/base/app-s
 | `--ds-layout-content-padding-top` | 32px | `main` padding-top 34px |
 | `--ds-layout-content-padding-bottom` | 48px | `main` padding-bottom 48px |
 
-One rule ties the sidebar numbers together: `width-collapsed = 2 × (padding-x + item-padding-x) + icon-size` (68 = 2 × 24 + 20). Each icon starts 24px from the sidebar edge in both states, which centres it in the 68px rail, so nothing jumps when the sidebar collapses. The toggle and the footer avatar sit on the same centre line. If you change one of these tokens, keep the rule true.
+One rule ties the sidebar numbers together: `width-collapsed = 2 × (padding-x + item-padding-x) + icon-size` (68 = 2 × 24 + 20). Each icon starts 24px from the sidebar edge in both states, which centres it in the 68px rail, so nothing jumps when the sidebar collapses. The toggle and the footer avatar share one centre line, 2px before the icon centres, because centring them exactly needs an off-grid 18px padding (`(68 - 32) / 2`). If you change one of these tokens, keep the rule true.
 
 The shell also reads these shared tokens:
 
@@ -190,7 +190,7 @@ The shell also reads these shared tokens:
 | Fills | `--ds-color-fill-hover`, `--ds-color-fill-active` (current row), `--ds-color-accent` (current icon), `--ds-color-focus-ring` |
 | Type | `--ds-font-family-sans`, `--ds-font-size-ui-lg` (base and nav rows), `-ui-md`, `-ui-sm`, `-ui-xs`, `-micro`, `-reading` (titles), weights, `--ds-line-height-ui`, `-tight`, `--ds-letter-spacing-title`, `-micro` |
 | Avatar | `--ds-color-teal-soft`, `--ds-color-teal-text` |
-| Shape and motion | `--ds-radius-base`, `--ds-border-width-hairline`, `-focus`, `--ds-focus-ring-offset`, `--ds-motion-duration-fast`, `-slow`, `--ds-motion-easing-standard`, `--ds-z-raised` |
+| Shape and motion | `--ds-radius-base`, `--ds-border-width-hairline`, `-focus`, `--ds-focus-ring-offset`, `--ds-motion-duration-fast`, `-base`, `-slow`, `--ds-motion-easing-standard`, `--ds-z-raised` |
 | Lanes | `--ds-layout-lane-text`, `-code`, `-wide` |
 
 To change a size for one app, override the token on the shell, never with a literal in a component:
@@ -203,7 +203,7 @@ To change a size for one app, override the token on the shell, never with a lite
 ## Behavior rules
 
 1. **Toggle placement and icon.** The toggle is the last item in the sidebar header, at its right end. The glyph is a panel outline with a divider and a chevron. The chevron points left (collapse) when expanded and right (expand) when collapsed. Never put the toggle in the topbar, and never hide the sidebar completely: the rail stays.
-2. **Collapsed icon rail.** `data-sidebar="collapsed"` on `.ds-shell` narrows the grid column to `--ds-layout-sidebar-width-collapsed`. Labels, the title and the footer text fade out and clip under the rail edge. Subnavs and nav headings are removed. The row of the section that holds the current page takes the fill, because its subnav is hidden. The toggle ends up centred in the header.
+2. **Collapsed icon rail.** `data-sidebar="collapsed"` on `.ds-shell` narrows the grid column to `--ds-layout-sidebar-width-collapsed`. Labels, the title and the footer text fade out and clip under the rail edge. Subnavs and nav headings are removed. The row of the section that holds the current page takes the fill, because its subnav is hidden. The toggle ends up in the rail, on the footer avatar's centre line.
 3. **Tooltips.** In the rail every nav row carries `title="<label>"`. Remove the `title` when expanded; the label is visible. The label stays in the DOM in both states, so the link keeps its accessible name.
 4. **Persistence.** Store the state in `localStorage` under `<app>.sidebar` with the values `collapsed` or `expanded`. Read it before the first paint (inline script or a lazy `useState` initializer), so no width transition plays on load. With no stored value, start collapsed when the viewport is 800px wide or less.
 5. **Shortcut.** `⌘\` on macOS, `Ctrl+\` elsewhere, from anywhere in the app, including text fields. Match `event.key === "\\"` or `event.code === "Backslash"`, require Meta or Control, ignore the event when Alt or Shift is held, and call `preventDefault()`. Show the shortcut in the toggle's `title` and declare it with `aria-keyshortcuts="Meta+\ Control+\"` (key values, not key codes).
