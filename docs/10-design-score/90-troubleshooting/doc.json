@@ -25,6 +25,14 @@
         "p3-what",
         "p3c",
         "p3f",
+        "h-p8",
+        "p8-what",
+        "p8c",
+        "p8f",
+        "h-p9",
+        "p9-what",
+        "p9c",
+        "p9f",
         "h-p4",
         "p4-what",
         "p4c",
@@ -89,7 +97,7 @@
       "props": {},
       "text": [
         {
-          "insert": "Seven problems came up during the first runs on Knowledge System, on 2026-10-29. Each heading names what you see."
+          "insert": "Nine problems came up during the first runs. Seven came up on Knowledge System on 2026-10-29, and two on tachyon-flow on 2026-10-30. Each heading names what you see."
         }
       ],
       "children": []
@@ -168,7 +176,7 @@
       "props": {},
       "text": [
         {
-          "insert": "Core's Playwright wants headless shell r1243, but "
+          "insert": "Core's Playwright wants headless shell r1243, but Playwright's browser cache holds only r1228 and r1234. On this Mac the cache is "
         },
         {
           "insert": "~/Library/Caches/ms-playwright/",
@@ -177,7 +185,7 @@
           }
         },
         {
-          "insert": " holds only r1228 and r1234."
+          "insert": "."
         }
       ],
       "children": []
@@ -227,7 +235,8 @@
       ],
       "children": [
         "p1f1",
-        "p1f2"
+        "p1f2",
+        "p1f3"
       ]
     },
     "p1f1": {
@@ -284,6 +293,75 @@
         },
         {
           "insert": ". Then rerun both runs that you compare."
+        }
+      ],
+      "children": []
+    },
+    "p1f3": {
+      "id": "p1f3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "On another platform, look in that platform's Playwright cache."
+        }
+      ],
+      "children": [
+        "p1f3a",
+        "p1f3b"
+      ]
+    },
+    "p1f3a": {
+      "id": "p1f3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Linux uses "
+        },
+        {
+          "insert": "$XDG_CACHE_HOME/ms-playwright",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "~/.cache/ms-playwright",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and Windows uses "
+        },
+        {
+          "insert": "%LOCALAPPDATA%\\ms-playwright",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "p1f3b": {
+      "id": "p1f3b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "PLAYWRIGHT_BROWSERS_PATH",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " replaces the cache on every platform."
         }
       ],
       "children": []
@@ -609,6 +687,370 @@
         },
         {
           "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-p8": {
+      "id": "h-p8",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "A WebGL Page Times Out on "
+        },
+        {
+          "insert": "waitFor",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "children": []
+    },
+    "p8-what": {
+      "id": "p8-what",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "tachyon-flow's game pages errored with \"waitForSelector: Timeout 15000ms exceeded\". With the Metal backend ("
+        },
+        {
+          "insert": "--use-angle=metal",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "), the same start card shows in about 0.3 s."
+        }
+      ],
+      "children": []
+    },
+    "p8c": {
+      "id": "p8c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Cause",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "p8c1",
+        "p8c2"
+      ]
+    },
+    "p8c1": {
+      "id": "p8c1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The headless shell draws WebGL with SwiftShader, a software renderer. The game took 14.4 to 15.3 s to show its start card, against the default 15 s wait."
+        }
+      ],
+      "children": []
+    },
+    "p8c2": {
+      "id": "p8c2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "game-hud",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "game-paused",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " also waited for "
+        },
+        {
+          "insert": ".hud-overlay[data-mode=\"hidden\"]",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", which has "
+        },
+        {
+          "insert": "visibility: hidden",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". A visible wait on it never resolves."
+        }
+      ],
+      "children": []
+    },
+    "p8f": {
+      "id": "p8f",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "p8f1",
+        "p8f2",
+        "p8f3"
+      ]
+    },
+    "p8f1": {
+      "id": "p8f1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Set "
+        },
+        {
+          "insert": "waitForTimeoutMs",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on each slow page. The tachyon-flow game pages set 45000."
+        }
+      ],
+      "children": []
+    },
+    "p8f2": {
+      "id": "p8f2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Use it only for a page that is slow in the scorer's headless browser and fast for a person. Give a whole number above 0, because Playwright reads 0 as no limit."
+        }
+      ],
+      "children": []
+    },
+    "p8f3": {
+      "id": "p8f3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Wait for an element that shows in the state. The game pages wait for "
+        },
+        {
+          "insert": ".hud-root[data-quiet=\"true\"]",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-p9": {
+      "id": "h-p9",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "S-color-literal Fails on 3D Scene Colors"
+        }
+      ],
+      "children": []
+    },
+    "p9-what": {
+      "id": "p9-what",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "S-color-literal fails on colors in tachyon-flow's "
+        },
+        {
+          "insert": "level/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "character/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "vfx/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " folders, though none of them is a UI color."
+        }
+      ],
+      "children": []
+    },
+    "p9c": {
+      "id": "p9c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Cause",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "p9c1"
+      ]
+    },
+    "p9c1": {
+      "id": "p9c1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "These folders hold Three.js scene and effect colors. The check reads source text, so it cannot tell a scene color from a UI color."
+        }
+      ],
+      "children": []
+    },
+    "p9f": {
+      "id": "p9f",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "p9f1",
+        "p9f2"
+      ]
+    },
+    "p9f1": {
+      "id": "p9f1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Add the folders to "
+        },
+        {
+          "insert": "excludes",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in the app config, as "
+        },
+        {
+          "insert": "Run and Read a Score",
+          "attributes": {
+            "link": "10-design-score/10-run-and-read"
+          }
+        },
+        {
+          "insert": " shows. tachyon-flow excludes "
+        },
+        {
+          "insert": "**/level/**",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "**/character/**",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "**/vfx/**",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "p9f2": {
+      "id": "p9f2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fix the check when it misreads a folder, and keep the folder in the scan. For the "
+        },
+        {
+          "insert": "anim/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " joint angles, "
+        },
+        {
+          "insert": "scripts/scan-literals.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/scan-literals.ts"
+            }
+          }
+        },
+        {
+          "insert": " counts number triples as colors only when one key names a color."
         }
       ],
       "children": []

@@ -24,6 +24,11 @@
         "b18",
         "b19",
         "b20",
+        "walk-h",
+        "walk-lead",
+        "walk1",
+        "walk2",
+        "walk3",
         "b21",
         "b22",
         "b23",
@@ -239,7 +244,8 @@
         }
       ],
       "children": [
-        "b11"
+        "b11",
+        "b11b"
       ]
     },
     "b11": {
@@ -282,6 +288,17 @@
         },
         {
           "insert": " scroll their own text, so the check skips them."
+        }
+      ],
+      "children": []
+    },
+    "b11b": {
+      "id": "b11b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Text past the visible edge of a scroller is a scroll away, not cut, so the check passes it."
         }
       ],
       "children": []
@@ -407,7 +424,20 @@
       },
       "text": [
         {
-          "insert": "The pass walks up from the element itself, at most 4 levels, and stops at the first box whose overflow is "
+          "insert": "The pass walks up from the element itself, at most 4 levels. A scroller on the way can cap how far the text reaches, as Boxes on the Walk shows."
+        }
+      ],
+      "children": []
+    },
+    "b18": {
+      "id": "b18",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "At a box whose overflow is "
         },
         {
           "insert": "hidden",
@@ -425,20 +455,7 @@
           }
         },
         {
-          "insert": "."
-        }
-      ],
-      "children": []
-    },
-    "b18": {
-      "id": "b18",
-      "type": "list-item",
-      "props": {
-        "ordered": true
-      },
-      "text": [
-        {
-          "insert": "The pass compares the text edges with that box's edges inside its border. It reports a right cut first, and a bottom cut only when there is no right cut."
+          "insert": ", the pass compares the text edges with the box's edges inside its border. It reports a right cut first, and a bottom cut only when there is no right cut."
         }
       ],
       "children": []
@@ -449,7 +466,7 @@
       "props": {},
       "text": [
         {
-          "insert": "Only the first clipping box counts. A box 2px wide or tall, or less, is a screen-reader-only box, and the walk stops there without a finding."
+          "insert": "The first clip box that cuts the text ends the walk, with or without a finding. A box 2px wide or tall, or less, is a screen-reader-only box, and the walk stops there without a finding."
         }
       ],
       "children": []
@@ -470,6 +487,322 @@
         },
         {
           "insert": " added for a bottom cut. A component reports each kind of cut once."
+        }
+      ],
+      "children": []
+    },
+    "walk-h": {
+      "id": "walk-h",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Boxes on the Walk"
+        }
+      ],
+      "children": []
+    },
+    "walk-lead": {
+      "id": "walk-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Not every box above the text can cut it. The pass treats three kinds of box in their own way."
+        }
+      ],
+      "children": []
+    },
+    "walk1": {
+      "id": "walk1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Scrollers",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "walk1a",
+        "walk1b",
+        "walk1c",
+        "walk1d",
+        "walk1e"
+      ]
+    },
+    "walk1a": {
+      "id": "walk1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A box scrolls on an axis when its overflow on that axis is "
+        },
+        {
+          "insert": "auto",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "scroll",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". An "
+        },
+        {
+          "insert": "inline",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "display: contents",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " box never scrolls, because overflow does not apply to it."
+        }
+      ],
+      "children": []
+    },
+    "walk1b": {
+      "id": "walk1b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "When the text runs past the scroller's visible edge, the pass caps the text's reach at that edge. A clip box above the scroller then fails the text only when it hides part of the scroller."
+        }
+      ],
+      "children": []
+    },
+    "walk1c": {
+      "id": "walk1c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The pass scales the visible edge by the scroller's rect over its offset size, so a transformed scroller counts where it shows."
+        }
+      ],
+      "children": []
+    },
+    "walk1d": {
+      "id": "walk1d",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The cap applies only to text that scrolling can reach. A "
+        },
+        {
+          "insert": "column-reverse",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " box overflows the wrong way, so its text keeps its full reach and the box above can cut it."
+        }
+      ],
+      "children": []
+    },
+    "walk1e": {
+      "id": "walk1e",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A finding after a cap says \"a scroller holding this text runs Npx past the right edge\", or \"below the bottom\", of the clip box."
+        }
+      ],
+      "children": []
+    },
+    "walk2": {
+      "id": "walk2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Clip boxes that cut nothing",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "walk2a"
+      ]
+    },
+    "walk2a": {
+      "id": "walk2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A clip box that the text fits inside hides nothing, so the walk goes on to the box above it. A scroller's own "
+        },
+        {
+          "insert": "overflow-x: hidden",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " therefore cannot hide a cut by its parent."
+        }
+      ],
+      "children": []
+    },
+    "walk3": {
+      "id": "walk3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Boxes that positioned text escapes",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "walk3a",
+        "walk3b"
+      ]
+    },
+    "walk3a": {
+      "id": "walk3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "An "
+        },
+        {
+          "insert": "absolute",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "fixed",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " box is laid out against its containing block. The boxes between them neither scroll nor clip it, so the walk skips them."
+        }
+      ],
+      "children": []
+    },
+    "walk3b": {
+      "id": "walk3b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The pass finds the containing block with the properties Chromium uses."
+        }
+      ],
+      "children": [
+        "walk3b1",
+        "walk3b2"
+      ]
+    },
+    "walk3b1": {
+      "id": "walk3b1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A box with a "
+        },
+        {
+          "insert": "transform",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "filter",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "perspective",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "contain",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " value, or a "
+        },
+        {
+          "insert": "will-change",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " that names one, holds both kinds of text."
+        }
+      ],
+      "children": []
+    },
+    "walk3b2": {
+      "id": "walk3b2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Any positioned box also holds "
+        },
+        {
+          "insert": "absolute",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " text."
         }
       ],
       "children": []
@@ -570,7 +903,7 @@
           [
             "Search depth",
             "The element and 3 parents",
-            "Only the first clipping box is tested",
+            "The first clip box that cuts the text ends the walk",
             "None"
           ]
         ],
@@ -610,7 +943,7 @@
           }
         },
         {
-          "insert": ". Both pages show one pinned card with a long title and a 3-line summary."
+          "insert": ". Both pages show one pinned card with a long title and a 3-line summary. The good page also has a Log panel."
         }
       ],
       "children": []
@@ -677,7 +1010,25 @@
           }
         },
         {
-          "insert": " to the summary."
+          "insert": " to the summary. Its Log panel has "
+        },
+        {
+          "insert": "overflow: hidden",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and holds a 3-line "
+        },
+        {
+          "insert": "overflow-y: auto",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " scroller. The log's later lines sit below the scroller's fold, so they pass."
         }
       ],
       "children": []
@@ -691,7 +1042,7 @@
           {
             "src": "./assets/images/good.png",
             "heading": "Good: pass",
-            "alt": "A pinned card. The title ends in an ellipsis, and the summary stops after 2 lines with an ellipsis. No boxes are drawn.",
+            "alt": "A pinned card and a Log panel. The title ends in an ellipsis, and the summary stops after 2 lines with an ellipsis. The log shows 3 lines and a scrollbar. No boxes are drawn.",
             "caption": "good.html, 0 findings"
           },
           {

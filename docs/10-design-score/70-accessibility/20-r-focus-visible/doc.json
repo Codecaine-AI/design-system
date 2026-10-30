@@ -22,6 +22,7 @@
         "m3",
         "m4",
         "m5",
+        "m-own",
         "m-moved",
         "m-stop",
         "h-thresholds",
@@ -40,6 +41,7 @@
         "h-fp",
         "fp-lead",
         "fp1",
+        "fp-after",
         "fp2",
         "fp3",
         "h-debug",
@@ -183,7 +185,16 @@
       "props": {},
       "text": [
         {
-          "insert": "An outline, a box-shadow ring, a border color or a background change passes when it changes enough pixels near the control."
+          "insert": "An outline, a box-shadow ring, a border color or a background change passes when it changes enough pixels near the control. A ring that the control's own stretched "
+        },
+        {
+          "insert": "::after",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " draws over its tile also counts."
         }
       ],
       "children": []
@@ -264,7 +275,7 @@
           }
         },
         {
-          "insert": " turns off every transition and animation, then blurs the focused element. It focuses the body once, so the first Tab starts at the top of the page."
+          "insert": " turns off transitions, animations and smooth scrolling, and focuses the body so that the first Tab starts at the top."
         }
       ],
       "children": []
@@ -318,6 +329,94 @@
       "text": [
         {
           "insert": "A stop with too few changed pixels is a finding. The pass keeps a crop of the focused clip for the report, then focuses the control again and presses Tab from it."
+        }
+      ],
+      "children": []
+    },
+    "m-own": {
+      "id": "m-own",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The clip also covers the control's own "
+        },
+        {
+          "insert": "::before",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "::after",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " when either is shown and "
+        },
+        {
+          "insert": "absolute",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "fixed",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". "
+        },
+        {
+          "insert": "ownPaintBox",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/focus.ts",
+              "symbol": "ownPaintBox"
+            }
+          }
+        },
+        {
+          "insert": " reads their boxes from Chromium's layout through CDP "
+        },
+        {
+          "insert": "DOM.getBoxModel",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", so a "
+        },
+        {
+          "insert": "::after",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " stretched over a tile widens the clip to the tile. For a Tab stop on a shadow host, the pass follows "
+        },
+        {
+          "insert": "shadowRoot.activeElement",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " through open shadow roots to the focused control."
         }
       ],
       "children": []
@@ -383,7 +482,26 @@
           ],
           [
             "Clip padding",
-            "6px on each side"
+            [
+              {
+                "insert": "6px on each side, around the control and its own positioned "
+              },
+              {
+                "insert": "::before",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "::after",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
           ],
           [
             "Changed pixel",
@@ -673,7 +791,7 @@
       },
       "text": [
         {
-          "insert": "Known False Positives"
+          "insert": "Known Gaps"
         }
       ],
       "children": []
@@ -684,7 +802,21 @@
       "props": {},
       "text": [
         {
-          "insert": "The check looks only at the control's own clip, so an indicator outside the clip does not count."
+          "insert": "The check counts changed pixels in the clip, so it misses paint outside the clip and counts any change inside it. The rule text in "
+        },
+        {
+          "insert": "scripts/design-score/checks.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/design-score/checks.ts",
+              "symbol": "CHECKS"
+            }
+          }
+        },
+        {
+          "insert": " names the first two gaps."
         }
       ],
       "children": []
@@ -721,6 +853,58 @@
         },
         {
           "insert": " more than 6px from the control fails, though the user sees it."
+        }
+      ],
+      "children": []
+    },
+    "fp-after": {
+      "id": "fp-after",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Changes inside a stretched ",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": "::after",
+          "attributes": {
+            "bold": true,
+            "code": true
+          }
+        }
+      ],
+      "children": [
+        "fp-after-a"
+      ]
+    },
+    "fp-after-a": {
+      "id": "fp-after-a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Any changed pixel inside the box of the control's stretched "
+        },
+        {
+          "insert": "::after",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " counts, even when the "
+        },
+        {
+          "insert": "::after",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " does not change. A status line that lights up in the tile passes a control with no ring."
         }
       ],
       "children": []
