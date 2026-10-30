@@ -356,12 +356,26 @@ describe.skipIf(!!process.env.DS_SKIP_BROWSER)("design:score v2 in a browser", (
     expect(contrast.map((f: { selector: string }) => f.selector)).toEqual([expect.stringContaining("gray")]);
   });
 
-  test("R-focus-visible: a control with no focus style fails next to a control with a ring", async () => {
-    await page.setContent(`<style>button { width: 80px; height: 32px; border: 1px solid #888; background: #eee; } .bare, .bare:focus { outline: none; } .ring:focus-visible { outline: 3px solid #00f; outline-offset: 1px; }</style>
-      <body style="margin:20px;background:#fff"><div style="display:flex;gap:2px"><button class="bare">Bare</button><button class="ring">Ring</button></div></body>`);
+  test("R-focus-visible: a ring on the control or drawn by its own stretched ::after over a tile passes; no change, or a change on a far element, fails", async () => {
+    // Each tile draws its ring 20px from the control, outside a clip around the control alone. The button tile is
+    // token-burner's ProviderTile shape, the link tile hue-control's GroupCard shape, and the third holds the same button
+    // in an open shadow root. The plain tile stretches the same ::after but draws nothing on focus. The far button lights
+    // only a status line 200px below it.
+    await page.setContent(`<style>button { width: 80px; height: 32px; border: 1px solid #888; background: #eee; } :is(button, a):focus { outline: none; }
+      .ring:focus-visible { outline: 3px solid #00f; outline-offset: 1px; }
+      .tile { position: relative; width: 300px; margin-top: 8px; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+      .stretch::after { content: ""; position: absolute; inset: 0; border-radius: inherit; } .ringed:focus-visible::after { outline: 2px solid #00f; outline-offset: 2px; }
+      .status { margin-top: 200px; height: 20px; } .far:focus ~ .status { background: #00f; }</style>
+      <body style="margin:20px;background:#fff"><div style="display:flex;gap:2px"><button class="bare">Bare</button><button class="ring">Ring</button></div>
+      <div class="tile"><span>Provider</span><button class="stretch ringed provider">+</button></div>
+      <div class="tile"><div><a class="stretch ringed room" href="#room">Room</a><span>3 lights</span></div></div>
+      <div class="tile"><x-add class="shadowed"><template shadowrootmode="open"><style>button { width: 28px; height: 28px; } button:focus { outline: none; }
+        button::after { content: ""; position: absolute; inset: 0; } button:focus-visible::after { outline: 2px solid #00f; outline-offset: 2px; }</style><button>+</button></template></x-add></div>
+      <div class="tile"><button class="stretch plain">+</button></div>
+      <div><button class="far">Far</button><p class="status">Status</p></div></body>`);
     const { findings, stops } = await focusPass(page, 10);
-    expect(stops).toBe(2);
-    expect(findings.map((f) => f.selector)).toEqual([expect.stringContaining("button.bare")]);
+    expect(stops).toBe(7);
+    expect(findings.map((f) => f.selector)).toEqual(["button.bare", "button.stretch.plain", "button.far"].map((s) => expect.stringContaining(s)));
   });
 
   test("R-state-shift: the shift pass runs on the view the page state left, not where the focus pass scrolled", async () => {

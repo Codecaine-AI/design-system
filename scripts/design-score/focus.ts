@@ -6,6 +6,8 @@
  * the element again and press Tab from it. Transitions and smooth scrolling are switched off for the
  * pass, so both captures are settled and no Tab scroll is still running when the pass returns. When the element moved between the captures, the computed style decides instead: an
  * outline or a changed box-shadow counts as visible.
+ * The clip also covers the element's own shown ::before and ::after when they are absolute or fixed (a ::after stretched over
+ * a tile can draw the ring there). Chromium's layout gives their boxes (CDP DOM.getBoxModel), so no containing-block rule is guessed.
  * Tabbing stops at a contenteditable (Tab may edit there), when focus cycles, or after N stops.
  */
 import { decodePng } from "../lib/png";
@@ -91,6 +93,45 @@ function refocusBlurred(): void {
 
 const NO_MOTION = "*, *::before, *::after { transition: none !important; animation-duration: 0s !important; animation-delay: 0s !important; caret-color: transparent !important; scroll-behavior: auto !important; }";
 
+/** The focused control the stop's element holds: itself, or the focused element inside its open shadow roots. Self-contained. */
+function ownFocus(key: string): Element | null {
+  let el = (window as unknown as { __dsFocus?: Element[] }).__dsFocus?.[Number(key)] ?? null;
+  while (el?.shadowRoot?.activeElement) el = el.shadowRoot.activeElement;
+  return el?.isConnected ? el : null;
+}
+
+/** Which of the element's own ::before and ::after are shown and absolute or fixed. Self-contained (runs as `this`). */
+function positionedPseudos(this: Element): string[] {
+  return ["before", "after"].filter((p) => {
+    const s = getComputedStyle(this, `::${p}`);
+    return s.content !== "none" && s.display !== "none" && (s.position === "absolute" || s.position === "fixed");
+  });
+}
+
+/** The box around the stop's element and its focused control's own absolute or fixed ::before and ::after, as Chromium laid them out. */
+async function ownPaintBox(cdp: any, key: string, box: Box): Promise<Box> {
+  const { result } = await cdp.send("Runtime.evaluate", { expression: `(${ownFocus})(${JSON.stringify(key)})` });
+  if (!result?.objectId) return box;
+  try {
+    const pseudos: string[] = (await cdp.send("Runtime.callFunctionOn", { objectId: result.objectId, functionDeclaration: String(positionedPseudos), returnByValue: true })).result.value ?? [];
+    if (!pseudos.length) return box;
+    const { node } = await cdp.send("DOM.describeNode", { objectId: result.objectId });
+    let [x0, y0, x1, y1] = [box.x, box.y, box.x + box.w, box.y + box.h];
+    for (const p of node.pseudoElements ?? []) {
+      if (!pseudos.includes(p.pseudoType)) continue;
+      // A pseudo-element with no layout box (display: contents and the like) has no box model.
+      const q: number[] = (await cdp.send("DOM.getBoxModel", { backendNodeId: p.backendNodeId }).catch(() => null))?.model.border ?? [];
+      for (let i = 0; i < q.length; i += 2) {
+        [x0, x1] = [Math.min(x0, q[i]!), Math.max(x1, q[i]!)];
+        [y0, y1] = [Math.min(y0, q[i + 1]!), Math.max(y1, q[i + 1]!)];
+      }
+    }
+    return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+  } finally {
+    await cdp.send("Runtime.releaseObject", { objectId: result.objectId }).catch(() => undefined);
+  }
+}
+
 function clipFor(box: Box, vw: number, vh: number, pad = 6) {
   const x = Math.max(0, Math.floor(box.x - pad));
   const y = Math.max(0, Math.floor(box.y - pad));
@@ -121,6 +162,7 @@ export interface FocusResult {
 export async function focusPass(page: any, max = 30): Promise<FocusResult> {
   const vp = page.viewportSize() ?? { width: 1440, height: 900 };
   const style = await page.addStyleTag({ content: NO_MOTION });
+  const cdp = await page.context().newCDPSession(page);
   const findings: RawFinding[] = [];
   const clips: FocusResult["clips"] = [];
   let stops = 0;
@@ -146,7 +188,7 @@ export async function focusPass(page: any, max = 30): Promise<FocusResult> {
       if (current.frame) break;
       await page.waitForTimeout(40);
       const focusedNow = (await page.evaluate(styleOf, current.key)) ?? { box: current.box, outline: current.outline, shadow: current.shadow };
-      const clip = clipFor(focusedNow.box, vp.width, vp.height);
+      const clip = clipFor(await ownPaintBox(cdp, current.key, focusedNow.box), vp.width, vp.height);
       const focusedPng: Uint8Array | null = clip ? await page.screenshot({ clip }) : null;
       // Never Tab inside an editor (Tab can indent there); its focus shows as the caret. Stop here.
       if (current.editable) break;
@@ -191,6 +233,7 @@ export async function focusPass(page: any, max = 30): Promise<FocusResult> {
     }
   } finally {
     await style.evaluate((node: Element) => node.remove()).catch(() => undefined);
+    await cdp.detach().catch(() => undefined);
   }
   return { findings, stops, clips };
 }
