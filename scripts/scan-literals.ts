@@ -656,10 +656,12 @@ const FONT_FACE_RE = /@font-face\s*\{[^}]*\}/gi;
 // (consumed through hsl(var(--primary))) or `--rgb: 255 255 255` for rgb(var(--rgb)).
 const CUSTOM_PROP_RE = /(?<![\w-])--[\w-]+\s*:\s*([^;{}]+)/g;
 // Palette tables written as numeric tuples, `background: [249, 249, 247],`. One
-// tuple could be a coordinate, so they only count when a file has
-// RGB_TUPLE_MIN of them.
-const RGB_TUPLE = /(?<![\w$])[\w$]+['"]?\s*:\s*\[\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\]/g;
+// tuple could be a coordinate, and many could be joint angles or other number
+// data, so they only count when a file has RGB_TUPLE_MIN of them and one of
+// their keys names a color.
+const RGB_TUPLE = /(?<![\w$])([\w$]+)['"]?\s*:\s*\[\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\]/g;
 const RGB_TUPLE_MIN = 6;
+const COLOR_KEY = /colou?r|rgb|background|foreground|fill|stroke|border|accent/i;
 const HSL_TRIPLET =/^-?\d*\.?\d+(?:deg|turn|rad|grad)?\s*,?\s+-?\d*\.?\d+%\s*,?\s+-?\d*\.?\d+%(?:\s*\/\s*\d*\.?\d+%?)?$/;
 const RGB_TRIPLET = /^(\d{1,3})(?:\s*,\s*|\s+)(\d{1,3})(?:\s*,\s*|\s+)(\d{1,3})(?:\s*\/\s*\d*\.?\d+%?)?$/;
 
@@ -1142,9 +1144,9 @@ export function scanText(src: string, kind: FileKind, keepComments = false): Hit
     add(category, m[0].replace(/\s+/g, " ").toLowerCase(), m.index!, inDefinition(text, m.index!, kind));
   }
   if (kind === "js") {
-    const tuples = [...text.matchAll(RGB_TUPLE)].filter((m) => [m[1], m[2], m[3]].every((ch) => Number(ch) <= 255));
-    if (tuples.length >= RGB_TUPLE_MIN) {
-      for (const m of tuples) add("rgb", `rgb(${m[1]} ${m[2]} ${m[3]})`, m.index!, true);
+    const tuples = [...text.matchAll(RGB_TUPLE)].filter((m) => [m[2], m[3], m[4]].every((ch) => Number(ch) <= 255));
+    if (tuples.length >= RGB_TUPLE_MIN && tuples.some((m) => COLOR_KEY.test(m[1]))) {
+      for (const m of tuples) add("rgb", `rgb(${m[2]} ${m[3]} ${m[4]})`, m.index!, true);
     }
   }
   if (kind === "css" || kind === "scss" || kind === "html") {

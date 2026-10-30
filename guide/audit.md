@@ -821,7 +821,7 @@ scan $W/codecaine/utilities/sotto/scripts/archive
 ### What the scanner does not see
 
 - **TS palette objects** count as inline literals. Example: canvas's `palette.ts`.
-- **Numeric `[r, g, b]` tuples** count only in files with 6 or more of them.
+- **Numeric `[r, g, b]` tuples** count only in files with 6 or more of them, when one of their keys names a color (`background`, `border`, `fill`, `selectionColor`).
 - **Swift, C# and Python** are not scanned.
 - **Widths, heights and other sizes** are not counted. Spacing shows up only as the soft `pxSpacing` signal.
 - **Tailwind default-palette classes** are a soft signal. The hour formula still counts them, because the standard bans them.
