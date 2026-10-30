@@ -132,25 +132,6 @@ async function ownPaintBox(cdp: any, key: string, box: Box): Promise<Box> {
   }
 }
 
-/**
- * The paint of the focused control's own shown absolute or fixed ::before and ::after, as one string. The clip widens over
- * them only when this differs between the focused and blurred states: a pseudo-element that does not change on focus draws
- * no ring, so other changes inside its box must not count. Self-contained.
- */
-function pseudoPaint(key: string): string {
-  let el = (window as unknown as { __dsFocus?: Element[] }).__dsFocus?.[Number(key)] ?? null;
-  while (el?.shadowRoot?.activeElement) el = el.shadowRoot.activeElement;
-  if (!el?.isConnected) return "";
-  const props = ["content", "display", "visibility", "opacity", "color", "background-color", "background-image", "box-shadow", "filter", "transform", "outline-style", "outline-width", "outline-color", "outline-offset", "border-top-style", "border-top-width", "border-top-color", "border-right-style", "border-right-width", "border-right-color", "border-bottom-style", "border-bottom-width", "border-bottom-color", "border-left-style", "border-left-width", "border-left-color", "border-image-source", "top", "right", "bottom", "left", "width", "height"];
-  return ["::before", "::after"]
-    .map((p) => {
-      const s = getComputedStyle(el!, p);
-      if (s.content === "none" || s.display === "none" || (s.position !== "absolute" && s.position !== "fixed")) return "";
-      return props.map((q) => s.getPropertyValue(q)).join("|");
-    })
-    .join("||");
-}
-
 function clipFor(box: Box, vw: number, vh: number, pad = 6) {
   const x = Math.max(0, Math.floor(box.x - pad));
   const y = Math.max(0, Math.floor(box.y - pad));
@@ -159,21 +140,14 @@ function clipFor(box: Box, vw: number, vh: number, pad = 6) {
   return right - x >= 2 && bottom - y >= 2 ? { x, y, width: right - x, height: bottom - y } : null;
 }
 
-/** Pixels that differ by more than 24 levels, counted in `only` (CSS px inside the clip of `clipWidth`) when given. */
-function changedPixels(a: Uint8Array, b: Uint8Array, only?: { x: number; y: number; width: number; height: number; clipWidth: number }): { count: number; width: number; height: number } {
+function changedPixels(a: Uint8Array, b: Uint8Array): { count: number; width: number; height: number } {
   const ia = decodePng(a);
   const ib = decodePng(b);
   if (ia.width !== ib.width || ia.height !== ib.height) return { count: Number.POSITIVE_INFINITY, width: ia.width, height: ia.height };
-  const k = only ? ia.width / only.clipWidth : 1;
-  const [x0, y0] = only ? [Math.floor(only.x * k), Math.floor(only.y * k)] : [0, 0];
-  const [x1, y1] = only ? [Math.ceil((only.x + only.width) * k), Math.ceil((only.y + only.height) * k)] : [ia.width, ia.height];
   let count = 0;
-  for (let y = Math.max(0, y0); y < Math.min(ia.height, y1); y++) {
-    for (let x = Math.max(0, x0); x < Math.min(ia.width, x1); x++) {
-      const i = (y * ia.width + x) * 4;
-      const d = Math.max(Math.abs(ia.data[i]! - ib.data[i]!), Math.abs(ia.data[i + 1]! - ib.data[i + 1]!), Math.abs(ia.data[i + 2]! - ib.data[i + 2]!));
-      if (d > 24) count++;
-    }
+  for (let i = 0; i < ia.data.length; i += 4) {
+    const d = Math.max(Math.abs(ia.data[i]! - ib.data[i]!), Math.abs(ia.data[i + 1]! - ib.data[i + 1]!), Math.abs(ia.data[i + 2]! - ib.data[i + 2]!));
+    if (d > 24) count++;
   }
   return { count, width: ia.width, height: ia.height };
 }
@@ -214,9 +188,7 @@ export async function focusPass(page: any, max = 30): Promise<FocusResult> {
       if (current.frame) break;
       await page.waitForTimeout(40);
       const focusedNow = (await page.evaluate(styleOf, current.key)) ?? { box: current.box, outline: current.outline, shadow: current.shadow };
-      const narrow = clipFor(focusedNow.box, vp.width, vp.height);
       const clip = clipFor(await ownPaintBox(cdp, current.key, focusedNow.box), vp.width, vp.height);
-      const ringFocused: string = await page.evaluate(pseudoPaint, current.key);
       const focusedPng: Uint8Array | null = clip ? await page.screenshot({ clip }) : null;
       // Never Tab inside an editor (Tab can indent there); its focus shows as the caret. Stop here.
       if (current.editable) break;
@@ -224,18 +196,13 @@ export async function focusPass(page: any, max = 30): Promise<FocusResult> {
       await page.evaluate(blurActive);
       await page.waitForTimeout(40);
       const after = await page.evaluate(styleOf, current.key);
-      // The widened clip counts only when the control's own pseudo-elements changed on focus.
-      const ringChanged = ringFocused !== (await page.evaluate(pseudoPaint, current.key));
-      const only = clip && narrow && !ringChanged && (clip.width !== narrow.width || clip.height !== narrow.height)
-        ? { x: narrow.x - clip.x, y: narrow.y - clip.y, width: narrow.width, height: narrow.height, clipWidth: clip.width }
-        : undefined;
       let visible: boolean | null = null;
       let measured = "";
       if (clip && focusedPng && after) {
         const moved = Math.abs(after.box.x - focusedNow.box.x) > 0.5 || Math.abs(after.box.y - focusedNow.box.y) > 0.5;
         if (!moved) {
           const unfocusedPng: Uint8Array = await page.screenshot({ clip });
-          const diff = changedPixels(focusedPng, unfocusedPng, only);
+          const diff = changedPixels(focusedPng, unfocusedPng);
           const perimeter = 2 * (focusedNow.box.w + focusedNow.box.h);
           const need = Math.max(12, perimeter * 0.1);
           visible = diff.count >= need;
