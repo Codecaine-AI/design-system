@@ -1,0 +1,116 @@
+{
+  "app": "skitzo",
+  "name": "Skitzo",
+  "repo": "experiments/skitzo",
+  "baseUrl": "http://127.0.0.1:47780",
+  "sourceDirs": [
+    "apps/frontend/src/app"
+  ],
+  "themes": {
+    "dark": {
+      "colorScheme": "dark",
+      "assert": "html[data-theme=\"dark\"]"
+    }
+  },
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "width": 1024,
+      "height": 768
+    }
+  ],
+  "settleMs": 700,
+  "loading": [
+    "Loading"
+  ],
+  "cap": 6,
+  "motionAllow": [
+    {
+      "name": "ds-shell-sidebar",
+      "selector": ".ds-shell",
+      "props": [
+        "grid-template-columns"
+      ],
+      "reason": "The design-system app shell animates its sidebar column when it collapses (css/layout.css .ds-shell). The shell owns it. Ford allowed it for knowledge-system, and this config reuses that allowance for the same shell."
+    }
+  ],
+  "pages": [
+    {
+      "id": "dashboard",
+      "path": "/dashboard",
+      "waitFor": ".ds-shell",
+      "note": "Home after sign-in: / redirects here. Skitzo is dark only (layout.tsx sets data-theme=\"dark\"). The app runs with SKITZO_DEV_AUTH=1 against a local Postgres seeded by apps/frontend/scripts/seed-dev.ts."
+    },
+    {
+      "id": "templates",
+      "path": "/templates",
+      "waitFor": ".ds-shell",
+      "note": "The Templates list (3 fixture templates)."
+    },
+    {
+      "id": "template",
+      "path": "/templates/00000000-0000-4000-8000-000000000010",
+      "waitFor": ".ds-shell",
+      "note": "A template page (Career story) on its Core tab."
+    },
+    {
+      "id": "template-new",
+      "path": "/templates/new",
+      "waitFor": ".ds-shell",
+      "note": "The new template form."
+    },
+    {
+      "id": "contexts",
+      "path": "/contexts",
+      "waitFor": ".ds-shell",
+      "note": "The Documents list (2 fixture context documents)."
+    },
+    {
+      "id": "context",
+      "path": "/contexts/00000000-0000-4000-8000-000000000040",
+      "waitFor": ".ds-shell",
+      "note": "A context document (About me) in the markdown editor."
+    },
+    {
+      "id": "context-new",
+      "path": "/contexts/new",
+      "waitFor": ".ds-shell",
+      "note": "The new context document form."
+    },
+    {
+      "id": "interviews",
+      "path": "/interviews",
+      "waitFor": ".ds-shell",
+      "note": "The Sessions list: completed, in progress and pending."
+    },
+    {
+      "id": "interview",
+      "path": "/interview/00000000-0000-4000-8000-000000000200",
+      "waitFor": ".ds-shell",
+      "note": "An in-progress session (Creative process): one answered question, one active."
+    },
+    {
+      "id": "report",
+      "path": "/interview/00000000-0000-4000-8000-000000000100/report",
+      "waitFor": ".ds-shell",
+      "note": "The report of a completed session (Career story) on its Summary view."
+    },
+    {
+      "id": "sidebar-collapsed",
+      "path": "/templates",
+      "waitFor": ".ds-shell",
+      "actions": [
+        {
+          "click": ".ds-sidebar-toggle"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "note": "The Templates list with the sidebar collapsed."
+    }
+  ]
+}
