@@ -190,7 +190,7 @@ The shell also reads these shared tokens:
 | Fills | `--ds-color-fill-hover`, `--ds-color-fill-active` (current row), `--ds-color-accent` (current icon), `--ds-color-focus-ring` |
 | Type | `--ds-font-family-sans`, `--ds-font-size-ui-lg` (base and nav rows), `-ui-md`, `-ui-sm`, `-ui-xs`, `-micro`, `-reading` (titles), weights, `--ds-line-height-ui`, `-tight`, `--ds-letter-spacing-title`, `-micro` |
 | Avatar | `--ds-color-teal-soft`, `--ds-color-teal-text` |
-| Shape and motion | `--ds-radius-base`, `--ds-border-width-hairline`, `-focus`, `--ds-focus-ring-offset`, `--ds-motion-duration-fast`, `-slow`, `--ds-motion-easing-standard`, `--ds-z-raised` |
+| Shape and motion | `--ds-radius-base`, `--ds-border-width-hairline`, `-focus`, `--ds-focus-ring-offset`, `--ds-motion-duration-fast`, `-base`, `-slow`, `--ds-motion-easing-standard`, `--ds-z-raised` |
 | Lanes | `--ds-layout-lane-text`, `-code`, `-wide` |
 
 To change a size for one app, override the token on the shell, never with a literal in a component:
