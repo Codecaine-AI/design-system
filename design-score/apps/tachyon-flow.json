@@ -6,6 +6,11 @@
   "sourceDirs": [
     "game/src"
   ],
+  "excludes": [
+    "**/level/**",
+    "**/character/**",
+    "**/vfx/**"
+  ],
   "themes": {
     "dark": {
       "colorScheme": "dark",
