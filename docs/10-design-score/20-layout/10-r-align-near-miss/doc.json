@@ -480,7 +480,7 @@
           }
         },
         {
-          "insert": ", an "
+          "insert": ", a button whose "
         },
         {
           "insert": "aria-label",
@@ -489,7 +489,7 @@
           }
         },
         {
-          "insert": " with drag or reorder, or a class that contains "
+          "insert": " contains drag or reorder, or a class that contains "
         },
         {
           "insert": "drag-handle",
@@ -521,7 +521,25 @@
           }
         },
         {
-          "insert": "). Each finding has a key made from the class signatures of both elements, so repeated rows report once per component."
+          "insert": "). The label counts only on a "
+        },
+        {
+          "insert": "button",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "[role=\"button\"]",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", because a canvas or viewport label also says \"drag\" to tell you how to use the area. Each finding has a key made from the class signatures of both elements, so repeated rows report once per component."
         }
       ],
       "children": []
@@ -651,7 +669,7 @@
           }
         },
         {
-          "insert": " starts each meta line 2px right of its title."
+          "insert": " starts each meta line 2px right of its title. The handle pass skips the good page's desk plan, an svg labelled \"Drag the lamp to move it\", because the plan is not a button."
         }
       ],
       "children": []
@@ -665,7 +683,7 @@
           {
             "src": "./assets/images/good.png",
             "heading": "Good: pass",
-            "alt": "Three task rows. Each grip is centered on its title line, and each meta line starts at the title's left edge. No boxes are drawn.",
+            "alt": "Three task rows and a desk plan with its caption below them. Each grip is centered on its title line, and each meta line starts at the title's left edge. No boxes are drawn.",
             "caption": "good.html, 0 findings"
           },
           {
@@ -968,7 +986,7 @@
           }
         },
         {
-          "insert": " or a drop zone labelled \"Drag files here\" counts as a handle. The handle pass then compares it with the text to its right."
+          "insert": ", or a button labelled \"Drag files here\", counts as a handle. The handle pass then compares it with the text to its right."
         }
       ],
       "children": []

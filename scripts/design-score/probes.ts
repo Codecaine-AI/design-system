@@ -839,12 +839,13 @@ export function probePage(o: ProbeOptions): { findings: ProbeFinding[]; stats: R
   }
 
   // Handles: a grip's visible center against the first text line of the row it moves.
+  // A label that says "drag" marks a grip only on a control: a canvas or viewport label says "drag" to describe the surface.
   const handleSel = [
     ...o.handles,
     '[draggable="true"]',
     "[data-drag-handle]",
-    '[aria-label*="drag" i]',
-    '[aria-label*="reorder" i]',
+    ':is(button, [role="button"])[aria-label*="drag" i]',
+    ':is(button, [role="button"])[aria-label*="reorder" i]',
     '[class*="drag-handle"]',
     '[class*="grip"]',
   ].join(", ");

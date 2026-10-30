@@ -3,8 +3,8 @@
  *
  * For each Tab stop: capture a clip around the focused element, blur it, capture the same clip again
  * (nothing focused, so a neighbour's ring cannot change the clip) and count changed pixels, then focus
- * the element again and press Tab from it. Transitions are switched off for the pass, so both captures
- * are settled. When the element moved between the captures, the computed style decides instead: an
+ * the element again and press Tab from it. Transitions and smooth scrolling are switched off for the
+ * pass, so both captures are settled and no Tab scroll is still running when the pass returns. When the element moved between the captures, the computed style decides instead: an
  * outline or a changed box-shadow counts as visible.
  * A ring drawn on a wrapper counts too: when an ancestor's paint (or a pseudo-element's, such as a ::after
  * stretched over a tile) changes on blur, the clip grows to that box and is captured blurred, then focused again.
@@ -173,7 +173,7 @@ function refocusBlurred(): void {
   ((window as unknown as { __dsBlurred?: Element | null }).__dsBlurred as HTMLElement | null)?.focus?.({ preventScroll: true });
 }
 
-const NO_MOTION = "*, *::before, *::after { transition: none !important; animation-duration: 0s !important; animation-delay: 0s !important; caret-color: transparent !important; }";
+const NO_MOTION = "*, *::before, *::after { transition: none !important; animation-duration: 0s !important; animation-delay: 0s !important; caret-color: transparent !important; scroll-behavior: auto !important; }";
 
 function clipFor(box: Box, vw: number, vh: number, pad = 6) {
   const x = Math.max(0, Math.floor(box.x - pad));
