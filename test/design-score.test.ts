@@ -330,7 +330,7 @@ describe.skipIf(!!process.env.DS_SKIP_BROWSER)("design:score v2 in a browser", (
 
   test("R-state-shift: the shift pass runs on the view the page state left, not where the focus pass scrolled", async () => {
     await page.setContent(`<style>html { scroll-behavior: smooth; } body { margin: 20px; } button { display: block; height: 32px; margin: 8px 0; border: 1px solid #888; } .grow:hover { border-width: 4px; }</style>
-      <body><button class="grow">Grow</button>${Array.from({ length: 40 }, (_, i) => `<button class="b">B${i}</button>`).join("")}</body>`);
+      <body><button class="grow">Grow</button><div style="height:2000px"></div><button class="far">Far</button></body>`);
     const restoreView = await keepScroll(page);
     await focusPass(page, 30);
     expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);

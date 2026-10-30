@@ -16,7 +16,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 
 import { LAUNCH_OPTIONS } from "../lib/capture";
-import { headlessShellPath, pinPlaywright, playwrightAnchor, playwrightVersion } from "../lib/playwright";
+import { browserCache, headlessShellIn, headlessShellPath, pinPlaywright, playwrightAnchor, playwrightVersion } from "../lib/playwright";
 
 export interface BrowserInfo {
   browser: any;
@@ -30,16 +30,15 @@ export interface BrowserInfo {
 
 /** The newest cached chromium_headless_shell-<rev> executable, or null. */
 function cachedShell(): string | null {
-  const cache = process.env.PLAYWRIGHT_BROWSERS_PATH || join(homedir(), "Library/Caches/ms-playwright");
+  const cache = browserCache();
   if (!existsSync(cache)) return null;
-  const arch = process.arch === "arm64" ? "mac-arm64" : "mac-x64";
   const revs = readdirSync(cache)
     .map((name) => /^chromium_headless_shell-(\d+)$/.exec(name))
     .filter((m): m is RegExpExecArray => !!m)
     .map((m) => Number(m[1]))
     .sort((a, b) => b - a);
   for (const rev of revs) {
-    const path = join(cache, `chromium_headless_shell-${rev}`, `chrome-headless-shell-${arch}`, "chrome-headless-shell");
+    const path = headlessShellIn(join(cache, `chromium_headless_shell-${rev}`));
     if (existsSync(path)) return path;
   }
   return null;

@@ -5,7 +5,7 @@
  * node_modules/playwright and the playwright-core it loads), never from wherever node resolution happens
  * to find a copy first: a node_modules dir inside an app's checkout (docs-system/node_modules, which
  * docs-workbench runs may write) would come first from deeper anchors. Browsers are the cached ones in
- * ~/Library/Caches/ms-playwright. `root` is the workspace tree the tool checks (the mirror during the run).
+ * Playwright's browser cache (browserCache). `root` is the workspace tree the tool checks (the mirror during the run).
  *
  * Core's node_modules sit inside --root, next to the apps a tool starts. The tool therefore resolves,
  * loads and hashes Playwright (playwright and playwright-core, every file) before the first app starts
@@ -188,10 +188,38 @@ export function resetPlaywrightPinsForTests(): void {
 }
 
 /**
+ * Playwright's browser cache, the folder its registry installs into: PLAYWRIGHT_BROWSERS_PATH, else the
+ * platform's cache folder (~/Library/Caches on macOS, $XDG_CACHE_HOME or ~/.cache on Linux,
+ * %LOCALAPPDATA% on Windows) + ms-playwright.
+ */
+export function browserCache(home: string = homedir()): string {
+  if (process.env.PLAYWRIGHT_BROWSERS_PATH) return process.env.PLAYWRIGHT_BROWSERS_PATH;
+  if (process.platform === "darwin") return join(home, "Library/Caches/ms-playwright");
+  if (process.platform === "win32") return join(process.env.LOCALAPPDATA || join(home, "AppData/Local"), "ms-playwright");
+  return join(process.env.XDG_CACHE_HOME || join(home, ".cache"), "ms-playwright");
+}
+
+/** The headless shell's folder and executable inside chromium_headless_shell-<rev>, per platform (Playwright's own names). */
+const HEADLESS_SHELL: Record<string, [string, string]> = {
+  "darwin-arm64": ["chrome-headless-shell-mac-arm64", "chrome-headless-shell"],
+  "darwin-x64": ["chrome-headless-shell-mac-x64", "chrome-headless-shell"],
+  "linux-arm64": ["chrome-headless-shell-linux-arm64", "chrome-headless-shell"],
+  "linux-x64": ["chrome-headless-shell-linux64", "chrome-headless-shell"],
+  "win32-x64": ["chrome-headless-shell-win64", "chrome-headless-shell.exe"],
+};
+
+/** The headless shell executable inside a chromium_headless_shell-<rev> dir, for this platform. Throws on a platform Playwright has no build for. */
+export function headlessShellIn(dir: string): string {
+  const platform = `${process.platform}-${process.platform === "darwin" && process.arch !== "arm64" ? "x64" : process.arch}`;
+  const shell = HEADLESS_SHELL[platform];
+  if (!shell) throw new Error(`Playwright has no Chromium headless shell for ${platform}`);
+  return join(dir, ...shell);
+}
+
+/**
  * The Chromium headless shell Playwright launches for `headless: true`, from the browsers.json of the
- * pinned playwright-core and Playwright's browser cache (PLAYWRIGHT_BROWSERS_PATH, else
- * ~/Library/Caches/ms-playwright). Throws when Playwright is not pinned or unchanged, when browsers.json
- * names no plain revision, or when the shell is not installed.
+ * pinned playwright-core and Playwright's browser cache (browserCache). Throws when Playwright is not
+ * pinned or unchanged, when browsers.json names no plain revision, or when the shell is not installed.
  */
 export function headlessShellPath(root: string, home: string = homedir()): { path: string; dir: string } {
   pinPlaywright(root);
@@ -200,10 +228,8 @@ export function headlessShellPath(root: string, home: string = homedir()): { pat
   const browsers = JSON.parse(readFileSync(join(core, "browsers.json"), "utf8")) as { browsers: Array<{ name: string; revision: string }> };
   const shell = browsers.browsers.find((browser) => browser.name === "chromium-headless-shell");
   if (!shell || !/^\d+$/.test(String(shell.revision))) throw new Error(`${core}/browsers.json names no chromium-headless-shell revision`);
-  const cache = process.env.PLAYWRIGHT_BROWSERS_PATH || join(home, "Library/Caches/ms-playwright");
-  const arch = process.arch === "arm64" ? "mac-arm64" : "mac-x64";
-  const dir = join(cache, `chromium_headless_shell-${shell.revision}`);
-  const path = join(dir, `chrome-headless-shell-${arch}`, "chrome-headless-shell");
+  const dir = join(browserCache(home), `chromium_headless_shell-${shell.revision}`);
+  const path = headlessShellIn(dir);
   if (!existsSync(path)) throw new Error(`the Chromium headless shell is not installed at ${path}`);
   return { path, dir: realpathSync(dir) };
 }
