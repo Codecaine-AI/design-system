@@ -105,9 +105,10 @@
   gap: var(--ds-space-2);
   box-sizing: border-box;
   height: var(--ds-layout-topbar-height);
-  /* End padding centres the toggle in the rail once collapsed. */
+  /* End padding sits the toggle on the footer avatar's line once collapsed:
+     2px before the icon centres, since exact centring needs an off-grid 18px. */
   padding-inline-start: var(--ds-layout-sidebar-padding-x);
-  padding-inline-end: calc((var(--ds-layout-sidebar-width-collapsed) - var(--ds-layout-sidebar-toggle-size)) / 2);
+  padding-inline-end: var(--ds-space-5);
   border-block-end: var(--ds-border-width-hairline) solid var(--ds-color-border-default);
 }
 
@@ -231,11 +232,11 @@
 .ds-sidebar-toggle-arrow {
   transform-box: fill-box;
   transform-origin: center;
-  transition: transform var(--ds-motion-duration-slow) var(--ds-motion-easing-standard);
+  transition: transform var(--ds-motion-duration-base) var(--ds-motion-easing-standard);
 }
 
 /* ------------------------------------------------------------------ */
-/* Navigation                                                          */
+/* Navigation                                                        */
 /* ------------------------------------------------------------------ */
 
 .ds-nav {
@@ -439,12 +440,10 @@
   align-items: center;
   gap: var(--ds-space-3);
   box-sizing: border-box;
-  /* Avatar centre lines up with the nav icon centres in both states. */
+  /* Avatar centre sits on the toggle's line once collapsed, 2px before the nav
+     icon centres: exact centring needs an off-grid 18px. */
   padding-block: var(--ds-space-4);
-  padding-inline: calc(
-    var(--ds-layout-sidebar-padding-x) + var(--ds-layout-sidebar-item-padding-x) +
-      (var(--ds-layout-sidebar-icon-size) - var(--ds-layout-sidebar-avatar-size)) / 2
-  );
+  padding-inline: var(--ds-space-4);
   overflow: hidden;
   white-space: nowrap;
 }
