@@ -184,6 +184,24 @@ describe.skipIf(!!process.env.DS_SKIP_BROWSER)("design:score v2 in a browser", (
     expect(hits.map((f: { group: string }) => f.group.split("|")[1])).toEqual(["a.crumb"]);
   });
 
+  // 20 lines of 10px/20px text end at 400px. A glyph box sits inside its line box, so the last line's text ends between 380 and 400px.
+  const clipLines = Array.from({ length: 20 }, (_, i) => `Line ${i}`).join("<br>");
+  test.each([
+    ["a 100px scroller wholly inside a 200px hidden parent passes: scrolling reaches all the text", 200, true, []],
+    ["a 100px scroller in a 40px hidden parent fails by the 60px of the scroller the parent hides", 40, true, [[60, 60]]],
+    ["the same text in a plain 40px hidden box fails by all of the text below 40px", 40, false, [[340, 360]]],
+  ] as const)("R-text-clip: %s", async (_name, hiddenHeight, scroller, fails) => {
+    await page.setContent(`<body style="margin:0;font:10px/20px monospace"><div style="height:${hiddenHeight}px;overflow:hidden">
+      <div style="${scroller ? "height:100px;overflow-y:auto" : ""}"><p style="margin:0">${clipLines}</p></div></div></body>`);
+    const clips = (await probe()).findings.filter((f: { check: string }) => f.check === "R-text-clip");
+    const below = clips.map((f: { measured: string }) => Number(/^text runs ([\d.]+)px below the bottom of an overflow:hidden ancestor/.exec(f.measured)?.[1]));
+    expect(below).toHaveLength(fails.length);
+    fails.forEach(([least, most], i) => {
+      expect(below[i]).toBeGreaterThanOrEqual(least);
+      expect(below[i]).toBeLessThanOrEqual(most);
+    });
+  });
+
   test("R-control-height skips a link that spans a row, and still flags two buttons", async () => {
     await page.setContent(`<style>.row:hover, .row { background: #ddd; } button { border: 1px solid #888; }</style>
       <body style="margin:20px;font:14px sans-serif"><div style="display:flex;gap:8px;align-items:center"><a class="row" href="#r" style="display:block;width:600px;height:32px">Session</a><button style="height:28px">Open</button></div>
