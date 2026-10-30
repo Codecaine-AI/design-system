@@ -503,10 +503,50 @@ export function probePage(o: ProbeOptions): { findings: ProbeFinding[]; stats: R
   for (const { el, rects } of textEls) {
     const s = cs(el);
     if (el.matches("input, textarea, select, option")) continue;
-    const textRight = Math.max(...rects.map((r) => r.right));
-    const textBottom = Math.max(...rects.map((r) => r.bottom));
+    // How far the text reaches. Text past the edge of a box that scrolls on that axis is reached by scrolling, so from
+    // there up it reaches only that box's visible edge: a clipping ancestor still fails it when it hides part of the scroller.
+    let textRight = Math.max(...rects.map((r) => r.right));
+    let textBottom = Math.max(...rects.map((r) => r.bottom));
+    let cappedX = false;
+    let cappedY = false;
+    let escape: string | null = null;
     for (let a: Element | null = el, depth = 0; a && depth < 4 && a !== document.body; a = a.parentElement, depth++) {
       const as = cs(a);
+      // An absolute or fixed box escapes the boxes between it and its containing block: they neither scroll nor clip it.
+      if (escape) {
+        // The properties that make a containing block, as Chromium applies them (the same list as R-focus-visible's in focus.ts).
+        const will = as.willChange.split(/,\s*/);
+        const set = (props: string[]) => props.some((p) => !["", "none"].includes(as.getPropertyValue(p)) || will.includes(p));
+        const holdsFixed =
+          as.display !== "contents" &&
+          (set(["filter", "backdrop-filter"]) ||
+            (as.display !== "inline" &&
+              (as.transformStyle === "preserve-3d" ||
+                will.includes("transform-style") ||
+                set(["transform", "translate", "rotate", "scale", "perspective", "offset-path"]) ||
+                (!/^table-(row|column|header|footer)/.test(as.display) && (/layout|paint|strict|content/.test(as.contain) || as.contentVisibility !== "visible" || will.includes("contain"))))));
+        if (!holdsFixed && !(escape === "absolute" && as.display !== "contents" && (as.position !== "static" || will.includes("position")))) continue;
+        escape = null;
+      }
+      // A display:contents box makes no box, so its position does not move its text out of anything.
+      if (as.display !== "contents" && (as.position === "absolute" || as.position === "fixed")) escape = as.position;
+      // Overflow does not apply to an inline or display:contents box, so it never scrolls whatever it computes to.
+      const scrollBox = as.display !== "inline" && as.display !== "contents";
+      const scrollsX = scrollBox && (as.overflowX === "auto" || as.overflowX === "scroll");
+      const scrollsY = scrollBox && (as.overflowY === "auto" || as.overflowY === "scroll");
+      if (scrollsX || scrollsY) {
+        // The client box is in layout px and the rect in viewport px: scale by rect over offset size for a transformed box.
+        const ar = rectOf(a);
+        const sx = a instanceof HTMLElement && a.offsetWidth ? ar.width / a.offsetWidth : 1;
+        const sy = a instanceof HTMLElement && a.offsetHeight ? ar.height / a.offsetHeight : 1;
+        const right = ar.left + (a.clientLeft + a.clientWidth) * sx;
+        const bottom = ar.top + (a.clientTop + a.clientHeight) * sy;
+        // Scrolling reaches only the scrollable overflow. Text past it (a column-reverse box overflows the wrong way) stays cut.
+        const reachRight = right + (a.scrollWidth - a.clientWidth - a.scrollLeft) * sx;
+        const reachBottom = bottom + (a.scrollHeight - a.clientHeight - a.scrollTop) * sy;
+        if (scrollsX && right < textRight && textRight <= reachRight + 1) [textRight, cappedX] = [right, true];
+        if (scrollsY && bottom < textBottom && textBottom <= reachBottom + 2) [textBottom, cappedY] = [bottom, true];
+      }
       const clipX = as.overflowX === "hidden" || as.overflowX === "clip";
       const clipY = as.overflowY === "hidden" || as.overflowY === "clip";
       if (!clipX && !clipY) continue;
@@ -524,7 +564,7 @@ export function probePage(o: ProbeOptions): { findings: ProbeFinding[]; stats: R
           selector: selectorOf(el),
           box: boxOf(rects[0]!),
           other: a !== el ? { selector: selectorOf(a), box: boxOf(ar) } : null,
-          measured: `text runs ${r1(textRight - innerRight)}px past the right edge of ${a === el ? "its box" : "an overflow:hidden ancestor"}, no ellipsis "${textSnippet(el)}"`,
+          measured: `${cappedX ? "a scroller holding this text" : "text"} runs ${r1(textRight - innerRight)}px past the right edge of ${a === el ? "its box" : "an overflow:hidden ancestor"}, no ellipsis "${textSnippet(el)}"`,
           expected: "text fits, wraps, or ends in an ellipsis",
           key: signature(el),
         });
@@ -537,13 +577,15 @@ export function probePage(o: ProbeOptions): { findings: ProbeFinding[]; stats: R
           selector: selectorOf(el),
           box: boxOf(rects[0]!),
           other: a !== el ? { selector: selectorOf(a), box: boxOf(ar) } : null,
-          measured: `text runs ${r1(textBottom - innerBottom)}px below the bottom of ${a === el ? "its box" : "an overflow:hidden ancestor"} "${textSnippet(el)}"`,
+          measured: `${cappedY ? "a scroller holding this text" : "text"} runs ${r1(textBottom - innerBottom)}px below the bottom of ${a === el ? "its box" : "an overflow:hidden ancestor"} "${textSnippet(el)}"`,
           expected: "text fits, or is clamped with -webkit-line-clamp",
           key: signature(el) + "|y",
         });
         break;
       }
-      break;
+      // A clip box that ellipsizes or clamps the text owns that cut. One that does not cut it hides nothing, so a box above
+      // it can still cut the text (a scroller's own overflow-x:hidden must not end the walk).
+      if ((clipX && textRight > innerRight + 1) || (clipY && textBottom > innerBottom + 2)) break;
     }
   }
 

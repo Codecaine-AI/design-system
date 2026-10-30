@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- R-text-clip, good: the long title ends in an ellipsis, and the summary is clamped to 2 lines with -webkit-line-clamp. -->
+<!-- R-text-clip, good: the long title ends in an ellipsis, the summary is clamped to 2 lines with -webkit-line-clamp, and the log's later lines sit below the fold of a scroller inside an overflow: hidden panel. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -16,6 +16,11 @@
   .title { text-overflow: ellipsis; }
   /* The summary stops at 2 lines and ends in an ellipsis. */
   .summary { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+  /* The panel clips its corners. The log scrolls, so its later lines are a scroll away, not cut. */
+  .card + h2 { margin-top: var(--ds-space-6); }
+  .panel { width: calc(var(--ds-space-16) * 4); overflow: hidden; border: 1px solid var(--ds-color-border-default); border-radius: var(--ds-radius-base); background: var(--ds-color-surface-panel); }
+  .log { height: calc(var(--ds-font-size-ui-sm) * var(--ds-line-height-ui) * 3); overflow-y: auto; }
+  .log p { margin: 0; padding: 0 var(--ds-space-3); font-size: var(--ds-font-size-ui-sm); line-height: var(--ds-line-height-ui); color: var(--ds-color-text-muted); }
 </style>
 </head>
 <body>
@@ -23,6 +28,12 @@
   <div class="card">
     <div class="title">Move the release checklist into the docs hub</div>
     <p class="summary">The checklist lives in three places today. Put one copy in the docs hub, link it from each repo, and delete the old copies after the next release.</p>
+  </div>
+  <h2>Log</h2>
+  <div class="panel">
+    <div class="log">
+      <p>The build started on the release branch. It fetched the lockfile, restored the cache and ran the type check. The tests ran in four shards, and every shard passed. The bundle came in under its size budget, so the job published the preview and posted its link.</p>
+    </div>
   </div>
 </body>
 </html>
