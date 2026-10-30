@@ -91,17 +91,21 @@ function layersOf(key: string): Layer[] | null {
       ? "none"
       : `${s.getPropertyValue(`${p}-width`)} ${s.getPropertyValue(`${p}-style`)} ${s.getPropertyValue(`${p}-color`)}`;
   // `color` shows on a box only through its own text: a child that sets its own color hides the change.
+  // Paint that uses currentColor (borders, shadows, images) computes to the color, so it shows in its own field.
   const paintOf = (s: CSSStyleDeclaration, text: boolean) =>
-    [`${line(s, "outline")} ${line(s, "outline") === "none" ? "" : s.outlineOffset}`, ...["top", "right", "bottom", "left"].map((side) => line(s, `border-${side}`)), s.boxShadow, s.backgroundColor, s.backgroundImage, text ? s.color : "", s.opacity, s.filter].join("|");
+    [`${line(s, "outline")} ${line(s, "outline") === "none" ? "" : s.outlineOffset}`, ...["top", "right", "bottom", "left"].map((side) => line(s, `border-${side}`)), s.borderImageSource, s.boxShadow, s.backgroundColor, s.backgroundImage, text ? s.color : "", s.opacity, s.filter].join("|");
   const ownText = (e: Element) => [...e.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && n.textContent!.trim() !== "");
   // The box an absolute descendant fills: Chromium makes one for each of these (checked in Chromium 153).
-  const holds = (s: CSSStyleDeclaration) =>
-    s.position !== "static" ||
-    ["transform", "translate", "rotate", "scale", "perspective", "filter", "backdrop-filter", "offset-path"].some((p) => !["", "none"].includes(s.getPropertyValue(p))) ||
-    s.transformStyle === "preserve-3d" ||
-    /layout|paint|strict|content/.test(s.contain) ||
-    s.contentVisibility !== "visible" ||
-    s.willChange.split(/,\s*/).some((p) => ["transform", "translate", "rotate", "scale", "perspective", "filter", "backdrop-filter", "contain", "position", "offset-path"].includes(p));
+  // A plain inline box takes only position and the filters, and an internal table box takes no containment.
+  const holds = (s: CSSStyleDeclaration) => {
+    if (s.display === "contents" || s.display === "none") return false;
+    const will = s.willChange.split(/,\s*/);
+    const set = (props: string[]) => props.some((p) => !["", "none"].includes(s.getPropertyValue(p)) || will.includes(p));
+    if (s.position !== "static" || will.includes("position") || set(["filter", "backdrop-filter"])) return true;
+    if (s.display === "inline") return false;
+    if (s.transformStyle === "preserve-3d" || set(["transform", "translate", "rotate", "scale", "perspective", "offset-path"])) return true;
+    return !/^table-(row|column|header|footer)/.test(s.display) && (/layout|paint|strict|content/.test(s.contain) || s.contentVisibility !== "visible" || will.includes("contain"));
+  };
   const layers: Layer[] = [];
   let holder = -1;
   const chain: Element[] = [];
@@ -116,7 +120,7 @@ function layersOf(key: string): Layer[] | null {
     layers[i] = {
       box: { x: r.left, y: r.top, w: r.width, h: r.height },
       paint: paintOf(s, ownText(e)),
-      pseudo: pseudos.map((p) => (p.content === "none" || p.display === "none" ? "none" : `${p.content}|${paintOf(p, p.content !== '""')}`)).join("||"),
+      pseudo: pseudos.map((p) => (p.content === "none" || p.display === "none" ? "none" : `${p.content}|${paintOf(p, !/^"\s*"$/.test(p.content))}`)).join("||"),
       floats: pseudos.some((p) => p.content !== "none" && p.position === "absolute"),
       holder,
     };

@@ -245,20 +245,23 @@ describe.skipIf(!!process.env.DS_SKIP_BROWSER)("design:score v2 in a browser", (
   });
 
   test("R-focus-visible: a ring on the control or on a tile it lights passes; no change, a change that cannot show, or a change on a far element, fails", async () => {
-    // The tiles draw their ring 20px from the button: one with :focus-within, two with the button's ::after stretched over the tile.
-    // The static tile holds the ::after through contain: layout. The quiet wrapper changes only paint its box cannot show.
+    // The tiles draw their ring 20px from the button: two with :focus-within (an outline, a currentColor border-image), two with
+    // the button's ::after stretched over the tile. Containment and translate on an inline span leave the tile holding the ::after;
+    // the static tile holds it through contain: layout. The quiet wrapper changes only paint its box cannot show.
     await page.setContent(`<style>button { width: 80px; height: 32px; border: 1px solid #888; background: #eee; } button:focus { outline: none; }
       .ring:focus-visible { outline: 3px solid #00f; outline-offset: 1px; }
       .tile { position: relative; width: 300px; margin-top: 8px; padding: 20px; border: 1px solid #ccc; } .within:focus-within { outline: 3px solid #00f; }
+      .drawn { color: transparent; border: 3px solid transparent; border-image: linear-gradient(currentColor, currentColor) 1; } .drawn:focus-within { color: #00f; }
       .stretch::after { content: ""; position: absolute; inset: 0; } .stretch:focus-visible::after { outline: 3px solid #00f; }
-      .status { margin-top: 200px; height: 20px; color: #000; } button:focus ~ .status { background: #00f; } .quiet:focus-within { outline-color: #00f; color: #00f; }
-      .contained { position: static; contain: layout; }</style>
+      .status { margin-top: 200px; height: 20px; color: #000; } button:focus ~ .status { background: #00f; } .quiet:focus-within { outline-color: #00f; color: #00f; } .quiet::before { content: " "; }
+      .contained { position: static; contain: layout; } .loose { contain: layout; translate: 0px; }</style>
       <body style="margin:20px;background:#fff"><div style="display:flex;gap:2px"><button class="bare">Bare</button><button class="ring">Ring</button></div><div class="quiet"><button class="hidden">Hidden</button><p class="status">Status</p></div>
-      <div class="tile within"><button class="inner">Within</button></div><div class="tile"><button class="stretch">Stretch</button></div>
+      <div class="tile within"><button class="inner">Within</button></div><div class="tile drawn"><button class="inner">Drawn</button></div>
+      <div class="tile"><span class="loose"><button class="stretch">Stretch</button></span></div>
       <div class="tile contained"><button class="stretch">Contained</button></div>
       <div><button class="far">Far</button><p class="status">Status</p></div></body>`);
     const { findings, stops } = await focusPass(page, 10);
-    expect(stops).toBe(7);
+    expect(stops).toBe(8);
     expect(findings.map((f) => f.selector)).toEqual([expect.stringContaining("button.bare"), expect.stringContaining("button.hidden"), expect.stringContaining("button.far")]);
   });
 
