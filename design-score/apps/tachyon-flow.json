@@ -42,18 +42,21 @@
       "id": "game-start",
       "path": "/",
       "waitFor": ".hud-overlay[data-mode=\"start\"]",
-      "note": "The game on load: the start card (title, sound settings, controls) over the 3D course. The app has one theme: index.html fixes data-theme=\"dark\", and the HUD floats over a 3D scene. Serve a build on the base URL (in game/: vite build --outDir <tmp>, then vite preview --outDir <tmp> --port 47740): the dev server is too slow. Every page draws a live WebGL canvas. The headless shell renders it with SwiftShader, so the game takes about 14.5 s to show the start card on a quiet machine, at the edge of the 15 s waitFor. With --use-angle=metal it takes about 0.3 s."
+      "waitForTimeoutMs": 45000,
+      "note": "The game on load: the start card (title, sound settings, controls) over the 3D course. The app has one theme: index.html fixes data-theme=\"dark\", and the HUD floats over a 3D scene. Serve a build on the base URL (in game/: vite build --outDir <tmp>, then vite preview --outDir <tmp> --port 47740): the dev server is too slow. Every page draws a live WebGL canvas. The headless shell renders it with SwiftShader, so the game takes about 14.5 s to show the start card on a quiet machine, past the default 15 s waitFor, so the game pages set waitForTimeoutMs to 45000. With --use-angle=metal it takes about 0.3 s."
     },
     {
       "id": "game-hud",
       "path": "/?autoplay=1",
       "waitFor": ".hud-root[data-quiet=\"true\"]",
+      "waitForTimeoutMs": 45000,
       "note": "Playing: the overlay is hidden, so only the timer, checkpoint and speed HUD show over the canvas. Wait for .hud-root[data-quiet=\"true\"] (set only by setOverlay('hidden')): the hidden overlay itself has visibility: hidden, so a visible wait on it never resolves."
     },
     {
       "id": "game-paused",
       "path": "/?autoplay=1",
       "waitFor": ".hud-root[data-quiet=\"true\"]",
+      "waitForTimeoutMs": 45000,
       "actions": [
         {
           "press": "Escape"
