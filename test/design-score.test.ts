@@ -248,6 +248,42 @@ describe.skipIf(!!process.env.DS_SKIP_BROWSER)("design:score v2 in a browser", (
     expect(hits.map((f: { group: string }) => f.group.split("|")[1])).toEqual(["a.crumb"]);
   });
 
+  // 20 lines of 10px/20px text end at 400px. A glyph box sits inside its line box, so the last line's text ends between 380 and 400px.
+  // A 60-character nowrap line of 10px monospace is about 360px wide. The probe skips text less than half shown, so every box shows 180px of it.
+  const clipLines = Array.from({ length: 20 }, (_, i) => `Line ${i}`).join("<br>");
+  const wideLine = `<p style="margin:0;white-space:nowrap">${"x".repeat(60)}</p>`;
+  const tall = `<p style="margin:0">${clipLines}</p>`;
+  const scroller = "a scroller holding this text";
+  test.each([
+    ["a 100px scroller wholly inside a 200px hidden parent passes: scrolling reaches all the text", `<div style="height:200px;overflow:hidden"><div style="height:100px;overflow-y:auto">${tall}</div></div>`, []],
+    ["a 100px scroller in a 40px hidden parent fails by the 60px of the scroller the parent hides", `<div style="height:40px;overflow:hidden"><div style="height:100px;overflow-y:auto">${tall}</div></div>`, [[scroller, "below the bottom", 60, 60]]],
+    ["the same text in a plain 40px hidden box fails by all of the text below 40px", `<div style="height:40px;overflow:hidden"><div>${tall}</div></div>`, [["text", "below the bottom", 340, 360]]],
+    ["a 200px-wide scroller wholly inside a 300px-wide hidden parent passes", `<div style="width:300px;overflow:hidden"><div style="width:200px;overflow-x:auto">${wideLine}</div></div>`, []],
+    ["a 300px-wide scroller in a 200px-wide hidden parent fails by the 100px the parent hides", `<div style="width:200px;overflow:hidden"><div style="width:300px;overflow-x:auto">${wideLine}</div></div>`, [[scroller, "past the right edge", 100, 100]]],
+    ["a vertical scroller's own overflow-x:hidden does not hide the 40px hidden parent's cut", `<div style="height:40px;overflow:hidden"><div style="height:100px;overflow-y:auto;overflow-x:hidden">${tall}</div></div>`, [[scroller, "below the bottom", 60, 60]]],
+    ["a horizontal scroller's own overflow-y:hidden does not hide the 200px-wide hidden parent's cut", `<div style="width:200px;overflow:hidden"><div style="width:300px;overflow-x:auto;overflow-y:hidden">${wideLine}</div></div>`, [[scroller, "past the right edge", 100, 100]]],
+    ["under scale(2) a 60px scroller (120px on screen) in a 40px hidden box (80px on screen) fails by 40px", `<div style="transform:scale(2);transform-origin:top left"><div style="height:40px;overflow:hidden"><div style="height:60px;overflow-y:auto">${tall}</div></div></div>`, [[scroller, "below the bottom", 40, 40]]],
+    ["an inline span with overflow:auto does not scroll, so the 40px hidden box cuts its text", `<div style="height:40px;overflow:hidden"><span style="overflow:auto">${clipLines}</span></div>`, [["text", "below the bottom", 340, 360]]],
+    ["an absolute line positioned from above the scroller escapes it, so the 240px-wide hidden box cuts it by about 120px", `<div style="position:relative;width:240px;height:100px;overflow:hidden"><div style="width:200px;height:100px;overflow:auto"><div style="width:500px;height:1px"></div><p style="position:absolute;top:0;left:0;margin:0;white-space:nowrap">${"x".repeat(60)}</p></div></div>`, [["text", "past the right edge", 110, 130]]],
+    ["a column-reverse scroller cannot scroll to the text below its bottom, so the 100px hidden parent cuts it", `<div style="height:100px;overflow:hidden"><div style="height:100px;overflow-y:auto;display:flex;flex-direction:column-reverse;justify-content:flex-end"><p style="margin:0;flex:none">${clipLines}</p></div></div>`, [["text", "below the bottom", 280, 300]]],
+    ["an absolute line in a 240px will-change:transform hidden box is cut by that box: will-change makes it the containing block", `<div style="width:240px;height:40px;overflow:hidden;will-change:transform"><p style="position:absolute;margin:0;white-space:nowrap">${"x".repeat(60)}</p></div>`, [["text", "past the right edge", 110, 130]]],
+    ["an absolute line in a 240px will-change:transform-style hidden box is cut by that box", `<div style="width:240px;height:40px;overflow:hidden;will-change:transform-style"><p style="position:absolute;top:0;left:0;margin:0;white-space:nowrap">${"x".repeat(60)}</p></div>`, [["text", "past the right edge", 110, 130]]],
+    ["a display:contents wrapper with position:absolute makes no box, so the 240px hidden box still cuts its line", `<div style="width:240px;height:100px;overflow:hidden"><div style="display:contents;position:absolute"><p style="margin:0;white-space:nowrap">${"x".repeat(60)}</p></div></div>`, [["text", "past the right edge", 110, 130]]],
+    ["a fixed line in a 240px hidden box with transform is cut by that box: transform makes it the fixed line's containing block", `<div style="width:240px;height:40px;overflow:hidden;transform:translateZ(0)"><p style="position:fixed;top:0;left:0;margin:0;white-space:nowrap">${"x".repeat(60)}</p></div>`, [["text", "past the right edge", 110, 130]]],
+    ["a fixed line in a plain 240px hidden box is not cut: the viewport holds it", `<div style="width:240px;height:40px;overflow:hidden"><p style="position:fixed;top:0;left:0;margin:0;white-space:nowrap">${"x".repeat(60)}</p></div>`, []],
+    ["an absolute line in a 240px contain:paint hidden box is cut by that box", `<div style="width:240px;height:40px;overflow:hidden;contain:paint"><p style="position:absolute;top:0;left:0;margin:0;white-space:nowrap">${"x".repeat(60)}</p></div>`, [["text", "past the right edge", 110, 130]]],
+    ["an absolute line under an inline span with transform is not cut by the plain hidden box above: an inline box holds no positioned text", `<div style="width:240px;height:40px;overflow:hidden"><span style="transform:scale(1)"><p style="position:absolute;top:0;left:0;margin:0;white-space:nowrap">${"x".repeat(60)}</p></span></div>`, []],
+  ] as const)("R-text-clip: %s", async (_name, markup, fails) => {
+    await page.setContent(`<body style="margin:0;font:10px/20px monospace">${markup}</body>`);
+    const clips = (await probe()).findings.filter((f: { check: string }) => f.check === "R-text-clip");
+    const cuts = clips.map((f: { measured: string }) => /^(.+) runs ([\d.]+)px (below the bottom|past the right edge) of an overflow:hidden ancestor/.exec(f.measured));
+    expect(cuts.map((m: RegExpExecArray | null) => m && [m[1], m[3]])).toEqual(fails.map(([who, edge]) => [who, edge]));
+    fails.forEach(([, , least, most], i) => {
+      expect(Number(cuts[i]![2])).toBeGreaterThanOrEqual(least);
+      expect(Number(cuts[i]![2])).toBeLessThanOrEqual(most);
+    });
+  });
+
   test("R-align-near-miss: a button grip labelled drag or reorder is a handle; a drag-labelled svg picture is not", async () => {
     // Each grip is 16px tall at 7px down, so its center sits at 15px. The 20px first line centers at 10px: +5px, within half the line.
     const grip = "width:16px;height:16px;margin-top:7px;padding:0;border:0;background:#888";
