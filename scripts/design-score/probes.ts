@@ -514,8 +514,17 @@ export function probePage(o: ProbeOptions): { findings: ProbeFinding[]; stats: R
       const as = cs(a);
       // An absolute or fixed box escapes the boxes between it and its containing block: they neither scroll nor clip it.
       if (escape) {
-        const holdsFixed = as.transform !== "none" || as.perspective !== "none" || as.filter !== "none" || /paint|layout|strict|content/.test(as.contain);
-        if (!holdsFixed && !(escape === "absolute" && as.position !== "static")) continue;
+        // The properties that make a containing block, as Chromium applies them (the same list as R-focus-visible's in focus.ts).
+        const will = as.willChange.split(/,\s*/);
+        const set = (props: string[]) => props.some((p) => !["", "none"].includes(as.getPropertyValue(p)) || will.includes(p));
+        const holdsFixed =
+          as.display !== "contents" &&
+          (set(["filter", "backdrop-filter"]) ||
+            (as.display !== "inline" &&
+              (as.transformStyle === "preserve-3d" ||
+                set(["transform", "translate", "rotate", "scale", "perspective", "offset-path"]) ||
+                (!/^table-(row|column|header|footer)/.test(as.display) && (/layout|paint|strict|content/.test(as.contain) || as.contentVisibility !== "visible" || will.includes("contain"))))));
+        if (!holdsFixed && !(escape === "absolute" && (as.position !== "static" || will.includes("position")))) continue;
         escape = null;
       }
       if (as.position === "absolute" || as.position === "fixed") escape = as.position;
