@@ -88,7 +88,7 @@
       "id": "weeks",
       "path": "/#/weeks",
       "waitFor": ".weeks-list",
-      "note": "The week list. Seed: a temp MEAL_DATA_DIR with the week of 2026-10-26 (4 dinners), the week of 2026-11-02, a shopping list from the first week and one cart from it with 3 items."
+      "note": "The week list. Seed on the run date: a temp MEAL_DATA_DIR with the week holding today (startDate is that Monday, 4 dinners), the week after it, a shopping list from the first week and one cart from it with 3 items. Fixed dates go stale: /weeks/current needs the week holding today."
     },
     {
       "id": "prep",
