@@ -505,10 +505,21 @@ export function probePage(o: ProbeOptions): { findings: ProbeFinding[]; stats: R
     if (el.matches("input, textarea, select, option")) continue;
     const textRight = Math.max(...rects.map((r) => r.right));
     const textBottom = Math.max(...rects.map((r) => r.bottom));
+    // Text past the edge of a box that scrolls on that axis is reached by scrolling, so the walk ends there on that axis.
+    let scrolledX = false;
+    let scrolledY = false;
     for (let a: Element | null = el, depth = 0; a && depth < 4 && a !== document.body; a = a.parentElement, depth++) {
       const as = cs(a);
-      const clipX = as.overflowX === "hidden" || as.overflowX === "clip";
-      const clipY = as.overflowY === "hidden" || as.overflowY === "clip";
+      const scrollsX = as.overflowX === "auto" || as.overflowX === "scroll";
+      const scrollsY = as.overflowY === "auto" || as.overflowY === "scroll";
+      if (scrollsX || scrollsY) {
+        const ar = rectOf(a);
+        if (scrollsX && textRight > ar.left + a.clientLeft + a.clientWidth + 1) scrolledX = true;
+        if (scrollsY && textBottom > ar.top + a.clientTop + a.clientHeight + 2) scrolledY = true;
+        if (scrolledX && scrolledY) break;
+      }
+      const clipX = !scrolledX && (as.overflowX === "hidden" || as.overflowX === "clip");
+      const clipY = !scrolledY && (as.overflowY === "hidden" || as.overflowY === "clip");
       if (!clipX && !clipY) continue;
       const ar = rectOf(a);
       if (srOnly(ar)) break;
