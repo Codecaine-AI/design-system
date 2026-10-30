@@ -197,11 +197,13 @@ describe.skipIf(!!process.env.DS_SKIP_BROWSER)("design:score v2 in a browser", (
   const probe = (baseRadii: number[] = []) => page.evaluate(probePage, { ignore: [], handles: [], spaceTokens: [2, 6], baseRadii });
 
   test("a page's waitForTimeoutMs sets how long the scorer waits for its waitFor selector", async () => {
-    const html = `<body><p id="late" hidden>Ready</p><script>setTimeout(() => (document.getElementById("late").hidden = false), 800)</script></body>`;
-    const server = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch: () => new Response(html, { headers: { "content-type": "text/html" } }) });
+    // /never keeps #late hidden, so its page waits out its whole limit. / shows #late 800ms after load.
+    const html = (reveal: boolean) =>
+      `<body><p id="late" hidden>Ready</p>${reveal ? `<script>setTimeout(() => (document.getElementById("late").hidden = false), 800)</script>` : ""}</body>`;
+    const server = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch: (req) => new Response(html(new URL(req.url).pathname !== "/never"), { headers: { "content-type": "text/html" } }) });
     const out = mkdtempSync(join(tmpdir(), "ds-score-wait-"));
-    const late = (id: string, waitForTimeoutMs: number) => ({ id, path: "/", waitFor: "#late", waitForTimeoutMs, optional: "the page is late" });
-    const config = { app: "wait-test", sourceDirs: [], themes: { light: {} }, viewports: [{ width: 800, height: 600 }], settleMs: 0, pages: [late("short", 200), late("long", 4000)] };
+    const late = (id: string, path: string, waitForTimeoutMs: number) => ({ id, path, waitFor: "#late", waitForTimeoutMs, optional: "the page is late" });
+    const config = { app: "wait-test", sourceDirs: [], themes: { light: {} }, viewports: [{ width: 800, height: 600 }], settleMs: 0, pages: [late("short", "/never", 200), late("long", "/", 4000)] };
     writeFileSync(join(out, "wait-test.json"), JSON.stringify(config));
     try {
       const { scorecard } = await runScore({
@@ -221,7 +223,9 @@ describe.skipIf(!!process.env.DS_SKIP_BROWSER)("design:score v2 in a browser", (
         static: false,
         quiet: true,
       });
-      expect(scorecard.pages.map((p) => `${p.id} ${p.skipped ? "skipped" : "scored"}`)).toEqual(["short skipped", "long scored"]);
+      const [short, long] = scorecard.pages;
+      expect(short!.skipped).toContain("Timeout 200ms exceeded");
+      expect({ skipped: long!.skipped, scored: long!.score !== null, errors: long!.errors }).toEqual({ skipped: undefined, scored: true, errors: [] });
     } finally {
       server.stop(true);
       rmSync(out, { recursive: true, force: true });
