@@ -507,14 +507,21 @@ export function probePage(o: ProbeOptions): { findings: ProbeFinding[]; stats: R
     // there up it reaches only that box's visible edge: a clipping ancestor still fails it when it hides part of the scroller.
     let textRight = Math.max(...rects.map((r) => r.right));
     let textBottom = Math.max(...rects.map((r) => r.bottom));
+    let cappedX = false;
+    let cappedY = false;
     for (let a: Element | null = el, depth = 0; a && depth < 4 && a !== document.body; a = a.parentElement, depth++) {
       const as = cs(a);
-      const scrollsX = as.overflowX === "auto" || as.overflowX === "scroll";
-      const scrollsY = as.overflowY === "auto" || as.overflowY === "scroll";
+      // Overflow does not apply to an inline or display:contents box, so it never scrolls whatever it computes to.
+      const scrollBox = as.display !== "inline" && as.display !== "contents";
+      const scrollsX = scrollBox && (as.overflowX === "auto" || as.overflowX === "scroll");
+      const scrollsY = scrollBox && (as.overflowY === "auto" || as.overflowY === "scroll");
       if (scrollsX || scrollsY) {
+        // The client box is in layout px and the rect in viewport px: scale by rect over offset size for a transformed box.
         const ar = rectOf(a);
-        if (scrollsX) textRight = Math.min(textRight, ar.left + a.clientLeft + a.clientWidth);
-        if (scrollsY) textBottom = Math.min(textBottom, ar.top + a.clientTop + a.clientHeight);
+        const right = ar.left + (a.clientLeft + a.clientWidth) * (a instanceof HTMLElement && a.offsetWidth ? ar.width / a.offsetWidth : 1);
+        const bottom = ar.top + (a.clientTop + a.clientHeight) * (a instanceof HTMLElement && a.offsetHeight ? ar.height / a.offsetHeight : 1);
+        if (scrollsX && right < textRight) [textRight, cappedX] = [right, true];
+        if (scrollsY && bottom < textBottom) [textBottom, cappedY] = [bottom, true];
       }
       const clipX = as.overflowX === "hidden" || as.overflowX === "clip";
       const clipY = as.overflowY === "hidden" || as.overflowY === "clip";
@@ -533,7 +540,7 @@ export function probePage(o: ProbeOptions): { findings: ProbeFinding[]; stats: R
           selector: selectorOf(el),
           box: boxOf(rects[0]!),
           other: a !== el ? { selector: selectorOf(a), box: boxOf(ar) } : null,
-          measured: `text runs ${r1(textRight - innerRight)}px past the right edge of ${a === el ? "its box" : "an overflow:hidden ancestor"}, no ellipsis "${textSnippet(el)}"`,
+          measured: `${cappedX ? "a scroller holding this text" : "text"} runs ${r1(textRight - innerRight)}px past the right edge of ${a === el ? "its box" : "an overflow:hidden ancestor"}, no ellipsis "${textSnippet(el)}"`,
           expected: "text fits, wraps, or ends in an ellipsis",
           key: signature(el),
         });
@@ -546,13 +553,15 @@ export function probePage(o: ProbeOptions): { findings: ProbeFinding[]; stats: R
           selector: selectorOf(el),
           box: boxOf(rects[0]!),
           other: a !== el ? { selector: selectorOf(a), box: boxOf(ar) } : null,
-          measured: `text runs ${r1(textBottom - innerBottom)}px below the bottom of ${a === el ? "its box" : "an overflow:hidden ancestor"} "${textSnippet(el)}"`,
+          measured: `${cappedY ? "a scroller holding this text" : "text"} runs ${r1(textBottom - innerBottom)}px below the bottom of ${a === el ? "its box" : "an overflow:hidden ancestor"} "${textSnippet(el)}"`,
           expected: "text fits, or is clamped with -webkit-line-clamp",
           key: signature(el) + "|y",
         });
         break;
       }
-      break;
+      // A clip box that ellipsizes or clamps the text owns that cut. One that does not cut it hides nothing, so a box above
+      // it can still cut the text (a scroller's own overflow-x:hidden must not end the walk).
+      if ((clipX && textRight > innerRight + 1) || (clipY && textBottom > innerBottom + 2)) break;
     }
   }
 
