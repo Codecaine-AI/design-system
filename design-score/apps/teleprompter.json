@@ -39,7 +39,7 @@
       "props": [
         "grid-template-columns"
       ],
-      "reason": "The design-system app shell animates its sidebar column when it collapses (css/layout.css .ds-shell). The shell owns it; allowed by Ford."
+      "reason": "The design-system app shell animates its sidebar column when it collapses (css/layout.css .ds-shell). The shell owns it. Ford allowed it for knowledge-system, and this config reuses that allowance for the same shell."
     }
   ],
   "pages": [
