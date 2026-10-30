@@ -142,3 +142,45 @@ test("after a second `--` the sub-property decides; `corner` alone is no radius;
   expect(hitsOf(css)).toEqual(["1 radius def 8px", "1 pxFontSize def 20px"]);
   expect(hitsOf(`<div style="--a: 'X', serif; --font: 'Inter', serif"></div>`, "html")).toEqual(["1 fontFamily def x", "1 fontFamily def inter"]);
 });
+
+// ---------------------------------------------------------------------------
+// Number triples are colors only in a palette table, not in other number data
+// (tachyon-flow's game/src/anim/fingers.ts got 10 rgb hits for joint angles).
+
+test.each([
+  [
+    "joint angles in degrees are not colors",
+    [
+      "export const FINGER_CURL = {",
+      "  index: { grip: [50, 74, 46], fist: [84, 100, 66] },",
+      "  middle: { grip: [54, 78, 48], fist: [88, 102, 68] },",
+      "  ring: { grip: [57, 80, 48], fist: [90, 104, 68] },",
+      "};",
+      "export const THUMB = { across: [42, 8, 0], curl: [4, 38, 52] };",
+    ],
+    [],
+  ],
+  [
+    "a palette table counts every row, named for a color or not",
+    [
+      "const DARK = {",
+      "  background: [27, 27, 28],",
+      "  foreground: [212, 212, 212],",
+      "  border: [58, 58, 59],",
+      "  traceUser: [96, 165, 250],",
+      "  traceTool: [232, 130, 61],",
+      "  treeCaret: [168, 168, 168],",
+      "};",
+    ],
+    [
+      "2 rgb def rgb(27 27 28)",
+      "3 rgb def rgb(212 212 212)",
+      "4 rgb def rgb(58 58 59)",
+      "5 rgb def rgb(96 165 250)",
+      "6 rgb def rgb(232 130 61)",
+      "7 rgb def rgb(168 168 168)",
+    ],
+  ],
+])("number triples: %s", (_, lines, expected) => {
+  expect(hitsOf(lines.join("\n"), "js")).toEqual(expected);
+});
