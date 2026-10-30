@@ -137,6 +137,11 @@ const config = JSON.parse(readFileSync(configPath, "utf8")) as AppConfig;
 if (config.app !== appId) fail(`${configPath} is for app "${config.app}", not "${appId}"`);
 if (!config.pages?.length) fail(`${configPath} lists no pages`);
 if (!config.themes || !Object.keys(config.themes).length) fail(`${configPath} lists no themes`);
+// Playwright reads a timeout of 0 as no limit, so a page could hang the run.
+for (const p of config.pages) {
+  const ms = p.waitForTimeoutMs;
+  if (ms !== undefined && !(Number.isInteger(ms) && ms > 0)) fail(`${configPath} page "${p.id}": waitForTimeoutMs must be a whole number of ms above 0, not ${JSON.stringify(ms)}`);
+}
 if (has("--judge-verdicts")) {
   const file = resolve(flag("--judge-verdicts") ?? fail("--judge-verdicts <file> is required"));
   if (!existsSync(file)) fail(`no file ${file}`);
