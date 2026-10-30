@@ -183,12 +183,6 @@
       "note": "The Sessions list. (audit route sessions)"
     },
     {
-      "id": "tasks",
-      "path": "/tasks",
-      "waitFor": ".ds-shell",
-      "note": "The Tasks list. (audit route tasks)"
-    },
-    {
       "id": "references",
       "path": "/inbox?tab=references",
       "waitFor": ".inbox-view-switch",
@@ -267,12 +261,6 @@
       "note": "A Piece page. (audit route piece)"
     },
     {
-      "id": "task",
-      "path": "/task/task_01M473JMG04D0CKP3MM6NG595T",
-      "waitFor": ".ds-shell",
-      "note": "A Task page. (audit route task)"
-    },
-    {
       "id": "note",
       "path": "/note/note_01M4GYVR2098WS24CZRFVPQ2FZ",
       "waitFor": ".ds-shell",
@@ -331,17 +319,6 @@
       "note": "Audit state peek-open."
     },
     {
-      "id": "peek-task",
-      "path": "/tasks?peek=task_01M473JMG04D0CKP3MM6NG595T",
-      "waitFor": ".ds-shell",
-      "actions": [
-        {
-          "wait": 600
-        }
-      ],
-      "note": "Audit state peek-task."
-    },
-    {
       "id": "prop-priority-popover",
       "path": "/project/prj_01M4E59BRJ9YND1DCR1XJ4Z997",
       "waitFor": ".ds-shell",
@@ -386,20 +363,6 @@
         }
       ],
       "note": "Audit state record-picker: the trigger is invisible until hover; a plain click times out"
-    },
-    {
-      "id": "areas-marks-info",
-      "path": "/areas",
-      "waitFor": ".ds-shell",
-      "actions": [
-        {
-          "click": ".pt-info-btn"
-        },
-        {
-          "wait": 300
-        }
-      ],
-      "note": "Audit state areas-marks-info."
     },
     {
       "id": "style-sidebar",
@@ -459,20 +422,6 @@
         }
       ],
       "note": "Audit state inbox-list."
-    },
-    {
-      "id": "tasks-by-phase",
-      "path": "/tasks",
-      "waitFor": ".ds-shell",
-      "actions": [
-        {
-          "click": "button:has-text(\"Phase\")"
-        },
-        {
-          "wait": 300
-        }
-      ],
-      "note": "Audit state tasks-by-phase."
     },
     {
       "id": "subarea-board",
@@ -542,18 +491,18 @@
       "note": "Audit state topic-contents-file. At 1024px the tree pane collapses, so the click takes the visible entity.json (the file list row)."
     },
     {
-      "id": "library-unfold",
-      "path": "/library",
-      "waitFor": ".ds-shell",
+      "id": "place-parts-folded",
+      "path": "/place/ent_01JB871HFE865V215DE1CTEWH0",
+      "waitFor": "ul[aria-label=\"Parts\"]",
       "actions": [
         {
-          "click": "button:has-text(\"Unfold all\")"
+          "click": "button:has-text(\"Fold all\")"
         },
         {
           "wait": 300
         }
       ],
-      "note": "Audit state library-unfold."
+      "note": "An Area's Open tab (Making) with its Parts tree folded by Fold all, so the header shows Unfold all. The Library's own Unfold all went with its card columns (knowledge-system #16)."
     },
     {
       "id": "piece-editor-hover",
@@ -596,10 +545,10 @@
     {
       "id": "open-phase-hover",
       "path": "/open",
-      "waitFor": ".owp-track",
+      "waitFor": ".wl-track",
       "actions": [
         {
-          "hover": ".owp-track .owp-step:not([data-state=\"now\"])"
+          "hover": ".wl-track .wl-step:not([data-state=\"now\"])"
         },
         {
           "wait": 300
@@ -654,10 +603,10 @@
       ],
       "actions": [
         {
-          "waitFor": "section.owp-section:has(h2:has-text(\"Library\"))"
+          "waitFor": "section.wl-section:has(h2:has-text(\"Library\"))"
         },
         {
-          "scrollTo": "section.owp-section:has(h2:has-text(\"Library\"))"
+          "scrollTo": "section.wl-section:has(h2:has-text(\"Library\"))"
         },
         {
           "wait": 300
