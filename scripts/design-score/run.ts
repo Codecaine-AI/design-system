@@ -228,7 +228,7 @@ export async function runScore(opts: RunOptions): Promise<{ dir: string; scoreca
       });
     }
     await page.goto(urlFor(opts.baseUrl, spec.path, theme), { waitUntil: "load", timeout: 30_000 });
-    if (spec.waitFor) await page.waitForSelector(spec.waitFor, { state: "visible", timeout: 15_000 });
+    if (spec.waitFor) await page.waitForSelector(spec.waitFor, { state: "visible", timeout: spec.waitForTimeoutMs ?? 15_000 });
     if (config.loading?.length) {
       await page
         .waitForFunction((texts: string[]) => !texts.some((t) => document.body.innerText.includes(t)), config.loading, { timeout: 20_000 })
