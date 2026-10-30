@@ -1,0 +1,186 @@
+{
+  "app": "budget",
+  "name": "Budget",
+  "repo": "life/budget",
+  "baseUrl": "http://127.0.0.1:47640",
+  "sourceDirs": [
+    "apps/web/src"
+  ],
+  "themes": {
+    "light": {
+      "colorScheme": "light"
+    },
+    "dark": {
+      "colorScheme": "dark"
+    }
+  },
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "width": 1024,
+      "height": 768
+    }
+  ],
+  "settleMs": 700,
+  "loading": [
+    "Loading"
+  ],
+  "cap": 6,
+  "pages": [
+    {
+      "id": "overview",
+      "path": "/overview",
+      "waitFor": "aside.main-sidebar",
+      "note": "Overview: the household's balances and recent movement."
+    },
+    {
+      "id": "net-worth",
+      "path": "/net-worth",
+      "waitFor": "aside.main-sidebar",
+      "note": "Net Worth chart and account breakdown."
+    },
+    {
+      "id": "spending",
+      "path": "/spending",
+      "waitFor": "aside.main-sidebar",
+      "note": "Spending by category and month."
+    },
+    {
+      "id": "runway",
+      "path": "/runway",
+      "waitFor": "aside.main-sidebar",
+      "note": "Runway: months of cash at the current burn."
+    },
+    {
+      "id": "transactions",
+      "path": "/accounts/transactions",
+      "waitFor": "aside.main-sidebar",
+      "note": "The Transactions ledger.",
+      "optional": "the page reads its rows with POST /api/transactions/processed (a read with a body), and the scorer's read-only browser aborts every POST, so the page never leaves its loading state"
+    },
+    {
+      "id": "subscriptions",
+      "path": "/subscriptions",
+      "waitFor": "aside.main-sidebar",
+      "note": "Recurring payments."
+    },
+    {
+      "id": "entities",
+      "path": "/entities",
+      "waitFor": "aside.main-sidebar",
+      "note": "Entities: people, household and businesses."
+    },
+    {
+      "id": "accounts",
+      "path": "/accounts",
+      "waitFor": "aside.main-sidebar",
+      "note": "Connections: bank connections and their accounts."
+    },
+    {
+      "id": "amazon",
+      "path": "/merchant-accounts/amazon",
+      "waitFor": "aside.main-sidebar",
+      "note": "Amazon merchant account setup. Reads only; the sign-in starts on a POST, which the scorer aborts."
+    },
+    {
+      "id": "venmo",
+      "path": "/merchant-accounts/venmo",
+      "waitFor": "aside.main-sidebar",
+      "note": "Venmo merchant account setup. Reads only; the sign-in starts on a POST, which the scorer aborts."
+    },
+    {
+      "id": "budget-setup",
+      "path": "/budget-setup?entity=household",
+      "waitFor": "aside.main-sidebar",
+      "note": "Budget Setup for the household."
+    },
+    {
+      "id": "budget-spend",
+      "path": "/budget-spend",
+      "waitFor": "aside.main-sidebar",
+      "note": "Budget Spend for the current month.",
+      "optional": "the page reads its rows with POST /api/transactions/processed (a read with a body), and the scorer's read-only browser aborts every POST, so the page never leaves its loading state"
+    },
+    {
+      "id": "special-rules",
+      "path": "/budget/special-rules",
+      "waitFor": "aside.main-sidebar",
+      "note": "Special Rules."
+    },
+    {
+      "id": "flow-preview",
+      "path": "/budget/special-rules/preview",
+      "waitFor": "aside.main-sidebar",
+      "note": "The money flow preview."
+    },
+    {
+      "id": "review",
+      "path": "/review",
+      "waitFor": "aside.main-sidebar",
+      "note": "The Classification review queue.",
+      "optional": "the page reads its rows with POST /api/transactions/processed (a read with a body), and the scorer's read-only browser aborts every POST, so the page never leaves its loading state"
+    },
+    {
+      "id": "review-links",
+      "path": "/review/links",
+      "waitFor": "aside.main-sidebar",
+      "note": "Linked Transactions.",
+      "optional": "the page reads its rows with POST /api/transactions/processed (a read with a body), and the scorer's read-only browser aborts every POST, so the page never leaves its loading state"
+    },
+    {
+      "id": "review-results",
+      "path": "/review/results",
+      "waitFor": "aside.main-sidebar",
+      "note": "Classification Results.",
+      "optional": "the page reads its rows with POST /api/transactions/processed (a read with a body), and the scorer's read-only browser aborts every POST, so the page never leaves its loading state"
+    },
+    {
+      "id": "review-disagreements",
+      "path": "/review/disagreements",
+      "waitFor": "aside.main-sidebar",
+      "note": "Classification disagreements.",
+      "optional": "the page reads its rows with POST /api/transactions/processed (a read with a body), and the scorer's read-only browser aborts every POST, so the page never leaves its loading state"
+    },
+    {
+      "id": "agents",
+      "path": "/agents",
+      "waitFor": "aside.main-sidebar",
+      "note": "Agent tools: Agents. The kernel is not started, so the page shows its unavailable state."
+    },
+    {
+      "id": "traces",
+      "path": "/traces",
+      "waitFor": "aside.main-sidebar",
+      "note": "Agent tools: Traces. The kernel is not started, so the page shows its unavailable state."
+    },
+    {
+      "id": "firecrawl",
+      "path": "/config/firecrawl",
+      "waitFor": "aside.main-sidebar",
+      "note": "Config: Firecrawl settings."
+    },
+    {
+      "id": "not-found",
+      "path": "/nope",
+      "waitFor": "aside.main-sidebar",
+      "note": "An unknown route."
+    },
+    {
+      "id": "sidebar-collapsed",
+      "path": "/overview",
+      "waitFor": "aside.main-sidebar",
+      "actions": [
+        {
+          "click": ".sidebar-toggle"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "note": "Overview with the sidebar collapsed."
+    }
+  ]
+}

@@ -1,0 +1,175 @@
+{
+  "app": "simple-research-kernel",
+  "name": "Simple Research Kernel",
+  "repo": "codecaine/core/agent-kernel",
+  "baseUrl": "http://127.0.0.1:47601",
+  "sourceDirs": [
+    "examples/simple-research-kernel/src"
+  ],
+  "themes": {
+    "light": {
+      "localStorage": {
+        "simpleResearchStyleSettings.v2": "{\"theme\":\"light\"}"
+      },
+      "colorScheme": "light",
+      "assert": "html[data-theme=\"light\"]"
+    },
+    "dark": {
+      "localStorage": {
+        "simpleResearchStyleSettings.v2": "{\"theme\":\"dark\"}"
+      },
+      "colorScheme": "dark",
+      "assert": "html[data-theme=\"dark\"]"
+    }
+  },
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "width": 1024,
+      "height": 768
+    }
+  ],
+  "settleMs": 700,
+  "loading": [
+    "Loading kernel trace",
+    "Loading the full request context"
+  ],
+  "cap": 6,
+  "motionAllow": [
+    {
+      "name": "ds-shell-sidebar",
+      "selector": ".ds-shell",
+      "props": [
+        "grid-template-columns"
+      ],
+      "reason": "The design-system app shell animates its sidebar column when it collapses (css/layout.css .ds-shell). The shell owns it. Ford allowed it for knowledge-system, and this config reuses that allowance for the same shell."
+    }
+  ],
+  "pages": [
+    {
+      "id": "research",
+      "path": "/research",
+      "waitFor": ".research-run-grid",
+      "note": "Research Run, the landing page (/ redirects here): run form, run details and the live trace pane with no active run."
+    },
+    {
+      "id": "research-style-rail",
+      "path": "/research?style=open",
+      "waitFor": "aside.ds-inspector",
+      "note": "Research Run with the Style inspector open (?style=open)."
+    },
+    {
+      "id": "traces",
+      "path": "/traces?traceId=96b2847d-b394-5f9e-8539-e7bb0f730a16",
+      "waitFor": "[role=treeitem][data-span-id=\"pi:bdb9eaff-2f9f-6b09-6064-f427911ea561\"]",
+      "note": "Trace Viewer on the model-nodes-demo fixture trace: the trace list and the span tree."
+    },
+    {
+      "id": "trace-list",
+      "path": "/traces?traceId=96b2847d-b394-5f9e-8539-e7bb0f730a16",
+      "waitFor": "[role=treeitem][data-span-id=\"pi:bdb9eaff-2f9f-6b09-6064-f427911ea561\"]",
+      "actions": [
+        {
+          "click": "button:has-text(\"All traces\")"
+        },
+        {
+          "wait": 500
+        }
+      ],
+      "note": "Trace Viewer back on its trace list (All traces), with the doctor panel."
+    },
+    {
+      "id": "trace-call",
+      "path": "/traces?traceId=96b2847d-b394-5f9e-8539-e7bb0f730a16",
+      "waitFor": "[data-span-row=\"pi:bdb9eaff-2f9f-6b09-6064-f427911ea561\"]",
+      "actions": [
+        {
+          "click": "[data-span-row=\"pi:bdb9eaff-2f9f-6b09-6064-f427911ea561\"]"
+        },
+        {
+          "waitFor": "[data-detail-block=\"call-output\"]"
+        }
+      ],
+      "note": "A model call span selected: the detail pane shows its output, input and summary (fixture route mn-call)."
+    },
+    {
+      "id": "trace-decision",
+      "path": "/traces?traceId=96b2847d-b394-5f9e-8539-e7bb0f730a16",
+      "waitFor": "[data-span-row=\"pi:f043aaeb-f070-1a1a-01fe-3f09bee6bea3\"]",
+      "actions": [
+        {
+          "click": "[data-span-row=\"pi:f043aaeb-f070-1a1a-01fe-3f09bee6bea3\"]"
+        },
+        {
+          "waitFor": "[data-detail-block=\"decision-bars\"]"
+        }
+      ],
+      "note": "A decision span selected: the detail pane shows its choice bars (fixture route mn-decision)."
+    },
+    {
+      "id": "trace-call-error",
+      "path": "/traces?traceId=96b2847d-b394-5f9e-8539-e7bb0f730a16",
+      "waitFor": "[data-span-row=\"pi:ec0ec929-734a-a20c-50fa-9972a7af3019\"]",
+      "actions": [
+        {
+          "click": "[data-span-row=\"pi:ec0ec929-734a-a20c-50fa-9972a7af3019\"]"
+        },
+        {
+          "waitFor": "[data-detail-block=\"call-error\"]"
+        }
+      ],
+      "note": "A failed call span selected: the detail pane shows its error (fixture route mn-call-error)."
+    },
+    {
+      "id": "trace-gate",
+      "path": "/traces?traceId=96b2847d-b394-5f9e-8539-e7bb0f730a16",
+      "waitFor": "[data-span-row=\"e02cbb14-67b6-8126-2c2b-167fa29b90e9\"]",
+      "actions": [
+        {
+          "click": "[data-span-row=\"e02cbb14-67b6-8126-2c2b-167fa29b90e9\"]"
+        },
+        {
+          "waitFor": "[data-detail-block=\"gate-checks\"]"
+        }
+      ],
+      "note": "A gate span selected: the detail pane shows its checks (fixture route mn-gate)."
+    },
+    {
+      "id": "trace-tool",
+      "path": "/traces?traceId=96b2847d-b394-5f9e-8539-e7bb0f730a16",
+      "waitFor": "[data-span-row=\"354f2472-bab4-1732-e98c-0b8331b32b2f\"]",
+      "actions": [
+        {
+          "click": "[data-span-row=\"354f2472-bab4-1732-e98c-0b8331b32b2f\"]"
+        },
+        {
+          "waitFor": "[data-detail-block=\"tool:call\"]"
+        }
+      ],
+      "note": "A codemode tool span selected: the detail pane shows the tool call and result."
+    },
+    {
+      "id": "agents",
+      "path": "/agents",
+      "waitFor": ".research-style-shell",
+      "note": "Agent Viewer: the agent list beside the prompt lab for the first agent."
+    },
+    {
+      "id": "sidebar-collapsed",
+      "path": "/traces?traceId=96b2847d-b394-5f9e-8539-e7bb0f730a16",
+      "waitFor": "[role=treeitem][data-span-id=\"pi:bdb9eaff-2f9f-6b09-6064-f427911ea561\"]",
+      "actions": [
+        {
+          "click": ".ds-sidebar-toggle"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "note": "Trace Viewer with the app shell sidebar collapsed."
+    }
+  ]
+}

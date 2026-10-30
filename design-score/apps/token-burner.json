@@ -1,0 +1,124 @@
+{
+  "app": "token-burner",
+  "name": "Token Burner dashboard",
+  "repo": "codecaine/utilities/token-burner",
+  "baseUrl": "http://127.0.0.1:47760",
+  "sourceDirs": [
+    "src/web"
+  ],
+  "themes": {
+    "light": {
+      "localStorage": {
+        "token-burner.theme": "light"
+      },
+      "colorScheme": "light",
+      "assert": "html[data-theme=\"light\"]"
+    },
+    "dark": {
+      "localStorage": {
+        "token-burner.theme": "dark"
+      },
+      "colorScheme": "dark",
+      "assert": "html[data-theme=\"dark\"]"
+    }
+  },
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "width": 1024,
+      "height": 768
+    }
+  ],
+  "settleMs": 700,
+  "loading": [
+    "Loading"
+  ],
+  "cap": 6,
+  "motionAllow": [
+    {
+      "name": "ds-shell-sidebar",
+      "selector": ".ds-shell",
+      "props": [
+        "grid-template-columns"
+      ],
+      "reason": "The design-system app shell animates its sidebar column when it collapses (css/layout.css .ds-shell). The shell owns it. Ford allowed it for knowledge-system, and this config reuses that allowance for the same shell."
+    }
+  ],
+  "pages": [
+    {
+      "id": "overview",
+      "path": "/",
+      "waitFor": ".overview-page",
+      "note": "Overview: usage sparklines, quota rings and account rows. Run against the app's fixture server (scripts/fixture-dashboard.ts, PORT=47760)."
+    },
+    {
+      "id": "quota",
+      "path": "/quota",
+      "waitFor": ".ds-shell",
+      "note": "Quota: every credential with its windows, on the All tab."
+    },
+    {
+      "id": "quota-drawer",
+      "path": "/quota?account=cx1",
+      "waitFor": ".account-drawer",
+      "note": "Quota with the cx1 account drawer open (the old /accounts?account= link lands here)."
+    },
+    {
+      "id": "quota-trash",
+      "path": "/quota?tab=trash",
+      "waitFor": ".ds-shell",
+      "note": "Quota's Trash tab with one restorable account."
+    },
+    {
+      "id": "add-account",
+      "path": "/add-account",
+      "waitFor": ".add-account-page",
+      "note": "Add account: the provider cards."
+    },
+    {
+      "id": "requests",
+      "path": "/requests",
+      "waitFor": ".requests-page",
+      "note": "Requests: the Log tab."
+    },
+    {
+      "id": "requests-stats",
+      "path": "/requests?view=stats",
+      "waitFor": ".requests-stats",
+      "note": "Requests: the Stats tab (throughput by provider, tokens)."
+    },
+    {
+      "id": "sessions",
+      "path": "/sessions",
+      "waitFor": ".sessions-page",
+      "note": "Sessions: account bindings."
+    },
+    {
+      "id": "keys",
+      "path": "/keys",
+      "waitFor": ".keys-page",
+      "note": "Keys: caller keys, one revoked."
+    },
+    {
+      "id": "settings",
+      "path": "/settings",
+      "waitFor": ".settings-page",
+      "note": "Settings: the Routing tab."
+    },
+    {
+      "id": "settings-polling",
+      "path": "/settings?tab=polling",
+      "waitFor": ".settings-page",
+      "note": "Settings: the Quota polling tab."
+    },
+    {
+      "id": "settings-versions",
+      "path": "/settings?tab=versions",
+      "waitFor": ".settings-page",
+      "note": "Settings: the Versions tab with the CPA instances."
+    }
+  ]
+}

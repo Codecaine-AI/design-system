@@ -1,0 +1,206 @@
+{
+  "app": "sequence-studio",
+  "name": "Sequence Studio",
+  "repo": "codecaine/core/sequence",
+  "baseUrl": "http://127.0.0.1:47560",
+  "sourceDirs": [
+    "packages/studio/src"
+  ],
+  "themes": {
+    "light": {
+      "localStorage": {
+        "sequence-studio.theme": "light"
+      },
+      "colorScheme": "light",
+      "assert": "html[data-theme=\"light\"]"
+    },
+    "dark": {
+      "localStorage": {
+        "sequence-studio.theme": "dark"
+      },
+      "colorScheme": "dark",
+      "assert": "html[data-theme=\"dark\"]"
+    }
+  },
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "width": 1024,
+      "height": 768
+    }
+  ],
+  "settleMs": 700,
+  "cap": 6,
+  "motionAllow": [
+    {
+      "name": "ds-shell-sidebar",
+      "selector": ".ds-shell",
+      "props": [
+        "grid-template-columns"
+      ],
+      "reason": "The design-system app shell animates its sidebar column when it collapses (css/layout.css .ds-shell). The shell owns it. Ford allowed it for knowledge-system, and this config reuses that allowance for the same shell."
+    }
+  ],
+  "pages": [
+    {
+      "id": "gallery",
+      "path": "/",
+      "waitFor": "section[aria-label=\"Examples\"]",
+      "note": "The gallery with no drafts: three example cards and the empty Your drafts note. (registry route gallery)"
+    },
+    {
+      "id": "gallery-drafts",
+      "path": "/",
+      "waitFor": "section[aria-label=\"Examples\"]",
+      "actions": [
+        {
+          "click": "button[title=\"Open a new draft seeded from Login flow\"]"
+        },
+        {
+          "waitFor": ".editor .diagram-card svg"
+        },
+        {
+          "click": ".ds-shell button:has-text(\"Gallery\")"
+        },
+        {
+          "waitFor": "section[aria-label=\"Your drafts\"] .doc-card"
+        }
+      ],
+      "note": "The gallery after one example was opened: the Login flow draft shows under Your drafts and in the sidebar nav. Drafts live in localStorage in a fresh browser context."
+    },
+    {
+      "id": "gallery-draft-hover",
+      "path": "/",
+      "waitFor": "section[aria-label=\"Examples\"]",
+      "actions": [
+        {
+          "click": "button[title=\"Open a new draft seeded from Login flow\"]"
+        },
+        {
+          "waitFor": ".editor .diagram-card svg"
+        },
+        {
+          "click": ".ds-shell button:has-text(\"Gallery\")"
+        },
+        {
+          "hover": "section[aria-label=\"Your drafts\"] .doc-card"
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "note": "A draft card hovered, so its Rename and Delete actions show. Nothing is clicked."
+    },
+    {
+      "id": "editor",
+      "path": "/",
+      "waitFor": "section[aria-label=\"Examples\"]",
+      "actions": [
+        {
+          "click": "button[title=\"Open a new draft seeded from Login flow\"]"
+        },
+        {
+          "waitFor": ".editor .diagram-card svg"
+        }
+      ],
+      "note": "The editor on a draft seeded from Login flow: program pane, diagram preview and the Style inspector, open by default. (registry route editor)"
+    },
+    {
+      "id": "editor-fragments",
+      "path": "/",
+      "waitFor": "section[aria-label=\"Examples\"]",
+      "actions": [
+        {
+          "click": "button[title=\"Open a new draft seeded from Combined fragments\"]"
+        },
+        {
+          "waitFor": ".editor .diagram-card svg"
+        }
+      ],
+      "note": "The editor on the Combined fragments example: the largest diagram."
+    },
+    {
+      "id": "editor-new",
+      "path": "/",
+      "waitFor": "section[aria-label=\"Examples\"]",
+      "actions": [
+        {
+          "click": "button:has-text(\"New sequence\")"
+        },
+        {
+          "waitFor": ".editor .diagram-card svg"
+        }
+      ],
+      "note": "A new Untitled sequence from the topbar's New sequence button."
+    },
+    {
+      "id": "editor-style-closed",
+      "path": "/",
+      "waitFor": "section[aria-label=\"Examples\"]",
+      "actions": [
+        {
+          "click": "button[title=\"Open a new draft seeded from Login flow\"]"
+        },
+        {
+          "waitFor": ".editor .diagram-card svg"
+        },
+        {
+          "click": "button[aria-controls=\"ds-inspector\"][aria-expanded=\"true\"]"
+        },
+        {
+          "waitFor": "button[aria-controls=\"ds-inspector\"][aria-expanded=\"false\"]"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "note": "The editor with the Style inspector closed from its topbar toggle: the preview takes the full width. The inspector is open by default, so the other editor pages show it open."
+    },
+    {
+      "id": "editor-error",
+      "path": "/",
+      "waitFor": "section[aria-label=\"Examples\"]",
+      "actions": [
+        {
+          "click": "button[title=\"Open a new draft seeded from Login flow\"]"
+        },
+        {
+          "waitFor": ".editor .diagram-card svg"
+        },
+        {
+          "focus": "textarea[aria-label=\"Sequence program\"]"
+        },
+        {
+          "press": "ControlOrMeta+ArrowUp"
+        },
+        {
+          "press": "!"
+        },
+        {
+          "waitFor": "textarea[aria-invalid=\"true\"]"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "note": "The editor with a parse error: one character typed at the start of the program, so the status shows the error and the preview goes stale. The draft lives in localStorage in a fresh browser context."
+    },
+    {
+      "id": "sidebar-collapsed",
+      "path": "/",
+      "waitFor": "section[aria-label=\"Examples\"]",
+      "actions": [
+        {
+          "click": ".ds-sidebar-toggle"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "note": "The gallery with the sidebar collapsed."
+    }
+  ]
+}

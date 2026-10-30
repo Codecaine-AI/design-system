@@ -1,0 +1,130 @@
+{
+  "app": "canvas-studio",
+  "name": "Canvas studio",
+  "repo": "codecaine/core/canvas",
+  "baseUrl": "http://127.0.0.1:47540",
+  "sourceDirs": [
+    "packages/studio/src"
+  ],
+  "themes": {
+    "light": {
+      "localStorage": {
+        "canvas-studio.theme": "light",
+        "studio.project-server-origin": "http://127.0.0.1:47559"
+      },
+      "colorScheme": "light",
+      "assert": "html[data-theme=\"light\"]"
+    },
+    "dark": {
+      "localStorage": {
+        "canvas-studio.theme": "dark",
+        "studio.project-server-origin": "http://127.0.0.1:47559"
+      },
+      "colorScheme": "dark",
+      "assert": "html[data-theme=\"dark\"]"
+    }
+  },
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "width": 1024,
+      "height": 768
+    }
+  ],
+  "ignore": [
+    "iframe"
+  ],
+  "settleMs": 700,
+  "cap": 6,
+  "pages": [
+    {
+      "id": "boards",
+      "path": "/",
+      "waitFor": "h2:text-is(\"Canvas files\")",
+      "note": "The Boards list. Boards come from a temp copy of the repo's canvases/ (CANVAS_DIR). The linked project server origin points at a dead port in this app's block (47559), so Project boards shows its offline line and the owner's :4803 is never asked."
+    },
+    {
+      "id": "boards-link-server",
+      "path": "/",
+      "waitFor": "h2:text-is(\"Canvas files\")",
+      "actions": [
+        {
+          "click": "button[title=\"Change the linked project server\"]"
+        },
+        {
+          "waitFor": "input[aria-label=\"Linked project server origin\"]"
+        }
+      ],
+      "note": "The Boards list with the linked project server form open (never submitted)."
+    },
+    {
+      "id": "gallery",
+      "path": "/gallery",
+      "waitFor": "article.bg-card >> nth=0",
+      "note": "The Object Gallery."
+    },
+    {
+      "id": "gallery-sidebar-collapsed",
+      "path": "/gallery",
+      "waitFor": "article.bg-card >> nth=0",
+      "actions": [
+        {
+          "click": "button[aria-label=\"Toggle sidebar\"]"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "note": "The Object Gallery with the shell sidebar collapsed."
+    },
+    {
+      "id": "evals",
+      "path": "/evals",
+      "waitFor": "main",
+      "note": "The eval-suite run gallery (dev pages). It reads packages/eval-suite/runs read-only and opens the newest run."
+    },
+    {
+      "id": "editor",
+      "path": "/canvas/v2-flow",
+      "waitFor": "[data-canvas-stage=\"true\"]",
+      "note": "The board editor on v2-flow. Saves are non-GET, so the scorer aborts them. The dev rail is not scored: its Dev tab sits under the board's page frame, so a click cannot reach it."
+    },
+    {
+      "id": "editor-style",
+      "path": "/canvas/v2-flow",
+      "waitFor": "[data-canvas-stage=\"true\"]",
+      "actions": [
+        {
+          "click": "button[title=\"Toggle style settings\"]"
+        },
+        {
+          "waitFor": "aside[aria-label=\"Style\"]"
+        }
+      ],
+      "note": "The editor with the Style rail open."
+    },
+    {
+      "id": "editor-inspector",
+      "path": "/canvas/v2-flow",
+      "waitFor": "[data-canvas-stage=\"true\"]",
+      "actions": [
+        {
+          "click": "button[title^=\"Toggle the inspector\"]"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "note": "The editor with the inspector open (nothing selected)."
+    },
+    {
+      "id": "viewer",
+      "path": "/view/v2-flow",
+      "waitFor": "[data-canvas-stage=\"true\"]",
+      "note": "The read-only board viewer."
+    }
+  ]
+}
