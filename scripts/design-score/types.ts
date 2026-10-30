@@ -38,6 +38,11 @@ export interface PageSpec {
   path: string;
   /** Selector to wait for after load. */
   waitFor?: string;
+  /**
+   * How long (ms) to wait for `waitFor`. Default 15000. Raise it only for a page that is slow in the
+   * scorer's headless browser and fast for a person, such as WebGL drawn by the software renderer.
+   */
+  waitForTimeoutMs?: number;
   actions?: Action[];
   /** Extra wait (ms) after actions, before measuring. Default config.settleMs. */
   settleMs?: number;
