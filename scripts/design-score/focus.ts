@@ -6,8 +6,12 @@
  * the element again and press Tab from it. Transitions and smooth scrolling are switched off for the
  * pass, so both captures are settled and no Tab scroll is still running when the pass returns. When the element moved between the captures, the computed style decides instead: an
  * outline or a changed box-shadow counts as visible.
- * A ring drawn on a wrapper counts too: when an ancestor's paint (or a pseudo-element's, such as a ::after
+ * A ring drawn on a wrapper counts too: when an ancestor's computed paint (or a pseudo-element's, such as a ::after
  * stretched over a tile) changes on blur, the clip grows to that box and is captured blurred, then focused again.
+ * In that wider clip the pixels decide, not the styles: each state is captured again with everything outside the
+ * control's chain hidden (the chain: its ancestors' own paint, the control, its subtree and their pseudo-elements),
+ * and a changed pixel counts only where both captures match the chain's own. So a change a sibling paints, or wrapper
+ * paint that cannot show (covered, zero-width), never rescues a control.
  * Tabbing stops at a contenteditable (Tab may edit there), when focus cycles, or after N stops.
  */
 import { decodePng } from "../lib/png";
@@ -81,20 +85,15 @@ interface Layer {
   holder: number;
 }
 
-/** The paint of the focused element's chain, compared focused and blurred to find what the focus lights. Self-contained. */
+/**
+ * The paint of the focused element's chain, compared focused and blurred to find which boxes the focus may light.
+ * Only a hint for where to look: whether the change shows is left to the pixels. Self-contained.
+ */
 function layersOf(key: string): Layer[] | null {
   const el = (window as unknown as { __dsFocus?: Element[] }).__dsFocus?.[Number(key)];
   if (!el || !el.isConnected) return null;
-  // Only paint that shows: an outline or border side with no style or no width paints nothing, whatever its color.
-  const line = (s: CSSStyleDeclaration, p: string) =>
-    s.getPropertyValue(`${p}-style`) === "none" || s.getPropertyValue(`${p}-style`) === "hidden" || !(parseFloat(s.getPropertyValue(`${p}-width`)) > 0)
-      ? "none"
-      : `${s.getPropertyValue(`${p}-width`)} ${s.getPropertyValue(`${p}-style`)} ${s.getPropertyValue(`${p}-color`)}`;
-  // `color` shows on a box only through its own text: a child that sets its own color hides the change.
-  // Paint that uses currentColor (borders, shadows, images) computes to the color, so it shows in its own field.
-  const paintOf = (s: CSSStyleDeclaration, text: boolean) =>
-    [`${line(s, "outline")} ${line(s, "outline") === "none" ? "" : s.outlineOffset}`, ...["top", "right", "bottom", "left"].map((side) => line(s, `border-${side}`)), s.borderImageSource, s.boxShadow, s.backgroundColor, s.backgroundImage, text ? s.color : "", s.opacity, s.filter].join("|");
-  const ownText = (e: Element) => [...e.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && n.textContent!.trim() !== "");
+  const paintOf = (s: CSSStyleDeclaration) =>
+    [s.outline, s.outlineOffset, s.borderTop, s.borderRight, s.borderBottom, s.borderLeft, s.borderImageSource, s.boxShadow, s.backgroundColor, s.backgroundImage, s.color, s.opacity, s.filter].join("|");
   // The box an absolute descendant fills: Chromium makes one for each of these (checked in Chromium 153).
   // A plain inline box takes only position and the filters, and an internal table box takes no containment.
   const holds = (s: CSSStyleDeclaration) => {
@@ -109,7 +108,7 @@ function layersOf(key: string): Layer[] | null {
   const layers: Layer[] = [];
   let holder = -1;
   const chain: Element[] = [];
-  for (let cur: Element | null = el; cur && cur !== document.body && cur !== document.documentElement; cur = cur.parentElement ?? ((cur.parentNode as ShadowRoot | null)?.host ?? null)) chain.push(cur);
+  for (let cur: Element | null = el; cur && cur !== document.body && cur !== document.documentElement; cur = cur.parentElement) chain.push(cur);
   // Walk from the top, so each layer knows the nearest box at or above it that holds an absolute pseudo.
   for (let i = chain.length - 1; i >= 0; i--) {
     const e = chain[i]!;
@@ -119,8 +118,8 @@ function layersOf(key: string): Layer[] | null {
     const r = e.getBoundingClientRect();
     layers[i] = {
       box: { x: r.left, y: r.top, w: r.width, h: r.height },
-      paint: paintOf(s, ownText(e)),
-      pseudo: pseudos.map((p) => (p.content === "none" || p.display === "none" ? "none" : `${p.content}|${paintOf(p, !/^"\s*"$/.test(p.content))}`)).join("||"),
+      paint: paintOf(s),
+      pseudo: pseudos.map((p) => (p.content === "none" || p.display === "none" ? "none" : `${p.content}|${paintOf(p)}`)).join("||"),
       floats: pseudos.some((p) => p.content !== "none" && p.position === "absolute"),
       holder,
     };
@@ -173,7 +172,30 @@ function refocusBlurred(): void {
   ((window as unknown as { __dsBlurred?: Element | null }).__dsBlurred as HTMLElement | null)?.focus?.({ preventScroll: true });
 }
 
-const NO_MOTION = "*, *::before, *::after { transition: none !important; animation-duration: 0s !important; animation-delay: 0s !important; caret-color: transparent !important; scroll-behavior: auto !important; }";
+/**
+ * With a key, hides everything but the element's chain: its ancestors keep their own paint, the element keeps its
+ * subtree, and each keeps its pseudo-elements. With null, undoes it. An adopted sheet does it, so the page's DOM is
+ * untouched. A Tab stop is always in the document (a shadow root's control stops as its host), so one sheet is enough.
+ * Self-contained.
+ */
+function isolate(key: string | null): void {
+  const w = window as unknown as { __dsFocus?: Element[]; __dsIsolated?: CSSStyleSheet };
+  document.adoptedStyleSheets = document.adoptedStyleSheets.filter((s) => s !== w.__dsIsolated);
+  const el = key === null ? null : w.__dsFocus?.[Number(key)];
+  if (!el?.isConnected) return;
+  // Each chain element as a path from the root, which holds while the DOM is unchanged.
+  const paths: string[] = [];
+  for (let cur: Element | null = el; cur; cur = cur.parentElement) {
+    const steps = [];
+    for (let e = cur; e.parentElement; e = e.parentElement) steps.unshift(`:nth-child(${[...e.parentElement.children].indexOf(e) + 1})`);
+    paths.push([":root", ...steps].join(" > "));
+  }
+  const sheet = (w.__dsIsolated = new CSSStyleSheet());
+  sheet.replaceSync(`*:not(${paths.join(", ")}, ${paths[0]} *) { visibility: hidden !important; }`);
+  document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
+}
+
+const NO_MOTION ="*, *::before, *::after { transition: none !important; animation-duration: 0s !important; animation-delay: 0s !important; caret-color: transparent !important; scroll-behavior: auto !important; }";
 
 function clipFor(box: Box, vw: number, vh: number, pad = 6) {
   const x = Math.max(0, Math.floor(box.x - pad));
@@ -183,14 +205,19 @@ function clipFor(box: Box, vw: number, vh: number, pad = 6) {
   return right - x >= 2 && bottom - y >= 2 ? { x, y, width: right - x, height: bottom - y } : null;
 }
 
-function changedPixels(a: Uint8Array, b: Uint8Array): { count: number; width: number; height: number } {
+/**
+ * Pixels that differ between a and b. Given `own` (a and b captured again with only the chain shown), a pixel counts
+ * only where each capture matches its own one: there the chain's paint is what shows, so the chain made the change.
+ */
+function changedPixels(a: Uint8Array, b: Uint8Array, own?: [Uint8Array, Uint8Array]): { count: number; width: number; height: number } {
   const ia = decodePng(a);
   const ib = decodePng(b);
-  if (ia.width !== ib.width || ia.height !== ib.height) return { count: Number.POSITIVE_INFINITY, width: ia.width, height: ia.height };
+  const io = own?.map(decodePng);
+  if ([ib, ...(io ?? [])].some((img) => img.width !== ia.width || img.height !== ia.height)) return { count: Number.POSITIVE_INFINITY, width: ia.width, height: ia.height };
+  const differs = (x: Uint8Array, y: Uint8Array, i: number) => Math.max(Math.abs(x[i]! - y[i]!), Math.abs(x[i + 1]! - y[i + 1]!), Math.abs(x[i + 2]! - y[i + 2]!)) > 24;
   let count = 0;
   for (let i = 0; i < ia.data.length; i += 4) {
-    const d = Math.max(Math.abs(ia.data[i]! - ib.data[i]!), Math.abs(ia.data[i + 1]! - ib.data[i + 1]!), Math.abs(ia.data[i + 2]! - ib.data[i + 2]!));
-    if (d > 24) count++;
+    if (differs(ia.data, ib.data, i) && !(io && (differs(ia.data, io[0]!.data, i) || differs(ib.data, io[1]!.data, i)))) count++;
   }
   return { count, width: ia.width, height: ia.height };
 }
@@ -248,19 +275,25 @@ export async function focusPass(page: any, max = 30): Promise<FocusResult> {
         const moved = Math.abs(after.box.x - focusedNow.box.x) > 0.5 || Math.abs(after.box.y - focusedNow.box.y) > 0.5;
         if (!moved) {
           let unfocusedPng: Uint8Array;
+          let own: [Uint8Array, Uint8Array] | undefined;
           const region = lit.length ? clipFor(union([focusedNow.box, ...lit]), vp.width, vp.height) : null;
           if (region) {
-            // The focus lights a box beyond the clip (a wrapper's ring): compare that region, blurred, then focused again.
+            // The focus may light a box beyond the clip (a wrapper's ring): compare that region blurred, then focused
+            // again, each also with only the chain shown, so a pixel counts only where the chain's own paint shows.
             clip = region;
             unfocusedPng = await page.screenshot({ clip });
+            await page.evaluate(isolate, current.key);
+            const ownBlurred: Uint8Array = await page.screenshot({ clip });
             await page.evaluate(refocusBlurred);
             refocused = true;
             await page.waitForTimeout(40);
+            own = [await page.screenshot({ clip }), ownBlurred];
+            await page.evaluate(isolate, null);
             focusedPng = await page.screenshot({ clip });
           } else {
             unfocusedPng = await page.screenshot({ clip });
           }
-          const diff = changedPixels(focusedPng!, unfocusedPng);
+          const diff = changedPixels(focusedPng!, unfocusedPng, own);
           const perimeter = 2 * (focusedNow.box.w + focusedNow.box.h);
           const need = Math.max(12, perimeter * 0.1);
           visible = diff.count >= need;
@@ -291,6 +324,7 @@ export async function focusPass(page: any, max = 30): Promise<FocusResult> {
       current = next;
     }
   } finally {
+    await page.evaluate(isolate, null).catch(() => undefined);
     await style.evaluate((node: Element) => node.remove()).catch(() => undefined);
   }
   return { findings, stops, clips };

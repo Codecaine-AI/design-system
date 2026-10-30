@@ -323,27 +323,37 @@ describe.skipIf(!!process.env.DS_SKIP_BROWSER)("design:score v2 in a browser", (
   test("R-focus-visible: a ring on the control or on a tile it lights passes; no change, a change that cannot show, or a change on a far element, fails", async () => {
     // The tiles draw their ring 20px from the button: two with :focus-within (an outline, a currentColor border-image), two with
     // the button's ::after stretched over the tile. Containment and translate on an inline span leave the tile holding the ::after;
-    // the static tile holds it through contain: layout. The quiet wrapper changes only paint its box cannot show.
+    // the static tile holds it through contain: layout. The quiet, zero and covered wrappers change only paint their box cannot
+    // show (an outline color with no outline, a border-image on a 0px border, a background under opaque children), while a
+    // status line inside each lights up.
     await page.setContent(`<style>button { width: 80px; height: 32px; border: 1px solid #888; background: #eee; } button:focus { outline: none; }
       .ring:focus-visible { outline: 3px solid #00f; outline-offset: 1px; }
       .tile { position: relative; width: 300px; margin-top: 8px; padding: 20px; border: 1px solid #ccc; } .within:focus-within { outline: 3px solid #00f; }
       .drawn { color: transparent; border: 3px solid transparent; border-image: linear-gradient(currentColor, currentColor) 1; } .drawn:focus-within { color: #00f; }
       .stretch::after { content: ""; position: absolute; inset: 0; } .stretch:focus-visible::after { outline: 3px solid #00f; }
-      .status { margin-top: 200px; height: 20px; color: #000; } button:focus ~ .status { background: #00f; } .quiet:focus-within { outline-color: #00f; color: #00f; } .quiet::before { content: " "; }
+      .status { margin-top: 200px; height: 20px; color: #000; } button:focus ~ .status, .covered:focus-within .status { background: #00f; } .quiet:focus-within { outline-color: #00f; color: #00f; } .quiet::before { content: " "; }
+      .zero { border: 0 solid; border-image: linear-gradient(currentColor, currentColor) 1; color: #000; } .zero:focus-within { color: #0a0; }
+      .covered:focus-within { background: #0a0; } .cover { display: flow-root; background: #fff; } :is(.zero, .covered) .status { margin-top: 24px; }
       .contained { position: static; contain: layout; } .loose { contain: layout; translate: 0px; }</style>
       <body style="margin:20px;background:#fff"><div style="display:flex;gap:2px"><button class="bare">Bare</button><button class="ring">Ring</button></div><div class="quiet"><button class="hidden">Hidden</button><p class="status">Status</p></div>
+      <div class="zero"><button class="zero-border">Zero</button><p class="status">Status</p></div>
+      <div class="covered"><div class="cover"><button class="covered-background">Covered</button></div><div class="cover"><p class="status">Status</p></div></div>
       <div class="tile within"><button class="inner">Within</button></div><div class="tile drawn"><button class="inner">Drawn</button></div>
       <div class="tile"><span class="loose"><button class="stretch">Stretch</button></span></div>
       <div class="tile contained"><button class="stretch">Contained</button></div>
       <div><button class="far">Far</button><p class="status">Status</p></div></body>`);
-    const { findings, stops } = await focusPass(page, 10);
-    expect(stops).toBe(8);
-    expect(findings.map((f) => f.selector)).toEqual([expect.stringContaining("button.bare"), expect.stringContaining("button.hidden"), expect.stringContaining("button.far")]);
+    const { findings, stops } = await focusPass(page, 12);
+    expect(stops).toBe(10);
+    expect(findings.map((f) => f.selector)).toEqual(
+      ["button.bare", "button.hidden", "button.zero-border", "button.covered-background", "button.far"].map((s) => expect.stringContaining(s)),
+    );
   });
 
   test("R-state-shift: the shift pass runs on the view the page state left, not where the focus pass scrolled", async () => {
     await page.setContent(`<style>html { scroll-behavior: smooth; } body { margin: 20px; } button { display: block; height: 32px; margin: 8px 0; border: 1px solid #888; } .grow:hover { border-width: 4px; }</style>
       <body><button class="grow">Grow</button><div style="height:2000px"></div><button class="far">Far</button></body>`);
+    // setContent keeps the scroll offset an earlier test left; this view starts at the top.
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
     const restoreView = await keepScroll(page);
     await focusPass(page, 30);
     expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
