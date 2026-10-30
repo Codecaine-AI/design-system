@@ -85,8 +85,13 @@ interface Layer {
 function layersOf(key: string): Layer[] | null {
   const el = (window as unknown as { __dsFocus?: Element[] }).__dsFocus?.[Number(key)];
   if (!el || !el.isConnected) return null;
-  const PROPS = ["outline-style", "outline-width", "outline-color", "outline-offset", "box-shadow", "border-color", "border-width", "background-color", "background-image", "color", "opacity", "filter"];
-  const paintOf = (s: CSSStyleDeclaration) => PROPS.map((p) => s.getPropertyValue(p)).join("|");
+  // Only paint that shows: an outline or border side with no style or no width paints nothing, whatever its color.
+  const line = (s: CSSStyleDeclaration, p: string) =>
+    s.getPropertyValue(`${p}-style`) === "none" || s.getPropertyValue(`${p}-style`) === "hidden" || !(parseFloat(s.getPropertyValue(`${p}-width`)) > 0)
+      ? "none"
+      : `${s.getPropertyValue(`${p}-width`)} ${s.getPropertyValue(`${p}-style`)} ${s.getPropertyValue(`${p}-color`)}`;
+  const paintOf = (s: CSSStyleDeclaration) =>
+    [`${line(s, "outline")} ${line(s, "outline") === "none" ? "" : s.outlineOffset}`, ...["top", "right", "bottom", "left"].map((side) => line(s, `border-${side}`)), s.boxShadow, s.backgroundColor, s.backgroundImage, s.color, s.opacity, s.filter].join("|");
   const layers: Layer[] = [];
   let holder = -1;
   const chain: Element[] = [];
@@ -101,7 +106,7 @@ function layersOf(key: string): Layer[] | null {
     layers[i] = {
       box: { x: r.left, y: r.top, w: r.width, h: r.height },
       paint: paintOf(s),
-      pseudo: pseudos.map((p) => `${p.content}|${p.display}|${paintOf(p)}`).join("||"),
+      pseudo: pseudos.map((p) => (p.content === "none" || p.display === "none" ? "none" : `${p.content}|${paintOf(p)}`)).join("||"),
       floats: pseudos.some((p) => p.content !== "none" && p.position === "absolute"),
       holder,
     };
