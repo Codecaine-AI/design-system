@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- R-align-near-miss, good: each grip is centered on its row's first text line, and every text line in a row starts at the same left edge. -->
+<!-- R-align-near-miss, good: each grip is centered on its row's first text line, and every text line in a row starts at the same left edge. The plan below is a picture whose label says "Drag": it is not a grip, so its center is not held to the caption's first line. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -16,6 +16,8 @@
   .grip { display: flex; align-items: center; height: calc(var(--ds-font-size-ui-md) * var(--ds-line-height-ui)); color: var(--ds-color-text-faint); }
   .title { font-size: var(--ds-font-size-ui-md); line-height: var(--ds-line-height-ui); }
   .meta { font-size: var(--ds-font-size-ui-sm); line-height: var(--ds-line-height-ui); color: var(--ds-color-text-muted); }
+  .plan { display: flex; align-items: flex-start; gap: var(--ds-space-2); margin-top: var(--ds-space-4); color: var(--ds-color-text-faint); }
+  .caption { margin: 0; font-size: var(--ds-font-size-ui-md); line-height: var(--ds-line-height-ui); color: var(--ds-color-text-body); }
 </style>
 </head>
 <body>
@@ -25,5 +27,6 @@
     <li><span class="grip" data-drag-handle><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><g fill="currentColor"><circle cx="4" cy="2" r="1"/><circle cx="8" cy="2" r="1"/><circle cx="4" cy="6" r="1"/><circle cx="8" cy="6" r="1"/><circle cx="4" cy="10" r="1"/><circle cx="8" cy="10" r="1"/></g></svg></span><div class="body"><div class="title">Write the release notes</div><div class="meta">Writing · due Monday</div></div></li>
     <li><span class="grip" data-drag-handle><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><g fill="currentColor"><circle cx="4" cy="2" r="1"/><circle cx="8" cy="2" r="1"/><circle cx="4" cy="6" r="1"/><circle cx="8" cy="6" r="1"/><circle cx="4" cy="10" r="1"/><circle cx="8" cy="10" r="1"/></g></svg></span><div class="body"><div class="title">Fix the focus ring in dark mode</div><div class="meta">Accessibility · no date</div></div></li>
   </ul>
+  <div class="plan"><svg role="group" aria-label="Desk plan. Drag the lamp to move it." width="48" height="32" viewBox="0 0 48 32"><rect x="1" y="1" width="46" height="30" fill="none" stroke="currentColor"/><circle cx="12" cy="10" r="4" fill="currentColor"/></svg><p class="caption">Desk plan</p></div>
 </body>
 </html>
