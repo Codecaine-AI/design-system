@@ -1028,7 +1028,7 @@
       "props": {},
       "text": [
         {
-          "insert": "Keep a folder in the scan when the check misreads it. tachyon-flow keeps "
+          "insert": "Fix the check when it misreads a folder, and keep the folder in the scan. For the "
         },
         {
           "insert": "anim/",
@@ -1037,16 +1037,20 @@
           }
         },
         {
-          "insert": ", whose joint angles S-color-literal misreads as "
+          "insert": " joint angles, "
         },
         {
-          "insert": "rgb()",
+          "insert": "scripts/scan-literals.ts",
           "attributes": {
-            "code": true
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/scan-literals.ts"
+            }
           }
         },
         {
-          "insert": ", because that fix belongs in the check."
+          "insert": " counts number triples as colors only when one key names a color."
         }
       ],
       "children": []

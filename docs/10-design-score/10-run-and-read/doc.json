@@ -1992,16 +1992,20 @@
           }
         },
         {
-          "insert": " in the scan, because S-color-literal misreads its joint angles as "
+          "insert": " in the scan. Its joint-angle triples look like a palette, so "
         },
         {
-          "insert": "rgb()",
+          "insert": "scripts/scan-literals.ts",
           "attributes": {
-            "code": true
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/scan-literals.ts"
+            }
           }
         },
         {
-          "insert": "."
+          "insert": " counts number triples as colors only when one key names a color."
         }
       ],
       "children": []
