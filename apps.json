@@ -5154,8 +5154,8 @@
         "packageManager": "bun"
       },
       "consume": {
-        "via": "workspace",
-        "detail": "Add ../../design-system to the root workspaces in life/budget/package.json and depend on `workspace:*` from apps/web (a live symlink, the same wiring Core uses); @import in src/styles.css; the kernel view takes the v3 preset."
+        "via": "vendor-tgz",
+        "detail": "A packed copy through file:vendor/<name>.tgz that carries its fonts: `bun run pack --out ../../../life/budget/apps/web/vendor` gives apps/web/vendor/codecaine-ai-design-system-<version>.tgz, and the root `overrides` in life/budget/package.json gives @codecaine-ai/canvas and @codecaine-ai/sequence the same copy (Lascari-AI/personal-budget#16, 0.2.1). It moves only on a repack with a patch version bump. @import in src/styles.css; the kernel view takes the v3 preset."
       },
       "entryStylesheet": "life/budget/apps/web/src/main.tsx",
       "theme": {
