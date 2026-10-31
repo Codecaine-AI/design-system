@@ -4701,12 +4701,12 @@
       "name": "variator",
       "wave": 1,
       "kind": "app",
-      "repo": "codecaine/codecaine-tools/variator",
-      "root": "codecaine/codecaine-tools/variator",
+      "repo": "codecaine/tools/variator",
+      "root": "codecaine/tools/variator",
       "scan": {
         "paths": [
-          "codecaine/codecaine-tools/variator/src/web",
-          "codecaine/codecaine-tools/variator/src/preview"
+          "codecaine/tools/variator/src/web",
+          "codecaine/tools/variator/src/preview"
         ],
         "exclude": []
       },
@@ -4719,12 +4719,11 @@
         "via": "relative-import",
         "detail": "Point the relative @import in src/web/docs-light.css at the package (read by path, so it stays live), or add a workspaces entry or bun link; never a bun file: dependency."
       },
-      "entryStylesheet": "codecaine/codecaine-tools/variator/src/web/main.tsx",
+      "entryStylesheet": "codecaine/tools/variator/src/web/main.tsx",
       "theme": {
         "rule": "light-dark"
       },
-      "literalFloor": 2,
-      "allowlist": "apps/allowlists/variator.json",
+      "literalFloor": 0,
       "shell": true,
       "folderStandard": true,
       "passes": {
@@ -4781,20 +4780,20 @@
       "run": {
         "mode": "none",
         "reason": "blocked by uncommitted owner work; profile unproven",
-        "cwd": "codecaine/codecaine-tools/variator",
+        "cwd": "codecaine/tools/variator",
         "start": "bun --no-env-file src/server/index.ts",
         "readyPattern": "Variator (http://127\\.0\\.0\\.1:\\d+)",
-        "serveRoot": "codecaine/codecaine-tools/variator/src/web"
+        "serveRoot": "codecaine/tools/variator/src/web"
       },
       "commands": {
-        "cwd": "codecaine/codecaine-tools/variator",
+        "cwd": "codecaine/tools/variator",
         "typecheck": "bun --no-env-file run typecheck"
       },
       "tests": {
         "safe": [
           {
             "cmd": "bun --no-env-file test src",
-            "cwd": "codecaine/codecaine-tools/variator"
+            "cwd": "codecaine/tools/variator"
           }
         ],
         "unsafe": [
@@ -4907,10 +4906,6 @@
         {
           "what": "planned profile",
           "reason": "VARIATOR_DATA_ROOT and VARIATOR_PI_AGENT_DIR in {tmp} (no credentials), so capture/Apply cannot call an LLM; routes never submit; needs bun install (postinstall symlinks Core packages) first. Apply writes into the docs-system source tree: never trigger it"
-        },
-        {
-          "what": "allowlist",
-          "reason": "brand art: Space Grotesk only on the .brand wordmark (src/web/style.css:179-180, decision 11; 1 hit, file and literal scoped); the color-picker fallback #808080 in src/web/tuning.tsx (color-control code kept per owner decision; <input type=color> needs a hex value)"
         },
         {
           "what": "theme rule light-dark",

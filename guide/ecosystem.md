@@ -40,7 +40,7 @@ Status as of 2026-10-07. For current status run `bun run progress`.
 | personal-site | `lascari-ai/personal-site` | `lascari-personal-site` | vendor-tgz | Excluded: out of scope. Its migration branch is not merged. | n/a |
 | annotations | `codecaine/core/annotations` | `@codecaine-ai/annotations` | host-css library | Pending: uncommitted `package.json` version line | n/a |
 | observatory | `codecaine/core/observatory` | `@codecaine-ai/observatory` | link | Pending: uncommitted `package.json`, 4 UI files and 3 untracked items | Shell |
-| variator | `codecaine/codecaine-tools/variator` | `variator` | relative-import | Pending: uncommitted files in `src/web` and `src/preview` | Shell |
+| variator | `codecaine/tools/variator` | `variator` | relative-import | Pending: run mode none. The review UI landed in Codecaine-AI/variator#1, so re-assess the run profile. | Shell |
 | slidev-template | `learning/lascari-ai-learning/presentations/SlidevTemplate` | `slidev` | relative-import | Pending: uncommitted `components/MotionCanvas.vue` and a description file | n/a |
 | budget | `life/budget/apps/web` | `@personal-budget/web` | workspace | Pending: 83 uncommitted files in `apps/web/src` and staged submodules | Shell |
 | pen-plotter | `apps/pen-plotter/apps/desktop` | `@pen-plotter/desktop` | workspace | Pending: uncommitted `SetupPanel.tsx` and 12 open worktrees to merge. Commits have landed since, so re-assess. | Shell |

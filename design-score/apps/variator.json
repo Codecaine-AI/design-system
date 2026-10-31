@@ -1,0 +1,131 @@
+{
+  "app": "variator",
+  "name": "Variator review",
+  "repo": "codecaine/tools/variator",
+  "baseUrl": "http://127.0.0.1:4888",
+  "sourceDirs": [
+    "src/web"
+  ],
+  "themes": {
+    "light": {
+      "query": {
+        "theme": "light"
+      },
+      "colorScheme": "light",
+      "assert": "html[data-theme=\"light\"]"
+    },
+    "dark": {
+      "query": {
+        "theme": "dark"
+      },
+      "colorScheme": "dark",
+      "assert": "html[data-theme=\"dark\"]"
+    }
+  },
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "width": 1024,
+      "height": 768
+    }
+  ],
+  "ignore": [
+    "iframe"
+  ],
+  "settleMs": 700,
+  "loading": [
+    "Loading…"
+  ],
+  "cap": 6,
+  "pages": [
+    {
+      "id": "review",
+      "path": "/?batch=knowledge-system-open-work-r1",
+      "waitFor": ".pane",
+      "note": "The review screen on a done batch (read only): tool bar, one frame with its caption bar and tab strip, and the notes dock. Run against the owner's server (bun src/server/index.ts, PORT 4888); the frames are iframes and are not measured."
+    },
+    {
+      "id": "review-variation-02",
+      "path": "/?batch=knowledge-system-open-work-r1",
+      "waitFor": ".pane",
+      "actions": [
+        {
+          "click": "button[role=\"tab\"][aria-label^=\"Variation 02\"]"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "note": "The second variation chosen in the frame's tab strip, so the dock title and the selected tab move."
+    },
+    {
+      "id": "review-original",
+      "path": "/?batch=knowledge-system-open-work-r1",
+      "waitFor": ".pane",
+      "actions": [
+        {
+          "click": "button[role=\"tab\"]:has-text(\"Original\")"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "note": "The Original tab: the live source page in the frame, and the dock says it takes no notes."
+    },
+    {
+      "id": "review-split",
+      "path": "/?batch=knowledge-system-open-work-r1",
+      "waitFor": ".pane",
+      "actions": [
+        {
+          "click": "button:has-text(\"Split\")"
+        },
+        {
+          "waitFor": ".app[data-split]"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "note": "Split: two frames side by side, each with its own caption bar and a tab strip that shows numbers only."
+    },
+    {
+      "id": "review-dock-closed",
+      "path": "/?batch=knowledge-system-open-work-r1",
+      "waitFor": ".pane",
+      "actions": [
+        {
+          "click": "button[aria-controls=\"dock\"]"
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "note": "Notes toggled off: the stage takes the full width."
+    },
+    {
+      "id": "review-meta-open",
+      "path": "/?batch=knowledge-system-open-work-r1",
+      "waitFor": ".pane",
+      "actions": [
+        {
+          "click": "details.meta summary"
+        },
+        {
+          "wait": 300
+        }
+      ],
+      "note": "The dock's Direction and intent disclosure open."
+    },
+    {
+      "id": "review-open-batch",
+      "path": "/?batch=knowledge-system-home-r1",
+      "waitFor": ".pane",
+      "note": "An open batch: Submit round in the tool bar, the Screenshot button in the caption bar, the Pick button and the note fields in the dock. No step clicks anything; the scorer aborts every non-GET request anyway.",
+      "optional": "needs an open batch in the owner's Variator data"
+    }
+  ]
+}
