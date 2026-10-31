@@ -1,7 +1,7 @@
 {
-  "app": "token-burner",
-  "name": "Token Burner dashboard",
-  "repo": "codecaine/utilities/token-burner",
+  "app": "token-gateway",
+  "name": "Token Gateway dashboard",
+  "repo": "codecaine/utilities/token-gateway",
   "baseUrl": "http://127.0.0.1:47760",
   "sourceDirs": [
     "src/web"
@@ -9,14 +9,14 @@
   "themes": {
     "light": {
       "localStorage": {
-        "token-burner.theme": "light"
+        "token-gateway.theme": "light"
       },
       "colorScheme": "light",
       "assert": "html[data-theme=\"light\"]"
     },
     "dark": {
       "localStorage": {
-        "token-burner.theme": "dark"
+        "token-gateway.theme": "dark"
       },
       "colorScheme": "dark",
       "assert": "html[data-theme=\"dark\"]"

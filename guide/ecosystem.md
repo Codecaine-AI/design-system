@@ -34,7 +34,7 @@ Status as of 2026-10-07. For current status run `bun run progress`.
 | viewer-ui | `codecaine/core/agent-kernel/packages/viewer-ui` | `@codecaine-ai/agent-kernel-viewer-ui` | host-css library | Migrated: pass 1 (2, 3 n/a) | n/a |
 | simple-research-kernel | `codecaine/core/agent-kernel/examples/simple-research-kernel` | `@codecaine-ai/agent-kernel-example-simple-research-kernel` | workspace (Tailwind v3 preset) | Migrated: passes 1, 2, 3 | Shell |
 | prompt-kit-ui | `codecaine/core/prompt-kit/packages/prompt-kit` | `@codecaine-ai/prompt-kit` | host-css library | Migrated: pass 1 (2, 3 n/a) | n/a |
-| token-burner | `codecaine/utilities/token-burner` | `token-burner` | workspace | Pending: run mode none. The dashboard needs the gateway wrapper, a pinned CPA binary and the mock upstream. | Shell |
+| token-gateway | `codecaine/utilities/token-gateway` | `token-gateway` | workspace | Pending: run mode none. The dashboard needs the gateway wrapper, a pinned CPA binary and the mock upstream. | Shell |
 | agent-skills-manager | `infrastructure/agent-config/manager` | none (vanilla JS) | copy | Migrated: passes 1, 2 (3 n/a) | Shell |
 | skitzo | `experiments/skitzo/apps/frontend` | `frontend` | vendor-tgz | Migrated: passes 1, 2, 3 | Shell |
 | personal-site | `lascari-ai/personal-site` | `lascari-personal-site` | vendor-tgz | Excluded: out of scope. Its migration branch is not merged. | n/a |

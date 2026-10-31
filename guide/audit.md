@@ -68,7 +68,7 @@ Snapshot: 2026-10-05. Literal counts come from [`scripts/scan-literals.ts`](../s
 | x-writer | Next 14, TW3, shadcn, Clerk, npm | 146 + 244 palette → 15.5 | 2/3 → 3 | 4 >400 → 13 | 31.5 |
 | font-pipe web | Next 15, TW3, bun | 15 + 136 palette → 8 | 0/3 → 6 | flat → 9 | 23 |
 | font-effects web | vanilla JS, Vite 5, npm | 159 → 4 | N/A | 2 >400 → 3.5 | 7.5 |
-| token-burner dashboard | vanilla TS, raw CSS | 139 → 7 | 1/3 → 7 | 1 >400 → 8 | 22 |
+| token-gateway dashboard | vanilla TS, raw CSS | 139 → 7 | 1/3 → 7 | 1 >400 → 8 | 22 |
 | ai-age | Next 15, TW4, npm | 318 → 9.5 | 1/3 → 6 | 3 >400 → 9 | 24.5 |
 | sotto / V07 (native) | SwiftUI | Swift palette → 7.5 | N/A | N/A | 7.5 |
 | sotto archive viewer | vanilla HTML/JS | 69 → 2 | N/A | N/A | 2 |
@@ -138,7 +138,7 @@ A tokens-only pass through waves 0–3 is 227.5h. Changes from the brief:
 | 3 | One alias sheet for the agent-viewer host contract (about 60 names: shadcn, `trace-*`, `status-*`, `agentprism-*`, `syntax-*`, `editor-*`) mapped to `--ds-*`. | It replaces hand-copied contracts in budget, gamecube and kurate. | 3 | Wave 1 |
 | 4 | Pack-and-vendor flow (`npm pack` to `vendor/*.tgz` plus a `file:` dep), the same as docs-publish. | Docker, Vercel and Railway builds cannot see `../codecaine/core/design-system`. | 2 | Waves 2, 3 |
 | 5 | Tailwind v3 preset (decision 3). | Six v3 surfaces. | 3 | Waves 1, 2 |
-| 6 | Data-viz palette tokens. | ECharts in budget, token-burner charts. | 2 | Wave 2 |
+| 6 | Data-viz palette tokens. | ECharts in budget, token-gateway charts. | 2 | Wave 2 |
 | 7 | Dark-first variant (decision 2). | Ten dark-only surfaces. | 4 | Wave 3 |
 
 ### Wave 1: Core surfaces near the docs look (173.5h)
@@ -700,11 +700,11 @@ Paths are relative to `/Users/Ford/workspace`. "Literals" lists the hard count f
 | Hours | Tokens 4. Slices 3.5. **7.5** |
 | Wave | Later |
 
-#### token-burner dashboard
+#### token-gateway dashboard
 
 | | |
 | --- | --- |
-| Path | `codecaine/utilities/token-burner/src/web` |
+| Path | `codecaine/utilities/token-gateway/src/web` |
 | Stack | Vanilla TS that builds `innerHTML` strings. Bun.build at server start. Raw CSS. bun. |
 | Theme | Light only, copied from CodexLB. 35 oklch tokens in `style.css`. Chart colors in `dashboard.ts`. Inter. 6–12px plus shadows. |
 | Literals | 139 hard (37 oklch, 57 px font sizes) |
@@ -813,7 +813,7 @@ scan $A/x-replier/X-Replier-Frontend/app $A/x-replier/X-Replier-Frontend/compone
 scan $A/x-writer-main/x-writer/X-Writer-Frontend/{app,components,lib}
 scan $W/experiments/font-pipe/apps/web/src
 scan $W/experiments/font-pipe/apps/font-creation/font-effects/web/src $W/experiments/font-pipe/apps/font-creation/font-effects/web/index.html $W/experiments/font-pipe/apps/font-creation/font-effects/web/composer/index.html
-scan $W/codecaine/utilities/token-burner/src/web
+scan $W/codecaine/utilities/token-gateway/src/web
 scan $W/experiments/ai-age/apps/frontend/{app,components,contexts,lib}
 scan $W/codecaine/utilities/sotto/scripts/archive
 ```

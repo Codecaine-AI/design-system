@@ -358,7 +358,7 @@ describe.skipIf(!!process.env.DS_SKIP_BROWSER)("design:score v2 in a browser", (
 
   test("R-focus-visible: a ring on the control or drawn by its own stretched ::after over a tile passes; no change, or a change on a far element, fails", async () => {
     // Each tile draws its ring 20px from the control, outside a clip around the control alone. The button tile is
-    // token-burner's ProviderTile shape, the link tile hue-control's GroupCard shape, and the third holds the same button
+    // token-gateway's ProviderTile shape, the link tile hue-control's GroupCard shape, and the third holds the same button
     // in an open shadow root. The plain tile stretches the same ::after but draws nothing on focus. The far button lights
     // only a status line 200px below it.
     await page.setContent(`<style>button { width: 80px; height: 32px; border: 1px solid #888; background: #eee; } :is(button, a):focus { outline: none; }
