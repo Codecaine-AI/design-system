@@ -3381,15 +3381,15 @@
       ]
     },
     {
-      "id": "token-burner",
-      "name": "token-burner dashboard",
+      "id": "token-gateway",
+      "name": "token-gateway dashboard",
       "wave": 3,
       "kind": "app",
-      "repo": "codecaine/utilities/token-burner",
-      "root": "codecaine/utilities/token-burner",
+      "repo": "codecaine/utilities/token-gateway",
+      "root": "codecaine/utilities/token-gateway",
       "scan": {
         "paths": [
-          "codecaine/utilities/token-burner/src/web"
+          "codecaine/utilities/token-gateway/src/web"
         ],
         "exclude": []
       },
@@ -3400,9 +3400,9 @@
       },
       "consume": {
         "via": "workspace",
-        "detail": "Add ../../../design-system to the workspaces array of the single-package token-burner/package.json and depend on `workspace:*` (a live symlink); bunfig.toml keeps the hoisted linker. src/web/main.tsx imports fonts.css, tokens.css and layout.css, which Bun.build bundles."
+        "detail": "Add ../../../design-system to the workspaces array of the single-package token-gateway/package.json and depend on `workspace:*` (a live symlink); bunfig.toml keeps the hoisted linker. src/web/main.tsx imports fonts.css, tokens.css and layout.css, which Bun.build bundles."
       },
-      "entryStylesheet": "codecaine/utilities/token-burner/src/web/main.tsx",
+      "entryStylesheet": "codecaine/utilities/token-gateway/src/web/main.tsx",
       "theme": {
         "rule": "light-dark"
       },
@@ -3464,12 +3464,12 @@
       "run": {
         "mode": "none",
         "reason": "needs the gateway wrapper, a pinned CPA binary and the mock upstream; profile unproven",
-        "cwd": "codecaine/utilities/token-burner",
+        "cwd": "codecaine/utilities/token-gateway",
         "start": "bun --no-env-file src/index.ts",
         "readyPattern": "Gateway: (http://127\\.0\\.0\\.1:\\d+)"
       },
       "commands": {
-        "cwd": "codecaine/utilities/token-burner",
+        "cwd": "codecaine/utilities/token-gateway",
         "typecheck": "bun --no-env-file run typecheck",
         "build": "bun --no-env-file run build:web"
       },
@@ -3477,13 +3477,13 @@
         "safe": [
           {
             "cmd": "bun --no-env-file test src",
-            "cwd": "codecaine/utilities/token-burner"
+            "cwd": "codecaine/utilities/token-gateway"
           }
         ],
         "unsafe": [
           {
             "cmd": "bun run accept",
-            "reason": "starts the pinned CPA binary and the mock upstream on loopback ports; run it only in the token-burner repo"
+            "reason": "starts the pinned CPA binary and the mock upstream on loopback ports; run it only in the token-gateway repo"
           }
         ]
       },
@@ -3569,7 +3569,7 @@
         },
         "sidebar": {
           "toggle": ".ds-sidebar-toggle",
-          "storageKey": "token-burner.sidebar"
+          "storageKey": "token-gateway.sidebar"
         }
       },
       "exceptions": [
@@ -3579,11 +3579,11 @@
         },
         {
           "what": "tests.safe not run through test:apps",
-          "reason": "new entry (2026-10-14, M1 1G); the managing agent runs bun run test:apps token-burner (twice) and records the baseline before the tests gate counts it"
+          "reason": "new entry (2026-10-14, M1 1G); the managing agent runs bun run test:apps token-gateway (twice) and records the baseline before the tests gate counts it"
         },
         {
           "what": "theme rule light-dark",
-          "reason": "new app: light by default, theme toggle in the topbar saves token-burner.theme and sets data-theme on <html>"
+          "reason": "new app: light by default, theme toggle in the topbar saves token-gateway.theme and sets data-theme on <html>"
         }
       ]
     },
