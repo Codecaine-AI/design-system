@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Notes: card grid</title>
+    <style>
+      body { margin: 0; font-family: var(--ds-font-family-sans); font-size: var(--ds-font-size-ui-md); color: var(--ds-color-text-body); background: var(--ds-color-surface-page); }
+      main { padding: var(--ds-space-8); }
+      h1 { font-size: var(--ds-font-size-ui-lg); margin: 0 0 var(--ds-space-6); }
+      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: var(--ds-space-4); }
+      article { background: var(--ds-color-surface-panel); border: 1px solid var(--ds-color-border-default); border-radius: var(--ds-radius-base); padding: var(--ds-space-4); }
+      article h2 { font-size: var(--ds-font-size-ui-lg); margin: 0 0 var(--ds-space-2); }
+      article p { margin: 0; line-height: var(--ds-line-height-reading); color: var(--ds-color-text-muted); }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Notes</h1>
+      <div class="grid">
+        <article><h2>Garden plan</h2><p>Plant the tomatoes along the south fence. Keep the herbs near the door.</p></article>
+        <article><h2>Reading list</h2><p>Three novels and one book on soil.</p></article>
+        <article><h2>Trip to the coast</h2><p>Leave Friday morning. Book the cabin by the lighthouse.</p></article>
+      </div>
+    </main>
+  </body>
+</html>

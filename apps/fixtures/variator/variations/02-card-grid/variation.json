@@ -1,0 +1,1 @@
+{ "name": "Card grid", "direction": "Every note as a card in one grid.", "intent": "Show more notes at once, with a short preview on each card.", "explores": ["Is a preview enough to find a note?"] }
