@@ -2,7 +2,7 @@
   "app": "variator",
   "name": "Variator review",
   "repo": "codecaine/tools/variator",
-  "baseUrl": "http://127.0.0.1:4888",
+  "registryApp": "variator",
   "sourceDirs": [
     "src/web"
   ],
@@ -43,42 +43,28 @@
   "pages": [
     {
       "id": "review",
-      "path": "/?batch=knowledge-system-open-work-r1",
-      "waitFor": ".pane",
-      "note": "The review screen on a done batch (read only): tool bar, one frame with its caption bar and tab strip, and the notes dock. Run against the owner's server (bun src/server/index.ts, PORT 4888); the frames are iframes and are not measured."
+      "path": "/?batch=sample-notes-home-r1",
+      "waitFor": ".stage .frame-box iframe",
+      "note": "The review screen on an open batch: Submit round in the tool bar, Screenshot in the caption bar, Pick and the note fields in the dock, and one pinned note. registryApp starts Variator in the sandbox on the batch apps/fixtures/variator/seed.ts seeds (two variations, one note). The frames are iframes holding fixture pages and are not measured."
     },
     {
       "id": "review-variation-02",
-      "path": "/?batch=knowledge-system-open-work-r1",
-      "waitFor": ".pane",
+      "path": "/?batch=sample-notes-home-r1",
+      "waitFor": ".stage .frame-box iframe",
       "actions": [
         {
           "click": "button[role=\"tab\"][aria-label^=\"Variation 02\"]"
         },
         {
-          "wait": 400
+          "waitFor": "button[role=\"tab\"][aria-label^=\"Variation 02\"][aria-selected=\"true\"]"
         }
       ],
-      "note": "The second variation chosen in the frame's tab strip, so the dock title and the selected tab move."
-    },
-    {
-      "id": "review-original",
-      "path": "/?batch=knowledge-system-open-work-r1",
-      "waitFor": ".pane",
-      "actions": [
-        {
-          "click": "button[role=\"tab\"]:has-text(\"Original\")"
-        },
-        {
-          "wait": 400
-        }
-      ],
-      "note": "The Original tab: the live source page in the frame, and the dock says it takes no notes."
+      "note": "The second variation chosen in the frame's tab strip: the dock title moves and the dock shows the empty hint (no notes on it yet)."
     },
     {
       "id": "review-split",
-      "path": "/?batch=knowledge-system-open-work-r1",
-      "waitFor": ".pane",
+      "path": "/?batch=sample-notes-home-r1",
+      "waitFor": ".stage .frame-box iframe",
       "actions": [
         {
           "click": "button:has-text(\"Split\")"
@@ -94,38 +80,45 @@
     },
     {
       "id": "review-dock-closed",
-      "path": "/?batch=knowledge-system-open-work-r1",
-      "waitFor": ".pane",
+      "path": "/?batch=sample-notes-home-r1",
+      "waitFor": ".stage .frame-box iframe",
       "actions": [
         {
           "click": "button[aria-controls=\"dock\"]"
         },
         {
-          "wait": 400
+          "waitFor": ".app[data-dock=\"closed\"]"
         }
       ],
       "note": "Notes toggled off: the stage takes the full width."
     },
     {
       "id": "review-meta-open",
-      "path": "/?batch=knowledge-system-open-work-r1",
-      "waitFor": ".pane",
+      "path": "/?batch=sample-notes-home-r1",
+      "waitFor": ".dock details.meta",
       "actions": [
         {
           "click": "details.meta summary"
         },
         {
-          "wait": 300
+          "waitFor": "details.meta[open]"
         }
       ],
       "note": "The dock's Direction and intent disclosure open."
     },
     {
-      "id": "review-open-batch",
-      "path": "/?batch=knowledge-system-home-r1",
-      "waitFor": ".pane",
-      "note": "An open batch: Submit round in the tool bar, the Screenshot button in the caption bar, the Pick button and the note fields in the dock. No step clicks anything; the scorer aborts every non-GET request anyway.",
-      "optional": "needs an open batch in the owner's Variator data"
+      "id": "review-submit-confirm",
+      "path": "/?batch=sample-notes-home-r1",
+      "waitFor": ".bar .submit",
+      "actions": [
+        {
+          "click": ".bar .submit:has-text(\"Submit round\")"
+        },
+        {
+          "waitFor": ".bar .confirm"
+        }
+      ],
+      "note": "The tool bar's Submit round confirm step. No step presses its Submit button, and the scorer aborts every non-GET request anyway."
     }
   ]
 }
