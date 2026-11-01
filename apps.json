@@ -4659,7 +4659,7 @@
           {
             "selector": "aside",
             "property": "background-color",
-            "token": "color.surface.sidebar"
+            "token": "color.surface.panel"
           },
           {
             "selector": "#root > div",
