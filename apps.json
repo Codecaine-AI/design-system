@@ -4522,7 +4522,7 @@
       "entryStylesheet": "codecaine/core/observatory/src/ui/main.tsx",
       "theme": {
         "rule": "light-dark",
-        "storageKey": "observatory.viewerStyle.v1"
+        "storageKey": "observatory.theme"
       },
       "literalFloor": 0,
       "allowlist": null,
@@ -4652,17 +4652,17 @@
         "route": "project",
         "probes": [
           {
-            "selector": "div.research-style-shell",
+            "selector": "#root > div",
             "property": "background-color",
             "token": "color.surface.page"
           },
           {
             "selector": "aside",
             "property": "background-color",
-            "token": "color.surface.sidebar"
+            "token": "color.surface.panel"
           },
           {
-            "selector": "div.research-style-shell",
+            "selector": "#root > div",
             "property": "color",
             "token": "color.text.body"
           },

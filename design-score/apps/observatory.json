@@ -9,14 +9,14 @@
   "themes": {
     "light": {
       "localStorage": {
-        "observatory.viewerStyle.v2": "{\"theme\":\"light\"}"
+        "observatory.theme": "light"
       },
       "colorScheme": "light",
       "assert": "html[data-theme=\"light\"]"
     },
     "dark": {
       "localStorage": {
-        "observatory.viewerStyle.v2": "{\"theme\":\"dark\"}"
+        "observatory.theme": "dark"
       },
       "colorScheme": "dark",
       "assert": "html[data-theme=\"dark\"]"
@@ -34,110 +34,48 @@
   ],
   "settleMs": 700,
   "loading": [
-    "Loading agent catalog"
+    "Reading the action log"
   ],
   "cap": 6,
   "pages": [
     {
-      "id": "traces",
+      "id": "actions",
       "path": "/",
-      "waitFor": "text=fn_8003A1C4 in d_a_player.cpp",
-      "note": "Home: the first project (live harness) on its Traces list. The fixture registry has a live project, an offline project with traces and an offline project with no trace database."
+      "waitFor": "text=prompts_apply_ops",
+      "note": "The action log with seven records from two threads and one thread-less run."
     },
     {
-      "id": "trace-detail",
+      "id": "actions-filtered",
       "path": "/",
-      "waitFor": "text=State demo: counter and checklist",
+      "waitFor": "text=prompts_apply_ops",
       "actions": [
         {
-          "click": "text=State demo: counter and checklist"
+          "click": "text=thread-91bc >> nth=0"
         },
         {
-          "waitFor": "text=All traces"
+          "waitFor": "text=3 actions"
         }
       ],
-      "note": "A trace open: the span tree and the empty inspector."
+      "note": "Filtered by one thread, set by clicking the thread cell."
     },
     {
-      "id": "trace-event",
+      "id": "actions-empty",
       "path": "/",
-      "waitFor": "text=State demo: counter and checklist",
-      "actions": [
+      "waitFor": "text=No actions match",
+      "mock": [
         {
-          "click": "text=State demo: counter and checklist"
-        },
-        {
-          "waitFor": "text=Turn one: probe the alpha note."
-        },
-        {
-          "click": "text=Turn one: probe the alpha note. >> nth=0"
-        },
-        {
-          "wait": 400
+          "path": "/api/actions",
+          "merge": {
+            "records": []
+          }
         }
       ],
-      "note": "A trace with a user-message span selected, so the inspector shows it."
+      "note": "An empty log."
     },
     {
-      "id": "agents",
+      "id": "registry-error",
       "path": "/",
       "waitFor": "aside",
-      "actions": [
-        {
-          "click": "li:nth-child(1) button:has-text(\"agents\")"
-        },
-        {
-          "waitFor": "text=Rendered prompt"
-        }
-      ],
-      "note": "The live project's Agents page: the catalog list and the read-only prompt of the first agent."
-    },
-    {
-      "id": "traces-offline",
-      "path": "/",
-      "waitFor": "aside",
-      "actions": [
-        {
-          "click": "li:nth-child(2) button:has-text(\"traces\")"
-        },
-        {
-          "waitFor": "text=Harness not running"
-        }
-      ],
-      "note": "An offline project's Traces list, read from its local SQLite database."
-    },
-    {
-      "id": "agents-offline",
-      "path": "/",
-      "waitFor": "aside",
-      "actions": [
-        {
-          "click": "li:nth-child(2) button:has-text(\"agents\")"
-        },
-        {
-          "waitFor": "text=Agents unavailable"
-        }
-      ],
-      "note": "An offline project's Agents page: the unavailable panel."
-    },
-    {
-      "id": "traces-empty",
-      "path": "/",
-      "waitFor": "aside",
-      "actions": [
-        {
-          "click": "li:nth-child(3) button:has-text(\"traces\")"
-        },
-        {
-          "waitFor": "text=No traces yet"
-        }
-      ],
-      "note": "An offline project with no trace database."
-    },
-    {
-      "id": "no-projects",
-      "path": "/",
-      "waitFor": "text=Add a project to registry.json",
       "mock": [
         {
           "path": "/registry/projects",
@@ -146,7 +84,7 @@
           }
         }
       ],
-      "note": "An empty registry. The fixture registry has projects, so the projects response is mocked empty."
+      "note": "No registered projects."
     }
   ]
 }
