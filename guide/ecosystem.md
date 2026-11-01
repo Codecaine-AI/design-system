@@ -47,6 +47,7 @@ Status as of 2026-10-07. For current status run `bun run progress`.
 | mainmenu | `apps/MainMenu/apps/scene-engine` | `scene-engine` | npm-file | Pending: uncommitted editor work in `app/editor/_components` | Shell |
 | gamecube | `harnesses/gamecube-decomp-harness/apps/frontend` | `@decomp-orchestrator/frontend` | link | Pending: uncommitted `styles.css`, `vite.config.ts` and root `package.json` | Shell |
 | circlesnakes-panels | `games/circle-snakes/web` | `circle-snakes-web` | vendor-tgz | Pending: 42 uncommitted entries in `src/ui`, `src/app` and `vite.config.ts` | n/a |
+| prompt-kit-studio | `codecaine/core/prompt-kit/packages/studio` | `@codecaine-ai/prompt-kit-studio` | workspace | Pending: run mode none. The studio starts a Prompt service outside the checkout, so its run profile is not proven. lint:apps passes. | Shell |
 
 - Libraries (docs-viewer, docs-publish, viewer-shell, viewer-ui, prompt-kit-ui, annotations) have no pass 3. Libraries and leaf renderers have no pass 2: they render inside a host's shell. Each n/a pass carries its reason in the registry entry.
 - Every pending app is blocked by uncommitted work in its repo. The action is to commit that work. The pending apps are the next batch.

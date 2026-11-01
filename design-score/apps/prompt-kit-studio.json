@@ -1,0 +1,64 @@
+{
+  "app": "prompt-kit-studio",
+  "name": "Prompt Studio",
+  "repo": "codecaine/core/prompt-kit",
+  "baseUrl": "http://127.0.0.1:4860",
+  "sourceDirs": [
+    "packages/studio/src"
+  ],
+  "themes": {
+    "light": {
+      "localStorage": {
+        "prompt-studio.theme": "light"
+      },
+      "colorScheme": "light",
+      "assert": "html[data-theme=\"light\"]"
+    },
+    "dark": {
+      "localStorage": {
+        "prompt-studio.theme": "dark"
+      },
+      "colorScheme": "dark",
+      "assert": "html[data-theme=\"dark\"]"
+    }
+  },
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "width": 1024,
+      "height": 768
+    }
+  ],
+  "settleMs": 700,
+  "loading": [
+    "Loading the catalog…"
+  ],
+  "cap": 6,
+  "motionAllow": [
+    {
+      "name": "ds-shell-sidebar",
+      "selector": ".ds-shell",
+      "props": [
+        "grid-template-columns"
+      ],
+      "reason": "The design-system app shell animates its sidebar column when it collapses (css/layout.css .ds-shell). The shell owns it. Ford allowed it for knowledge-system, and this config reuses that allowance for the same shell."
+    }
+  ],
+  "pages": [
+    {
+      "id": "prompts",
+      "path": "/",
+      "waitFor": ".ds-nav a.ds-nav-item",
+      "note": "The prompt list: the catalog's prompts in the sidebar, one section per project, and the Choose a prompt note in the main lane. Start the studio with bun run dev in codecaine/core/prompt-kit/packages/studio (vite on 127.0.0.1:4860). (registry route prompts)"
+    },
+    {
+      "id": "prompt",
+      "path": "/p/prompt-kit-6c3b6538/promptEditorPrompt",
+      "waitFor": ".prompt-editor-surface",
+      "note": "One prompt open in the Lab: Prompt Editor, the first prompt in the prompt-kit catalog. The Lab reads its requests from the Prompt service, which must have the /api/annotations routes, or the page shows only the 404 message. Nothing is clicked or typed. (registry route prompt)"
+    }
+  ]
+}

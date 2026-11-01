@@ -6236,6 +6236,192 @@
           "reason": "the app is blocked by uncommitted owner work (STATE.md app_ledger), so test:apps did not run it and tests.baselines has no entry; when it unblocks, the managing agent runs bun run test:apps <app> (twice) and records the baseline before the tests gate counts it"
         }
       ]
+    },
+    {
+      "id": "prompt-kit-studio",
+      "name": "Prompt Studio",
+      "wave": 1,
+      "kind": "app",
+      "repo": "codecaine/core/prompt-kit",
+      "root": "codecaine/core/prompt-kit/packages/studio",
+      "scan": {
+        "paths": [
+          "codecaine/core/prompt-kit/packages/studio/src"
+        ],
+        "exclude": []
+      },
+      "stack": {
+        "summary": "React 19.2, Vite 7.3, Tailwind 4 (postcss) and plain CSS; bun (Core workspace)",
+        "tailwind": "v4",
+        "packageManager": "bun"
+      },
+      "consume": {
+        "via": "workspace",
+        "detail": "Core workspace member: `@codecaine-ai/design-system` is `workspace:*`; src/index.css imports the package CSS, and vite.config.ts allows the Core dir in server.fs.allow."
+      },
+      "entryStylesheet": "codecaine/core/prompt-kit/packages/studio/src/main.tsx",
+      "theme": {
+        "rule": "light-dark"
+      },
+      "literalFloor": 0,
+      "shell": true,
+      "folderStandard": true,
+      "passes": {
+        "1": {
+          "required": true
+        },
+        "2": {
+          "required": true
+        },
+        "3": {
+          "required": true
+        }
+      },
+      "checks": {
+        "resolution": {
+          "required": true
+        },
+        "wiring": {
+          "required": true
+        },
+        "literals": {
+          "required": true
+        },
+        "names": {
+          "required": true
+        },
+        "shell": {
+          "required": true
+        },
+        "structure": {
+          "required": true
+        }
+      },
+      "gates": {
+        "lint": {
+          "required": true
+        },
+        "verify": {
+          "required": false,
+          "reason": "run mode none: profile unproven: the studio starts or reuses a Prompt service (ensureDaemon) whose state lives outside the checkout, so app-runner cannot run it in the sandbox yet; verified statically only"
+        },
+        "snapshot": {
+          "required": false,
+          "reason": "run mode none: profile unproven; verified statically only"
+        },
+        "pixelDiff": {
+          "required": false,
+          "reason": "run mode none: profile unproven; verified statically only"
+        },
+        "tests": {
+          "required": false,
+          "reason": "not run yet: bun test server starts a studio and a Prompt service; the managing agent records a baseline under test:apps before the gate counts"
+        }
+      },
+      "run": {
+        "mode": "none",
+        "reason": "profile unproven: the studio starts or reuses a Prompt service (ensureDaemon) whose state lives outside the checkout, so app-runner cannot run it in the sandbox yet; design:score runs against the owner's dev server on 4860",
+        "cwd": "codecaine/core/prompt-kit/packages/studio",
+        "start": "bun x --no-env-file --bun vite {flags}",
+        "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
+      },
+      "commands": {
+        "cwd": "codecaine/core/prompt-kit/packages/studio",
+        "typecheck": "bun x --no-env-file --bun tsc -p tsconfig.json --noEmit"
+      },
+      "tests": {
+        "safe": [],
+        "unsafe": [
+          {
+            "cmd": "bun test server",
+            "reason": "starts the studio and a Prompt service and files a request through it"
+          }
+        ]
+      },
+      "routes": [
+        {
+          "id": "prompts",
+          "path": "/",
+          "waitFor": ".ds-nav a.ds-nav-item"
+        },
+        {
+          "id": "prompt",
+          "path": "/p/prompt-kit-6c3b6538/promptEditorPrompt",
+          "waitFor": ".prompt-editor-surface"
+        }
+      ],
+      "runProfile": {
+        "env": {
+          "NO_COLOR": "1",
+          "CODECAINE_PROMPTS_STATE_DIR": "{tmp}/prompts-state"
+        },
+        "unsetEnv": [
+          "ANTHROPIC_API_KEY",
+          "OPENAI_API_KEY",
+          "GITHUB_TOKEN",
+          "GH_TOKEN",
+          "PROMPT_KIT_STUDIO_WORKSPACE"
+        ],
+        "tempHome": true,
+        "fixtures": [],
+        "flags": [
+          "--port",
+          "{port:ui}",
+          "--strictPort",
+          "--host",
+          "127.0.0.1"
+        ],
+        "ports": {
+          "ui": 47260
+        },
+        "proof": {
+          "status": "unproven",
+          "method": ""
+        }
+      },
+      "verify": {
+        "route": "prompts",
+        "probes": [
+          {
+            "selector": "html",
+            "property": "background-color",
+            "token": "color.surface.page"
+          },
+          {
+            "selector": ".ds-sidebar",
+            "property": "background-color",
+            "token": "color.surface.sidebar"
+          },
+          {
+            "selector": "body",
+            "property": "color",
+            "token": "color.text.body"
+          },
+          {
+            "selector": ".ds-topbar",
+            "property": "border-bottom-color",
+            "token": "color.border.default"
+          }
+        ],
+        "darkSwitch": {
+          "kind": "attribute",
+          "target": "html"
+        },
+        "sidebar": {
+          "toggle": ".ds-sidebar-toggle",
+          "storageKey": "prompt-studio.sidebar"
+        }
+      },
+      "exceptions": [
+        {
+          "what": "planned profile",
+          "reason": "CODECAINE_PROMPTS_STATE_DIR in {tmp}, so the studio starts its own Prompt service and never touches the shared one in ~/.local/state/codecaine-prompts; routes never file a request"
+        },
+        {
+          "what": "prompt route key",
+          "reason": "prompt-kit-6c3b6538/promptEditorPrompt is the first (and on 2026-11-01 the only) prompt in the prompt-kit catalog (GET /api/studio/prompts)"
+        }
+      ]
     }
   ]
 }
