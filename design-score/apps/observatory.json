@@ -42,7 +42,93 @@
       "id": "actions",
       "path": "/",
       "waitFor": "text=prompts_apply_ops",
-      "note": "The action log with seven records from two threads and one thread-less run."
+      "note": "The action log with seven records from two threads and one thread-less run, mocked so the score does not depend on the machine log.",
+      "mock": [
+        {
+          "path": "/api/actions",
+          "merge": {
+            "records": [
+              {
+                "id": 1,
+                "runId": "run-7f2a",
+                "threadId": "thread-91bc",
+                "agent": "claude-code",
+                "tool": "docs_read",
+                "target": "docs/observatory/overview",
+                "result": "ok",
+                "snapshotId": null,
+                "at": "2026-11-01T09:12:04.000Z"
+              },
+              {
+                "id": 2,
+                "runId": "run-7f2a",
+                "threadId": "thread-91bc",
+                "agent": "claude-code",
+                "tool": "docs_write_text",
+                "target": "docs/observatory/overview",
+                "result": "ok",
+                "snapshotId": null,
+                "at": "2026-11-01T09:13:40.000Z"
+              },
+              {
+                "id": 3,
+                "runId": "run-3c11",
+                "threadId": "thread-4e07",
+                "agent": "codex",
+                "tool": "place_shape",
+                "target": "canvases/payments-flow",
+                "result": "ok",
+                "snapshotId": null,
+                "at": "2026-11-01T09:20:15.000Z"
+              },
+              {
+                "id": 4,
+                "runId": "run-3c11",
+                "threadId": "thread-4e07",
+                "agent": "codex",
+                "tool": "connect",
+                "target": "canvases/payments-flow",
+                "result": "refused",
+                "snapshotId": null,
+                "at": "2026-11-01T09:21:02.000Z"
+              },
+              {
+                "id": 5,
+                "runId": "run-7f2a",
+                "threadId": "thread-91bc",
+                "agent": "claude-code",
+                "tool": "prompts_apply_ops",
+                "target": "prompts/observatory/system",
+                "result": "2 findings",
+                "snapshotId": null,
+                "at": "2026-11-01T09:30:47.000Z"
+              },
+              {
+                "id": 6,
+                "runId": "run-3c11",
+                "threadId": "thread-4e07",
+                "agent": "codex",
+                "tool": "canvas_check",
+                "target": "canvases/payments-flow",
+                "result": "ok",
+                "snapshotId": null,
+                "at": "2026-11-01T09:34:19.000Z"
+              },
+              {
+                "id": 7,
+                "runId": "run-b905",
+                "threadId": null,
+                "agent": "docs-system",
+                "tool": "docs_check",
+                "target": "docs/observatory/overview",
+                "result": "ok",
+                "snapshotId": null,
+                "at": "2026-11-01T09:41:33.000Z"
+              }
+            ]
+          }
+        }
+      ]
     },
     {
       "id": "actions-filtered",
@@ -56,7 +142,49 @@
           "waitFor": "text=3 actions"
         }
       ],
-      "note": "Filtered by one thread, set by clicking the thread cell."
+      "note": "Filtered by one thread, set by clicking the thread cell. The mock serves that thread's three records, since a mock cannot read the thread query.",
+      "mock": [
+        {
+          "path": "/api/actions",
+          "merge": {
+            "records": [
+              {
+                "id": 1,
+                "runId": "run-7f2a",
+                "threadId": "thread-91bc",
+                "agent": "claude-code",
+                "tool": "docs_read",
+                "target": "docs/observatory/overview",
+                "result": "ok",
+                "snapshotId": null,
+                "at": "2026-11-01T09:12:04.000Z"
+              },
+              {
+                "id": 2,
+                "runId": "run-7f2a",
+                "threadId": "thread-91bc",
+                "agent": "claude-code",
+                "tool": "docs_write_text",
+                "target": "docs/observatory/overview",
+                "result": "ok",
+                "snapshotId": null,
+                "at": "2026-11-01T09:13:40.000Z"
+              },
+              {
+                "id": 5,
+                "runId": "run-7f2a",
+                "threadId": "thread-91bc",
+                "agent": "claude-code",
+                "tool": "prompts_apply_ops",
+                "target": "prompts/observatory/system",
+                "result": "2 findings",
+                "snapshotId": null,
+                "at": "2026-11-01T09:30:47.000Z"
+              }
+            ]
+          }
+        }
+      ]
     },
     {
       "id": "actions-empty",
