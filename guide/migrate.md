@@ -1,6 +1,6 @@
 # Migrate an app
 
-How to move one app onto `@codecaine-ai/design-system`. Check first that the app is in scope: [ecosystem.md](ecosystem.md#scope). The commands run in the design-system folder and are listed in [AGENTS.md](../AGENTS.md#commands).
+How to move one app onto `@codecaine-ai/design-system`. Check first that the app is in scope: [ecosystem.md](ecosystem.md#scope). The commands run in the design-system folder and are listed in the docs page [App Checks and Commands](../docs/20-app-checks-and-commands/doc.json).
 
 An app moves in up to three passes. Each pass ends at its gates and two reviews.
 
@@ -105,5 +105,5 @@ After three review-and-fix rounds without acceptance, stop and mark the pass blo
 1. Style only with tokens: `var(--ds-*)`, the Tailwind theme or preset, or `cssVar()`. Never hard-code a color, size, spacing, radius, font, shadow, duration or z-index.
 2. Never copy token values into an app, and never edit `dist/`. A value with no equal token stays as written, with an allowlist row and its reason.
 3. Check light and dark. A dark-first surface is checked in dark only.
-4. Never run an app, its tests or its screenshots outside its run profile. `verify:apps`, `snapshot`, `test:apps` and `use:app` start and stop it under the profile ([AGENTS.md](../AGENTS.md#check-an-app), rule 6). Run an app's tests only through `test:apps`.
+4. Never run an app, its tests or its screenshots outside its run profile. `verify:apps`, `snapshot`, `test:apps` and `use:app` start and stop it under the profile ([App Checks and Commands](../docs/20-app-checks-and-commands/doc.json), Run Profile). Run an app's tests only through `test:apps`.
 5. Send no request that changes state. Use only navigation and view controls: never submit, save, delete, sync or send. Your own browser scripts abort every non-GET request at the browser context before any click or key press.

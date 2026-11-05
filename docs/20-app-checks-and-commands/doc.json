@@ -1,0 +1,1604 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-e30336c2569f2743994a550a2d6996c5",
+  "title": "App Checks and Commands",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "intro",
+        "h-commands",
+        "cmd-where",
+        "cmd-root",
+        "cmd-apps",
+        "cmd-table",
+        "h-test-exit",
+        "test-exit-lead",
+        "test-exit-1",
+        "test-exit-2",
+        "test-exit-3",
+        "test-exit-4",
+        "test-exit-5",
+        "test-skip",
+        "h-exact",
+        "exact-lead",
+        "exact-1",
+        "exact-2",
+        "exact-3",
+        "exact-4",
+        "exact-5",
+        "exact-args",
+        "h-profile",
+        "profile-lead",
+        "profile-1",
+        "profile-2",
+        "profile-3",
+        "profile-4",
+        "profile-5",
+        "net-lead",
+        "net-table",
+        "h-electron",
+        "electron-lead",
+        "electron-table",
+        "h-cleanup",
+        "cleanup-lead",
+        "cleanup-code",
+        "cleanup-1",
+        "cleanup-2",
+        "cleanup-3",
+        "h-output",
+        "output-lead",
+        "output-1",
+        "output-2"
+      ]
+    },
+    "intro": {
+      "id": "intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The design-system commands build the package and check each app in the app registry, "
+        },
+        {
+          "insert": "apps.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". This page lists the build and app-check commands, the run profile that each app run uses, the Electron opt-in, the cleanup after a crashed run, and where results go. "
+        },
+        {
+          "insert": "Design Score",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "10-design-score"
+            }
+          }
+        },
+        {
+          "insert": " covers "
+        },
+        {
+          "insert": "design:score",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and the "
+        },
+        {
+          "insert": "design-system",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " skill gives the order in which you run the app checks."
+        }
+      ],
+      "children": []
+    },
+    "h-commands": {
+      "id": "h-commands",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Commands"
+        }
+      ],
+      "children": []
+    },
+    "cmd-where": {
+      "id": "cmd-where",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Run each command in the design-system checkout, "
+        },
+        {
+          "insert": "/Users/Ford/workspace/codebases/codecaine/core/design-system",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Two arguments have defaults."
+        }
+      ],
+      "children": []
+    },
+    "cmd-root": {
+      "id": "cmd-root",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "--root",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is the workspace to check. It defaults to "
+        },
+        {
+          "insert": "/Users/Ford/workspace/codebases",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", three levels above the checkout."
+        }
+      ],
+      "children": []
+    },
+    "cmd-apps": {
+      "id": "cmd-apps",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "app...",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " defaults to every app in "
+        },
+        {
+          "insert": "apps.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". "
+        },
+        {
+          "insert": "test:apps",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " needs at least one app."
+        }
+      ],
+      "children": []
+    },
+    "cmd-table": {
+      "id": "cmd-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Command",
+          "What it does"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "bun run build",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Validates the tokens and writes "
+              },
+              {
+                "insert": "dist/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "guide/tokens.md",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "bun run check",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Exits 1 when "
+              },
+              {
+                "insert": "dist/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " is stale."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "bun run test",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Runs the tests in "
+              },
+              {
+                "insert": "test/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "bun run registry:check [--root <dir>]",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Checks the paths, ports, allowlists and fixtures in "
+              },
+              {
+                "insert": "apps.json",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " against the workspace."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "bun run lint:apps [--root <dir>] [--pass <n>] [--json] [app...]",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Static checks. Pass 1 checks resolution, wiring, literals and names. Pass 2 checks the shell. Pass 3 checks the folder structure."
+          ],
+          [
+            [
+              {
+                "insert": "bun run verify:apps [--root <dir>] [--pass <n>] [app...]",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Checks in a browser that the app renders from the tokens. Run mode "
+              },
+              {
+                "insert": "none",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " gets a static check."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "bun run verify:apps --propagate --root <dir>",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Rebuilds with a sentinel page color and checks that live-linked apps paint it. "
+              },
+              {
+                "insert": "--restore --root <dir>",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " undoes an interrupted propagate."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "bun run test:apps [--root <dir>] [--commands typecheck,build] [--no-tests] [--timeout <s>] [--json] app...",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Runs the app's safe tests and named commands in the sandbox. Compares each result with "
+              },
+              {
+                "insert": "tests.baselines",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "bun run use:app --app <id> [--root <dir>] [--out-dir <dir>]",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Uses the app in a browser. It visits each route in each theme, runs the route steps, toggles the sidebar and hovers controls."
+          ],
+          [
+            [
+              {
+                "insert": "bun run snapshot --app <id> --set <name>",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Takes a screenshot of each route in each theme."
+          ],
+          [
+            [
+              {
+                "insert": "bun run snapshot:diff --app <id> --a <set> --b <set> [--exact]",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Compares two shot sets pixel by pixel."
+          ],
+          [
+            [
+              {
+                "insert": "bun run snapshot:sheet --app <id> --a <set> --b <set>",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Writes a before and after sheet of two shot sets."
+          ],
+          [
+            [
+              {
+                "insert": "bun run codemod:literals --app <id> propose",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Proposes a token for each hard-coded literal. "
+              },
+              {
+                "insert": "apply --table <mapping.json>",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " changes only rows marked "
+              },
+              {
+                "insert": "\"approve\": \"yes\"",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "bun run progress [--root <dir>] [--baseline-lint <file>]",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Writes "
+              },
+              {
+                "insert": "progress.html",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "progress.md",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " with each app's pass status and literal count."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "bun run pack [--out <dir>]",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Packs a tgz for a vendored app. "
+              },
+              {
+                "insert": "guide/consume.md",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " gives its rules."
+              }
+            ]
+          ]
+        ],
+        "title": "Design-system commands"
+      },
+      "children": []
+    },
+    "h-test-exit": {
+      "id": "h-test-exit",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "When "
+        },
+        {
+          "insert": "test:apps",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " Fails"
+        }
+      ],
+      "children": []
+    },
+    "test-exit-lead": {
+      "id": "test-exit-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "test:apps",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " compares each command with its baseline in "
+        },
+        {
+          "insert": "tests.baselines",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and fails the command on five kinds of result."
+        }
+      ],
+      "children": []
+    },
+    "test-exit-1": {
+      "id": "test-exit-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A failing test or tsc error that the baseline does not list fails the command."
+        }
+      ],
+      "children": []
+    },
+    "test-exit-2": {
+      "id": "test-exit-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Fewer tests than the baseline ran fail the command, whatever the exit code."
+        }
+      ],
+      "children": []
+    },
+    "test-exit-3": {
+      "id": "test-exit-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A baseline without "
+        },
+        {
+          "insert": "cmd",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or a baseline for another command, fails the command."
+        }
+      ],
+      "children": []
+    },
+    "test-exit-4": {
+      "id": "test-exit-4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A write into the app's own checkout fails the command. Build caches such as "
+        },
+        {
+          "insert": "node_modules/.vite",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "*.tsbuildinfo",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " do not count."
+        }
+      ],
+      "children": []
+    },
+    "test-exit-5": {
+      "id": "test-exit-5",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A timeout, a process that leaves the run's process group, or a listener beyond loopback fails the command."
+        }
+      ],
+      "children": []
+    },
+    "test-skip": {
+      "id": "test-skip",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A named command that the entry does not set is skipped with the line "
+        },
+        {
+          "insert": "commands.<name>: not set in apps.json (skipped)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". "
+        },
+        {
+          "insert": "test:apps",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " refuses to run anything without a working "
+        },
+        {
+          "insert": "sandbox-exec",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", without a snapshot of the listening ports, or when the app's folder is in no git checkout inside "
+        },
+        {
+          "insert": "--root",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-exact": {
+      "id": "h-exact",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "When "
+        },
+        {
+          "insert": "snapshot:diff --exact",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " Fails"
+        }
+      ],
+      "children": []
+    },
+    "exact-lead": {
+      "id": "exact-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Without "
+        },
+        {
+          "insert": "--exact",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "snapshot:diff",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " writes the same "
+        },
+        {
+          "insert": "report.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and exits 0. With "
+        },
+        {
+          "insert": "--exact",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", it exits 1 when the pixel-diff gate fails for one of these causes."
+        }
+      ],
+      "children": []
+    },
+    "exact-1": {
+      "id": "exact-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A gating shot changed, is missing, failed, is unstable, or is not in the registry."
+        }
+      ],
+      "children": []
+    },
+    "exact-2": {
+      "id": "exact-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The mask boxes differ, or were never recorded."
+        }
+      ],
+      "children": []
+    },
+    "exact-3": {
+      "id": "exact-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A set is partial without "
+        },
+        {
+          "insert": "--only",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", is incomplete, or used another capture spec."
+        }
+      ],
+      "children": []
+    },
+    "exact-4": {
+      "id": "exact-4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Set B no longer matches the tree at "
+        },
+        {
+          "insert": "--root",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or its shots come from two trees."
+        }
+      ],
+      "children": []
+    },
+    "exact-5": {
+      "id": "exact-5",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A run broke isolation, or no shot was compared."
+        }
+      ],
+      "children": []
+    },
+    "exact-args": {
+      "id": "exact-args",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Bad arguments exit 2, with or without "
+        },
+        {
+          "insert": "--exact",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Examples are the same set twice, a missing set, or an "
+        },
+        {
+          "insert": "--only",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " id that names no route."
+        }
+      ],
+      "children": []
+    },
+    "h-profile": {
+      "id": "h-profile",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Run Profile"
+        }
+      ],
+      "children": []
+    },
+    "profile-lead": {
+      "id": "profile-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The run profile is the isolation that the app runner, "
+        },
+        {
+          "insert": "scripts/lib/app-runner.ts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", puts around each app run. "
+        },
+        {
+          "insert": "verify:apps",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "snapshot",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "test:apps",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "use:app",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " start and stop the app under it. Never start an app outside its run profile."
+        }
+      ],
+      "children": []
+    },
+    "profile-1": {
+      "id": "profile-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each run gets a fresh temp dir as "
+        },
+        {
+          "insert": "HOME",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "TMPDIR",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and the XDG dirs, with the profile's fixtures copied in. The runner never copies a "
+        },
+        {
+          "insert": ".env*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " file."
+        }
+      ],
+      "children": []
+    },
+    "profile-2": {
+      "id": "profile-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The run environment starts from an allowlist, not from your full environment. "
+        },
+        {
+          "insert": "runProfile.env",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " adds to it."
+        }
+      ],
+      "children": []
+    },
+    "profile-3": {
+      "id": "profile-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each process runs inside a macOS "
+        },
+        {
+          "insert": "sandbox-exec",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " profile. Without a working "
+        },
+        {
+          "insert": "sandbox-exec",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", the run refuses to start."
+        }
+      ],
+      "children": []
+    },
+    "profile-4": {
+      "id": "profile-4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The sandbox allows reads under your home only in "
+        },
+        {
+          "insert": "--root",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and the runtimes. It denies each "
+        },
+        {
+          "insert": ".env",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " read."
+        }
+      ],
+      "children": []
+    },
+    "profile-5": {
+      "id": "profile-5",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The sandbox allows writes only in the app's own checkout and the run's temp dir."
+        }
+      ],
+      "children": []
+    },
+    "net-lead": {
+      "id": "net-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Network access depends on the kind of run. Each kind connects only on loopback."
+        }
+      ],
+      "children": []
+    },
+    "net-table": {
+      "id": "net-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Run kind",
+          "Ports it can reach"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "An app that "
+              },
+              {
+                "insert": "verify:apps",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "snapshot",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " or "
+              },
+              {
+                "insert": "use:app",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " starts"
+              }
+            ],
+            [
+              {
+                "insert": "Its own port block and "
+              },
+              {
+                "insert": "allowedLocalPorts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". Blocks come from 46900-47999."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "A test command in "
+              },
+              {
+                "insert": "test:apps",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Its port block and 49152-65535, minus each port that listens when it starts and the owner's ports."
+          ],
+          [
+            [
+              {
+                "insert": "A named command in "
+              },
+              {
+                "insert": "test:apps",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", such as typecheck or build"
+              }
+            ],
+            "No port."
+          ]
+        ],
+        "title": "Network access by run kind"
+      },
+      "children": []
+    },
+    "h-electron": {
+      "id": "h-electron",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Electron Apps"
+        }
+      ],
+      "children": []
+    },
+    "electron-lead": {
+      "id": "electron-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The app runner refuses an Electron run by default. An Electron launch writes "
+        },
+        {
+          "insert": "~/Library/Preferences/com.github.Electron.plist",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " through cfprefsd, and neither the sandbox nor "
+        },
+        {
+          "insert": "CFFIXED_USER_HOME",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " stops that write. Set these variables only when the app owner asks."
+        }
+      ],
+      "children": []
+    },
+    "electron-table": {
+      "id": "electron-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Variables",
+          "Effect"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "DS_ALLOW_ELECTRON=1",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "The app runner starts an app with run mode "
+              },
+              {
+                "insert": "electron",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "DS_ALLOW_ELECTRON=1",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "DS_TEST_ELECTRON=1",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "bun run test",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " runs the Electron test in "
+              },
+              {
+                "insert": "test/app-runner.test.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "DS_TEST_ELECTRON=1",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "bun run test",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " runs the Electron capture test in "
+              },
+              {
+                "insert": "test/capture-electron.test.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ]
+        ],
+        "title": "Electron opt-in variables"
+      },
+      "children": []
+    },
+    "h-cleanup": {
+      "id": "h-cleanup",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Stop a Crashed Run"
+        }
+      ],
+      "children": []
+    },
+    "cleanup-lead": {
+      "id": "cleanup-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each run records its processes in "
+        },
+        {
+          "insert": "<out-dir>/runs/<id>.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". After a tool crashes, run the cleanup with the "
+        },
+        {
+          "insert": "--out-dir",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " that the tool used."
+        }
+      ],
+      "children": []
+    },
+    "cleanup-code": {
+      "id": "cleanup-code",
+      "type": "code",
+      "props": {
+        "language": "bash"
+      },
+      "text": [
+        {
+          "insert": "bun scripts/lib/app-runner.ts --cleanup --out-dir <dir>"
+        }
+      ],
+      "children": []
+    },
+    "cleanup-1": {
+      "id": "cleanup-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The cleanup stops only processes that a record proves are the run's."
+        }
+      ],
+      "children": [
+        "cleanup-1a",
+        "cleanup-1b"
+      ]
+    },
+    "cleanup-1a": {
+      "id": "cleanup-1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A proven root has the same start time and the runner's own command line."
+        }
+      ],
+      "children": []
+    },
+    "cleanup-1b": {
+      "id": "cleanup-1b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The cleanup also stops the descendants and the process group of a proven root."
+        }
+      ],
+      "children": []
+    },
+    "cleanup-2": {
+      "id": "cleanup-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The cleanup skips the records of a tool that is still alive. It changes nothing when "
+        },
+        {
+          "insert": "ps",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " fails."
+        }
+      ],
+      "children": []
+    },
+    "cleanup-3": {
+      "id": "cleanup-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Without "
+        },
+        {
+          "insert": "--out-dir",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", the cleanup reads "
+        },
+        {
+          "insert": "$DS_RUN",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or "
+        },
+        {
+          "insert": "<tmpdir>/ds-rollout",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " when "
+        },
+        {
+          "insert": "DS_RUN",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is not set."
+        }
+      ],
+      "children": []
+    },
+    "h-output": {
+      "id": "h-output",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Run Output"
+        }
+      ],
+      "children": []
+    },
+    "output-lead": {
+      "id": "output-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Screenshots, logs and reports go to "
+        },
+        {
+          "insert": "--out-dir",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", never into a git checkout."
+        }
+      ],
+      "children": []
+    },
+    "output-1": {
+      "id": "output-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "--out-dir",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " defaults to "
+        },
+        {
+          "insert": "$DS_RUN",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or to "
+        },
+        {
+          "insert": "<tmpdir>/ds-rollout",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " when "
+        },
+        {
+          "insert": "DS_RUN",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is not set."
+        }
+      ],
+      "children": []
+    },
+    "output-2": {
+      "id": "output-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "An app passes when every gate that its "
+        },
+        {
+          "insert": "apps.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " entry marks required passes. "
+        },
+        {
+          "insert": "guide/migrate.md",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "guide/migrate.md"
+            }
+          }
+        },
+        {
+          "insert": " lists the gates."
+        }
+      ],
+      "children": []
+    }
+  }
+}
