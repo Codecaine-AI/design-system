@@ -10,7 +10,8 @@
       "props": {},
       "children": [
         "intro",
-        "sections"
+        "sections",
+        "sections-checks"
       ]
     },
     "intro": {
@@ -37,15 +38,15 @@
           }
         },
         {
-          "insert": " folder and in "
+          "insert": " folder, starting at "
         },
         {
-          "insert": "AGENTS.md",
+          "insert": "guide/tokens.md",
           "attributes": {
             "code": true,
             "reference": {
               "kind": "source",
-              "path": "AGENTS.md"
+              "path": "guide/tokens.md"
             }
           }
         },
@@ -87,6 +88,36 @@
         },
         {
           "insert": " scores every page of an app against the design rules in a real browser. The section covers how to run it, every check, and how to fix a check that acts strangely."
+        }
+      ],
+      "children": []
+    },
+    "sections-checks": {
+      "id": "sections-checks",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "App Checks and Commands",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "20-app-checks-and-commands"
+            }
+          }
+        }
+      ],
+      "children": [
+        "sections-checks-a"
+      ]
+    },
+    "sections-checks-a": {
+      "id": "sections-checks-a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The section lists the build and app-check commands and the isolation around each app run."
         }
       ],
       "children": []

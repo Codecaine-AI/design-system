@@ -11,7 +11,7 @@ The design system is the shared UI for one ecosystem:
 
 Sites with their own custom look stay outside it. personal-site is excluded: it keeps its own UI (owner decision, 2026-10-07). Product looks inside an in-scope app also stay as they are: game scenes and exports, landing heroes, brand pages.
 
-Every app in scope has an entry in [`apps.json`](../apps.json), the app registry. The tools (`lint:apps`, `verify:apps`, `test:apps`, `snapshot`, `use:app`) read it. The commands are in [AGENTS.md](../AGENTS.md).
+Every app in scope has an entry in [`apps.json`](../apps.json), the app registry. The tools (`lint:apps`, `verify:apps`, `test:apps`, `snapshot`, `use:app`) read it. The commands are in the docs page [App Checks and Commands](../docs/20-app-checks-and-commands/doc.json).
 
 ## Consumers
 

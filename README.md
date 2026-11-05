@@ -169,4 +169,4 @@ The build fails on an unresolved alias, an alias cycle, a missing `$type` or `$v
 
 Which apps consume the package, how, and their status: [guide/ecosystem.md](guide/ecosystem.md). To move a new app onto it: [guide/migrate.md](guide/migrate.md).
 
-Agents doing UI work: read [AGENTS.md](AGENTS.md).
+Agents doing UI work: read [AGENTS.md](AGENTS.md) and the `design-system` skill.
