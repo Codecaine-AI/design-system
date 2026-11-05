@@ -4711,27 +4711,29 @@
         "exclude": []
       },
       "stack": {
-        "summary": "React 19.3, Bun.build, plain CSS; bun; Tailwind 4.3 only compiles the preview renderers",
+        "summary": "React 19, Bun.build, plain CSS; bun",
         "tailwind": "none",
         "packageManager": "bun"
       },
       "consume": {
         "via": "relative-import",
-        "detail": "Point the relative @import in src/web/docs-light.css at the package (read by path, so it stays live), or add a workspaces entry or bun link; never a bun file: dependency."
+        "detail": "src/web/style.css @imports the package's css/fonts.css and dist/css/tokens.css by relative path (read by path, so it stays live); never a bun file: dependency."
       },
       "entryStylesheet": "codecaine/tools/variator/src/web/main.tsx",
       "theme": {
         "rule": "light-dark"
       },
       "literalFloor": 0,
-      "shell": true,
+      "allowlist": null,
+      "shell": false,
       "folderStandard": true,
       "passes": {
         "1": {
           "required": true
         },
         "2": {
-          "required": true
+          "required": false,
+          "reason": "one-screen review sidecar since variator#1: a tool bar, a stage of one or two frames and a notes dock; no sidebar or nav for the shell to hold"
         },
         "3": {
           "required": true
@@ -4751,7 +4753,8 @@
           "required": true
         },
         "shell": {
-          "required": true
+          "required": false,
+          "reason": "one-screen review sidecar since variator#1: a tool bar, a stage of one or two frames and a notes dock; no sidebar or nav for the shell to hold"
         },
         "structure": {
           "required": true
@@ -4763,27 +4766,26 @@
         },
         "verify": {
           "required": false,
-          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+          "reason": "verify:apps passes every token probe and the theme switch in light and dark (2026-10-31), but fails its font check: Variator's Bun.build inlines fonts.css's woff2 files into artifacts/web/main.css as data: URLs, so the winning @font-face is not the package's fonts.css (decision 20). Variator's build fixes it, not this registry"
         },
         "snapshot": {
           "required": false,
-          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+          "reason": "no pixel baseline yet: the run profile was proven 2026-10-31; snapshot takes its first set once verify passes"
         },
         "pixelDiff": {
           "required": false,
-          "reason": "run mode none: blocked by uncommitted owner work; profile unproven; verified statically only"
+          "reason": "no pixel baseline yet: the run profile was proven 2026-10-31; snapshot takes its first set once verify passes"
         },
         "tests": {
           "required": true
         }
       },
       "run": {
-        "mode": "none",
-        "reason": "blocked by uncommitted owner work; profile unproven",
+        "mode": "browser",
         "cwd": "codecaine/tools/variator",
-        "start": "bun --no-env-file src/server/index.ts",
+        "start": "bun --no-env-file {ds}/apps/fixtures/variator/seed.ts && exec bun --no-env-file src/server/index.ts",
         "readyPattern": "Variator (http://127\\.0\\.0\\.1:\\d+)",
-        "serveRoot": "codecaine/tools/variator/src/web"
+        "serveRoot": "{tmp}"
       },
       "commands": {
         "cwd": "codecaine/tools/variator",
@@ -4805,40 +4807,28 @@
       },
       "routes": [
         {
-          "id": "capture",
-          "path": "/",
-          "waitFor": "section.capture.panel"
+          "id": "review",
+          "path": "/?batch=sample-notes-home-r1",
+          "waitFor": ".stage .frame-box iframe"
         },
         {
-          "id": "brief",
-          "path": "/",
+          "id": "notes-closed",
+          "path": "/?batch=sample-notes-home-r1",
           "steps": [
             {
               "action": "click",
-              "target": "button[aria-label=\"Brief\"]"
+              "target": "button[aria-controls=\"dock\"]"
             }
           ],
-          "waitFor": "main"
-        },
-        {
-          "id": "history",
-          "path": "/",
-          "steps": [
-            {
-              "action": "click",
-              "target": "button[aria-label=\"History\"]"
-            }
-          ],
-          "waitFor": "main"
+          "waitFor": ".app[data-dock=\"closed\"]"
         }
       ],
       "runProfile": {
         "env": {
           "NO_COLOR": "1",
           "PORT": "{port:ui}",
-          "VARIATOR_DATA_ROOT": "{tmp}/variator-data",
-          "VARIATOR_PI_AGENT_DIR": "{tmp}/pi-agent",
-          "VARIATOR_MODEL": "none"
+          "VARIATOR_DATA_ROOT": "{tmp}/artifacts",
+          "VARIATOR_PORT": "{port:ui}"
         },
         "unsetEnv": [
           "DOCS_SHARED_API_URL",
@@ -4861,12 +4851,13 @@
           "ui": 47190
         },
         "proof": {
-          "status": "unproven",
-          "method": ""
+          "status": "proven",
+          "method": "scripts/registry-prove.ts (2026-10-31, design-system ks/design-score-config-for-variator): sandboxed app-runner start with the profile env only (seed.ts seeds {tmp}/artifacts through the Variator CLI, then the server), guardedContext, lsof sampling from before spawn (23 samples, 0 failed; 18 connections, 0 foreign). 4/4 route loads (review and notes-closed, light and dark) rendered; the guard blocked nothing; stopped clean. Seeded for the proof run: proof.status was set to proven by hand first, because registry-prove loads the registry through the same check that refuses an unproven browser profile",
+          "date": "2026-10-31"
         }
       },
       "verify": {
-        "route": "capture",
+        "route": "review",
         "probes": [
           {
             "selector": "html",
@@ -4874,17 +4865,17 @@
             "token": "color.surface.page"
           },
           {
-            "selector": ".capture.panel",
+            "selector": ".dock",
             "property": "background-color",
             "token": "color.surface.panel"
           },
           {
-            "selector": ".capture.panel",
+            "selector": ".dock",
             "property": "color",
             "token": "color.text.body"
           },
           {
-            "selector": ".topbar",
+            "selector": ".bar",
             "property": "border-bottom-color",
             "token": "color.border.default"
           }
@@ -4892,28 +4883,16 @@
         "darkSwitch": {
           "kind": "attribute",
           "target": "html"
-        },
-        "sidebar": {
-          "toggle": ".ds-sidebar-toggle",
-          "storageKey": "variator.sidebar"
         }
       },
       "exceptions": [
         {
-          "what": "blocked",
-          "reason": "uncommitted src/web/{docs-light.css,index.html,main.tsx,tuning.tsx} and src/preview/* in the owner's tree"
+          "what": "fixture data",
+          "reason": "run.start seeds {tmp}/artifacts with apps/fixtures/variator/seed.ts through Variator's own CLI: one open batch (sample-notes-home-r1), two variations, one pinned note, no screenshots. Variator stores absolute paths, so the seed runs per run instead of shipping a data root. Routes never Pick or Submit"
         },
         {
-          "what": "planned profile",
-          "reason": "VARIATOR_DATA_ROOT and VARIATOR_PI_AGENT_DIR in {tmp} (no credentials), so capture/Apply cannot call an LLM; routes never submit; needs bun install (postinstall symlinks Core packages) first. Apply writes into the docs-system source tree: never trigger it"
-        },
-        {
-          "what": "theme rule light-dark",
-          "reason": "pinned light today; not on the owner's dark-first list, so it gains a dark theme with the tokens"
-        },
-        {
-          "what": "tests.safe not run: blocked",
-          "reason": "the app is blocked by uncommitted owner work (STATE.md app_ledger), so test:apps did not run it and tests.baselines has no entry; when it unblocks, the managing agent runs bun run test:apps <app> (twice) and records the baseline before the tests gate counts it"
+          "what": "tests.safe not baselined",
+          "reason": "test:apps has not run variator since its run profile was proven, so tests.baselines has no entry; the managing agent runs bun run test:apps variator (twice) and records the baseline before the tests gate counts it"
         }
       ]
     },
