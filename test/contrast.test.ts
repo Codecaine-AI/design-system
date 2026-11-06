@@ -8,7 +8,7 @@ import { evaluateColor } from "../scripts/lib/color.ts";
 import { readJson, type Theme, THEMES } from "./support.ts";
 
 const HUES = ["gray", "blue", "teal", "green", "yellow", "orange", "red", "violet", "pink"];
-const STATUS_HUE: Record<string, string> = { info: "blue", success: "green", warning: "yellow", danger: "red", neutral: "gray" };
+const STATUS_HUE: Record<string, string> = { info: "blue", success: "green", warning: "yellow", danger: "red", neutral: "gray", decision: "violet" };
 const AA = 4.5;
 
 function channel(hex: string, offset: number): number {

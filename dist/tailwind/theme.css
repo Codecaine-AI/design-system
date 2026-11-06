@@ -139,6 +139,11 @@
   --color-danger-soft: var(--ds-color-status-danger-soft);
   --color-danger-solid: var(--ds-color-status-danger-solid);
   --color-danger: var(--ds-color-status-danger-text);
+  --color-decision-line: var(--ds-color-status-decision-line);
+  --color-decision-on-solid: var(--ds-color-status-decision-on-solid);
+  --color-decision-soft: var(--ds-color-status-decision-soft);
+  --color-decision-solid: var(--ds-color-status-decision-solid);
+  --color-decision: var(--ds-color-status-decision-text);
   --color-info-line: var(--ds-color-status-info-line);
   --color-info-on-solid: var(--ds-color-status-info-on-solid);
   --color-info-soft: var(--ds-color-status-info-soft);

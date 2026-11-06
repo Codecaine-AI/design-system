@@ -19,7 +19,7 @@
       "default": { "$type": "color", "$value": "#3d444d", "$description": "Frames, rules, dividers, inputs. Seed: --palette-rule." },
       "subtle": { "$type": "color", "$value": "#262c36", "$description": "Row rules and inner separators. Seed: --palette-rule-soft." },
       "strong": { "$type": "color", "$value": "color-mix(in srgb, {color.border.default} 70%, {color.text.faint} 30%)", "$description": "Header rules that must read over a default rule. Seed: --docs-border-strong." },
-      "guide": { "$type": "color", "$value": "color-mix(in srgb, {color.text.faint} 45%, {color.border.default})", "$description": "Tree indent guides. Seed: --docs-guide." },
+      "guide": { "$type": "color", "$value": "color-mix(in srgb, {color.text.muted} 45%, {color.border.default})", "$description": "Tree indent guides. Seed: --docs-guide." },
       "image": { "$type": "color", "$value": "#ffffff1a", "$description": "Outline on images and media: pure white at 10%, never a tinted neutral. Inset it with border.width.hairline and a negative hairline offset." }
     },
     "fill": {
@@ -133,6 +133,13 @@
         "on-solid": { "$type": "color", "$value": "{color.gray.on-solid}", "$description": "Glyph on the neutral tile." },
         "soft": { "$type": "color", "$value": "{color.gray.soft}", "$description": "Neutral fill." },
         "line": { "$type": "color", "$value": "{color.gray.line}", "$description": "Neutral border." }
+      },
+      "decision": {
+        "text": { "$type": "color", "$value": "{color.violet.text}", "$description": "Decision text, icon and rail: a choice waiting on a person." },
+        "solid": { "$type": "color", "$value": "{color.violet.solid}", "$description": "Decision tile." },
+        "on-solid": { "$type": "color", "$value": "{color.violet.on-solid}", "$description": "Glyph on the decision tile." },
+        "soft": { "$type": "color", "$value": "{color.violet.soft}", "$description": "Decision fill." },
+        "line": { "$type": "color", "$value": "{color.violet.line}", "$description": "Decision border." }
       }
     },
     "category": {

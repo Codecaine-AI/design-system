@@ -126,7 +126,7 @@
   --ds-light-color-blue-solid: #0b6e99;
   --ds-light-color-blue-text: #0b6e99;
   --ds-light-color-border-default: #e6e5e3;
-  --ds-light-color-border-guide: color-mix(in srgb, var(--ds-light-color-text-faint) 45%, var(--ds-light-color-border-default));
+  --ds-light-color-border-guide: color-mix(in srgb, var(--ds-light-color-text-muted) 70%, var(--ds-light-color-border-default));
   --ds-light-color-border-image: #0000001a;
   --ds-light-color-border-strong: color-mix(in srgb, var(--ds-light-color-border-default) 70%, var(--ds-light-color-text-faint) 30%);
   --ds-light-color-border-subtle: #efeeec;
@@ -244,6 +244,11 @@
   --ds-light-color-status-danger-soft: var(--ds-light-color-red-soft);
   --ds-light-color-status-danger-solid: var(--ds-light-color-red-solid);
   --ds-light-color-status-danger-text: var(--ds-light-color-red-text);
+  --ds-light-color-status-decision-line: var(--ds-light-color-violet-line);
+  --ds-light-color-status-decision-on-solid: var(--ds-light-color-violet-on-solid);
+  --ds-light-color-status-decision-soft: var(--ds-light-color-violet-soft);
+  --ds-light-color-status-decision-solid: var(--ds-light-color-violet-solid);
+  --ds-light-color-status-decision-text: var(--ds-light-color-violet-text);
   --ds-light-color-status-info-line: var(--ds-light-color-blue-line);
   --ds-light-color-status-info-on-solid: var(--ds-light-color-blue-on-solid);
   --ds-light-color-status-info-soft: var(--ds-light-color-blue-soft);
@@ -334,7 +339,7 @@
   --ds-dark-color-blue-solid: #4493f8;
   --ds-dark-color-blue-text: #4493f8;
   --ds-dark-color-border-default: #3d444d;
-  --ds-dark-color-border-guide: color-mix(in srgb, var(--ds-dark-color-text-faint) 45%, var(--ds-dark-color-border-default));
+  --ds-dark-color-border-guide: color-mix(in srgb, var(--ds-dark-color-text-muted) 45%, var(--ds-dark-color-border-default));
   --ds-dark-color-border-image: #ffffff1a;
   --ds-dark-color-border-strong: color-mix(in srgb, var(--ds-dark-color-border-default) 70%, var(--ds-dark-color-text-faint) 30%);
   --ds-dark-color-border-subtle: #262c36;
@@ -452,6 +457,11 @@
   --ds-dark-color-status-danger-soft: var(--ds-dark-color-red-soft);
   --ds-dark-color-status-danger-solid: var(--ds-dark-color-red-solid);
   --ds-dark-color-status-danger-text: var(--ds-dark-color-red-text);
+  --ds-dark-color-status-decision-line: var(--ds-dark-color-violet-line);
+  --ds-dark-color-status-decision-on-solid: var(--ds-dark-color-violet-on-solid);
+  --ds-dark-color-status-decision-soft: var(--ds-dark-color-violet-soft);
+  --ds-dark-color-status-decision-solid: var(--ds-dark-color-violet-solid);
+  --ds-dark-color-status-decision-text: var(--ds-dark-color-violet-text);
   --ds-dark-color-status-info-line: var(--ds-dark-color-blue-line);
   --ds-dark-color-status-info-on-solid: var(--ds-dark-color-blue-on-solid);
   --ds-dark-color-status-info-soft: var(--ds-dark-color-blue-soft);
@@ -662,6 +672,11 @@
   --ds-color-status-danger-soft: var(--ds-light-color-status-danger-soft);
   --ds-color-status-danger-solid: var(--ds-light-color-status-danger-solid);
   --ds-color-status-danger-text: var(--ds-light-color-status-danger-text);
+  --ds-color-status-decision-line: var(--ds-light-color-status-decision-line);
+  --ds-color-status-decision-on-solid: var(--ds-light-color-status-decision-on-solid);
+  --ds-color-status-decision-soft: var(--ds-light-color-status-decision-soft);
+  --ds-color-status-decision-solid: var(--ds-light-color-status-decision-solid);
+  --ds-color-status-decision-text: var(--ds-light-color-status-decision-text);
   --ds-color-status-info-line: var(--ds-light-color-status-info-line);
   --ds-color-status-info-on-solid: var(--ds-light-color-status-info-on-solid);
   --ds-color-status-info-soft: var(--ds-light-color-status-info-soft);
@@ -872,6 +887,11 @@
   --ds-color-status-danger-soft: var(--ds-dark-color-status-danger-soft);
   --ds-color-status-danger-solid: var(--ds-dark-color-status-danger-solid);
   --ds-color-status-danger-text: var(--ds-dark-color-status-danger-text);
+  --ds-color-status-decision-line: var(--ds-dark-color-status-decision-line);
+  --ds-color-status-decision-on-solid: var(--ds-dark-color-status-decision-on-solid);
+  --ds-color-status-decision-soft: var(--ds-dark-color-status-decision-soft);
+  --ds-color-status-decision-solid: var(--ds-dark-color-status-decision-solid);
+  --ds-color-status-decision-text: var(--ds-dark-color-status-decision-text);
   --ds-color-status-info-line: var(--ds-dark-color-status-info-line);
   --ds-color-status-info-on-solid: var(--ds-dark-color-status-info-on-solid);
   --ds-color-status-info-soft: var(--ds-dark-color-status-info-soft);
