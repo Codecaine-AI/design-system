@@ -1,0 +1,295 @@
+{
+  "schemaVersion": 1,
+  "id": "token-reach",
+  "title": "How a token change reaches each app",
+  "mode": "diagram",
+  "objects": [
+    {
+      "id": "token-file",
+      "type": "rectangle",
+      "text": "Token files",
+      "detail": "tokens/ in design-system",
+      "color": "blue",
+      "parentId": null,
+      "geometry": {
+        "x": 0,
+        "y": 700,
+        "width": 250,
+        "height": 90
+      }
+    },
+    {
+      "id": "build",
+      "type": "rectangle",
+      "text": "bun run build",
+      "detail": "runs in design-system",
+      "color": "blue",
+      "parentId": null,
+      "geometry": {
+        "x": 300,
+        "y": 700,
+        "width": 220,
+        "height": 90
+      }
+    },
+    {
+      "id": "dist",
+      "type": "rectangle",
+      "text": "dist/",
+      "detail": "built output in design-system",
+      "color": "blue",
+      "parentId": null,
+      "geometry": {
+        "x": 640,
+        "y": 700,
+        "width": 290,
+        "height": 90
+      }
+    },
+    {
+      "id": "sec-live",
+      "type": "section",
+      "text": "Live on next reload or build",
+      "parentId": null,
+      "geometry": {
+        "x": 1060,
+        "y": 0,
+        "width": 460,
+        "height": 510
+      }
+    },
+    {
+      "id": "workspace",
+      "type": "rectangle",
+      "text": "workspace",
+      "detail": "Core members, budget, pen-plotter",
+      "color": "green",
+      "parentId": "sec-live",
+      "geometry": {
+        "x": 1100,
+        "y": 60,
+        "width": 380,
+        "height": 90
+      }
+    },
+    {
+      "id": "link",
+      "type": "rectangle",
+      "text": "link",
+      "detail": "observatory, gamecube",
+      "color": "green",
+      "parentId": "sec-live",
+      "geometry": {
+        "x": 1100,
+        "y": 170,
+        "width": 380,
+        "height": 90
+      }
+    },
+    {
+      "id": "npm-file",
+      "type": "rectangle",
+      "text": "npm-file",
+      "detail": "mainmenu",
+      "color": "green",
+      "parentId": "sec-live",
+      "geometry": {
+        "x": 1100,
+        "y": 280,
+        "width": 380,
+        "height": 90
+      }
+    },
+    {
+      "id": "relative-import",
+      "type": "rectangle",
+      "text": "relative-import",
+      "detail": "variator, slidev-template",
+      "color": "green",
+      "parentId": "sec-live",
+      "geometry": {
+        "x": 1100,
+        "y": 390,
+        "width": 380,
+        "height": 90
+      }
+    },
+    {
+      "id": "sec-step",
+      "type": "section",
+      "text": "After a rebuild or snapshot",
+      "parentId": null,
+      "geometry": {
+        "x": 1060,
+        "y": 550,
+        "width": 460,
+        "height": 390
+      }
+    },
+    {
+      "id": "build-time",
+      "type": "rectangle",
+      "text": "relative-import (build time)",
+      "detail": "docs-publish",
+      "color": "orange",
+      "parentId": "sec-step",
+      "geometry": {
+        "x": 1100,
+        "y": 610,
+        "width": 380,
+        "height": 90
+      }
+    },
+    {
+      "id": "vendor-tgz",
+      "type": "rectangle",
+      "text": "vendor-tgz",
+      "detail": "skitzo, circlesnakes-panels",
+      "color": "orange",
+      "parentId": "sec-step",
+      "geometry": {
+        "x": 1100,
+        "y": 720,
+        "width": 380,
+        "height": 90
+      }
+    },
+    {
+      "id": "copy",
+      "type": "rectangle",
+      "text": "copy",
+      "detail": "agent-skills-manager",
+      "color": "orange",
+      "parentId": "sec-step",
+      "geometry": {
+        "x": 1100,
+        "y": 830,
+        "width": 380,
+        "height": 90
+      }
+    },
+    {
+      "id": "sec-host",
+      "type": "section",
+      "text": "Through the host",
+      "parentId": null,
+      "geometry": {
+        "x": 1060,
+        "y": 980,
+        "width": 460,
+        "height": 320
+      }
+    },
+    {
+      "id": "host-app",
+      "type": "rectangle",
+      "text": "Host app",
+      "detail": "gets dist/ through its own consume type",
+      "color": "teal",
+      "parentId": "sec-host",
+      "geometry": {
+        "x": 1100,
+        "y": 1040,
+        "width": 380,
+        "height": 80
+      }
+    },
+    {
+      "id": "host-css",
+      "type": "rectangle",
+      "text": "host-css library",
+      "detail": "5 libraries, named below",
+      "color": "teal",
+      "parentId": "sec-host",
+      "geometry": {
+        "x": 1100,
+        "y": 1180,
+        "width": 380,
+        "height": 90
+      }
+    }
+  ],
+  "connections": [
+    {
+      "id": "token-to-build",
+      "from": {
+        "objectId": "token-file",
+        "anchor": "right"
+      },
+      "to": {
+        "objectId": "build",
+        "anchor": "left"
+      },
+      "style": "solid",
+      "arrow": "forward"
+    },
+    {
+      "id": "build-to-dist",
+      "from": {
+        "objectId": "build",
+        "anchor": "right"
+      },
+      "to": {
+        "objectId": "dist",
+        "anchor": "left"
+      },
+      "label": "writes",
+      "style": "solid",
+      "arrow": "forward"
+    },
+    {
+      "id": "dist-to-live",
+      "from": {
+        "objectId": "dist",
+        "anchor": "top"
+      },
+      "to": {
+        "objectId": "sec-live",
+        "anchor": "left"
+      },
+      "style": "solid",
+      "arrow": "forward"
+    },
+    {
+      "id": "dist-to-step",
+      "from": {
+        "objectId": "dist",
+        "anchor": "right"
+      },
+      "to": {
+        "objectId": "sec-step",
+        "anchor": "left"
+      },
+      "style": "dashed",
+      "arrow": "forward"
+    },
+    {
+      "id": "dist-to-host",
+      "from": {
+        "objectId": "dist",
+        "anchor": "bottom"
+      },
+      "to": {
+        "objectId": "host-app",
+        "anchor": "left"
+      },
+      "style": "solid",
+      "arrow": "forward"
+    },
+    {
+      "id": "host-app-to-host-css",
+      "from": {
+        "objectId": "host-app",
+        "anchor": "bottom"
+      },
+      "to": {
+        "objectId": "host-css",
+        "anchor": "top"
+      },
+      "label": "tokens.css loads first",
+      "style": "solid",
+      "arrow": "forward"
+    }
+  ],
+  "annotations": []
+}

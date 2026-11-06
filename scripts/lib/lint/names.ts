@@ -14,7 +14,7 @@
  *   `--ds-x:` (CSS, SCSS, Less, HTML `<style>` and `style=""`, CSS in JS strings, a Tailwind
  *   arbitrary property `[--ds-x:…]`), `setProperty("--ds-x", …)`, and a style-object key
  *   `"--ds-x":` or `["--ds-x"]:`. A reference (`var(--ds-x)`, `cssVar("…")`) is fine.
- *   One exception (decision 32, guide/layout.md): a `--ds-layout-*` override scoped to the shell,
+ *   One exception (decision 32, docs/30-guide/20-layout): a `--ds-layout-*` override scoped to the shell,
  *   in a rule whose selectors' subjects carry `ds-shell` (`.docs-app.ds-shell { … }`), on the shell
  *   element itself (its `style`, a Tailwind arbitrary property in its class string), or set at run
  *   time on the shell element or `document.documentElement` (shell-scope.ts). The name must still
@@ -404,7 +404,7 @@ export function checkNames(ctx: AppContext): CheckOutput {
           rel,
           line(d.index),
           layout
-            ? `${d.name.slice(0, 80)} is declared here, outside the shell; override --ds-layout-* tokens only on .ds-shell or the shell element (guide/layout.md, decision 32)`
+            ? `${d.name.slice(0, 80)} is declared here, outside the shell; override --ds-layout-* tokens only on .ds-shell or the shell element (docs/30-guide/20-layout, decision 32)`
             : `${d.name.slice(0, 80)} is declared here; apps never redefine --ds-* tokens`,
         );
       }

@@ -9,7 +9,7 @@
  *   @import "@codecaine-ai/design-system/tailwind.css";
  *
  * `inline`: utilities read the --ds-* custom properties directly, so they follow data-theme.
- * Utility names are listed in guide/tokens.md.
+ * Utility names are listed in dist/guide/tokens.md.
  */
 @theme inline {
 

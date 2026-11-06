@@ -1,0 +1,6386 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-d11238f5db227797b278fcf56c77a5ad",
+  "title": "Consume the Package",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "open",
+        "h-wiring",
+        "wiring-lead",
+        "wiring-table",
+        "wiring-1",
+        "wiring-2",
+        "wiring-3",
+        "wiring-4",
+        "h-member",
+        "member-lead",
+        "member-1",
+        "member-2",
+        "member-3",
+        "member-4",
+        "h-link",
+        "link-lead",
+        "link-1",
+        "link-2",
+        "link-3",
+        "link-4",
+        "h-npm",
+        "npm-lead",
+        "npm-1",
+        "npm-2",
+        "npm-3",
+        "h-tgz",
+        "tgz-lead",
+        "h-pack-env",
+        "pack-env-lead",
+        "pack-env-1",
+        "pack-env-2",
+        "pack-env-3",
+        "h-first",
+        "first-lead",
+        "first-1",
+        "first-2",
+        "first-3",
+        "first-4",
+        "first-5",
+        "h-repack",
+        "repack-lead",
+        "repack-table",
+        "repack-steps-lead",
+        "repack-1",
+        "repack-2",
+        "repack-3",
+        "repack-4",
+        "repack-5",
+        "repack-after",
+        "repack-n1",
+        "repack-n2",
+        "repack-n3",
+        "h-check",
+        "check-lead",
+        "check-code",
+        "check-scripts",
+        "h-exports",
+        "exports-lead",
+        "exports-table",
+        "h-order",
+        "order-lead",
+        "order-1",
+        "order-2",
+        "order-3",
+        "order-4",
+        "order-dark",
+        "order-dark-1",
+        "order-dark-2",
+        "order-dark-3",
+        "h-plain",
+        "plain-lead",
+        "plain-code",
+        "h-tw4",
+        "tw4-lead",
+        "tw4-code",
+        "h-tw3",
+        "tw3-lead",
+        "tw3-config",
+        "tw3-sheet-lead",
+        "tw3-sheet",
+        "h-hosts",
+        "hosts-lead",
+        "hosts-table",
+        "hosts-1",
+        "hosts-2",
+        "hosts-3",
+        "hosts-4",
+        "h-vite",
+        "vite-lead",
+        "h-fs",
+        "fs-lead",
+        "fs-fix",
+        "fs-code",
+        "fs-1",
+        "fs-2",
+        "h-optimize",
+        "optimize-lead",
+        "optimize-1",
+        "optimize-2",
+        "optimize-3",
+        "h-dedupe",
+        "dedupe-lead",
+        "h-source",
+        "source-lead",
+        "source-code",
+        "source-1",
+        "source-2",
+        "h-fonts",
+        "fonts-lead",
+        "fonts-1",
+        "fonts-2",
+        "fonts-3",
+        "h-electron",
+        "electron-lead",
+        "electron-pen",
+        "electron-mm",
+        "h-use",
+        "use-lead",
+        "h-use-css",
+        "use-css-lead",
+        "use-css-code",
+        "use-css-1",
+        "use-css-2",
+        "h-use-tw4",
+        "use-tw4-lead",
+        "use-tw4-code",
+        "use-tw4-1",
+        "use-tw4-2",
+        "use-tw4-table",
+        "use-tw4-3",
+        "use-tw4-4",
+        "use-tw4-5",
+        "use-tw4-6",
+        "h-use-tw3",
+        "use-tw3-lead",
+        "use-tw3-code",
+        "use-tw3-1",
+        "use-tw3-2",
+        "use-tw3-3",
+        "h-use-js",
+        "use-js-lead",
+        "use-js-code",
+        "use-js-1",
+        "h-use-json",
+        "use-json",
+        "h-use-install",
+        "use-install-lead",
+        "use-install-table",
+        "use-install-bun"
+      ]
+    },
+    "open": {
+      "id": "open",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "An app depends on "
+        },
+        {
+          "insert": "@codecaine-ai/design-system",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " through one of five wirings and loads its CSS in a fixed order. Read this page before you wire one app. Paths are relative to the workspace root, "
+        },
+        {
+          "insert": "/Users/Ford/workspace",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or to the mirror "
+        },
+        {
+          "insert": "/Users/Ford/workspace-ds",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " during the rollout. Use It, the last section, shows how an app uses each output."
+        }
+      ],
+      "children": []
+    },
+    "h-wiring": {
+      "id": "h-wiring",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Pick the Wiring"
+        }
+      ],
+      "children": []
+    },
+    "wiring-lead": {
+      "id": "wiring-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The wiring depends on where the app lives and how it builds. The last column names the apps of each kind in the app registry, "
+        },
+        {
+          "insert": "apps.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "apps.json"
+            }
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "wiring-table": {
+      "id": "wiring-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "The app",
+          "Wiring",
+          [
+            {
+              "insert": "Apps in "
+            },
+            {
+              "insert": "apps.json",
+              "attributes": {
+                "code": true
+              }
+            }
+          ]
+        ],
+        "rows": [
+          [
+            "Is a Codecaine Core workspace member",
+            [
+              {
+                "insert": "\"workspace:*\"",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". Core's root "
+              },
+              {
+                "insert": "workspaces",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " already lists "
+              },
+              {
+                "insert": "design-system",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", because the folder sits inside Core."
+              }
+            ],
+            "docs-workbench, sequence studio, canvas studio, canvas-agent viewer, simple-research-kernel"
+          ],
+          [
+            "Is in another bun repo",
+            [
+              {
+                "insert": "Add the design-system path to the repo's root "
+              },
+              {
+                "insert": "workspaces",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", then "
+              },
+              {
+                "insert": "\"workspace:*\"",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ],
+            "budget web, pen-plotter, gamecube, system-view"
+          ],
+          [
+            [
+              {
+                "insert": "Already takes Core packages through "
+              },
+              {
+                "insert": "link:",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "\"link:@codecaine-ai/design-system\"",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". See the section "
+              },
+              {
+                "insert": "link:",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "bun link",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ],
+            "observatory"
+          ],
+          [
+            "Uses npm and builds on this machine",
+            [
+              {
+                "insert": "\"file:<relative path to design-system>\"",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". npm symlinks a folder."
+              }
+            ],
+            "MainMenu"
+          ],
+          [
+            "Builds in Docker, Vercel or Railway",
+            "The vendored tgz. See the section Vendored tgz.",
+            "personal-site, skitzo, CircleSnakesWeb"
+          ]
+        ],
+        "title": "Wiring by kind of app"
+      },
+      "children": []
+    },
+    "wiring-1": {
+      "id": "wiring-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Never use a bun "
+        },
+        {
+          "insert": "file:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " dependency on the folder. Bun snapshots the folder at install time, so a file the build adds or rewrites later stays missing or stale until the next "
+        },
+        {
+          "insert": "bun install",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "wiring-2": {
+      "id": "wiring-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Libraries take no dependency, and the host app loads the CSS. These libraries are docs-viewer, annotations, viewer-shell, viewer-ui and prompt-kit UI."
+        }
+      ],
+      "children": []
+    },
+    "wiring-3": {
+      "id": "wiring-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "viewer-ui, prompt-kit UI and canvas-agent's viewer read "
+        },
+        {
+          "insert": "var(--ds-*)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with no fallback. A host that skips "
+        },
+        {
+          "insert": "tokens.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " renders them with unset values."
+        }
+      ],
+      "children": [
+        "wiring-3a"
+      ]
+    },
+    "wiring-3a": {
+      "id": "wiring-3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "An unset variable makes its whole "
+        },
+        {
+          "insert": "calc()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " invalid, so prompt-kit's editor rows lose all their indent."
+        }
+      ],
+      "children": []
+    },
+    "wiring-4": {
+      "id": "wiring-4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Every wiring except the tgz is a live symlink. "
+        },
+        {
+          "insert": "bun run build",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in design-system reaches the app on its next reload or build."
+        }
+      ],
+      "children": []
+    },
+    "h-member": {
+      "id": "h-member",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Bun Workspace Member"
+        }
+      ],
+      "children": []
+    },
+    "member-lead": {
+      "id": "member-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A bun workspace member gets a symlink to the design-system folder in "
+        },
+        {
+          "insert": "node_modules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". A Codecaine Core member skips step 1, because Core's root "
+        },
+        {
+          "insert": "workspaces",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " already lists the folder."
+        }
+      ],
+      "children": []
+    },
+    "member-1": {
+      "id": "member-1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "In the repo's root "
+        },
+        {
+          "insert": "package.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", add the design-system folder to "
+        },
+        {
+          "insert": "workspaces",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", relative to that file."
+        }
+      ],
+      "children": [
+        "member-1a",
+        "member-1b"
+      ]
+    },
+    "member-1a": {
+      "id": "member-1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "life/budget",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "apps/pen-plotter",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "harnesses/gamecube-decomp-harness",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " use "
+        },
+        {
+          "insert": "\"../../codecaine/core/design-system\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "member-1b": {
+      "id": "member-1b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "system-view",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " uses "
+        },
+        {
+          "insert": "\"../codecaine/core/design-system\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". It is a single package, so add a "
+        },
+        {
+          "insert": "workspaces",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " array to it."
+        }
+      ],
+      "children": []
+    },
+    "member-2": {
+      "id": "member-2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "In the app's "
+        },
+        {
+          "insert": "package.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", add "
+        },
+        {
+          "insert": "\"@codecaine-ai/design-system\": \"workspace:*\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "member-3": {
+      "id": "member-3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run "
+        },
+        {
+          "insert": "bun install",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " at the repo root."
+        }
+      ],
+      "children": []
+    },
+    "member-4": {
+      "id": "member-4",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "In the root or the app folder, check that "
+        },
+        {
+          "insert": "ls -l node_modules/@codecaine-ai/design-system",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " shows a symlink to the design-system folder."
+        }
+      ],
+      "children": []
+    },
+    "h-link": {
+      "id": "h-link",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "link:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "bun link",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "children": []
+    },
+    "link-lead": {
+      "id": "link-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A "
+        },
+        {
+          "insert": "link:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " dependency is a live symlink that needs a registration from "
+        },
+        {
+          "insert": "bun link",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The registration lives in a link registry on one machine."
+        }
+      ],
+      "children": []
+    },
+    "link-1": {
+      "id": "link-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "\"link:@codecaine-ai/design-system\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " resolves through a link registry. The registry is bun's global folder, or the folder that "
+        },
+        {
+          "insert": "install.globalDir",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in the app's "
+        },
+        {
+          "insert": "bunfig.toml",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " names. observatory sets "
+        },
+        {
+          "insert": "globalDir = \"./.bun-links\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "link-2": {
+      "id": "link-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A registration exists only on the machine, and in the registry, where "
+        },
+        {
+          "insert": "bun link",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " ran. A fresh clone or another machine needs the registration again."
+        }
+      ],
+      "children": []
+    },
+    "link-3": {
+      "id": "link-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "During the rollout, "
+        },
+        {
+          "insert": "run.env",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " sets "
+        },
+        {
+          "insert": "BUN_INSTALL_GLOBAL_DIR=/Users/Ford/workspace-ds/.bun-global",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", so links stay out of the owner's registry."
+        }
+      ],
+      "children": [
+        "link-3a",
+        "link-3b"
+      ]
+    },
+    "link-3a": {
+      "id": "link-3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Workers never run "
+        },
+        {
+          "insert": "bun link",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "link-3b": {
+      "id": "link-3b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "When an app needs a registration, ask the managing agent."
+        }
+      ],
+      "children": []
+    },
+    "link-4": {
+      "id": "link-4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "When the repo allows it, prefer a bun workspace member. A workspace member needs no registration."
+        }
+      ],
+      "children": []
+    },
+    "h-npm": {
+      "id": "h-npm",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "npm",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " "
+        },
+        {
+          "insert": "file:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " to the Folder"
+        }
+      ],
+      "children": []
+    },
+    "npm-lead": {
+      "id": "npm-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "An npm app that builds on this machine depends on the folder through "
+        },
+        {
+          "insert": "file:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". npm symlinks the folder, so the link stays live."
+        }
+      ],
+      "children": []
+    },
+    "npm-1": {
+      "id": "npm-1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "In the app's "
+        },
+        {
+          "insert": "package.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", add "
+        },
+        {
+          "insert": "\"@codecaine-ai/design-system\": \"file:<path>\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", with the path relative to that file."
+        }
+      ],
+      "children": [
+        "npm-1a"
+      ]
+    },
+    "npm-1a": {
+      "id": "npm-1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "MainMenu, in "
+        },
+        {
+          "insert": "apps/MainMenu/apps/scene-engine",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", uses "
+        },
+        {
+          "insert": "\"file:../../../../codecaine/core/design-system\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "npm-2": {
+      "id": "npm-2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run "
+        },
+        {
+          "insert": "npm install",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "npm-3": {
+      "id": "npm-3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Check that "
+        },
+        {
+          "insert": "node_modules/@codecaine-ai/design-system",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is a symlink."
+        }
+      ],
+      "children": [
+        "npm-3a"
+      ]
+    },
+    "npm-3a": {
+      "id": "npm-3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "An "
+        },
+        {
+          "insert": ".npmrc",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with "
+        },
+        {
+          "insert": "install-links=true",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " makes npm copy the folder instead. Remove that setting."
+        }
+      ],
+      "children": []
+    },
+    "h-tgz": {
+      "id": "h-tgz",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Vendored "
+        },
+        {
+          "insert": "tgz",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "children": []
+    },
+    "tgz-lead": {
+      "id": "tgz-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Docker, Vercel and Railway builds cannot see a folder outside the repo, so the app commits a packed copy. personal-site takes "
+        },
+        {
+          "insert": "vendor/codecaine-ai-docs-publish-0.1.0-proof.20.tgz",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " the same way. A tgz is a snapshot, so a token change reaches the app only through a repack."
+        }
+      ],
+      "children": []
+    },
+    "h-pack-env": {
+      "id": "h-pack-env",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Where "
+        },
+        {
+          "insert": "bun run pack",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " Runs"
+        }
+      ],
+      "children": []
+    },
+    "pack-env-lead": {
+      "id": "pack-env-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "bun run pack",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " checks its checkout, its temp folder and its "
+        },
+        {
+          "insert": "npm",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " before it packs."
+        }
+      ],
+      "children": []
+    },
+    "pack-env-1": {
+      "id": "pack-env-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Run it from the design-system checkout in the same workspace as the app. A checkout outside "
+        },
+        {
+          "insert": "/Users/Ford/workspace",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", such as the rollout mirror, refuses every destination inside it."
+        }
+      ],
+      "children": []
+    },
+    "pack-env-2": {
+      "id": "pack-env-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Its scratch folders, npm's staging folder and its temp "
+        },
+        {
+          "insert": "HOME",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", go under "
+        },
+        {
+          "insert": "TMPDIR",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": [
+        "pack-env-2a",
+        "pack-env-2b"
+      ]
+    },
+    "pack-env-2a": {
+      "id": "pack-env-2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "bun run pack",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " exits 1 and creates nothing when "
+        },
+        {
+          "insert": "TMPDIR",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is inside "
+        },
+        {
+          "insert": "/Users/Ford/workspace",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", is your home folder itself, or is inside "
+        },
+        {
+          "insert": "~/Library",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or a credential folder such as "
+        },
+        {
+          "insert": "~/.ssh",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "pack-env-2b": {
+      "id": "pack-env-2b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Unset "
+        },
+        {
+          "insert": "TMPDIR",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or point it at a system temp folder."
+        }
+      ],
+      "children": []
+    },
+    "pack-env-3": {
+      "id": "pack-env-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "It runs npm inside the macOS sandbox. npm writes only its staging folder and temp "
+        },
+        {
+          "insert": "HOME",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and has no network."
+        }
+      ],
+      "children": [
+        "pack-env-3a",
+        "pack-env-3b",
+        "pack-env-3c"
+      ]
+    },
+    "pack-env-3a": {
+      "id": "pack-env-3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "It takes "
+        },
+        {
+          "insert": "npm",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "node",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " from the nvm folder, "
+        },
+        {
+          "insert": "~/.nvm",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or from a folder you cannot write."
+        }
+      ],
+      "children": []
+    },
+    "pack-env-3b": {
+      "id": "pack-env-3b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "If the first "
+        },
+        {
+          "insert": "npm",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "node",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on "
+        },
+        {
+          "insert": "PATH",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is in a folder you can write, before the nvm folder, it exits 1 and runs nothing."
+        }
+      ],
+      "children": [
+        "pack-env-3b1",
+        "pack-env-3b2"
+      ]
+    },
+    "pack-env-3b1": {
+      "id": "pack-env-3b1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Something could have put that file there."
+        }
+      ],
+      "children": []
+    },
+    "pack-env-3b2": {
+      "id": "pack-env-3b2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Examples of such folders are "
+        },
+        {
+          "insert": "~/.local/bin",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "/usr/local/bin",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "pack-env-3c": {
+      "id": "pack-env-3c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Remove that file, or put the nvm "
+        },
+        {
+          "insert": "bin",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " folder first on "
+        },
+        {
+          "insert": "PATH",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-first": {
+      "id": "h-first",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "First Wiring"
+        }
+      ],
+      "children": []
+    },
+    "first-lead": {
+      "id": "first-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The first wiring packs the tgz into the app's "
+        },
+        {
+          "insert": "vendor/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " folder and points the dependency at it."
+        }
+      ],
+      "children": []
+    },
+    "first-1": {
+      "id": "first-1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "In design-system, run "
+        },
+        {
+          "insert": "bun run pack --out ../<app>/vendor",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": [
+        "first-1a",
+        "first-1b",
+        "first-1-code",
+        "first-1c"
+      ]
+    },
+    "first-1a": {
+      "id": "first-1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "--out",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is relative to the design-system folder, so "
+        },
+        {
+          "insert": "../<app>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is the app's folder in the workspace. An example is "
+        },
+        {
+          "insert": "--out ../lascari-ai/personal-site/vendor",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "first-1b": {
+      "id": "first-1b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The command refuses a stale build, packs, checks the tgz and prints two lines. The path it prints is absolute."
+        }
+      ],
+      "children": []
+    },
+    "first-1-code": {
+      "id": "first-1-code",
+      "type": "code",
+      "props": {
+        "language": "text"
+      },
+      "text": [
+        {
+          "insert": "tgz: /Users/Ford/workspace/<app>/vendor/codecaine-ai-design-system-0.2.0.tgz\ntokens.css sha256: <hex>"
+        }
+      ],
+      "children": []
+    },
+    "first-1c": {
+      "id": "first-1c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The command never overwrites a tgz of the same name."
+        }
+      ],
+      "children": [
+        "first-1c1",
+        "first-1c2",
+        "first-1c3"
+      ]
+    },
+    "first-1c1": {
+      "id": "first-1c1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "If "
+        },
+        {
+          "insert": "vendor/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " already holds the same content, the command leaves the file and prints a third line, "
+        },
+        {
+          "insert": "unchanged: a tgz with the same files and bytes was already at this path",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "first-1c2": {
+      "id": "first-1c2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The same content means the same files with the same bytes once extracted. Another npm or zlib version can compress them differently."
+        }
+      ],
+      "children": []
+    },
+    "first-1c3": {
+      "id": "first-1c3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "If "
+        },
+        {
+          "insert": "vendor/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " holds different content, the command exits 1 and writes nothing. Bump the version first, as Repack After a Token Change says."
+        }
+      ],
+      "children": []
+    },
+    "first-2": {
+      "id": "first-2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "In the app's "
+        },
+        {
+          "insert": "package.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", under "
+        },
+        {
+          "insert": "dependencies",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", add "
+        },
+        {
+          "insert": "\"@codecaine-ai/design-system\": \"file:vendor/codecaine-ai-design-system-0.2.0.tgz\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": [
+        "first-2a"
+      ]
+    },
+    "first-2a": {
+      "id": "first-2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A Dockerfile that runs "
+        },
+        {
+          "insert": "npm ci --omit=dev",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " skips "
+        },
+        {
+          "insert": "devDependencies",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "first-3": {
+      "id": "first-3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run "
+        },
+        {
+          "insert": "npm install",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or "
+        },
+        {
+          "insert": "bun install",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", in the app."
+        }
+      ],
+      "children": [
+        "first-3a"
+      ]
+    },
+    "first-3a": {
+      "id": "first-3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The lockfile records the tgz path and its "
+        },
+        {
+          "insert": "integrity",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " hash."
+        }
+      ],
+      "children": []
+    },
+    "first-4": {
+      "id": "first-4",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Make sure the build context holds "
+        },
+        {
+          "insert": "vendor/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". personal-site's Dockerfile copies "
+        },
+        {
+          "insert": "vendor/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " before the install."
+        }
+      ],
+      "children": [
+        "first-4-code",
+        "first-4a",
+        "first-4b"
+      ]
+    },
+    "first-4-code": {
+      "id": "first-4-code",
+      "type": "code",
+      "props": {
+        "language": "dockerfile"
+      },
+      "text": [
+        {
+          "insert": "COPY package*.json ./\nCOPY vendor/ ./vendor/\nRUN npm ci"
+        }
+      ],
+      "children": []
+    },
+    "first-4a": {
+      "id": "first-4a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Check that "
+        },
+        {
+          "insert": ".dockerignore",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " does not exclude "
+        },
+        {
+          "insert": "vendor/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "first-4b": {
+      "id": "first-4b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "skitzo's Docker context is "
+        },
+        {
+          "insert": "apps/frontend",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", so its "
+        },
+        {
+          "insert": "vendor/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " goes there."
+        }
+      ],
+      "children": []
+    },
+    "first-5": {
+      "id": "first-5",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Commit "
+        },
+        {
+          "insert": "vendor/<name>.tgz",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "package.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and the lockfile together."
+        }
+      ],
+      "children": []
+    },
+    "h-repack": {
+      "id": "h-repack",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Repack After a Token Change"
+        }
+      ],
+      "children": []
+    },
+    "repack-lead": {
+      "id": "repack-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Never repack under the same file name. "
+        },
+        {
+          "insert": "bun run pack",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " refuses to overwrite a same-name tgz with different content, and the lockfile pins the old bytes by "
+        },
+        {
+          "insert": "integrity",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The table shows a repack that kept the name, measured offline with npm 10.9 and bun 1.4."
+        }
+      ],
+      "children": []
+    },
+    "repack-table": {
+      "id": "repack-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Install",
+          "npm",
+          "bun"
+        ],
+        "rows": [
+          [
+            "On a machine that installed the old tgz (warm cache)",
+            [
+              {
+                "insert": "npm install",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "npm ci",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", even with "
+              },
+              {
+                "insert": "node_modules",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " deleted: exit 0, "
+              },
+              {
+                "insert": "old",
+                "attributes": {
+                  "bold": true
+                }
+              },
+              {
+                "insert": " tokens"
+              }
+            ],
+            [
+              {
+                "insert": "bun install",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "--frozen-lockfile",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ": exit 0, "
+              },
+              {
+                "insert": "old",
+                "attributes": {
+                  "bold": true
+                }
+              },
+              {
+                "insert": " tokens"
+              }
+            ]
+          ],
+          [
+            "On a clean machine (Docker, CI)",
+            [
+              {
+                "insert": "npm ci",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ": "
+              },
+              {
+                "insert": "EINTEGRITY",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", exit 1"
+              }
+            ],
+            [
+              {
+                "insert": "bun install --frozen-lockfile",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ": "
+              },
+              {
+                "insert": "Integrity check failed for tarball",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", exit 1"
+              }
+            ]
+          ]
+        ],
+        "title": "Install results after a same-name repack"
+      },
+      "children": []
+    },
+    "repack-steps-lead": {
+      "id": "repack-steps-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A same-name repack looks fine locally and breaks the deployed build. These steps work for both npm and bun."
+        }
+      ],
+      "children": []
+    },
+    "repack-1": {
+      "id": "repack-1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "In design-system, bump the patch version in "
+        },
+        {
+          "insert": "package.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": [
+        "repack-1a",
+        "repack-1b",
+        "repack-1c"
+      ]
+    },
+    "repack-1a": {
+      "id": "repack-1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Every repack that changes the tgz bumps the version, from "
+        },
+        {
+          "insert": "0.2.0",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " to "
+        },
+        {
+          "insert": "0.2.1",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on the next repack, then to "
+        },
+        {
+          "insert": "0.2.2",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The tgz name follows the version."
+        }
+      ],
+      "children": []
+    },
+    "repack-1b": {
+      "id": "repack-1b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A change to any shipped file counts, not only a token change. The shipped files are "
+        },
+        {
+          "insert": "dist/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "css/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "fonts/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "tokens/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "templates/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "AGENTS.md",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "README.md",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "repack-1c": {
+      "id": "repack-1c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "During the rollout, do not bump the version yourself. Ask the managing agent."
+        }
+      ],
+      "children": []
+    },
+    "repack-2": {
+      "id": "repack-2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run "
+        },
+        {
+          "insert": "bun run build",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", then "
+        },
+        {
+          "insert": "bun run pack --out ../<app>/vendor",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "repack-3": {
+      "id": "repack-3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Delete the old tgz from the app's "
+        },
+        {
+          "insert": "vendor/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and change the dependency line to the new file name."
+        }
+      ],
+      "children": []
+    },
+    "repack-4": {
+      "id": "repack-4",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run "
+        },
+        {
+          "insert": "npm install",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or "
+        },
+        {
+          "insert": "bun install",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", in the app."
+        }
+      ],
+      "children": [
+        "repack-4a"
+      ]
+    },
+    "repack-4a": {
+      "id": "repack-4a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The lockfile gets the new path and "
+        },
+        {
+          "insert": "integrity",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "repack-5": {
+      "id": "repack-5",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Commit the new tgz, the deleted old one, "
+        },
+        {
+          "insert": "package.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and the lockfile together."
+        }
+      ],
+      "children": []
+    },
+    "repack-after": {
+      "id": "repack-after",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "After these steps, npm and bun install the new tokens. A clean "
+        },
+        {
+          "insert": "npm ci",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "bun install --frozen-lockfile",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with an empty cache passes."
+        }
+      ],
+      "children": []
+    },
+    "repack-n1": {
+      "id": "repack-n1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Packing an unchanged build produces identical bytes, even after a "
+        },
+        {
+          "insert": "touch",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " of its files."
+        }
+      ],
+      "children": [
+        "repack-n1a"
+      ]
+    },
+    "repack-n1a": {
+      "id": "repack-n1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "bun run pack",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " then leaves the existing tgz in place and prints "
+        },
+        {
+          "insert": "unchanged",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", so that repack is safe and needs no bump."
+        }
+      ],
+      "children": []
+    },
+    "repack-n2": {
+      "id": "repack-n2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "With npm only, "
+        },
+        {
+          "insert": "npm install \"@codecaine-ai/design-system@file:vendor/<same name>.tgz\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " also refreshes the lock entry."
+        }
+      ],
+      "children": [
+        "repack-n2a"
+      ]
+    },
+    "repack-n2a": {
+      "id": "repack-n2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "bun add",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with the same spec kept the old tokens."
+        }
+      ],
+      "children": []
+    },
+    "repack-n3": {
+      "id": "repack-n3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Deleting the whole lockfile also works but re-resolves every other dependency, so do not do it."
+        }
+      ],
+      "children": []
+    },
+    "h-check": {
+      "id": "h-check",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Check a Vendored Copy"
+        }
+      ],
+      "children": []
+    },
+    "check-lead": {
+      "id": "check-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The conformance linter compares the sha256 of "
+        },
+        {
+          "insert": "package/dist/css/tokens.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " inside the vendored tgz with the current build's "
+        },
+        {
+          "insert": "dist/css/tokens.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". "
+        },
+        {
+          "insert": "bun run pack",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " prints the hash of the copy it packed. To compare the two hashes by hand, run these commands."
+        }
+      ],
+      "children": []
+    },
+    "check-code": {
+      "id": "check-code",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "tar -xzOf vendor/codecaine-ai-design-system-0.2.1.tgz package/dist/css/tokens.css | shasum -a 256\nshasum -a 256 <design-system>/dist/css/tokens.css"
+        }
+      ],
+      "children": []
+    },
+    "check-scripts": {
+      "id": "check-scripts",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Scripts can import "
+        },
+        {
+          "insert": "tokensCssSha256(tgzPath)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "readTgz(path)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "tgzProblems(files)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " from "
+        },
+        {
+          "insert": "scripts/pack.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/pack.ts"
+            }
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-exports": {
+      "id": "h-exports",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Exports"
+        }
+      ],
+      "children": []
+    },
+    "exports-lead": {
+      "id": "exports-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each import path of the package resolves to one file or folder inside it. "
+        },
+        {
+          "insert": "package.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "package.json"
+            }
+          }
+        },
+        {
+          "insert": " declares the map under "
+        },
+        {
+          "insert": "exports",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "exports-table": {
+      "id": "exports-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Import",
+          "File",
+          "Use"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "@codecaine-ai/design-system",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "dist/js/index.js",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (+ "
+              },
+              {
+                "insert": ".d.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ")"
+              }
+            ],
+            [
+              {
+                "insert": "JS tokens: "
+              },
+              {
+                "insert": "tokens",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "flat",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "cssVar()",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "@codecaine-ai/design-system/fonts.css",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "css/fonts.css",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "@font-face",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " for Inter and IBM Plex Mono. Load it first."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "@codecaine-ai/design-system/fonts/*",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "fonts/*",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "The woff2 files and their OFL licenses. "
+              },
+              {
+                "insert": "fonts.css",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " references them."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "@codecaine-ai/design-system/tokens.css",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "dist/css/tokens.css",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "--ds-*",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " custom properties. Light on "
+              },
+              {
+                "insert": ":root",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "@codecaine-ai/design-system/tokens-dark-first.css",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "dist/css/tokens-dark-first.css",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "The same tokens, dark on "
+              },
+              {
+                "insert": ":root",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". For dark-first surfaces."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "@codecaine-ai/design-system/layout.css",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "css/layout.css",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "The app shell ("
+              },
+              {
+                "insert": ".ds-shell",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", sidebar, topbar, inspector)"
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "@codecaine-ai/design-system/host-contract.css",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "dist/css/host-contract.css",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "The agent-viewer host contract (shadcn, "
+              },
+              {
+                "insert": "trace-*",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "status-*",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and the rest) mapped to "
+              },
+              {
+                "insert": "--ds-*",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "@codecaine-ai/design-system/host-contract-dark-first.css",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "dist/css/host-contract-dark-first.css",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "The same contract, dark on "
+              },
+              {
+                "insert": ":root",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "@codecaine-ai/design-system/tailwind.css",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "dist/tailwind/theme.css",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Tailwind v4 theme: the utility names"
+          ],
+          [
+            [
+              {
+                "insert": "@codecaine-ai/design-system/tailwind-strict.css",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "dist/tailwind/strict.css",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Tailwind v4: removes Tailwind's default palette and scales"
+          ],
+          [
+            [
+              {
+                "insert": "@codecaine-ai/design-system/tailwind-v3-preset",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "dist/tailwind/preset-v3.cjs",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Tailwind v3 preset ("
+              },
+              {
+                "insert": "require",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " only)"
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "@codecaine-ai/design-system/json/*",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "dist/json/*",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "base.json",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "light.json",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "dark.json",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "tokens.json",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ]
+        ],
+        "title": "Package exports"
+      },
+      "children": []
+    },
+    "h-order": {
+      "id": "h-order",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Load Order"
+        }
+      ],
+      "children": []
+    },
+    "order-lead": {
+      "id": "order-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The linter's wiring check reads the app's entry stylesheet. Put the imports there, in this order."
+        }
+      ],
+      "children": []
+    },
+    "order-1": {
+      "id": "order-1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "fonts.css",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "children": []
+    },
+    "order-2": {
+      "id": "order-2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "tokens.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or "
+        },
+        {
+          "insert": "tokens-dark-first.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on a dark-first surface, such as MainMenu, skitzo, gamecube, CircleSnakesWeb panels or the docs-mcp home page"
+        }
+      ],
+      "children": []
+    },
+    "order-3": {
+      "id": "order-3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "host-contract.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or "
+        },
+        {
+          "insert": "host-contract-dark-first.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", only in a host of the agent viewer"
+        }
+      ],
+      "children": []
+    },
+    "order-4": {
+      "id": "order-4",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "layout.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", only in an app with the shell"
+        }
+      ],
+      "children": []
+    },
+    "order-dark": {
+      "id": "order-dark",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "On a dark-first surface that uses Tailwind's "
+        },
+        {
+          "insert": "dark:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", set "
+        },
+        {
+          "insert": "data-theme=\"dark\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on "
+        },
+        {
+          "insert": "<html>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "order-dark-1": {
+      "id": "order-dark-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "dark:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " then also matches inside a "
+        },
+        {
+          "insert": "data-theme=\"light\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " region, because the dark "
+        },
+        {
+          "insert": "<html>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is still an ancestor."
+        }
+      ],
+      "children": []
+    },
+    "order-dark-2": {
+      "id": "order-dark-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Token utilities such as "
+        },
+        {
+          "insert": "dark:bg-panel",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " follow the nearest theme and stay correct."
+        }
+      ],
+      "children": []
+    },
+    "order-dark-3": {
+      "id": "order-dark-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Inside a light region, do not use a "
+        },
+        {
+          "insert": "dark:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " utility whose value is not "
+        },
+        {
+          "insert": "var(--ds-*)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": [
+        "order-dark-3a",
+        "order-dark-3b"
+      ]
+    },
+    "order-dark-3a": {
+      "id": "order-dark-3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Examples are "
+        },
+        {
+          "insert": "dark:hidden",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "dark:invert",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "dark:bg-[#0d1117]",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "order-dark-3b": {
+      "id": "order-dark-3b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The Theming section of "
+        },
+        {
+          "insert": "Tokens",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/10-tokens"
+            }
+          }
+        },
+        {
+          "insert": " explains the theme rules."
+        }
+      ],
+      "children": []
+    },
+    "h-plain": {
+      "id": "h-plain",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Plain CSS"
+        }
+      ],
+      "children": []
+    },
+    "plain-lead": {
+      "id": "plain-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A plain CSS app imports the sheets directly."
+        }
+      ],
+      "children": []
+    },
+    "plain-code": {
+      "id": "plain-code",
+      "type": "code",
+      "props": {
+        "language": "css"
+      },
+      "text": [
+        {
+          "insert": "@import \"@codecaine-ai/design-system/fonts.css\";\n@import \"@codecaine-ai/design-system/tokens.css\";\n@import \"@codecaine-ai/design-system/layout.css\"; /* shell apps */"
+        }
+      ],
+      "children": []
+    },
+    "h-tw4": {
+      "id": "h-tw4",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Tailwind v4"
+        }
+      ],
+      "children": []
+    },
+    "tw4-lead": {
+      "id": "tw4-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A Tailwind v4 app imports "
+        },
+        {
+          "insert": "tailwind-strict.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " before "
+        },
+        {
+          "insert": "tailwind.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Imported after "
+        },
+        {
+          "insert": "tailwind.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "tailwind-strict.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " would remove the design-system utilities too."
+        }
+      ],
+      "children": []
+    },
+    "tw4-code": {
+      "id": "tw4-code",
+      "type": "code",
+      "props": {
+        "language": "css"
+      },
+      "text": [
+        {
+          "insert": "@import \"tailwindcss\";\n@import \"@codecaine-ai/design-system/fonts.css\";\n@import \"@codecaine-ai/design-system/tokens.css\";\n@import \"@codecaine-ai/design-system/tailwind-strict.css\"; /* before tailwind.css */\n@import \"@codecaine-ai/design-system/tailwind.css\";\n@import \"@codecaine-ai/design-system/layout.css\"; /* shell apps */"
+        }
+      ],
+      "children": []
+    },
+    "h-tw3": {
+      "id": "h-tw3",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Tailwind v3"
+        }
+      ],
+      "children": []
+    },
+    "tw3-lead": {
+      "id": "tw3-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A Tailwind v3 app adds the preset in "
+        },
+        {
+          "insert": "tailwind.config.cjs",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or in "
+        },
+        {
+          "insert": "tailwind.config.js",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "tw3-config": {
+      "id": "tw3-config",
+      "type": "code",
+      "props": {
+        "language": "js"
+      },
+      "text": [
+        {
+          "insert": "module.exports = {\n  presets: [require(\"@codecaine-ai/design-system/tailwind-v3-preset\")],\n  content: [\"./index.html\", \"./src/**/*.{ts,tsx}\"],\n};"
+        }
+      ],
+      "children": []
+    },
+    "tw3-sheet-lead": {
+      "id": "tw3-sheet-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "In the entry stylesheet, put every "
+        },
+        {
+          "insert": "@import",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " before the "
+        },
+        {
+          "insert": "@tailwind",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " lines."
+        }
+      ],
+      "children": []
+    },
+    "tw3-sheet": {
+      "id": "tw3-sheet",
+      "type": "code",
+      "props": {
+        "language": "css"
+      },
+      "text": [
+        {
+          "insert": "@import \"@codecaine-ai/design-system/fonts.css\";\n@import \"@codecaine-ai/design-system/tokens.css\";\n@tailwind base;\n@tailwind components;\n@tailwind utilities;"
+        }
+      ],
+      "children": []
+    },
+    "h-hosts": {
+      "id": "h-hosts",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Agent-Viewer Hosts"
+        }
+      ],
+      "children": []
+    },
+    "hosts-lead": {
+      "id": "hosts-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A host of viewer-ui, viewer-shell or prompt-kit loads "
+        },
+        {
+          "insert": "host-contract.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and deletes its hand-copied contract block. These hosts are simple-research-kernel, observatory, canvas-agent, budget's kernel view and gamecube. The sheet writes the contract in the format that the libraries read."
+        }
+      ],
+      "children": []
+    },
+    "hosts-table": {
+      "id": "hosts-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Names",
+          "Format",
+          [
+            {
+              "insert": "Tailwind v4 "
+            },
+            {
+              "insert": "@theme inline",
+              "attributes": {
+                "code": true
+              }
+            }
+          ],
+          [
+            {
+              "insert": "Tailwind v3 "
+            },
+            {
+              "insert": "colors",
+              "attributes": {
+                "code": true
+              }
+            }
+          ]
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "shadcn names, "
+              },
+              {
+                "insert": "trace-*",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "status-*",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "syntax-*",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "agentprism-*",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "tree-caret",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "tree-connector",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "selection-color",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "zebra-color",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "RGB triplet ("
+              },
+              {
+                "insert": "253 253 253",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ")"
+              }
+            ],
+            [
+              {
+                "insert": "--color-background: rgb(var(--background));",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "background: \"rgb(var(--background) / <alpha-value>)\"",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "editor-*",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "color",
+            [
+              {
+                "insert": "--color-editor-bg: var(--editor-bg);",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "\"editor-bg\": \"var(--editor-bg)\"",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "radius",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "length",
+            [
+              {
+                "insert": "--radius-sm: var(--radius);",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (also "
+              },
+              {
+                "insert": "-md",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "-lg",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ")"
+              }
+            ],
+            [
+              {
+                "insert": "borderRadius: { sm: \"var(--radius)\" }",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ]
+        ],
+        "title": "Host contract formats"
+      },
+      "children": []
+    },
+    "hosts-1": {
+      "id": "hosts-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The v4 hosts observatory and gamecube map the shadcn names as "
+        },
+        {
+          "insert": "var(--background)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " today, because their copies hold hex values."
+        }
+      ],
+      "children": [
+        "hosts-1a"
+      ]
+    },
+    "hosts-1a": {
+      "id": "hosts-1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Switch those lines to "
+        },
+        {
+          "insert": "rgb(var(--background))",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "hosts-2": {
+      "id": "hosts-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "--editor-bg",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "--editor-gutter-bg",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " are always opaque, and the build fails otherwise."
+        }
+      ],
+      "children": [
+        "hosts-2a"
+      ]
+    },
+    "hosts-2a": {
+      "id": "hosts-2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "viewer-ui paints its sticky line-number gutter with them, and code scrolls under it."
+        }
+      ],
+      "children": []
+    },
+    "hosts-3": {
+      "id": "hosts-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Do not keep "
+        },
+        {
+          "insert": "calc(var(--radius) - 4px)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", because the radius is 2px and the result falls to 0 or below."
+        }
+      ],
+      "children": []
+    },
+    "hosts-4": {
+      "id": "hosts-4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The sheet holds no non-color knobs, such as "
+        },
+        {
+          "insert": "--band-*-opacity",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "--selection-width",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "--zebra-opacity",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "--research-*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": [
+        "hosts-4a"
+      ]
+    },
+    "hosts-4a": {
+      "id": "hosts-4a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Keep their defaults in the host or in the viewer-shell style engine."
+        }
+      ],
+      "children": []
+    },
+    "h-vite": {
+      "id": "h-vite",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Vite"
+        }
+      ],
+      "children": []
+    },
+    "vite-lead": {
+      "id": "vite-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The Vite settings in this section are checked against Vite 5.4 and "
+        },
+        {
+          "insert": "@tailwindcss/vite",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " 4.3, as installed in Core. Each subsection names the case that needs its setting."
+        }
+      ],
+      "children": []
+    },
+    "h-fs": {
+      "id": "h-fs",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "server.fs.allow",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "children": []
+    },
+    "fs-lead": {
+      "id": "fs-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Vite resolves a symlink to its real path. With "
+        },
+        {
+          "insert": "workspace:*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "link:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or npm "
+        },
+        {
+          "insert": "file:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", that path is outside the app's root, and the dev server answers 403 for the font files. The CSS itself still loads."
+        }
+      ],
+      "children": []
+    },
+    "fs-fix": {
+      "id": "fs-fix",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Allow the package folder. Setting "
+        },
+        {
+          "insert": "allow",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " replaces Vite's default, so keep the workspace root in the list."
+        }
+      ],
+      "children": []
+    },
+    "fs-code": {
+      "id": "fs-code",
+      "type": "code",
+      "props": {
+        "language": "ts"
+      },
+      "text": [
+        {
+          "insert": "import { createRequire } from \"node:module\";\nimport { dirname } from \"node:path\";\nimport { defineConfig, searchForWorkspaceRoot } from \"vite\";\n\nconst designSystem = dirname(createRequire(import.meta.url).resolve(\"@codecaine-ai/design-system/package.json\"));\n\nexport default defineConfig({\n  server: { fs: { allow: [searchForWorkspaceRoot(process.cwd()), designSystem] } },\n});"
+        }
+      ],
+      "children": []
+    },
+    "fs-1": {
+      "id": "fs-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "With a vendored tgz, the package sits in the app's "
+        },
+        {
+          "insert": "node_modules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", inside the root, so it needs no change."
+        }
+      ],
+      "children": []
+    },
+    "fs-2": {
+      "id": "fs-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "vite build",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is not affected."
+        }
+      ],
+      "children": []
+    },
+    "h-optimize": {
+      "id": "h-optimize",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "optimizeDeps.exclude",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "children": []
+    },
+    "optimize-lead": {
+      "id": "optimize-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Vite does not pre-bundle a linked package whose real path is outside "
+        },
+        {
+          "insert": "node_modules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and it never pre-bundles CSS. This holds for every linked workspace package, so most apps need no "
+        },
+        {
+          "insert": "exclude",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Add "
+        },
+        {
+          "insert": "optimizeDeps: { exclude: [\"@codecaine-ai/design-system\"] }",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " only when all three of these conditions are true."
+        }
+      ],
+      "children": []
+    },
+    "optimize-1": {
+      "id": "optimize-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The app imports the JS tokens, as in "
+        },
+        {
+          "insert": "import { cssVar } from \"@codecaine-ai/design-system\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "optimize-2": {
+      "id": "optimize-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The package resolves to a path inside "
+        },
+        {
+          "insert": "node_modules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", for example with "
+        },
+        {
+          "insert": "resolve.preserveSymlinks: true",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "optimize-3": {
+      "id": "optimize-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Token changes must show without a dev-server restart."
+        }
+      ],
+      "children": []
+    },
+    "h-dedupe": {
+      "id": "h-dedupe",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "resolve.dedupe",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "children": []
+    },
+    "dedupe-lead": {
+      "id": "dedupe-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "design-system has no dependencies, so it never needs "
+        },
+        {
+          "insert": "resolve.dedupe",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". A linked library with its own "
+        },
+        {
+          "insert": "node_modules/react",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", such as viewer-ui or prompt-kit, gives the app two copies of React. Add "
+        },
+        {
+          "insert": "resolve: { dedupe: [\"react\", \"react-dom\"] }",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and Vite then resolves those names from the app's root."
+        }
+      ],
+      "children": []
+    },
+    "h-source": {
+      "id": "h-source",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Tailwind v4 "
+        },
+        {
+          "insert": "@source",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "children": []
+    },
+    "source-lead": {
+      "id": "source-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Tailwind scans the Vite root for class names, and skips "
+        },
+        {
+          "insert": "node_modules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and the files that "
+        },
+        {
+          "insert": ".gitignore",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " lists. design-system ships CSS, not class names, so it needs no "
+        },
+        {
+          "insert": "@source",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". A linked library whose TS source uses Tailwind classes needs one line in the entry stylesheet, with the path relative to that stylesheet."
+        }
+      ],
+      "children": []
+    },
+    "source-code": {
+      "id": "source-code",
+      "type": "code",
+      "props": {
+        "language": "css"
+      },
+      "text": [
+        {
+          "insert": "@source \"../node_modules/@codecaine-ai/agent-kernel-viewer-ui/src\"; /* from src/styles.css */"
+        }
+      ],
+      "children": []
+    },
+    "source-1": {
+      "id": "source-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Tailwind scans a package under "
+        },
+        {
+          "insert": "node_modules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", a symlink included, only through an explicit "
+        },
+        {
+          "insert": "@source",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "source-2": {
+      "id": "source-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "An explicit "
+        },
+        {
+          "insert": "@source",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " follows the symlink."
+        }
+      ],
+      "children": []
+    },
+    "h-fonts": {
+      "id": "h-fonts",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Fonts"
+        }
+      ],
+      "children": []
+    },
+    "fonts-lead": {
+      "id": "fonts-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "fonts.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " names its files as "
+        },
+        {
+          "insert": "url(\"../fonts/...\")",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", inside the package. Vite and "
+        },
+        {
+          "insert": "@tailwindcss/vite",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " resolve these URLs from the folder of "
+        },
+        {
+          "insert": "fonts.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", not from the app's stylesheet."
+        }
+      ],
+      "children": []
+    },
+    "fonts-1": {
+      "id": "fonts-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "vite build",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " emits each woff2 as a hashed file, such as "
+        },
+        {
+          "insert": "dist/assets/Inter-Regular-<hash>.woff2",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": [
+        "fonts-1a"
+      ]
+    },
+    "fonts-1a": {
+      "id": "fonts-1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each woff2 is 49 to 106 KB, above the 4 KB "
+        },
+        {
+          "insert": "assetsInlineLimit",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "fonts-2": {
+      "id": "fonts-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The fonts come from the app's own origin, so a CSP of "
+        },
+        {
+          "insert": "default-src 'self'",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " allows them."
+        }
+      ],
+      "children": []
+    },
+    "fonts-3": {
+      "id": "fonts-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Do not copy the font files into "
+        },
+        {
+          "insert": "public/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-electron": {
+      "id": "h-electron",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Electron and Next Standalone"
+        }
+      ],
+      "children": []
+    },
+    "electron-lead": {
+      "id": "electron-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Two packaged apps load the fonts under their own constraints. pen-plotter is an Electron app with a Vite renderer, and MainMenu is a Next 15 standalone app in Electron."
+        }
+      ],
+      "children": []
+    },
+    "electron-pen": {
+      "id": "electron-pen",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "pen-plotter",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "electron-pen-1",
+        "electron-pen-2",
+        "electron-pen-3"
+      ]
+    },
+    "electron-pen-1": {
+      "id": "electron-pen-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The CSP in "
+        },
+        {
+          "insert": "apps/pen-plotter/apps/desktop/src/renderer/index.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is "
+        },
+        {
+          "insert": "default-src 'self'; ... img-src 'self' data:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with no "
+        },
+        {
+          "insert": "font-src",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", so "
+        },
+        {
+          "insert": "default-src 'self'",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " governs fonts."
+        }
+      ],
+      "children": []
+    },
+    "electron-pen-2": {
+      "id": "electron-pen-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The emitted font files load."
+        }
+      ],
+      "children": []
+    },
+    "electron-pen-3": {
+      "id": "electron-pen-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Keep "
+        },
+        {
+          "insert": "assetsInlineLimit",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " below the font sizes, because the CSP would block a "
+        },
+        {
+          "insert": "data:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " font."
+        }
+      ],
+      "children": []
+    },
+    "electron-mm": {
+      "id": "electron-mm",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "MainMenu",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "electron-mm-1",
+        "electron-mm-2",
+        "electron-mm-3"
+      ]
+    },
+    "electron-mm-1": {
+      "id": "electron-mm-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "apps/MainMenu/apps/scene-engine/desktop/scripts/prepare-next-runtime.mjs",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " copies "
+        },
+        {
+          "insert": ".next/standalone",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": ".next/static",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " into "
+        },
+        {
+          "insert": "desktop/dist-next/runtime",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and deletes "
+        },
+        {
+          "insert": "runtime/public",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "electron-mm-2": {
+      "id": "electron-mm-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "CSS and fonts imported in "
+        },
+        {
+          "insert": "globals.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " compile into "
+        },
+        {
+          "insert": ".next/static",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", so they survive. Fonts placed in "
+        },
+        {
+          "insert": "public/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " would not."
+        }
+      ],
+      "children": []
+    },
+    "electron-mm-3": {
+      "id": "electron-mm-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "After wiring, run "
+        },
+        {
+          "insert": "next build",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and the prepare script once. Then check that "
+        },
+        {
+          "insert": "desktop/dist-next/runtime/.next/static",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " holds the woff2 files."
+        }
+      ],
+      "children": []
+    },
+    "h-use": {
+      "id": "h-use",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Use It"
+        }
+      ],
+      "children": []
+    },
+    "use-lead": {
+      "id": "use-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "An app uses the package through its CSS, its Tailwind themes, its JS tokens and its JSON files. Each subsection shows one of these outputs, and Install sums up the wirings."
+        }
+      ],
+      "children": []
+    },
+    "h-use-css": {
+      "id": "h-use-css",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "CSS"
+        }
+      ],
+      "children": []
+    },
+    "use-css-lead": {
+      "id": "use-css-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A CSS app imports the fonts, then the tokens, then the optional shell."
+        }
+      ],
+      "children": []
+    },
+    "use-css-code": {
+      "id": "use-css-code",
+      "type": "code",
+      "props": {
+        "language": "css"
+      },
+      "text": [
+        {
+          "insert": "@import \"@codecaine-ai/design-system/fonts.css\"; /* Inter and IBM Plex Mono, shipped in the package */\n@import \"@codecaine-ai/design-system/tokens.css\"; /* or tokens-dark-first.css on a dark-first surface */\n@import \"@codecaine-ai/design-system/layout.css\"; /* optional: the app shell */"
+        }
+      ],
+      "children": []
+    },
+    "use-css-1": {
+      "id": "use-css-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The font files are byte-identical to "
+        },
+        {
+          "insert": "@codecaine-ai/text-measure",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "'s, so browser text matches canvas measurement."
+        }
+      ],
+      "children": []
+    },
+    "use-css-2": {
+      "id": "use-css-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Agent-viewer hosts, the apps that use viewer-ui, viewer-shell or prompt-kit, add "
+        },
+        {
+          "insert": "@codecaine-ai/design-system/host-contract.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " after the tokens."
+        }
+      ],
+      "children": []
+    },
+    "h-use-tw4": {
+      "id": "h-use-tw4",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Tailwind v4"
+        }
+      ],
+      "children": []
+    },
+    "use-tw4-lead": {
+      "id": "use-tw4-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A Tailwind v4 app imports the tokens, the strict sheet and the theme after Tailwind itself."
+        }
+      ],
+      "children": []
+    },
+    "use-tw4-code": {
+      "id": "use-tw4-code",
+      "type": "code",
+      "props": {
+        "language": "css"
+      },
+      "text": [
+        {
+          "insert": "@import \"tailwindcss\";\n@import \"@codecaine-ai/design-system/tokens.css\";\n@import \"@codecaine-ai/design-system/tailwind-strict.css\"; /* new apps: before tailwind.css */\n@import \"@codecaine-ai/design-system/tailwind.css\";"
+        }
+      ],
+      "children": []
+    },
+    "use-tw4-1": {
+      "id": "use-tw4-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "New apps import "
+        },
+        {
+          "insert": "tailwind-strict.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " before "
+        },
+        {
+          "insert": "tailwind.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": [
+        "use-tw4-1a",
+        "use-tw4-1b",
+        "use-tw4-1c"
+      ]
+    },
+    "use-tw4-1a": {
+      "id": "use-tw4-1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "It clears Tailwind's default palette ("
+        },
+        {
+          "insert": "bg-red-500",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "bg-white",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "), text sizes ("
+        },
+        {
+          "insert": "text-sm",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ") and shadows ("
+        },
+        {
+          "insert": "shadow-lg",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ")."
+        }
+      ],
+      "children": []
+    },
+    "use-tw4-1b": {
+      "id": "use-tw4-1b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "It also clears Tailwind's radius, font, line-height, tracking, blur and easing steps, so only the utilities in the table generate."
+        }
+      ],
+      "children": []
+    },
+    "use-tw4-1c": {
+      "id": "use-tw4-1c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Imported after "
+        },
+        {
+          "insert": "tailwind.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", it would clear the design-system utilities too."
+        }
+      ],
+      "children": []
+    },
+    "use-tw4-2": {
+      "id": "use-tw4-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "dark:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " follows the theme, not the OS. "
+        },
+        {
+          "insert": "tailwind.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " redefines it as "
+        },
+        {
+          "insert": "data-theme=\"dark\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": ".dark",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on the element or an ancestor."
+        }
+      ],
+      "children": []
+    },
+    "use-tw4-table": {
+      "id": "use-tw4-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Need",
+          "Utilities"
+        ],
+        "rows": [
+          [
+            "Surfaces and fills",
+            [
+              {
+                "insert": "bg-page",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "bg-panel",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "bg-sidebar",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "bg-sunken",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "bg-chip",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "bg-hover",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "bg-active",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "bg-accent-soft",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Text",
+            [
+              {
+                "insert": "text-ink",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "text-body",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "text-secondary",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "text-muted",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "text-faint",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Borders",
+            [
+              {
+                "insert": "border-rule",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "border-rule-subtle",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "border-rule-strong",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "border-guide",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Accent and status",
+            [
+              {
+                "insert": "text-link",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "bg-accent",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "border-accent",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "ring-focus",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "text-danger",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "bg-danger-soft",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "border-info-line",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Hues (categorical only)",
+            [
+              {
+                "insert": "text-blue",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "bg-blue-soft",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "bg-blue-solid",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "text-blue-on-solid",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "border-blue-line",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", for gray, blue, teal, green, yellow, orange, red, violet and pink"
+              }
+            ]
+          ],
+          [
+            "Spacing and radius",
+            [
+              {
+                "insert": "p-1",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " is 4px. "
+              },
+              {
+                "insert": "gap-3",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " is 12px. Every "
+              },
+              {
+                "insert": "rounded-*",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " step is the one 2px radius, plus "
+              },
+              {
+                "insert": "rounded-pill",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            "Type",
+            [
+              {
+                "insert": "font-sans",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "font-mono",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "font-medium",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "text-ui-xs",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "text-ui-sm",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "text-ui-md",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "text-reading",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "text-title",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "leading-reading",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "tracking-micro",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Effects and motion",
+            [
+              {
+                "insert": "shadow-glass",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "backdrop-blur-glass",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "ease-emphasized",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "z-popover",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Layout",
+            [
+              {
+                "insert": "max-w-lane-text",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "w-sidebar",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "h-topbar",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "px-content-x",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " "
+              },
+              {
+                "insert": "w-inspector",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ]
+        ],
+        "title": "Design-system Tailwind utilities"
+      },
+      "children": []
+    },
+    "use-tw4-3": {
+      "id": "use-tw4-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Text in the accent color is "
+        },
+        {
+          "insert": "text-link",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". "
+        },
+        {
+          "insert": "accent",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is for fills, borders and focus rings, because the light "
+        },
+        {
+          "insert": "accent",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on the page is 4.34:1, under AA for text."
+        }
+      ],
+      "children": []
+    },
+    "use-tw4-4": {
+      "id": "use-tw4-4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A glyph on a solid tile is that tile's "
+        },
+        {
+          "insert": "on-solid",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", as in "
+        },
+        {
+          "insert": "bg-yellow-solid text-yellow-on-solid",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "bg-warning-solid text-warning-on-solid",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": [
+        "use-tw4-4a",
+        "use-tw4-4b",
+        "use-tw4-4c"
+      ]
+    },
+    "use-tw4-4a": {
+      "id": "use-tw4-4a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each "
+        },
+        {
+          "insert": "on-solid",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is white or ink, whichever meets 4.5:1 on that solid."
+        }
+      ],
+      "children": []
+    },
+    "use-tw4-4b": {
+      "id": "use-tw4-4b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "text-on-solid",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is white in light and fails on the light gray, yellow, orange and red solids."
+        }
+      ],
+      "children": []
+    },
+    "use-tw4-4c": {
+      "id": "use-tw4-4c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Light red tops out at 4.26:1 with white, and ink is 3.87:1, so light red tiles carry icons and large text only."
+        }
+      ],
+      "children": []
+    },
+    "use-tw4-5": {
+      "id": "use-tw4-5",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "There is no "
+        },
+        {
+          "insert": "bg-muted",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Muted is a text color, "
+        },
+        {
+          "insert": "text-muted",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and the neutral fill is "
+        },
+        {
+          "insert": "bg-active",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "use-tw4-6": {
+      "id": "use-tw4-6",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The full utility list is in "
+        },
+        {
+          "insert": "dist/guide/tokens.md",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "dist/guide/tokens.md"
+            }
+          }
+        },
+        {
+          "insert": ", which the "
+        },
+        {
+          "insert": "Tokens",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/10-tokens"
+            }
+          }
+        },
+        {
+          "insert": " page links."
+        }
+      ],
+      "children": []
+    },
+    "h-use-tw3": {
+      "id": "h-use-tw3",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Tailwind v3"
+        }
+      ],
+      "children": []
+    },
+    "use-tw3-lead": {
+      "id": "use-tw3-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A Tailwind v3 app adds the preset to its config."
+        }
+      ],
+      "children": []
+    },
+    "use-tw3-code": {
+      "id": "use-tw3-code",
+      "type": "code",
+      "props": {
+        "language": "js"
+      },
+      "text": [
+        {
+          "insert": "// tailwind.config.cjs\nmodule.exports = {\n  presets: [require(\"@codecaine-ai/design-system/tailwind-v3-preset\")],\n  content: [\"./src/**/*.{ts,tsx}\"],\n};"
+        }
+      ],
+      "children": []
+    },
+    "use-tw3-1": {
+      "id": "use-tw3-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The preset has the same utility names as "
+        },
+        {
+          "insert": "tailwind.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "use-tw3-2": {
+      "id": "use-tw3-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "It removes Tailwind's default palette, type, radius, shadow, blur and easing scales, and points "
+        },
+        {
+          "insert": "dark:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " at "
+        },
+        {
+          "insert": "data-theme=\"dark\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": ".dark",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "use-tw3-3": {
+      "id": "use-tw3-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Import "
+        },
+        {
+          "insert": "fonts.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "tokens.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in the entry stylesheet."
+        }
+      ],
+      "children": []
+    },
+    "h-use-js": {
+      "id": "h-use-js",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "JS and TypeScript"
+        }
+      ],
+      "children": []
+    },
+    "use-js-lead": {
+      "id": "use-js-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The package root exports "
+        },
+        {
+          "insert": "tokens",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "flat",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "cssVar",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "use-js-code": {
+      "id": "use-js-code",
+      "type": "code",
+      "props": {
+        "language": "ts"
+      },
+      "text": [
+        {
+          "insert": "import { tokens, flat, cssVar } from \"@codecaine-ai/design-system\";\n\ntokens.light.color.surface.page; // \"#fdfdfd\"\nflat.base[\"space.3\"]; // \"12px\"\ncssVar(\"color.text.muted\"); // \"var(--ds-color-text-muted)\"\ncssVar(\"color.code.bg\", \"dark\"); // \"var(--ds-dark-color-code-bg)\", pinned to dark"
+        }
+      ],
+      "children": []
+    },
+    "use-js-1": {
+      "id": "use-js-1",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Use "
+        },
+        {
+          "insert": "cssVar()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in inline styles. A raw value from "
+        },
+        {
+          "insert": "tokens",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " does not switch with the theme."
+        }
+      ],
+      "children": []
+    },
+    "h-use-json": {
+      "id": "h-use-json",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "JSON"
+        }
+      ],
+      "children": []
+    },
+    "use-json": {
+      "id": "use-json",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "@codecaine-ai/design-system/json/base.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "light.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "dark.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " map dotted paths to resolved values. "
+        },
+        {
+          "insert": "tokens.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " holds the same values nested."
+        }
+      ],
+      "children": []
+    },
+    "h-use-install": {
+      "id": "h-use-install",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Install"
+        }
+      ],
+      "children": []
+    },
+    "use-install-lead": {
+      "id": "use-install-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The table gives the short form of each install. Pick the Wiring and Vendored tgz on this page give the full recipe, including the tgz for apps that build in Docker, Vercel or Railway. The Vite section gives the Vite settings."
+        }
+      ],
+      "children": []
+    },
+    "use-install-table": {
+      "id": "use-install-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Where",
+          "How"
+        ],
+        "rows": [
+          [
+            "Inside Codecaine Core",
+            [
+              {
+                "insert": "Core's "
+              },
+              {
+                "insert": "workspaces",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " already lists the folder as "
+              },
+              {
+                "insert": "design-system",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", because it sits inside Core. Add "
+              },
+              {
+                "insert": "\"@codecaine-ai/design-system\": \"workspace:*\"",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " to the app, then run "
+              },
+              {
+                "insert": "bun install",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " at the Core root."
+              }
+            ]
+          ],
+          [
+            "Another bun app",
+            [
+              {
+                "insert": "Add the design-system folder's relative path to the root "
+              },
+              {
+                "insert": "workspaces",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and depend on "
+              },
+              {
+                "insert": "\"workspace:*\"",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". Or run "
+              },
+              {
+                "insert": "bun link",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " in design-system and "
+              },
+              {
+                "insert": "bun link @codecaine-ai/design-system",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " in the app. Both are live symlinks."
+              }
+            ]
+          ],
+          [
+            "An npm app",
+            [
+              {
+                "insert": "\"@codecaine-ai/design-system\": \"file:<relative path to this folder>\"",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". npm symlinks a "
+              },
+              {
+                "insert": "file:",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " folder, so it stays live."
+              }
+            ]
+          ],
+          [
+            "No package manager",
+            [
+              {
+                "insert": "Import by path, relative to the stylesheet. From "
+              },
+              {
+                "insert": "codebases/<group>/<app>/src/index.css",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", use "
+              },
+              {
+                "insert": "@import \"../../../codecaine/core/design-system/dist/css/tokens.css\";",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ]
+        ],
+        "title": "Install by kind of app"
+      },
+      "children": []
+    },
+    "use-install-bun": {
+      "id": "use-install-bun",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Do not use "
+        },
+        {
+          "insert": "file:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with bun. Bun snapshots the folder at install time, so a file added later, such as a new "
+        },
+        {
+          "insert": "dist/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " output, is missing until "
+        },
+        {
+          "insert": "bun install",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " runs again. Bun 1.4 links each file that exists at install time, and older versions copy the files."
+        }
+      ],
+      "children": []
+    }
+  }
+}

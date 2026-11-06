@@ -12,15 +12,15 @@ metadata:
 ## Style UI
 
 1. Style only with tokens: `var(--ds-*)` in CSS, the utilities from `@codecaine-ai/design-system/tailwind.css` (Tailwind v4), or `cssVar()` and `tokens` from `@codecaine-ai/design-system` in JS. With `tailwind.css`, `dark:` follows `data-theme`, not the OS.
-2. Use the semantic roles (surface, text, border, fill, accent, link, status). Use hue tokens only for categorical color. Text uses `link`, never `accent`. `guide/tokens.md` lists every token.
+2. Use the semantic roles (surface, text, border, fill, accent, link, status). Use hue tokens only for categorical color. Text uses `link`, never `accent`. `dist/guide/tokens.md` lists every token, and the docs page `docs/30-guide/10-tokens` gives the rules.
 3. Never hard-code a color, size, spacing, radius, font, shadow, duration or z-index. Never copy token values into an app. In Tailwind, never use Tailwind's own scales (`bg-red-500`, `text-sm`, `shadow-md`, `rounded-lg`). New apps import `tailwind-strict.css` before `tailwind.css`, so those utilities don't generate at all.
 4. Check light and dark: set `data-theme="dark"` on `<html>`.
 5. Scan the folders you touched with `bun /Users/Ford/workspace/codebases/codecaine/core/design-system/scripts/scan-literals.ts <dir>`. A new hard-coded literal is a bug.
 
 ## Build a New App or Screen
 
-1. Use the app shell in `guide/layout.md`: a collapsible left sidebar (`⌘\` toggles it and the state persists), a topbar with the page title and actions, content in lanes, and an optional inspector. Start from `templates/react-app-shell/` for React, or from the markup in `guide/layout.md`.
-2. Organize code by vertical slice, as `guide/code-structure.md` describes. Every component is a folder, `_components/<Name>/index.tsx`. Its parts go in its own `_components/`. Keep breaking components down. Move shared code up to the nearest common ancestor.
+1. Use the app shell in the docs page `docs/30-guide/20-layout`: a collapsible left sidebar (`⌘\` toggles it and the state persists), a topbar with the page title and actions, content in lanes, and an optional inspector. Start from `templates/react-app-shell/` for React, or from the markup in `docs/30-guide/20-layout`.
+2. Organize code by vertical slice, as the docs page `docs/30-guide/30-code-structure` describes. Every component is a folder, `_components/<Name>/index.tsx`. Its parts go in its own `_components/`. Keep breaking components down. Move shared code up to the nearest common ancestor.
 
 ## Change the Look
 
@@ -35,7 +35,7 @@ metadata:
 - **npm apps:** use a `file:` dependency, which npm links live, or `@import` the CSS by relative path.
 - **Apps built on Vercel, Railway or Docker:** vendor a packed copy. Run `bun run pack --out ../<app>/vendor` in design-system (`--out` is relative to the design-system folder) and depend on `file:vendor/<tgz name>`. Repack after a token change.
 - **Load order:** `@codecaine-ai/design-system/fonts.css`, then `tokens.css` (`tokens-dark-first.css` on a dark-first surface), then `layout.css`. Agent-viewer hosts add `host-contract.css` after the tokens. For Tailwind v4, `tailwind-strict.css` comes before `tailwind.css`; Tailwind v3 apps use the `tailwind-v3-preset` export as a preset.
-- `guide/consume.md` has the full recipe, including the Vite settings.
+- The docs page `docs/30-guide/40-consume` has the full recipe, including the Vite settings.
 
 ## Check an App
 
@@ -52,9 +52,9 @@ Run these in `/Users/Ford/workspace/codebases/codecaine/core/design-system`. `--
 
 ## Move an Existing App
 
-`guide/audit.md` lists every app with its gaps, effort and migration wave, and `apps.json` holds its registry entry. Move tokens first, then the shell, then the code structure, one app per change:
+`apps.json` holds each app's registry entry, and `bun run progress` reports each app's pass status. The migration waves are finished. Move tokens first, then the shell, then the code structure, one app per change:
 
 1. Capture the before state: `bun run snapshot --app <id> --set before`.
 2. Run `bun run codemod:literals --app <id> propose`, mark the rows you accept `"approve": "yes"`, then run `bun run codemod:literals apply --table <mapping.json>`.
-3. Wire the CSS (`guide/consume.md`) and fix what is left until `lint:apps --pass <n>` and `verify:apps --pass <n>` both pass, and `test:apps <id>` shows no failure beyond the baseline.
+3. Wire the CSS (`docs/30-guide/40-consume`) and fix what is left until `lint:apps --pass <n>` and `verify:apps --pass <n>` both pass, and `test:apps <id>` shows no failure beyond the baseline.
 4. Run `bun run snapshot --app <id> --set after`, then `bun run snapshot:sheet --app <id> --a before --b after` (and `snapshot:diff` with the same flags) to prove the change.

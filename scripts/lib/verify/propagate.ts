@@ -10,8 +10,8 @@
  * a journal is unrestored or a build holds the sentinel, snapshot and verify:apps refuse to run
  * (propagateBlocker).
  *
- * Nothing is written through a symlink: the theme files, tokens/, tokens/themes/, dist/ (every entry)
- * and guide/tokens.md must be real files and directories inside the design-system, checked before
+ * Nothing is written through a symlink: the theme files, tokens/, tokens/themes/ and dist/ (every entry)
+ * must be real files and directories inside the design-system, checked before
  * journaling and again before every write; theme files are replaced by a rename, never written in place.
  */
 import { spawnSync } from "node:child_process";
@@ -92,14 +92,12 @@ function requireRealTree(dsReal: string, rel: string): void {
 /**
  * The theme files of a design-system whose propagate writes all stay inside it, or a Refusal: tokens/,
  * tokens/themes/ and dist/ are real directories, every theme file is a regular file, nothing under dist/
- * is a symlink or a hard link (the build rewrites those files in place), and neither is guide/tokens.md.
+ * is a symlink or a hard link (the build rewrites those files in place).
  * scripts/build.ts is not a symlink either: it builds the directory above its real path.
  */
 function checkTree(dsReal: string): string[] {
   for (const rel of ["tokens", THEMES_DIR, "dist"]) requireReal(dsReal, rel, "dir");
   requireRealTree(dsReal, "dist");
-  requireReal(dsReal, "guide", "dir", { optional: true });
-  requireReal(dsReal, "guide/tokens.md", "file", { optional: true, single: true });
   requireReal(dsReal, "scripts", "dir", { optional: true });
   requireReal(dsReal, "scripts/build.ts", "file", { optional: true });
   const rels = readdirSync(join(dsReal, THEMES_DIR))

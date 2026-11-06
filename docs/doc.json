@@ -11,7 +11,8 @@
       "children": [
         "intro",
         "sections",
-        "sections-checks"
+        "sections-checks",
+        "sections-guide"
       ]
     },
     "intro": {
@@ -29,24 +30,26 @@
           }
         },
         {
-          "insert": ". The token and layout rules live in the "
+          "insert": ". The token, layout and code rules live in the "
         },
         {
-          "insert": "guide/",
+          "insert": "Guide",
           "attributes": {
-            "code": true
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide"
+            }
           }
         },
         {
-          "insert": " folder, starting at "
+          "insert": " section, starting at "
         },
         {
-          "insert": "guide/tokens.md",
+          "insert": "Tokens",
           "attributes": {
-            "code": true,
             "reference": {
-              "kind": "source",
-              "path": "guide/tokens.md"
+              "kind": "doc",
+              "path": "30-guide/10-tokens"
             }
           }
         },
@@ -118,6 +121,36 @@
       "text": [
         {
           "insert": "The section lists the build and app-check commands and the isolation around each app run."
+        }
+      ],
+      "children": []
+    },
+    "sections-guide": {
+      "id": "sections-guide",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Guide",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide"
+            }
+          }
+        }
+      ],
+      "children": [
+        "sections-guide-a"
+      ]
+    },
+    "sections-guide-a": {
+      "id": "sections-guide-a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The section gives the token, layout and code-structure rules, how an app consumes the package, how to migrate an app, and which apps use it."
         }
       ],
       "children": []

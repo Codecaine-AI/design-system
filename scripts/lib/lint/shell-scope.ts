@@ -1,5 +1,5 @@
 /**
- * Where a `--ds-layout-*` declaration sits, for the names check (decision 32, guide/layout.md
+ * Where a `--ds-layout-*` declaration sits, for the names check (decision 32, docs/30-guide/20-layout
  * "To change a size for one app, override the token on the shell"). An override is shell-scoped when:
  * - CSS: every selector of the innermost style rule around it has a subject (its last compound
  *   selector) that carries the `ds-shell` class: `.docs-app.ds-shell { … }`,

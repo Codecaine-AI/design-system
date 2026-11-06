@@ -1,0 +1,1243 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-bb9fd09588c47a507f82bcc64e2ce475",
+  "title": "Budget Review Example",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "intro",
+        "h-today",
+        "today-lead",
+        "tree-today",
+        "h-after",
+        "after-lead",
+        "tree-after",
+        "h-why",
+        "why-lead",
+        "why-1",
+        "why-2",
+        "why-3",
+        "why-4",
+        "why-5"
+      ]
+    },
+    "intro": {
+      "id": "intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The review slice of the budget app, "
+        },
+        {
+          "insert": "life/budget/apps/web/src/pages/review/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", is the deepest tree in the reference apps. This page shows the slice today, the slice after the move to "
+        },
+        {
+          "insert": "Code Structure",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/30-code-structure"
+            }
+          }
+        },
+        {
+          "insert": ", and the reason for each move."
+        }
+      ],
+      "children": []
+    },
+    "h-today": {
+      "id": "h-today",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Today"
+        }
+      ],
+      "children": []
+    },
+    "today-lead": {
+      "id": "today-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The slice root holds 24 files and "
+        },
+        {
+          "insert": "_components/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The tests for the whole app sit in "
+        },
+        {
+          "insert": "apps/web/tests/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", away from the code they test."
+        }
+      ],
+      "children": []
+    },
+    "tree-today": {
+      "id": "tree-today",
+      "type": "file-tree",
+      "props": {
+        "entries": [
+          {
+            "path": "src/pages/review/",
+            "note": "24 files and _components/"
+          },
+          {
+            "path": "src/pages/review/page.tsx",
+            "note": "Renders _components/ReviewContent"
+          },
+          {
+            "path": "src/pages/review/results.tsx",
+            "note": "Sub-route as a sibling file"
+          },
+          {
+            "path": "src/pages/review/reconciliation.tsx",
+            "note": "Sub-route as a sibling file"
+          },
+          {
+            "path": "src/pages/review/disagreements.tsx",
+            "note": "Sub-route as a sibling file"
+          },
+          {
+            "path": "src/pages/review/model.ts",
+            "note": "One of 12 plain .ts modules"
+          },
+          {
+            "path": "src/pages/review/queue-model.ts",
+            "note": "One of 12 plain .ts modules"
+          },
+          {
+            "path": "src/pages/review/navigation.ts",
+            "note": "One of 12 plain .ts modules"
+          },
+          {
+            "path": "src/pages/review/suggest.ts",
+            "note": "One of 12 plain .ts modules"
+          },
+          {
+            "path": "src/pages/review/use-classifier.ts"
+          },
+          {
+            "path": "src/pages/review/use-decisions.ts"
+          },
+          {
+            "path": "src/pages/review/use-review-hotkeys.ts"
+          },
+          {
+            "path": "src/pages/review/review.css"
+          },
+          {
+            "path": "src/pages/review/review-cards.css"
+          },
+          {
+            "path": "src/pages/review/results.css"
+          },
+          {
+            "path": "src/pages/review/reconciliation.css"
+          },
+          {
+            "path": "src/pages/review/disagreements.css"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent.tsx",
+            "note": "205 lines. Renders ReviewWorkbench and ReviewMonthPicker."
+          },
+          {
+            "path": "src/pages/review/_components/GroupedSelector.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/grouped-selector.css"
+          },
+          {
+            "path": "src/pages/review/_components/CategoryGuidance.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/DisagreementExplanation.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewDataset.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewMonthPicker.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/UnresolvedCredits.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/ReviewWorkbench.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/review-workbench.css"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/use-review-draft.ts"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/ReviewCard/ReviewCard.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/ReviewCard/review-card.css"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/ReviewCard/_components/CardActions/CardActions.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/ReviewCard/_components/CardHeader/CardHeader.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/ReviewCard/_components/ClassificationPicker/ClassificationPicker.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/ReviewCard/_components/ContextNote/ContextNote.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/EvidenceRail/EvidenceRail.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/EvidenceRail/evidence-rail.css"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/EvidenceRail/use-connector-history.ts"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/EvidenceRail/use-purchase-matches.ts"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/EvidenceRail/connectors/index.ts"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/EvidenceRail/connectors/EvidenceConnector.ts"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/EvidenceRail/connectors/amazon/AmazonConnector.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/EvidenceRail/connectors/merchant/MerchantConnector.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/EvidenceRail/connectors/venmo/VenmoConnector.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/EvidenceRail/_components/AmazonEvidence/AmazonEvidence.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/EvidenceRail/_components/AmazonEvidence/_components/OrderItem.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/EvidenceRail/_components/AmazonEvidence/_components/OrderReceipt.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/EvidenceRail/_components/AmazonEvidence/_components/OtherCandidates.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/EvidenceRail/_components/AmazonEvidence/_components/PaymentFilter.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/EvidenceRail/_components/BestGuess/BestGuess.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/EvidenceRail/_components/BestGuess/best-guess.css"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/EvidenceRail/_components/HistorySection/HistorySection.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/EvidenceRail/_components/MerchantEvidence/MerchantEvidence.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/EvidenceRail/_components/MoreDetails/MoreDetails.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/EvidenceRail/_components/VenmoEvidence/VenmoEvidence.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/EvidenceRail/_components/VenmoEvidence/_components/FundingLink.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewWorkbench/_components/EvidenceRail/_components/VenmoEvidence/_components/PaymentNote.tsx"
+          },
+          {
+            "path": "tests/",
+            "note": "apps/web/tests/. 33 bun:test files for the whole app."
+          }
+        ]
+      },
+      "children": []
+    },
+    "h-after": {
+      "id": "h-after",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "After"
+        }
+      ],
+      "children": []
+    },
+    "after-lead": {
+      "id": "after-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Under the standard, the slice root holds "
+        },
+        {
+          "insert": "page.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "_lib/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "_components/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and one folder per sub-route. Code that other slices or the shell use moves to "
+        },
+        {
+          "insert": "src/shared/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "src/_components/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "tree-after": {
+      "id": "tree-after",
+      "type": "file-tree",
+      "props": {
+        "entries": [
+          {
+            "path": "src/_components/AppShell/",
+            "note": "Was shared/AppLayout.tsx and shared/sidebar.css"
+          },
+          {
+            "path": "src/shared/_components/CategoryIcon/",
+            "note": "Was shared/CategoryIcon.tsx and category-icon.css"
+          },
+          {
+            "path": "src/shared/budget-setup.ts",
+            "note": "Moved out of pages/budget-setup/model.ts"
+          },
+          {
+            "path": "src/shared/review-navigation.ts",
+            "note": "Was pages/review/navigation.ts"
+          },
+          {
+            "path": "src/pages/review/page.tsx",
+            "note": "Renders <ReviewContent />"
+          },
+          {
+            "path": "src/pages/review/_lib/",
+            "note": "9 modules that the whole slice uses"
+          },
+          {
+            "path": "src/pages/review/_lib/model.ts"
+          },
+          {
+            "path": "src/pages/review/_lib/queue-model.ts"
+          },
+          {
+            "path": "src/pages/review/_lib/queue-prediction.ts"
+          },
+          {
+            "path": "src/pages/review/_lib/suggest.ts"
+          },
+          {
+            "path": "src/pages/review/_lib/classifier-run.ts"
+          },
+          {
+            "path": "src/pages/review/_lib/category-guidance.ts"
+          },
+          {
+            "path": "src/pages/review/_lib/results-model.ts"
+          },
+          {
+            "path": "src/pages/review/_lib/useClassifier.ts"
+          },
+          {
+            "path": "src/pages/review/_lib/useDecisions.ts"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/index.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/styles.css"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/utils.ts",
+            "note": "Was hotkeys.ts and monthly-queue.ts"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/utils.test.ts",
+            "note": "Was tests/review-hotkeys.test.ts"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/useReviewHotkeys.ts",
+            "note": "Used by ReviewContent and useReviewDraft"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewMonthPicker/index.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/index.tsx",
+            "note": "Was ReviewWorkbench.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/styles.css",
+            "note": "Was review-workbench.css"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/types.ts",
+            "note": "SelectGroup"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/useReviewDraft.ts",
+            "note": "Was use-review-draft.ts"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/utils.ts",
+            "note": "Was context-autosave.ts"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/utils.test.ts",
+            "note": "Was tests/context-autosave.test.ts"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/ReviewCard/index.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/ReviewCard/styles.css"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/ReviewCard/_components/CardActions/"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/ReviewCard/_components/CardHeader/"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/ReviewCard/_components/ContextNote/"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/ReviewCard/_components/ClassificationPicker/index.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/ReviewCard/_components/ClassificationPicker/_components/GroupedSelector/index.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/ReviewCard/_components/ClassificationPicker/_components/GroupedSelector/styles.css"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/EvidenceRail/index.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/EvidenceRail/index.test.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/EvidenceRail/styles.css"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/EvidenceRail/useConnectorHistory.ts"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/EvidenceRail/usePurchaseMatches.ts"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/EvidenceRail/connectors/index.ts"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/EvidenceRail/connectors/index.test.ts"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/EvidenceRail/connectors/evidence-connector.ts"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/EvidenceRail/connectors/amazon-connector.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/EvidenceRail/connectors/merchant-connector.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/EvidenceRail/connectors/venmo-connector.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/EvidenceRail/_components/AmazonEvidence/index.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/EvidenceRail/_components/AmazonEvidence/_components/OrderReceipt/index.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/EvidenceRail/_components/AmazonEvidence/_components/OrderReceipt/_components/OrderItem/index.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/EvidenceRail/_components/AmazonEvidence/_components/OrderReceipt/_components/OrderItem/_components/ProductImage/index.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/EvidenceRail/_components/AmazonEvidence/_components/OtherCandidates/"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/EvidenceRail/_components/AmazonEvidence/_components/PaymentFilter/"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/EvidenceRail/_components/BestGuess/"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/EvidenceRail/_components/HistorySection/"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/EvidenceRail/_components/MerchantEvidence/"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/EvidenceRail/_components/MoreDetails/"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/EvidenceRail/_components/VenmoEvidence/index.tsx"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/EvidenceRail/_components/VenmoEvidence/_components/FundingLink/"
+          },
+          {
+            "path": "src/pages/review/_components/ReviewContent/_components/ReviewWorkbench/_components/EvidenceRail/_components/VenmoEvidence/_components/PaymentNote/"
+          },
+          {
+            "path": "src/pages/review/results/page.tsx",
+            "note": "Was results.tsx"
+          },
+          {
+            "path": "src/pages/review/results/styles.css",
+            "note": "Was results.css"
+          },
+          {
+            "path": "src/pages/review/results/_components/ReviewDataset/"
+          },
+          {
+            "path": "src/pages/review/reconciliation/page.tsx",
+            "note": "Was reconciliation.tsx"
+          },
+          {
+            "path": "src/pages/review/reconciliation/styles.css",
+            "note": "Was reconciliation.css"
+          },
+          {
+            "path": "src/pages/review/reconciliation/model.ts",
+            "note": "Was reconciliation-model.ts"
+          },
+          {
+            "path": "src/pages/review/reconciliation/_components/UnresolvedCredits/index.tsx"
+          },
+          {
+            "path": "src/pages/review/reconciliation/_components/UnresolvedCredits/index.test.tsx"
+          },
+          {
+            "path": "src/pages/review/disagreements/page.tsx"
+          },
+          {
+            "path": "src/pages/review/disagreements/styles.css"
+          },
+          {
+            "path": "src/pages/review/disagreements/_components/CategoryGuidance/"
+          },
+          {
+            "path": "src/pages/review/disagreements/_components/DisagreementExplanation/"
+          }
+        ]
+      },
+      "children": []
+    },
+    "h-why": {
+      "id": "h-why",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Why Each Move"
+        }
+      ],
+      "children": []
+    },
+    "why-lead": {
+      "id": "why-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each part moves to the place that its consumers set."
+        }
+      ],
+      "children": []
+    },
+    "why-1": {
+      "id": "why-1",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Components go to the one component or sub-route that renders them."
+        }
+      ],
+      "children": [
+        "why-1a",
+        "why-1b"
+      ]
+    },
+    "why-1a": {
+      "id": "why-1a",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "ReviewWorkbench",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "ReviewMonthPicker",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " go under "
+        },
+        {
+          "insert": "ReviewContent",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", the only component that renders them."
+        }
+      ],
+      "children": []
+    },
+    "why-1b": {
+      "id": "why-1b",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Components that only one sub-route renders go into that sub-route: "
+        },
+        {
+          "insert": "ReviewDataset",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "UnresolvedCredits",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "CategoryGuidance",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "DisagreementExplanation",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "why-2": {
+      "id": "why-2",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Parts with one renderer move down under it."
+        }
+      ],
+      "children": [
+        "why-2a",
+        "why-2b",
+        "why-2c"
+      ]
+    },
+    "why-2a": {
+      "id": "why-2a",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "GroupedSelector",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " goes down to "
+        },
+        {
+          "insert": "ClassificationPicker",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", its only renderer, and "
+        },
+        {
+          "insert": "SelectGroup",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " goes to "
+        },
+        {
+          "insert": "ReviewWorkbench/types.ts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "why-2b": {
+      "id": "why-2b",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "OrderItem",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " goes under "
+        },
+        {
+          "insert": "OrderReceipt",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", its only renderer."
+        }
+      ],
+      "children": []
+    },
+    "why-2c": {
+      "id": "why-2c",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "ProductImage",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", the second component in "
+        },
+        {
+          "insert": "OrderItem.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", gets its own folder."
+        }
+      ],
+      "children": []
+    },
+    "why-3": {
+      "id": "why-3",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "navigation.ts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " moves to "
+        },
+        {
+          "insert": "src/shared/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " because the shell imports it. "
+        },
+        {
+          "insert": "reviewEntities",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " moves with it, out of "
+        },
+        {
+          "insert": "model.ts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "why-4": {
+      "id": "why-4",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Model code that other slices import moves to "
+        },
+        {
+          "insert": "src/shared/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": [
+        "why-4a",
+        "why-4b",
+        "why-4c"
+      ]
+    },
+    "why-4a": {
+      "id": "why-4a",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Other slices import "
+        },
+        {
+          "insert": "Category",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "BudgetSetup",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "parseSetup",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "storageKey",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " from "
+        },
+        {
+          "insert": "budget-setup/model.ts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Those, and the helpers that "
+        },
+        {
+          "insert": "parseSetup",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " calls, move to "
+        },
+        {
+          "insert": "src/shared/budget-setup.ts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "why-4b": {
+      "id": "why-4b",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "accountCategories",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "categoryEvidence",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " stay, because only the budget-setup slice uses them."
+        }
+      ],
+      "children": []
+    },
+    "why-4c": {
+      "id": "why-4c",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "spending/model.ts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " needs the same split, because "
+        },
+        {
+          "insert": "review/suggest.ts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "budget-spend",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " import it."
+        }
+      ],
+      "children": []
+    },
+    "why-5": {
+      "id": "why-5",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Stylesheets follow their markup."
+        }
+      ],
+      "children": [
+        "why-5a",
+        "why-5b"
+      ]
+    },
+    "why-5a": {
+      "id": "why-5a",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "ReviewContent",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " imports "
+        },
+        {
+          "insert": "review-cards.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", but the sheet styles classes from eight components, so it splits by owner. The eight are "
+        },
+        {
+          "insert": "ReviewContent",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "ReviewMonthPicker",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "ReviewCard",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "CardHeader",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "ClassificationPicker",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "ContextNote",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "GroupedSelector",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "MoreDetails",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "why-5b": {
+      "id": "why-5b",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "disagreements.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " also renders classes from "
+        },
+        {
+          "insert": "results.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ": "
+        },
+        {
+          "insert": ".classification-results",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": ".results-run-picker",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": ".results-amount",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". That shared markup becomes one component in "
+        },
+        {
+          "insert": "review/_components/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    }
+  }
+}

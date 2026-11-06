@@ -1,0 +1,2365 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-71059d8b0ce8bcc6bebf1c2d92c15266",
+  "title": "Ecosystem",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "intro",
+        "h-scope",
+        "scope-lead",
+        "scope-1",
+        "scope-2",
+        "scope-out",
+        "scope-registry",
+        "scope-next",
+        "h-consumers",
+        "cons-lead",
+        "cons-date",
+        "cons-table",
+        "cons-notes-lead",
+        "cons-n1",
+        "cons-n3",
+        "cons-n4",
+        "h-reach",
+        "reach-lead",
+        "reach-canvas",
+        "live-lead",
+        "live-1",
+        "live-2",
+        "step-lead",
+        "step-1",
+        "step-2",
+        "step-3",
+        "host-lib",
+        "propagate",
+        "personal-site",
+        "h-hosts",
+        "hosts-lead",
+        "hosts-two",
+        "hosts-table",
+        "hosts-kurate",
+        "h-rollout",
+        "roll-lead",
+        "roll-table",
+        "roll-not-lead",
+        "roll-not-1",
+        "roll-not-2",
+        "roll-not-3",
+        "roll-tokens",
+        "h-gate",
+        "gate-lead",
+        "gate-1",
+        "gate-2",
+        "gate-3"
+      ]
+    },
+    "intro": {
+      "id": "intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The design system is the shared UI for the Codecaine apps and the owner's personal apps. This page gives its scope, the apps that consume it, how a token change reaches each app, and the record of the first rollout."
+        }
+      ],
+      "children": []
+    },
+    "h-scope": {
+      "id": "h-scope",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Scope"
+        }
+      ],
+      "children": []
+    },
+    "scope-lead": {
+      "id": "scope-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The design system is the shared UI for one ecosystem with two parts."
+        }
+      ],
+      "children": []
+    },
+    "scope-1": {
+      "id": "scope-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The first part is the Codecaine apps and libraries. These are the Core repos docs-system, canvas, sequence, agent-kernel, prompt-kit, annotations and observatory, and the tools around them."
+        }
+      ],
+      "children": []
+    },
+    "scope-2": {
+      "id": "scope-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The second part is the owner's personal apps, such as budget."
+        }
+      ],
+      "children": []
+    },
+    "scope-out": {
+      "id": "scope-out",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Sites with their own custom look stay outside the design system. personal-site is excluded and keeps its own UI, by an owner decision on 2026-10-07. Product looks inside an in-scope app also stay as they are, such as game scenes and exports, landing heroes and brand pages."
+        }
+      ],
+      "children": []
+    },
+    "scope-registry": {
+      "id": "scope-registry",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Every app in scope has an entry in "
+        },
+        {
+          "insert": "apps.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "apps.json"
+            }
+          }
+        },
+        {
+          "insert": ", the app registry. The tools "
+        },
+        {
+          "insert": "lint:apps",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "verify:apps",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "test:apps",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "snapshot",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "use:app",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " read it, and "
+        },
+        {
+          "insert": "App Checks and Commands",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "20-app-checks-and-commands"
+            }
+          }
+        },
+        {
+          "insert": " gives their commands."
+        }
+      ],
+      "children": []
+    },
+    "scope-next": {
+      "id": "scope-next",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "To move a new app onto the package, read "
+        },
+        {
+          "insert": "Migrate",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/50-migrate"
+            }
+          }
+        },
+        {
+          "insert": ". Agents that do UI work read "
+        },
+        {
+          "insert": "AGENTS.md",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "AGENTS.md"
+            }
+          }
+        },
+        {
+          "insert": " and the "
+        },
+        {
+          "insert": "design-system",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " skill."
+        }
+      ],
+      "children": []
+    },
+    "h-consumers": {
+      "id": "h-consumers",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Consumers"
+        }
+      ],
+      "children": []
+    },
+    "cons-lead": {
+      "id": "cons-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The table has one row for each entry in "
+        },
+        {
+          "insert": "apps.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "apps.json"
+            }
+          }
+        },
+        {
+          "insert": ", with paths relative to the workspace root. Consume is the registry's "
+        },
+        {
+          "insert": "consume.via",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", sometimes with a short note. Shell is the registry's "
+        },
+        {
+          "insert": "shell",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". It reads Shell when the app renders the app shell from "
+        },
+        {
+          "insert": "Layout",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/20-layout"
+            }
+          }
+        },
+        {
+          "insert": ", which pass 2 checks, and n/a otherwise."
+        }
+      ],
+      "children": []
+    },
+    "cons-date": {
+      "id": "cons-date",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Status gives each app's migration passes from "
+        },
+        {
+          "insert": "Migrate",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/50-migrate"
+            }
+          }
+        },
+        {
+          "insert": ", or why it is pending or excluded, as of 2026-10-07. For current status, run "
+        },
+        {
+          "insert": "bun run progress",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "cons-table": {
+      "id": "cons-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "App",
+          "Path",
+          "Package",
+          "Consume",
+          "Status",
+          "Shell"
+        ],
+        "rows": [
+          [
+            "sequence-renderer",
+            [
+              {
+                "insert": "codecaine/core/sequence/packages/sequence",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "@codecaine-ai/sequence",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "workspace (JS tokens)",
+            "Migrated: pass 1 (2, 3 n/a)",
+            "n/a"
+          ],
+          [
+            "sequence-studio",
+            [
+              {
+                "insert": "codecaine/core/sequence/packages/studio",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "@codecaine-ai/sequence-studio",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "workspace",
+            "Migrated: passes 1, 2, 3",
+            "Shell"
+          ],
+          [
+            "docs-workbench",
+            [
+              {
+                "insert": "codecaine/core/docs-system/packages/docs-workbench",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "@codecaine-ai/docs-workbench",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "workspace",
+            "Migrated: passes 1, 2, 3",
+            "Shell"
+          ],
+          [
+            "canvas-studio",
+            [
+              {
+                "insert": "codecaine/core/canvas/packages/studio",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "@codecaine-ai/studio",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "workspace",
+            "Migrated: passes 1, 2, 3",
+            "Shell"
+          ],
+          [
+            "canvas-renderer",
+            [
+              {
+                "insert": "codecaine/core/canvas/packages/canvas",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "@codecaine-ai/canvas",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "workspace (JS tokens)",
+            "Migrated: pass 1 (2, 3 n/a)",
+            "n/a"
+          ],
+          [
+            "canvas-agent",
+            [
+              {
+                "insert": "codecaine/core/canvas/packages/canvas-agent",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "@codecaine-ai/canvas-agent",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "workspace",
+            "Migrated: passes 1, 2, 3",
+            "Shell"
+          ],
+          [
+            "docs-mcp-home",
+            [
+              {
+                "insert": "codecaine/core/docs-system/packages/docs-mcp",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "@codecaine-ai/docs-mcp",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "workspace (files served at a URL prefix)",
+            "Migrated: pass 1 (2, 3 n/a)",
+            "n/a"
+          ],
+          [
+            "docs-viewer",
+            [
+              {
+                "insert": "codecaine/core/docs-system/packages/docs-viewer",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "@codecaine-ai/docs-viewer",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "host-css library",
+            "Migrated: pass 1 (2, 3 n/a)",
+            "n/a"
+          ],
+          [
+            "docs-publish",
+            [
+              {
+                "insert": "codecaine/core/docs-system/packages/docs-publish",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "@codecaine-ai/docs-publish",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "relative-import (build time)",
+            "Migrated: pass 1 (2, 3 n/a)",
+            "n/a"
+          ],
+          [
+            "viewer-shell",
+            [
+              {
+                "insert": "codecaine/core/agent-kernel/packages/viewer-shell",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "@codecaine-ai/agent-kernel-viewer-shell",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "host-css library",
+            "Migrated: pass 1 (2, 3 n/a)",
+            "n/a"
+          ],
+          [
+            "viewer-ui",
+            [
+              {
+                "insert": "codecaine/core/agent-kernel/packages/viewer-ui",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "@codecaine-ai/agent-kernel-viewer-ui",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "host-css library",
+            "Migrated: pass 1 (2, 3 n/a)",
+            "n/a"
+          ],
+          [
+            "simple-research-kernel",
+            [
+              {
+                "insert": "codecaine/core/agent-kernel/examples/simple-research-kernel",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "@codecaine-ai/agent-kernel-example-simple-research-kernel",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "workspace (Tailwind v3 preset)",
+            "Migrated: passes 1, 2, 3",
+            "Shell"
+          ],
+          [
+            "prompt-kit-ui",
+            [
+              {
+                "insert": "codecaine/core/prompt-kit/packages/prompt-kit",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "@codecaine-ai/prompt-kit",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "host-css library",
+            "Migrated: pass 1 (2, 3 n/a)",
+            "n/a"
+          ],
+          [
+            "token-gateway",
+            [
+              {
+                "insert": "codecaine/utilities/token-gateway",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "token-gateway",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "workspace",
+            "Pending: run mode none. The dashboard needs the gateway wrapper, a pinned CPA binary and the mock upstream.",
+            "Shell"
+          ],
+          [
+            "agent-skills-manager",
+            [
+              {
+                "insert": "infrastructure/agent-config/manager",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "none (vanilla JS)",
+            "copy",
+            "Migrated: passes 1, 2 (3 n/a)",
+            "Shell"
+          ],
+          [
+            "skitzo",
+            [
+              {
+                "insert": "experiments/skitzo/apps/frontend",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "frontend",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "vendor-tgz",
+            "Migrated: passes 1, 2, 3",
+            "Shell"
+          ],
+          [
+            "personal-site",
+            [
+              {
+                "insert": "lascari-ai/personal-site",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "lascari-personal-site",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "vendor-tgz",
+            "Excluded: out of scope. Its migration branch is not merged.",
+            "n/a"
+          ],
+          [
+            "annotations",
+            [
+              {
+                "insert": "codecaine/core/annotations",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "@codecaine-ai/annotations",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "host-css library",
+            [
+              {
+                "insert": "Pending: uncommitted "
+              },
+              {
+                "insert": "package.json",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " version line"
+              }
+            ],
+            "n/a"
+          ],
+          [
+            "observatory",
+            [
+              {
+                "insert": "codecaine/core/observatory",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "@codecaine-ai/observatory",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "link",
+            [
+              {
+                "insert": "Pending: uncommitted "
+              },
+              {
+                "insert": "package.json",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", 4 UI files and 3 untracked items"
+              }
+            ],
+            "Shell"
+          ],
+          [
+            "variator",
+            [
+              {
+                "insert": "codecaine/tools/variator",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "variator",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "relative-import",
+            "Pending: run mode none. The review UI landed in Codecaine-AI/variator#1, so re-assess the run profile.",
+            "Shell"
+          ],
+          [
+            "slidev-template",
+            [
+              {
+                "insert": "learning/lascari-ai-learning/presentations/SlidevTemplate",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "slidev",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "relative-import",
+            [
+              {
+                "insert": "Pending: uncommitted "
+              },
+              {
+                "insert": "components/MotionCanvas.vue",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and a description file"
+              }
+            ],
+            "n/a"
+          ],
+          [
+            "budget",
+            [
+              {
+                "insert": "life/budget/apps/web",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "@personal-budget/web",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "workspace",
+            [
+              {
+                "insert": "Pending: 83 uncommitted files in "
+              },
+              {
+                "insert": "apps/web/src",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and staged submodules"
+              }
+            ],
+            "Shell"
+          ],
+          [
+            "pen-plotter",
+            [
+              {
+                "insert": "apps/pen-plotter/apps/desktop",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "@pen-plotter/desktop",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "workspace",
+            [
+              {
+                "insert": "Pending: uncommitted "
+              },
+              {
+                "insert": "SetupPanel.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and 12 open worktrees to merge. Commits have landed since, so re-assess."
+              }
+            ],
+            "Shell"
+          ],
+          [
+            "mainmenu",
+            [
+              {
+                "insert": "apps/MainMenu/apps/scene-engine",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "scene-engine",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "npm-file",
+            [
+              {
+                "insert": "Pending: uncommitted editor work in "
+              },
+              {
+                "insert": "app/editor/_components",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Shell"
+          ],
+          [
+            "gamecube",
+            [
+              {
+                "insert": "harnesses/gamecube-decomp-harness/apps/frontend",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "@decomp-orchestrator/frontend",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "link",
+            [
+              {
+                "insert": "Pending: uncommitted "
+              },
+              {
+                "insert": "styles.css",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "vite.config.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and root "
+              },
+              {
+                "insert": "package.json",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Shell"
+          ],
+          [
+            "circlesnakes-panels",
+            [
+              {
+                "insert": "games/circle-snakes/web",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "circle-snakes-web",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "vendor-tgz",
+            [
+              {
+                "insert": "Pending: 42 uncommitted entries in "
+              },
+              {
+                "insert": "src/ui",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "src/app",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "vite.config.ts",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "n/a"
+          ],
+          [
+            "prompt-kit-studio",
+            [
+              {
+                "insert": "codecaine/core/prompt-kit/packages/studio",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "@codecaine-ai/prompt-kit-studio",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "workspace",
+            "Pending: run mode none. The studio starts a Prompt service outside the checkout, so its run profile is not proven. lint:apps passes.",
+            "Shell"
+          ]
+        ],
+        "title": "Apps in the registry, status as of 2026-10-07"
+      },
+      "children": []
+    },
+    "cons-notes-lead": {
+      "id": "cons-notes-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Three groups of apps carry extra rules: the n/a passes, the pending apps and the dark-first surfaces."
+        }
+      ],
+      "children": []
+    },
+    "cons-n1": {
+      "id": "cons-n1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "n/a passes",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "cons-n1a",
+        "cons-n1b",
+        "cons-n1c"
+      ]
+    },
+    "cons-n1a": {
+      "id": "cons-n1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Libraries have no pass 3. The libraries are docs-viewer, docs-publish, viewer-shell, viewer-ui, prompt-kit-ui and annotations."
+        }
+      ],
+      "children": []
+    },
+    "cons-n1b": {
+      "id": "cons-n1b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Libraries and leaf renderers have no pass 2, because they render inside a host's shell."
+        }
+      ],
+      "children": []
+    },
+    "cons-n1c": {
+      "id": "cons-n1c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each n/a pass carries its reason in the registry entry."
+        }
+      ],
+      "children": []
+    },
+    "cons-n3": {
+      "id": "cons-n3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Pending apps",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "cons-n3a",
+        "cons-n3b",
+        "cons-n3c"
+      ]
+    },
+    "cons-n3a": {
+      "id": "cons-n3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Uncommitted work in its repo blocks every pending app."
+        }
+      ],
+      "children": []
+    },
+    "cons-n3b": {
+      "id": "cons-n3b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The action is to commit that work."
+        }
+      ],
+      "children": []
+    },
+    "cons-n3c": {
+      "id": "cons-n3c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The pending apps are the next batch."
+        }
+      ],
+      "children": []
+    },
+    "cons-n4": {
+      "id": "cons-n4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Dark-first surfaces",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "cons-n4a",
+        "cons-n4b",
+        "cons-n4c"
+      ]
+    },
+    "cons-n4a": {
+      "id": "cons-n4a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The dark-first surfaces are skitzo, docs-mcp-home, mainmenu, gamecube and circlesnakes-panels."
+        }
+      ],
+      "children": []
+    },
+    "cons-n4b": {
+      "id": "cons-n4b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "They use the same tokens, dark by default, and are checked in dark only."
+        }
+      ],
+      "children": []
+    },
+    "cons-n4c": {
+      "id": "cons-n4c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Every other entry supports light and dark."
+        }
+      ],
+      "children": []
+    },
+    "h-reach": {
+      "id": "h-reach",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "How a Token Change Reaches Each App"
+        }
+      ],
+      "children": []
+    },
+    "reach-lead": {
+      "id": "reach-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A token change is a "
+        },
+        {
+          "insert": "bun run build",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in design-system, as the Change a Token section of "
+        },
+        {
+          "insert": "README.md",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "README.md"
+            }
+          }
+        },
+        {
+          "insert": " gives. How far the change travels depends on the app's consume type, which the canvas groups by when the app sees the change."
+        }
+      ],
+      "children": []
+    },
+    "reach-canvas": {
+      "id": "reach-canvas",
+      "type": "canvas",
+      "props": {
+        "src": "./assets/canvases/token-reach.canvas.json",
+        "title": "How a token change reaches each app"
+      },
+      "children": []
+    },
+    "live-lead": {
+      "id": "live-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "workspace, link and npm-file apps reach "
+        },
+        {
+          "insert": "dist/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " through a live symlink, and relative-import apps read it by path. Two of these types carry a condition."
+        }
+      ],
+      "children": []
+    },
+    "live-1": {
+      "id": "live-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A link symlink goes through a bun link registry. The registration exists only on the machine and in the registry where "
+        },
+        {
+          "insert": "bun link",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " ran."
+        }
+      ],
+      "children": []
+    },
+    "live-2": {
+      "id": "live-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "An npm-file symlink stays live unless an "
+        },
+        {
+          "insert": ".npmrc",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " sets "
+        },
+        {
+          "insert": "install-links=true",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "step-lead": {
+      "id": "step-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Three consume types change only after a step."
+        }
+      ],
+      "children": []
+    },
+    "step-1": {
+      "id": "step-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "relative-import (build time)",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "step-1a",
+        "step-1b"
+      ]
+    },
+    "step-1a": {
+      "id": "step-1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "docs-publish compiles the tokens into "
+        },
+        {
+          "insert": "dist/styles/docs.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " at build time."
+        }
+      ],
+      "children": []
+    },
+    "step-1b": {
+      "id": "step-1b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Published pages change only after a docs-publish rebuild."
+        }
+      ],
+      "children": []
+    },
+    "step-2": {
+      "id": "step-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "vendor-tgz",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "step-2a",
+        "step-2b"
+      ]
+    },
+    "step-2a": {
+      "id": "step-2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A vendor-tgz app holds a snapshot."
+        }
+      ],
+      "children": []
+    },
+    "step-2b": {
+      "id": "step-2b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "It needs a version bump, a repack and a new lockfile entry, as "
+        },
+        {
+          "insert": "Consume",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/40-consume"
+            }
+          }
+        },
+        {
+          "insert": " gives."
+        }
+      ],
+      "children": []
+    },
+    "step-3": {
+      "id": "step-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "copy",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "step-3a",
+        "step-3b",
+        "step-3c"
+      ]
+    },
+    "step-3a": {
+      "id": "step-3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A copy app holds a snapshot of the built "
+        },
+        {
+          "insert": "tokens.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "layout.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "fonts.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with its fonts."
+        }
+      ],
+      "children": []
+    },
+    "step-3b": {
+      "id": "step-3b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Copy them into "
+        },
+        {
+          "insert": "web/vendor/design-system/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " again."
+        }
+      ],
+      "children": []
+    },
+    "step-3c": {
+      "id": "step-3c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The linter checks the copy by the hash of "
+        },
+        {
+          "insert": "tokens.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "host-lib": {
+      "id": "host-lib",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The host-css libraries are docs-viewer, viewer-shell, viewer-ui, prompt-kit-ui and annotations. Each one gets the change through its host, and the host gets it through its own consume type. The host must load "
+        },
+        {
+          "insert": "tokens.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " before the library's CSS."
+        }
+      ],
+      "children": []
+    },
+    "propagate": {
+      "id": "propagate",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "bun run verify:apps --propagate --root <dir>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " proves the live path. It rebuilds with a sentinel page color and checks that live-linked apps paint it. It refuses "
+        },
+        {
+          "insert": "/Users/Ford/workspace",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", so run it against a mirror."
+        }
+      ],
+      "children": []
+    },
+    "personal-site": {
+      "id": "personal-site",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "personal-site takes docs-publish as a vendored tgz for its article pages. A future docs-publish repack into the site brings design-system tokens into those pages, unless the site keeps its current tgz."
+        }
+      ],
+      "children": []
+    },
+    "h-hosts": {
+      "id": "h-hosts",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Hosts That Link Libraries Live"
+        }
+      ],
+      "children": []
+    },
+    "hosts-lead": {
+      "id": "hosts-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "viewer-ui, viewer-shell and prompt-kit-ui read "
+        },
+        {
+          "insert": "var(--ds-*)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " without px or hex fallbacks. "
+        },
+        {
+          "insert": "host-contract.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " alone does not define the size, radius, motion, z and selection-width tokens that viewer-ui reads. Every host must load "
+        },
+        {
+          "insert": "tokens.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " first, as "
+        },
+        {
+          "insert": "Consume",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/40-consume"
+            }
+          }
+        },
+        {
+          "insert": " gives."
+        }
+      ],
+      "children": []
+    },
+    "hosts-two": {
+      "id": "hosts-two",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Two hosts link these libraries live, outside a workspace."
+        }
+      ],
+      "children": []
+    },
+    "hosts-table": {
+      "id": "hosts-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Host",
+          "How it links",
+          [
+            {
+              "insert": "Without "
+            },
+            {
+              "insert": "tokens.css",
+              "attributes": {
+                "code": true
+              }
+            }
+          ]
+        ],
+        "rows": [
+          [
+            "gamecube",
+            "bun link registry (global links), the way it takes prompt-kit",
+            "Boxed message cards lose their inset under the corner cap. The detail modal's z-index falls to auto. Selection rings lose their widths."
+          ],
+          [
+            [
+              {
+                "insert": "kurate (a client app, not in "
+              },
+              {
+                "insert": "apps.json",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ")"
+              }
+            ],
+            [
+              {
+                "insert": "link:",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " to Core's viewer-ui"
+              }
+            ],
+            "Text falls to 16px. Card text sits under the corner cap. The detail modal's z-index falls to auto."
+          ]
+        ],
+        "title": "Hosts that link libraries live"
+      },
+      "children": []
+    },
+    "hosts-kurate": {
+      "id": "hosts-kurate",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Once kurate loads "
+        },
+        {
+          "insert": "tokens.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", its scrollbars and form controls also follow the theme, because "
+        },
+        {
+          "insert": "tokens.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " sets "
+        },
+        {
+          "insert": "color-scheme",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in each theme block."
+        }
+      ],
+      "children": []
+    },
+    "h-rollout": {
+      "id": "h-rollout",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rollout Record"
+        }
+      ],
+      "children": []
+    },
+    "roll-lead": {
+      "id": "roll-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The first rollout shipped on 2026-10-07. It fast-forwarded each repo's "
+        },
+        {
+          "insert": "origin/main",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " to the commit in the table. design-system has no remote, so its row gives its local "
+        },
+        {
+          "insert": "main",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "roll-table": {
+      "id": "roll-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Repo",
+          [
+            {
+              "insert": "Commit on "
+            },
+            {
+              "insert": "main",
+              "attributes": {
+                "code": true
+              }
+            }
+          ],
+          "Apps"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "design-system",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "227a8f1",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "The package, the tools and "
+              },
+              {
+                "insert": "apps.json",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". No remote, local "
+              },
+              {
+                "insert": "main",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " only."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "codecaine/core",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "cbe266d",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Core's doctor runs "
+              },
+              {
+                "insert": "lint:apps",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (warn only)."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "codecaine/core/docs-system",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "0ad8b5e",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "docs-mcp-home, docs-viewer, docs-publish, docs-workbench"
+          ],
+          [
+            [
+              {
+                "insert": "codecaine/core/sequence",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "14cc2b7",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "sequence-renderer, sequence-studio"
+          ],
+          [
+            [
+              {
+                "insert": "codecaine/core/canvas",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "66e7546a",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "canvas-studio, canvas-renderer, canvas-agent"
+          ],
+          [
+            [
+              {
+                "insert": "codecaine/core/agent-kernel",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "96a37c2",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "viewer-shell, viewer-ui, simple-research-kernel"
+          ],
+          [
+            [
+              {
+                "insert": "codecaine/core/prompt-kit",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "5f447dd",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "prompt-kit-ui"
+          ],
+          [
+            [
+              {
+                "insert": "lascari-ai/agent-skills",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "3bf833a",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "agent-skills-manager"
+          ],
+          [
+            [
+              {
+                "insert": "experiments/skitzo",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "a83c7d7",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "skitzo"
+          ]
+        ],
+        "title": "First rollout commits"
+      },
+      "children": []
+    },
+    "roll-not-lead": {
+      "id": "roll-not-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Three groups were not rolled out."
+        }
+      ],
+      "children": []
+    },
+    "roll-not-1": {
+      "id": "roll-not-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "system-view was not under git, so it was not rolled out."
+        }
+      ],
+      "children": [
+        "roll-not-1a",
+        "roll-not-1b"
+      ]
+    },
+    "roll-not-1a": {
+      "id": "roll-not-1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Its migrated copy lived only in the rollout mirror."
+        }
+      ],
+      "children": []
+    },
+    "roll-not-1b": {
+      "id": "roll-not-1b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "apps.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " no longer lists it."
+        }
+      ],
+      "children": []
+    },
+    "roll-not-2": {
+      "id": "roll-not-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "personal-site is out of scope, so it was not rolled out."
+        }
+      ],
+      "children": []
+    },
+    "roll-not-3": {
+      "id": "roll-not-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The 9 pending apps in the Consumers table were not rolled out."
+        }
+      ],
+      "children": []
+    },
+    "roll-tokens": {
+      "id": "roll-tokens",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "No existing token value changed in the rollout. The rollout added "
+        },
+        {
+          "insert": "color.chart.*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and the "
+        },
+        {
+          "insert": "color-scheme",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " property."
+        }
+      ],
+      "children": []
+    },
+    "h-gate": {
+      "id": "h-gate",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Open Merge-Gate Consequences"
+        }
+      ],
+      "children": []
+    },
+    "gate-lead": {
+      "id": "gate-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "canvas, agent-kernel and prompt-kit shipped before every app that depends on them was migrated. Until the pending apps below finish pass 1, three consequences hold."
+        }
+      ],
+      "children": []
+    },
+    "gate-1": {
+      "id": "gate-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "canvas-agent loads "
+        },
+        {
+          "insert": "tailwind-strict.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", so it does not generate the Tailwind default classes that annotations uses on "
+        },
+        {
+          "insert": "/config",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": [
+        "gate-1a",
+        "gate-1b"
+      ]
+    },
+    "gate-1a": {
+      "id": "gate-1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "An annotated prompt panel loses its 12px and 14px text sizes, its shadows and the white text of the destructive badge."
+        }
+      ],
+      "children": []
+    },
+    "gate-1b": {
+      "id": "gate-1b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "This holds until annotations pass 1 maps those classes to tokens."
+        }
+      ],
+      "children": []
+    },
+    "gate-2": {
+      "id": "gate-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "budget keeps its "
+        },
+        {
+          "insert": "packages/agent-kernel",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " submodule at or before "
+        },
+        {
+          "insert": "081dfb6",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " until budget depends on the package and its kernel view loads "
+        },
+        {
+          "insert": "fonts.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "tokens.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "host-contract.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": [
+        "gate-2a"
+      ]
+    },
+    "gate-2a": {
+      "id": "gate-2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A later submodule fails budget's Tailwind build on the preset "
+        },
+        {
+          "insert": "require",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or renders the kernel view with unset variables."
+        }
+      ],
+      "children": []
+    },
+    "gate-3": {
+      "id": "gate-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "gamecube and kurate lose the values in the Hosts That Link Libraries Live table until they load "
+        },
+        {
+          "insert": "tokens.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    }
+  }
+}

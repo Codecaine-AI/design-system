@@ -1,0 +1,4927 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-9420606c59c8281434413cda5758f1a5",
+  "title": "App Layout",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "intro",
+        "src-lead",
+        "src-1",
+        "src-2",
+        "src-3",
+        "src-4",
+        "hero",
+        "h-when",
+        "when-lead",
+        "when-table",
+        "when-after",
+        "h-anat",
+        "anat-lead",
+        "anat-html",
+        "anat-collapsed",
+        "h-markup",
+        "markup-lead",
+        "markup-code",
+        "h-classes",
+        "classes-lead",
+        "classes-table",
+        "h-tokens",
+        "tokens-lead",
+        "tokens-table",
+        "rule-lead",
+        "rule-1",
+        "rule-2",
+        "shared-lead",
+        "shared-table",
+        "override-lead",
+        "override-css",
+        "h-rules",
+        "rules-lead",
+        "h-rules-a",
+        "rules-a-lead",
+        "r1",
+        "r2",
+        "r3",
+        "r4",
+        "r5",
+        "h-rules-b",
+        "rules-b-lead",
+        "r6",
+        "r7",
+        "r8",
+        "r9",
+        "h-rules-c",
+        "rules-c-lead",
+        "r10",
+        "r11",
+        "r12",
+        "r13",
+        "h-lanes",
+        "lanes-lead",
+        "lanes-table",
+        "lanes-ch",
+        "lanes-pad",
+        "h-density",
+        "density-lead",
+        "density-table",
+        "density-after",
+        "h-dodont",
+        "dodont-lead",
+        "dodont-table",
+        "h-shells",
+        "shells-lead",
+        "sh-budget",
+        "sh-docs",
+        "sh-ops",
+        "sh-site",
+        "h-check",
+        "check-lead",
+        "c1",
+        "c2",
+        "c3",
+        "c4",
+        "c5",
+        "c6",
+        "h-gaps",
+        "gaps-lead",
+        "g1",
+        "g2",
+        "g3",
+        "h-shots",
+        "shots-lead",
+        "shots-grid",
+        "shots-insp",
+        "shots-narrow",
+        "shots-query"
+      ]
+    },
+    "intro": {
+      "id": "intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Every app you click around in uses one shell: a collapsible sidebar, a sticky topbar, and the page content in a lane, a capped content width. An optional inspector panel docks on the right. The shell comes from the budget app, "
+        },
+        {
+          "insert": "life/budget/apps/web/src/shared/AppLayout.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "sidebar.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Its sizes are the budget sizes rounded to the 4px grid, and its colors, type and radius are the design-system tokens."
+        }
+      ],
+      "children": []
+    },
+    "src-lead": {
+      "id": "src-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The shell CSS is "
+        },
+        {
+          "insert": "css/layout.css",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "css/layout.css"
+            }
+          }
+        },
+        {
+          "insert": ", which loads after "
+        },
+        {
+          "insert": "css/fonts.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "dist/css/tokens.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". A demo, a React reference and two guide pages go with it."
+        }
+      ],
+      "children": []
+    },
+    "src-1": {
+      "id": "src-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "templates/app-shell-demo.html",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "templates/app-shell-demo.html"
+            }
+          }
+        },
+        {
+          "insert": " is the demo. Open it in a browser."
+        }
+      ],
+      "children": []
+    },
+    "src-2": {
+      "id": "src-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "templates/react-app-shell/",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "templates/react-app-shell"
+            }
+          }
+        },
+        {
+          "insert": " is the React reference."
+        }
+      ],
+      "children": []
+    },
+    "src-3": {
+      "id": "src-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Consume",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/40-consume"
+            }
+          }
+        },
+        {
+          "insert": " shows how to wire the package into an app."
+        }
+      ],
+      "children": []
+    },
+    "src-4": {
+      "id": "src-4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Code Structure",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/30-code-structure"
+            }
+          }
+        },
+        {
+          "insert": " shows the code structure for the app around the shell."
+        }
+      ],
+      "children": []
+    },
+    "hero": {
+      "id": "hero",
+      "type": "image",
+      "props": {
+        "alt": "The demo in light theme with the sidebar expanded. The sidebar shows Budget, the nav rows with Net Worth current under Overview, the Agent tools group at the bottom and the Sample Household footer. The Net Worth page shows three summary cards and an accounts table.",
+        "caption": "Expanded sidebar, light theme",
+        "src": "./assets/images/app-shell-expanded-light.png"
+      },
+      "children": []
+    },
+    "h-when": {
+      "id": "h-when",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "When It Applies"
+        }
+      ],
+      "children": []
+    },
+    "when-lead": {
+      "id": "when-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Use the shell for an app with more than one view. Skip it for a single canvas, a landing page or an embed."
+        }
+      ],
+      "children": []
+    },
+    "when-table": {
+      "id": "when-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Use the shell",
+          "Do not use the shell"
+        ],
+        "rows": [
+          [
+            "Apps with more than one view you move between: budget, ops consoles, agent and trace viewers, settings-heavy tools.",
+            "A single full-screen canvas or 3D scene, such as the personal-site visualizer. It keeps floating panels and uses tokens only."
+          ],
+          [
+            "Internal tools that grow new pages over time.",
+            "Marketing or landing pages."
+          ],
+          [
+            "Document workbenches, such as the docs system, once they migrate. Existing Shells on this page lists them.",
+            "Embeds rendered inside another app's shell."
+          ]
+        ],
+        "title": "When to use the shell"
+      },
+      "children": []
+    },
+    "when-after": {
+      "id": "when-after",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "If you are unsure, use the shell. One shell across apps means one set of habits. The toggle is always in the same place, and "
+        },
+        {
+          "insert": "⌘\\",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " always collapses the sidebar."
+        }
+      ],
+      "children": []
+    },
+    "h-anat": {
+      "id": "h-anat",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Anatomy"
+        }
+      ],
+      "children": []
+    },
+    "anat-lead": {
+      "id": "anat-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The shell has three columns: "
+        },
+        {
+          "insert": ".ds-sidebar",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": ".ds-workspace",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and the optional "
+        },
+        {
+          "insert": ".ds-inspector",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The drawing shows the expanded shell and the collapsed rail."
+        }
+      ],
+      "children": []
+    },
+    "anat-html": {
+      "id": "anat-html",
+      "type": "html",
+      "props": {
+        "height": 900,
+        "html": "<style>:root{color-scheme:light dark;--bg:#fff;--page:#fafaf9;--side:#f4f4f3;--panel:#f7f7f6;--line:#d6d6d2;--ink:#1c1c1a;--muted:#6b6b66;--fill:#e6e6e3;--tag:#9a3412;--avbg:#d5ede8;--avfg:#0f766e}@media (prefers-color-scheme:dark){:root{--bg:#0b0d12;--page:#0d1017;--side:#0a0c11;--panel:#121620;--line:#2b303b;--ink:#f1f1ef;--muted:#9a9ea8;--fill:#1d2230;--tag:#fdba74;--avbg:#134e4a;--avfg:#5eead4}}*{box-sizing:border-box}body{margin:0;padding:16px;background:var(--bg);color:var(--ink);font:13px/1.35 Inter,system-ui,sans-serif}h3{margin:0 0 8px;font-size:13px;font-weight:600}code{font:11px/1.3 'IBM Plex Mono',ui-monospace,monospace;color:var(--tag)}.cols{display:grid;grid-template-columns:200px 1fr 220px}.labels{margin-bottom:4px;color:var(--muted);font-size:11px}.labels span{padding:0 6px}.shell{border:1px solid var(--line);height:430px;background:var(--page)}.rail{grid-template-columns:56px 1fr;height:330px;max-width:560px}.side{background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column;min-width:0}.insp{background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;min-width:0}.hdr{height:48px;flex:none;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 10px;font-weight:600;gap:6px}.body{flex:1;padding:8px;display:flex;flex-direction:column;gap:2px;min-height:0}.row{padding:3px 6px;border-radius:4px;color:var(--muted);white-space:nowrap}.cur{background:var(--fill);color:var(--ink)}.sub{margin-left:14px;border-left:1px solid var(--line);padding-left:6px}.end{margin-top:auto}.head{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:2px 6px}.foot{border-top:1px solid var(--line);padding:8px 10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}.av{width:22px;height:22px;border-radius:4px;background:var(--avbg);color:var(--avfg);font-size:10px;display:grid;place-items:center;font-weight:600}.btn{border:1px solid var(--line);border-radius:4px;padding:2px 6px;font-size:11px;font-weight:500}.work{display:flex;flex-direction:column;min-width:0}.main{flex:1;padding:14px 26px;display:flex}.lane{flex:1;border:1px dashed var(--muted);border-radius:4px;padding:10px;display:flex;flex-direction:column;gap:6px;color:var(--muted)}.kv{display:grid;grid-template-columns:62px 1fr;gap:4px 8px;padding:10px;color:var(--muted)}.kv b{color:var(--ink);font-weight:500}.cap{margin:6px 0 20px;color:var(--muted);font-size:12px}hr{border:0;border-top:1px solid var(--line);margin:3px 0;width:100%}</style><h3>Expanded shell</h3><div class='cols labels'><span><code>.ds-sidebar</code> 220px, 68px collapsed</span><span><code>.ds-workspace</code></span><span><code>.ds-inspector</code> 360px, optional</span></div><div class='cols shell'><div class='side'><div class='hdr'>Budget <span class='btn'>◧</span></div><div class='body'><div class='row'>☑ Classification</div><hr><div class='row'>▦ Overview</div><div class='sub'><div class='row cur'>Net Worth</div><div class='row'>Spending</div></div><div class='row'>◔ Budget</div><div class='row'>▤ Activity</div><div class='row'>⌂ Connections</div><div class='end'><code style='padding:0 6px'>.ds-nav[data-placement=\"end\"]</code><div class='head'>Agent tools</div><div class='row'>☺ Agents</div><div class='row'>≡ Traces</div><div class='row'>⚙ Config</div></div></div><div class='foot'><span class='av'>SH</span>Sample Household<code>.ds-sidebar-footer slot</code></div></div><div class='work'><div class='hdr'>Net Worth <span><span class='btn'>Refresh</span> <span class='btn'>Details</span></span></div><div class='main'><div class='lane'><code>.ds-main</code><span>Content capped at a lane (wide: 1100px), centred, 40px side padding.</span></div></div></div><div class='insp'><div class='hdr'>Account details <span>✕</span></div><div class='kv'><span>Account</span><b>Brokerage</b><span>Entity</span><b>Household</b><span>Balance</span><b>$185,400.00</b></div><code style='padding:0 10px'>.ds-inspector-body</code></div></div><p class='cap'>The sidebar header, the topbar and the inspector header form one 72px line.</p><h3>Collapsed icon rail, 68px</h3><div class='cols shell rail'><div class='side'><div class='hdr' style='justify-content:center'><span class='btn'>◨</span></div><div class='body' style='align-items:center'><div class='row'>☑</div><hr><div class='row cur'>▦</div><div class='row'>◔</div><div class='row'>▤</div><div class='row'>⌂</div><div class='end'><div class='row'>☺</div><div class='row'>≡</div><div class='row'>⚙</div></div></div><div class='foot' style='justify-content:center'><span class='av'>SH</span></div></div><div class='work'><div class='hdr'>Net Worth <span><span class='btn'>Refresh</span> <span class='btn'>Details</span></span></div><div class='main'><div class='lane'><span>The section that holds the current page (▦ Overview) gets the fill while its subnav is hidden.</span></div></div></div></div>",
+        "title": "App shell regions, expanded and collapsed"
+      },
+      "children": []
+    },
+    "anat-collapsed": {
+      "id": "anat-collapsed",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Collapsed, the sidebar becomes a 68px icon rail. The icons stay in place. Labels, the title, subnavs and the nav heading go away."
+        }
+      ],
+      "children": []
+    },
+    "h-markup": {
+      "id": "h-markup",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Markup"
+        }
+      ],
+      "children": []
+    },
+    "markup-lead": {
+      "id": "markup-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "This markup builds the expanded shell with a subnav, an "
+        },
+        {
+          "insert": "end",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " nav group, the footer and the inspector. Copy it for an app that does not use React."
+        }
+      ],
+      "children": []
+    },
+    "markup-code": {
+      "id": "markup-code",
+      "type": "code",
+      "props": {
+        "language": "html"
+      },
+      "text": [
+        {
+          "insert": "<div class=\"ds-shell\" data-sidebar=\"expanded\" data-inspector=\"closed\">\n  <a class=\"ds-skip-link\" href=\"#main\">Skip to content</a>\n\n  <aside class=\"ds-sidebar\" id=\"app-sidebar\" aria-label=\"Sidebar\">\n    <div class=\"ds-sidebar-header\">\n      <span class=\"ds-sidebar-title\">Budget</span>\n      <button class=\"ds-shell-icon-button ds-sidebar-toggle\" type=\"button\"\n              aria-label=\"Toggle sidebar\" aria-expanded=\"true\" aria-controls=\"app-sidebar\"\n              aria-keyshortcuts=\"Meta+\\ Control+\\\" title=\"Collapse sidebar (⌘\\)\">\n        <svg viewBox=\"0 0 24 24\" aria-hidden=\"true\" …>\n          <rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\" /><path d=\"M9 3v18\" />\n          <path class=\"ds-sidebar-toggle-arrow\" d=\"m16 9-3 3 3 3\" />\n        </svg>\n      </button>\n    </div>\n\n    <div class=\"ds-sidebar-body\">\n      <nav class=\"ds-nav\" aria-label=\"Primary\">\n        <a class=\"ds-nav-item\" href=\"/review\">\n          <span class=\"ds-nav-icon\" aria-hidden=\"true\"><svg …/></span>\n          <span class=\"ds-nav-label\">Classification</span>\n        </a>\n        <hr class=\"ds-sidebar-divider\" />\n        <a class=\"ds-nav-item\" href=\"/overview\" data-active=\"true\">…Overview…</a>\n        <div class=\"ds-subnav\" role=\"group\" aria-label=\"Overview\">\n          <a class=\"ds-subnav-item\" href=\"/net-worth\" aria-current=\"page\">Net Worth</a>\n          <a class=\"ds-subnav-item\" href=\"/spending\">Spending</a>\n        </div>\n      </nav>\n      <nav class=\"ds-nav\" data-placement=\"end\" aria-labelledby=\"tools-heading\">\n        <p class=\"ds-nav-heading\" id=\"tools-heading\">Agent tools</p>\n        <a class=\"ds-nav-item\" href=\"/config\">…Config…</a>\n      </nav>\n    </div>\n\n    <div class=\"ds-sidebar-footer\">\n      <span class=\"ds-avatar\" aria-hidden=\"true\">SH</span>\n      <span class=\"ds-sidebar-footer-text\">\n        <span class=\"ds-sidebar-footer-name\">Sample Household</span>\n        <span class=\"ds-sidebar-footer-meta\">Local account</span>\n      </span>\n    </div>\n  </aside>\n\n  <div class=\"ds-workspace\">\n    <header class=\"ds-topbar\">\n      <h1 class=\"ds-topbar-title\">Net Worth</h1>\n      <div class=\"ds-topbar-actions\">\n        <button class=\"ds-shell-button\" type=\"button\">Refresh</button>\n      </div>\n    </header>\n    <main class=\"ds-main\" id=\"main\" tabindex=\"-1\">…</main>\n  </div>\n\n  <aside class=\"ds-inspector\" id=\"inspector\" aria-label=\"Account details\">\n    <div class=\"ds-inspector-header\">\n      <h2 class=\"ds-inspector-title\">Account details</h2>\n      <button class=\"ds-shell-icon-button\" type=\"button\" aria-label=\"Close account details\">…</button>\n    </div>\n    <div class=\"ds-inspector-body\">…</div>\n  </aside>\n</div>"
+        }
+      ],
+      "children": []
+    },
+    "h-classes": {
+      "id": "h-classes",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Classes"
+        }
+      ],
+      "children": []
+    },
+    "classes-lead": {
+      "id": "classes-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each "
+        },
+        {
+          "insert": "ds-",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " class in the markup names one part of the shell."
+        }
+      ],
+      "children": []
+    },
+    "classes-table": {
+      "id": "classes-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Class",
+          "Part"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": ".ds-shell",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Grid root. Holds "
+              },
+              {
+                "insert": "data-sidebar",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "data-inspector",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". Sets the base font ("
+              },
+              {
+                "insert": "--ds-font-size-ui-lg",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "), color and page background."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": ".ds-skip-link",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "First focusable element. Hidden until focused."
+          ],
+          [
+            [
+              {
+                "insert": ".ds-sidebar",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Sticky, full-height column. Clips its content while it collapses. Its edge is an inset line, so it takes no width."
+          ],
+          [
+            [
+              {
+                "insert": ".ds-sidebar-header",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": ".ds-sidebar-title",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "App name and the collapse toggle, one topbar-height row."
+          ],
+          [
+            [
+              {
+                "insert": ".ds-sidebar-toggle",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "The collapse button. Combine with "
+              },
+              {
+                "insert": ".ds-shell-icon-button",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": ".ds-sidebar-toggle-arrow",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "The chevron path inside the toggle glyph. Flips when collapsed."
+          ],
+          [
+            [
+              {
+                "insert": ".ds-sidebar-body",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Scroll region between header and footer."
+          ],
+          [
+            [
+              {
+                "insert": ".ds-nav",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": ".ds-nav[data-placement=\"end\"]",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "A group of nav items. "
+              },
+              {
+                "insert": "end",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " pushes the group to the bottom."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": ".ds-nav-heading",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Optional visible group label. Hidden in the rail."
+          ],
+          [
+            [
+              {
+                "insert": ".ds-nav-item",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": ".ds-nav-icon",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": ".ds-nav-label",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "A top-level row, icon plus label. Works on "
+              },
+              {
+                "insert": "<a>",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "<button>",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": ".ds-subnav",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": ".ds-subnav-item",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Rows under the active section, with a guide line. Works on "
+              },
+              {
+                "insert": "<a>",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "<button>",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". Nest a "
+              },
+              {
+                "insert": ".ds-subnav",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " for a third level."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": ".ds-sidebar-divider",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "<hr>",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " between nav rows."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": ".ds-sidebar-footer",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": ".ds-avatar",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": ".ds-sidebar-footer-text",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "-name",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "-meta",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Footer slot, usually the account card."
+          ],
+          [
+            [
+              {
+                "insert": ".ds-workspace",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Topbar plus main."
+          ],
+          [
+            [
+              {
+                "insert": ".ds-topbar",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": ".ds-topbar-title",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": ".ds-topbar-actions",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Sticky page header, "
+              },
+              {
+                "insert": "h1",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and actions."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": ".ds-main",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Page content. "
+              },
+              {
+                "insert": "data-lane",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " picks the lane."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": ".ds-inspector",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "-header",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "-title",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "-body",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Optional right panel."
+          ],
+          [
+            [
+              {
+                "insert": ".ds-shell-button",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": ".ds-shell-icon-button",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Quiet buttons for shell chrome, such as topbar actions, the toggle and close."
+          ]
+        ],
+        "title": "Shell classes"
+      },
+      "children": []
+    },
+    "h-tokens": {
+      "id": "h-tokens",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Tokens"
+        }
+      ],
+      "children": []
+    },
+    "tokens-lead": {
+      "id": "tokens-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Layout tokens live in "
+        },
+        {
+          "insert": "tokens/base/app-shell.tokens.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "tokens/base/app-shell.tokens.json"
+            }
+          }
+        },
+        {
+          "insert": ". The third column names the budget app value that each token comes from."
+        }
+      ],
+      "children": []
+    },
+    "tokens-table": {
+      "id": "tokens-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Token",
+          "Value",
+          "Budget app source"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "--ds-layout-sidebar-width",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "220px",
+            [
+              {
+                "insert": "aside",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " width 218px"
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "--ds-layout-sidebar-width-collapsed",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "68px",
+            [
+              {
+                "insert": ".sidebar-collapsed .main-sidebar",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " 68px"
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "--ds-layout-sidebar-padding-x",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "12px",
+            [
+              {
+                "insert": "--sidebar-padding",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " 12px"
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "--ds-layout-sidebar-item-height",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "40px",
+            "nav row, 11px + 22px icon + 11px"
+          ],
+          [
+            [
+              {
+                "insert": "--ds-layout-sidebar-item-padding-x",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "12px",
+            [
+              {
+                "insert": "nav a",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " padding-inline 12px"
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "--ds-layout-sidebar-icon-size",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "20px",
+            [
+              {
+                "insert": ".outline-icon",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " 20px (22px in the nav)"
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "--ds-layout-sidebar-subitem-height",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "28px",
+            "subnav row, 7px + 12px line + 7px"
+          ],
+          [
+            [
+              {
+                "insert": "--ds-layout-sidebar-toggle-size",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "32px",
+            [
+              {
+                "insert": ".sidebar-toggle",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " 32px"
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "--ds-layout-sidebar-avatar-size",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "32px",
+            [
+              {
+                "insert": ".avatar",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " 31px"
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "--ds-layout-topbar-height",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "72px",
+            [
+              {
+                "insert": ".workspace-topbar",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": ".sidebar-header",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " 72px"
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "--ds-layout-topbar-padding-x",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "32px",
+            [
+              {
+                "insert": ".workspace-topbar",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " padding 0 32px"
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "--ds-layout-inspector-width",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "360px",
+            [
+              {
+                "insert": "SidePeek",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " width "
+              },
+              {
+                "insert": "min(360px, 40vw)",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "--ds-layout-content-padding-x",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "40px",
+            [
+              {
+                "insert": "main",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " padding-inline 42px"
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "--ds-layout-content-padding-top",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "32px",
+            [
+              {
+                "insert": "main",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " padding-top 34px"
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "--ds-layout-content-padding-bottom",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "48px",
+            [
+              {
+                "insert": "main",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " padding-bottom 48px"
+              }
+            ]
+          ]
+        ],
+        "title": "Layout tokens"
+      },
+      "children": []
+    },
+    "rule-lead": {
+      "id": "rule-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "One rule ties the sidebar numbers together: "
+        },
+        {
+          "insert": "width-collapsed = 2 × (padding-x + item-padding-x) + icon-size",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", so 68 = 2 × 24 + 20. If you change one of these tokens, keep the rule true."
+        }
+      ],
+      "children": []
+    },
+    "rule-1": {
+      "id": "rule-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each icon starts 24px from the sidebar edge in both states, which centres it in the 68px rail. Nothing jumps when the sidebar collapses."
+        }
+      ],
+      "children": []
+    },
+    "rule-2": {
+      "id": "rule-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The toggle and the footer avatar share one centre line, 2px before the icon centres. Centring them exactly needs an off-grid 18px padding, "
+        },
+        {
+          "insert": "(68 - 32) / 2",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "shared-lead": {
+      "id": "shared-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The shell also reads shared tokens for surfaces, text, lines, fills, type, the avatar, shape, motion and lanes."
+        }
+      ],
+      "children": []
+    },
+    "shared-table": {
+      "id": "shared-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Role",
+          "Tokens"
+        ],
+        "rows": [
+          [
+            "Surfaces",
+            [
+              {
+                "insert": "--ds-color-surface-page",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (page, topbar), "
+              },
+              {
+                "insert": "--ds-color-surface-sidebar",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "--ds-color-surface-panel",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (inspector)"
+              }
+            ]
+          ],
+          [
+            "Text",
+            [
+              {
+                "insert": "--ds-color-text-ink",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (titles, hover, current), "
+              },
+              {
+                "insert": "--ds-color-text-body",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "--ds-color-text-muted",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (nav rows, headings), "
+              },
+              {
+                "insert": "--ds-color-text-faint",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (disabled)"
+              }
+            ]
+          ],
+          [
+            "Lines",
+            [
+              {
+                "insert": "--ds-color-border-default",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (frame edges), "
+              },
+              {
+                "insert": "--ds-color-border-subtle",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (dividers), "
+              },
+              {
+                "insert": "--ds-color-border-guide",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (subnav guide line)"
+              }
+            ]
+          ],
+          [
+            "Fills",
+            [
+              {
+                "insert": "--ds-color-fill-hover",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "--ds-color-fill-active",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (current row), "
+              },
+              {
+                "insert": "--ds-color-accent",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (current icon), "
+              },
+              {
+                "insert": "--ds-color-focus-ring",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Type",
+            [
+              {
+                "insert": "--ds-font-family-sans",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "--ds-font-size-ui-lg",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (base and nav rows), "
+              },
+              {
+                "insert": "-ui-md",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "-ui-sm",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "-ui-xs",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "-micro",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "-reading",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (titles), weights, "
+              },
+              {
+                "insert": "--ds-line-height-ui",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "-tight",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "--ds-letter-spacing-title",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "-micro",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Avatar",
+            [
+              {
+                "insert": "--ds-color-teal-soft",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "--ds-color-teal-text",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Shape and motion",
+            [
+              {
+                "insert": "--ds-radius-base",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "--ds-border-width-hairline",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "-focus",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "--ds-focus-ring-offset",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "--ds-motion-duration-fast",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "-base",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "-slow",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "--ds-motion-easing-standard",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "--ds-z-raised",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Lanes",
+            [
+              {
+                "insert": "--ds-layout-lane-text",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "-code",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "-wide",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ]
+        ],
+        "title": "Shared tokens the shell reads"
+      },
+      "children": []
+    },
+    "override-lead": {
+      "id": "override-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "To change a size for one app, override the token on the shell, never with a literal in a component."
+        }
+      ],
+      "children": []
+    },
+    "override-css": {
+      "id": "override-css",
+      "type": "code",
+      "props": {
+        "language": "css"
+      },
+      "text": [
+        {
+          "insert": "/* A docs tree needs a wider sidebar. */\n.docs-app.ds-shell { --ds-layout-sidebar-width: 288px; }"
+        }
+      ],
+      "children": []
+    },
+    "h-rules": {
+      "id": "h-rules",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Behavior Rules"
+        }
+      ],
+      "children": []
+    },
+    "rules-lead": {
+      "id": "rules-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Thirteen numbered behavior rules fix how the shell acts. Other guide pages cite them by number, such as rule 12."
+        }
+      ],
+      "children": []
+    },
+    "h-rules-a": {
+      "id": "h-rules-a",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Toggle and Rail"
+        }
+      ],
+      "children": []
+    },
+    "rules-a-lead": {
+      "id": "rules-a-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Rules 1 to 5 cover the sidebar toggle, the collapsed rail and how the app keeps the sidebar state."
+        }
+      ],
+      "children": []
+    },
+    "r1": {
+      "id": "r1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Rule 1. Toggle placement and icon",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "r1a",
+        "r1b",
+        "r1c"
+      ]
+    },
+    "r1a": {
+      "id": "r1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The toggle is the last item in the sidebar header, at its right end."
+        }
+      ],
+      "children": []
+    },
+    "r1b": {
+      "id": "r1b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The glyph is a panel outline with a divider and a chevron. The chevron points left (collapse) when expanded and right (expand) when collapsed."
+        }
+      ],
+      "children": []
+    },
+    "r1c": {
+      "id": "r1c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Never put the toggle in the topbar. Never hide the sidebar completely, because the rail stays."
+        }
+      ],
+      "children": []
+    },
+    "r2": {
+      "id": "r2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Rule 2. Collapsed icon rail",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "r2a",
+        "r2b",
+        "r2c",
+        "r2d"
+      ]
+    },
+    "r2a": {
+      "id": "r2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "data-sidebar=\"collapsed\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on "
+        },
+        {
+          "insert": ".ds-shell",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " narrows the grid column to "
+        },
+        {
+          "insert": "--ds-layout-sidebar-width-collapsed",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "r2b": {
+      "id": "r2b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Labels, the title and the footer text fade out and clip under the rail edge. Subnavs and nav headings are removed."
+        }
+      ],
+      "children": []
+    },
+    "r2c": {
+      "id": "r2c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The row of the section that holds the current page takes the fill, because its subnav is hidden."
+        }
+      ],
+      "children": []
+    },
+    "r2d": {
+      "id": "r2d",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The toggle ends up in the rail, on the footer avatar's centre line."
+        }
+      ],
+      "children": []
+    },
+    "r3": {
+      "id": "r3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Rule 3. Tooltips",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "r3a",
+        "r3b",
+        "r3c"
+      ]
+    },
+    "r3a": {
+      "id": "r3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "In the rail every nav row carries "
+        },
+        {
+          "insert": "title=\"<label>\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "r3b": {
+      "id": "r3b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Remove the "
+        },
+        {
+          "insert": "title",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " when expanded, because the label is visible."
+        }
+      ],
+      "children": []
+    },
+    "r3c": {
+      "id": "r3c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The label stays in the DOM in both states, so the link keeps its accessible name."
+        }
+      ],
+      "children": []
+    },
+    "r4": {
+      "id": "r4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Rule 4. Persistence",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "r4a",
+        "r4b",
+        "r4c"
+      ]
+    },
+    "r4a": {
+      "id": "r4a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Store the state in "
+        },
+        {
+          "insert": "localStorage",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " under "
+        },
+        {
+          "insert": "<app>.sidebar",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", with the value "
+        },
+        {
+          "insert": "collapsed",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "expanded",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "r4b": {
+      "id": "r4b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Read the state before the first paint, with an inline script or a lazy "
+        },
+        {
+          "insert": "useState",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " initializer. Then no width transition plays on load."
+        }
+      ],
+      "children": []
+    },
+    "r4c": {
+      "id": "r4c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "With no stored value, start collapsed when the viewport is 800px wide or less."
+        }
+      ],
+      "children": []
+    },
+    "r5": {
+      "id": "r5",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Rule 5. Shortcut",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "r5a",
+        "r5b",
+        "r5c",
+        "r5d"
+      ]
+    },
+    "r5a": {
+      "id": "r5a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The shortcut is "
+        },
+        {
+          "insert": "⌘\\",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on macOS and "
+        },
+        {
+          "insert": "Ctrl+\\",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " elsewhere. It works from anywhere in the app, including text fields."
+        }
+      ],
+      "children": []
+    },
+    "r5b": {
+      "id": "r5b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Match "
+        },
+        {
+          "insert": "event.key === \"\\\\\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "event.code === \"Backslash\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and require Meta or Control."
+        }
+      ],
+      "children": []
+    },
+    "r5c": {
+      "id": "r5c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Ignore the event when Alt or Shift is held. Call "
+        },
+        {
+          "insert": "preventDefault()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "r5d": {
+      "id": "r5d",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Show the shortcut in the toggle's "
+        },
+        {
+          "insert": "title",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Declare it with "
+        },
+        {
+          "insert": "aria-keyshortcuts=\"Meta+\\ Control+\\\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", which uses key values, not key codes."
+        }
+      ],
+      "children": []
+    },
+    "h-rules-b": {
+      "id": "h-rules-b",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Navigation, Motion and Accessibility"
+        }
+      ],
+      "children": []
+    },
+    "rules-b-lead": {
+      "id": "rules-b-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Rules 6 to 9 cover the subnav, the current page, reduced motion and the accessibility attributes."
+        }
+      ],
+      "children": []
+    },
+    "r6": {
+      "id": "r6",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Rule 6. Subnav",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "r6a",
+        "r6b",
+        "r6c"
+      ]
+    },
+    "r6a": {
+      "id": "r6a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A section's subnav shows under it while the section holds the current page. It is inline, never a flyout."
+        }
+      ],
+      "children": []
+    },
+    "r6b": {
+      "id": "r6b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Its text lines up with the parent label, and a guide line runs under the parent icon."
+        }
+      ],
+      "children": []
+    },
+    "r6c": {
+      "id": "r6c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A third level nests one more "
+        },
+        {
+          "insert": ".ds-subnav",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", with one 12px indent and no second guide line. Keep it to three levels."
+        }
+      ],
+      "children": []
+    },
+    "r7": {
+      "id": "r7",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Rule 7. Current page",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "r7a",
+        "r7b",
+        "r7c"
+      ]
+    },
+    "r7a": {
+      "id": "r7a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The current page's row gets "
+        },
+        {
+          "insert": "aria-current=\"page\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "r7b": {
+      "id": "r7b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The section row above it gets "
+        },
+        {
+          "insert": "data-active=\"true\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", not "
+        },
+        {
+          "insert": "aria-current",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "r7c": {
+      "id": "r7c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Only one row is filled in the expanded sidebar."
+        }
+      ],
+      "children": []
+    },
+    "r8": {
+      "id": "r8",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Rule 8. Reduced motion",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "r8a",
+        "r8b",
+        "r8c"
+      ]
+    },
+    "r8a": {
+      "id": "r8a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The grid column animates over "
+        },
+        {
+          "insert": "--ds-motion-duration-slow",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "r8b": {
+      "id": "r8b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Labels fade over "
+        },
+        {
+          "insert": "--ds-motion-duration-fast",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "r8c": {
+      "id": "r8c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Under "
+        },
+        {
+          "insert": "prefers-reduced-motion: reduce",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " every shell transition is off."
+        }
+      ],
+      "children": []
+    },
+    "r9": {
+      "id": "r9",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Rule 9. Accessibility attributes",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "r9a",
+        "r9b",
+        "r9c",
+        "r9d",
+        "r9e",
+        "r9f"
+      ]
+    },
+    "r9a": {
+      "id": "r9a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The toggle has "
+        },
+        {
+          "insert": "aria-label=\"Toggle sidebar\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "aria-expanded",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " (true when expanded), "
+        },
+        {
+          "insert": "aria-controls",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " (the sidebar id) and "
+        },
+        {
+          "insert": "aria-keyshortcuts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "r9b": {
+      "id": "r9b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The sidebar is "
+        },
+        {
+          "insert": "<aside aria-label=\"Sidebar\">",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Each group is a "
+        },
+        {
+          "insert": "<nav>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with "
+        },
+        {
+          "insert": "aria-label",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or with "
+        },
+        {
+          "insert": "aria-labelledby",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " pointing at its "
+        },
+        {
+          "insert": ".ds-nav-heading",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "r9c": {
+      "id": "r9c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A subnav has "
+        },
+        {
+          "insert": "role=\"group\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with "
+        },
+        {
+          "insert": "aria-label",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " set to the section name."
+        }
+      ],
+      "children": []
+    },
+    "r9d": {
+      "id": "r9d",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The inspector opener has "
+        },
+        {
+          "insert": "aria-expanded",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "aria-controls",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The inspector is an "
+        },
+        {
+          "insert": "<aside>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with "
+        },
+        {
+          "insert": "aria-label",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "Escape",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " closes it, and focus moves into it on open and back to the opener on close."
+        }
+      ],
+      "children": []
+    },
+    "r9e": {
+      "id": "r9e",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Main has an "
+        },
+        {
+          "insert": "id",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " for the skip link and "
+        },
+        {
+          "insert": "tabindex=\"-1\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", so the skip link can focus it."
+        }
+      ],
+      "children": []
+    },
+    "r9f": {
+      "id": "r9f",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Every interactive part shows a "
+        },
+        {
+          "insert": "--ds-border-width-focus",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " ring in "
+        },
+        {
+          "insert": "--ds-color-focus-ring",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with "
+        },
+        {
+          "insert": "--ds-focus-ring-offset",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Under "
+        },
+        {
+          "insert": "forced-colors: active",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " the current row and pressed shell buttons get an outline, because fills disappear."
+        }
+      ],
+      "children": []
+    },
+    "h-rules-c": {
+      "id": "h-rules-c",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Topbar, Inspector and Scrolling"
+        }
+      ],
+      "children": []
+    },
+    "rules-c-lead": {
+      "id": "rules-c-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Rules 10 to 13 cover the topbar, the inspector, scrolling and narrow screens."
+        }
+      ],
+      "children": []
+    },
+    "r10": {
+      "id": "r10",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Rule 10. Topbar",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "r10a",
+        "r10b",
+        "r10c",
+        "r10d"
+      ]
+    },
+    "r10a": {
+      "id": "r10a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each page has one "
+        },
+        {
+          "insert": "h1",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", the page title, with the same words as the document title."
+        }
+      ],
+      "children": []
+    },
+    "r10b": {
+      "id": "r10b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Actions sit on the right. Keep three or fewer visible and move the rest into a menu."
+        }
+      ],
+      "children": []
+    },
+    "r10c": {
+      "id": "r10c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The topbar is sticky and has the same height as the sidebar header, so their bottom borders form one line."
+        }
+      ],
+      "children": []
+    },
+    "r10d": {
+      "id": "r10d",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The title takes its natural width up to half the bar and never shrinks below that. When the bar runs out of room, the actions scroll sideways."
+        }
+      ],
+      "children": []
+    },
+    "r11": {
+      "id": "r11",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Rule 11. Inspector",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "r11a",
+        "r11b",
+        "r11c"
+      ]
+    },
+    "r11a": {
+      "id": "r11a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The inspector is optional. It pushes the workspace instead of covering it."
+        }
+      ],
+      "children": []
+    },
+    "r11b": {
+      "id": "r11b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "It uses "
+        },
+        {
+          "insert": "--ds-layout-inspector-width",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and keeps the topbar height for its header."
+        }
+      ],
+      "children": []
+    },
+    "r11c": {
+      "id": "r11c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Keep it mounted while closed so it can slide out. "
+        },
+        {
+          "insert": "data-inspector",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on the shell opens and closes it."
+        }
+      ],
+      "children": []
+    },
+    "r12": {
+      "id": "r12",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Rule 12. Scrolling",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "r12a",
+        "r12b",
+        "r12c"
+      ]
+    },
+    "r12a": {
+      "id": "r12a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The document scrolls. The sidebar and inspector are sticky and scroll on their own."
+        }
+      ],
+      "children": []
+    },
+    "r12b": {
+      "id": "r12b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Do not add a scroll container inside "
+        },
+        {
+          "insert": ".ds-main",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " unless the page is a tool view on the "
+        },
+        {
+          "insert": "full",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " lane."
+        }
+      ],
+      "children": []
+    },
+    "r12c": {
+      "id": "r12c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The page never scrolls sideways. Put wide content, such as a table, in its own box with "
+        },
+        {
+          "insert": "overflow-x: auto",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "r13": {
+      "id": "r13",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Rule 13. Narrow screens (800px and below)",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "r13a",
+        "r13b",
+        "r13c",
+        "r13d"
+      ]
+    },
+    "r13a": {
+      "id": "r13a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The sidebar starts collapsed when no choice is stored."
+        }
+      ],
+      "children": []
+    },
+    "r13b": {
+      "id": "r13b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Content and topbar padding drop to "
+        },
+        {
+          "insert": "--ds-space-4",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "r13c": {
+      "id": "r13c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The inspector covers the workspace from the end edge instead of pushing it. Its width is "
+        },
+        {
+          "insert": "--ds-layout-inspector-width",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or the full width, whichever is smaller."
+        }
+      ],
+      "children": []
+    },
+    "r13d": {
+      "id": "r13d",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "CSS and script use the same 800px."
+        }
+      ],
+      "children": []
+    },
+    "h-lanes": {
+      "id": "h-lanes",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Content Lanes"
+        }
+      ],
+      "children": []
+    },
+    "lanes-lead": {
+      "id": "lanes-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": ".ds-main",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " centres the content and caps the content box at a lane, which "
+        },
+        {
+          "insert": "data-lane",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " picks. Padding sits outside the lane."
+        }
+      ],
+      "children": []
+    },
+    "lanes-table": {
+      "id": "lanes-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          [
+            {
+              "insert": "data-lane",
+              "attributes": {
+                "code": true
+              }
+            }
+          ],
+          "Max content width",
+          "Use for"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "(none) or "
+              },
+              {
+                "insert": "wide",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "--ds-layout-lane-wide",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (1100px)"
+              }
+            ],
+            "Default. Dashboards, tables, forms, lists."
+          ],
+          [
+            [
+              {
+                "insert": "text",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "--ds-layout-lane-text",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (60ch)"
+              }
+            ],
+            "Prose pages, such as help, release notes and long descriptions."
+          ],
+          [
+            [
+              {
+                "insert": "code",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "--ds-layout-lane-code",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (88ch)"
+              }
+            ],
+            "Code, logs, diffs, pseudocode."
+          ],
+          [
+            [
+              {
+                "insert": "full",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "none",
+            "Tool views that need the whole width, such as trace timelines, agent viewers and editors."
+          ]
+        ],
+        "title": "Content lanes"
+      },
+      "children": []
+    },
+    "lanes-ch": {
+      "id": "lanes-ch",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "ch",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " resolves at the font size of "
+        },
+        {
+          "insert": ".ds-main",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", which is "
+        },
+        {
+          "insert": "--ds-font-size-ui-lg",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " by default. If the page is long-form reading, put a larger reading size on an inner "
+        },
+        {
+          "insert": "<article>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "lanes-pad": {
+      "id": "lanes-pad",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Content padding is "
+        },
+        {
+          "insert": "--ds-layout-content-padding-top",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " (32px) under the topbar, "
+        },
+        {
+          "insert": "--ds-layout-content-padding-x",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on the sides, and "
+        },
+        {
+          "insert": "--ds-layout-content-padding-bottom",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " (48px) at the end. The side padding is 40px, or 16px at 800px and below."
+        }
+      ],
+      "children": []
+    },
+    "h-density": {
+      "id": "h-density",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Density"
+        }
+      ],
+      "children": []
+    },
+    "density-lead": {
+      "id": "density-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The shell keeps the budget app's proportions in every app."
+        }
+      ],
+      "children": []
+    },
+    "density-table": {
+      "id": "density-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Part",
+          "Size",
+          "Text"
+        ],
+        "rows": [
+          [
+            "Topbar and sidebar header",
+            "72px",
+            [
+              {
+                "insert": "Title "
+              },
+              {
+                "insert": "--ds-font-size-reading",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (18px), semibold, "
+              },
+              {
+                "insert": "--ds-letter-spacing-title",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Nav row",
+            "40px, 4px apart, 20px icon, 12px icon-to-label gap",
+            [
+              {
+                "insert": "--ds-font-size-ui-lg",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (14px), medium"
+              }
+            ]
+          ],
+          [
+            "Subnav row",
+            "28px, 2px apart",
+            [
+              {
+                "insert": "--ds-font-size-ui-sm",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (13px), regular (medium when current)"
+              }
+            ]
+          ],
+          [
+            "Nav heading",
+            "about 20px",
+            [
+              {
+                "insert": "--ds-font-size-micro",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", semibold, uppercase, "
+              },
+              {
+                "insert": "--ds-letter-spacing-micro",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Footer",
+            "32px avatar, 16px block padding",
+            [
+              {
+                "insert": "Name "
+              },
+              {
+                "insert": "--ds-font-size-ui-sm",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", meta "
+              },
+              {
+                "insert": "--ds-font-size-ui-xs",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Shell buttons",
+            "32px tall",
+            [
+              {
+                "insert": "--ds-font-size-ui-sm",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", medium"
+              }
+            ]
+          ]
+        ],
+        "title": "Shell density"
+      },
+      "children": []
+    },
+    "density-after": {
+      "id": "density-after",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Page content inside "
+        },
+        {
+          "insert": ".ds-main",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " can be denser, such as tables at "
+        },
+        {
+          "insert": "--ds-font-size-ui-sm",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The shell stays at this density so every app feels the same."
+        }
+      ],
+      "children": []
+    },
+    "h-dodont": {
+      "id": "h-dodont",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Do and Don't"
+        }
+      ],
+      "children": []
+    },
+    "dodont-lead": {
+      "id": "dodont-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each row pairs a practice with the mistake it prevents."
+        }
+      ],
+      "children": []
+    },
+    "dodont-table": {
+      "id": "dodont-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Do",
+          "Don't"
+        ],
+        "rows": [
+          [
+            "Give every top-level nav row an icon. The rail shows only icons.",
+            "Add a top-level row without an icon."
+          ],
+          [
+            "Keep labels short (18 characters or fewer) and keep the primary nav to about 7 rows.",
+            "Let labels wrap or truncate in the expanded sidebar."
+          ],
+          [
+            [
+              {
+                "insert": "Put tools, settings and admin pages in the "
+              },
+              {
+                "insert": "end",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " nav."
+              }
+            ],
+            "Mix tools into the primary nav."
+          ],
+          [
+            [
+              {
+                "insert": "Use "
+              },
+              {
+                "insert": "data-active",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " on the section row and "
+              },
+              {
+                "insert": "aria-current=\"page\"",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " on the page row."
+              }
+            ],
+            [
+              {
+                "insert": "Put "
+              },
+              {
+                "insert": "aria-current",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " on two rows."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "Override layout tokens on "
+              },
+              {
+                "insert": ".ds-shell",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " when an app needs a different size."
+              }
+            ],
+            "Restyle shell classes with literal colors or sizes."
+          ],
+          [
+            [
+              {
+                "insert": "Put page actions in "
+              },
+              {
+                "insert": ".ds-topbar-actions",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ],
+            "Put page actions in the sidebar."
+          ],
+          [
+            "Use the inspector for details of a selected row.",
+            "Open the inspector as a modal or an overlay."
+          ],
+          [
+            "Keep the shell the same in every app.",
+            "Build a per-app sidebar."
+          ]
+        ],
+        "title": "Do and don't"
+      },
+      "children": []
+    },
+    "h-shells": {
+      "id": "h-shells",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Existing Shells"
+        }
+      ],
+      "children": []
+    },
+    "shells-lead": {
+      "id": "shells-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "These four shells keep working as they are. They migrate to this standard later, one app at a time."
+        }
+      ],
+      "children": []
+    },
+    "sh-budget": {
+      "id": "sh-budget",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Budget",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "life/budget/apps/web",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "children": [
+        "sb1",
+        "sb2",
+        "sb3",
+        "sb4",
+        "sb5",
+        "sb6"
+      ]
+    },
+    "sb1": {
+      "id": "sb1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The budget app is the source of this layout. "
+        },
+        {
+          "insert": "shared/AppLayout.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " toggles "
+        },
+        {
+          "insert": ".sidebar-collapsed",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on "
+        },
+        {
+          "insert": ".app",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "sb2": {
+      "id": "sb2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Its "
+        },
+        {
+          "insert": "aside",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is "
+        },
+        {
+          "insert": "position: fixed",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and "
+        },
+        {
+          "insert": ".workspace",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " uses "
+        },
+        {
+          "insert": "margin-left",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". "
+        },
+        {
+          "insert": "SidePeek",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is a fixed overlay with "
+        },
+        {
+          "insert": "margin-right",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on the workspace."
+        }
+      ],
+      "children": []
+    },
+    "sb3": {
+      "id": "sb3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "It has six copies of the subnav rule, such as "
+        },
+        {
+          "insert": ".overview-subnav",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": ".budget-subnav",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "sb4": {
+      "id": "sb4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "It does not persist the state and has no shortcut. Its colors are literals."
+        }
+      ],
+      "children": []
+    },
+    "sb5": {
+      "id": "sb5",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Its migration swaps the classes for "
+        },
+        {
+          "insert": "ds-",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " classes, uses one "
+        },
+        {
+          "insert": ".ds-subnav",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and turns "
+        },
+        {
+          "insert": "SidePeek",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " into the inspector column."
+        }
+      ],
+      "children": []
+    },
+    "sb6": {
+      "id": "sb6",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Its migration replaces the "
+        },
+        {
+          "insert": "collapsed",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " state with "
+        },
+        {
+          "insert": "useSidebarCollapsed",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " from the template, which adds persistence and "
+        },
+        {
+          "insert": "⌘\\",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "sh-docs": {
+      "id": "sh-docs",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Docs system",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "codecaine/core/docs-system",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "children": [
+        "sd1",
+        "sd2",
+        "sd3",
+        "sd4"
+      ]
+    },
+    "sd1": {
+      "id": "sd1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "docs-workbench/web/src/shell/App.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " has a 288px tree sidebar ("
+        },
+        {
+          "insert": "w-72",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ") with a 44px header and no collapse."
+        }
+      ],
+      "children": []
+    },
+    "sd2": {
+      "id": "sd2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "On the right it has a side-peek push drawer and a collapsible style rail, persisted as "
+        },
+        {
+          "insert": "docs-style-rail-collapsed",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". It uses "
+        },
+        {
+          "insert": "--docs-*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " variables."
+        }
+      ],
+      "children": []
+    },
+    "sd3": {
+      "id": "sd3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Its migration adopts "
+        },
+        {
+          "insert": ".ds-shell",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with "
+        },
+        {
+          "insert": "--ds-layout-sidebar-width: 288px",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " for the tree."
+        }
+      ],
+      "children": []
+    },
+    "sd4": {
+      "id": "sd4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Its migration maps the style rail to the inspector column and moves the header to the topbar height."
+        }
+      ],
+      "children": []
+    },
+    "sh-ops": {
+      "id": "sh-ops",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Ops console",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "hey-bubba/.../ops-console/frontend",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "children": [
+        "so1",
+        "so2",
+        "so3"
+      ]
+    },
+    "so1": {
+      "id": "so1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The ops console is a Next.js app with a Tailwind sidebar in "
+        },
+        {
+          "insert": "app/layout.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The sidebar has grouped "
+        },
+        {
+          "insert": "NavLink",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " rows and an active bar, and no collapse."
+        }
+      ],
+      "children": []
+    },
+    "so2": {
+      "id": "so2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Its migration copies the template's "
+        },
+        {
+          "insert": "AppShell",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and renders it through a client "
+        },
+        {
+          "insert": "app/_components/RouterShell/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " from "
+        },
+        {
+          "insert": "app/layout.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The "
+        },
+        {
+          "insert": "template README",
+          "attributes": {
+            "reference": {
+              "kind": "source",
+              "path": "templates/react-app-shell/README.md"
+            }
+          }
+        },
+        {
+          "insert": " shows how."
+        }
+      ],
+      "children": []
+    },
+    "so3": {
+      "id": "so3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "In the migration, "
+        },
+        {
+          "insert": "NavLink",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " becomes "
+        },
+        {
+          "insert": "NavItem",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "sh-site": {
+      "id": "sh-site",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Personal site",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "lascari-ai/personal-site",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "children": [
+        "ss1",
+        "ss2"
+      ]
+    },
+    "ss1": {
+      "id": "ss1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The personal site is a full-screen 3D canvas with floating glass panels on both sides."
+        }
+      ],
+      "children": []
+    },
+    "ss2": {
+      "id": "ss2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "It is exempt from the shell and adopts tokens only."
+        }
+      ],
+      "children": []
+    },
+    "h-check": {
+      "id": "h-check",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Checklist for a New App"
+        }
+      ],
+      "children": []
+    },
+    "check-lead": {
+      "id": "check-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Six steps put a new app on the shell."
+        }
+      ],
+      "children": []
+    },
+    "c1": {
+      "id": "c1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Load "
+        },
+        {
+          "insert": "@codecaine-ai/design-system/fonts.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " (Inter and IBM Plex Mono), then "
+        },
+        {
+          "insert": "tokens.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", then "
+        },
+        {
+          "insert": "layout.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", once at the app root."
+        }
+      ],
+      "children": [
+        "c1a",
+        "c1b"
+      ]
+    },
+    "c1a": {
+      "id": "c1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The tokens file is "
+        },
+        {
+          "insert": "@codecaine-ai/design-system/tokens.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or "
+        },
+        {
+          "insert": "tokens-dark-first.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on a dark-first surface. The layout file is "
+        },
+        {
+          "insert": "@codecaine-ai/design-system/layout.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "c1b": {
+      "id": "c1b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Consume",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/40-consume"
+            }
+          }
+        },
+        {
+          "insert": " shows how to depend on the package."
+        }
+      ],
+      "children": []
+    },
+    "c2": {
+      "id": "c2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Copy "
+        },
+        {
+          "insert": "templates/react-app-shell/src/_components/AppShell/",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "templates/react-app-shell/src/_components/AppShell"
+            }
+          }
+        },
+        {
+          "insert": " for React, or the markup in Anatomy for anything else."
+        }
+      ],
+      "children": []
+    },
+    "c3": {
+      "id": "c3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Write the nav config. Give every top-level row an icon, and put tools in an "
+        },
+        {
+          "insert": "end",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " section."
+        }
+      ],
+      "children": []
+    },
+    "c4": {
+      "id": "c4",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Pick the storage key "
+        },
+        {
+          "insert": "<app>.sidebar",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "c5": {
+      "id": "c5",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Set "
+        },
+        {
+          "insert": "data-theme",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on "
+        },
+        {
+          "insert": "<html>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": [
+        "c5a"
+      ]
+    },
+    "c5a": {
+      "id": "c5a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "tokens.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " sets "
+        },
+        {
+          "insert": "color-scheme",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with it, so scrollbars and form controls follow the theme."
+        }
+      ],
+      "children": []
+    },
+    "c6": {
+      "id": "c6",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Check the toggle, "
+        },
+        {
+          "insert": "⌘\\",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", the state after reload, the dark theme, keyboard-only use and reduced motion by hand."
+        }
+      ],
+      "children": [
+        "c6a"
+      ]
+    },
+    "c6a": {
+      "id": "c6a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Also check a 390px-wide window. It must show no sideways scroll."
+        }
+      ],
+      "children": []
+    },
+    "h-gaps": {
+      "id": "h-gaps",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Known Gaps"
+        }
+      ],
+      "children": []
+    },
+    "gaps-lead": {
+      "id": "gaps-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The shell has three known gaps, in breakpoints, heading size and rail tooltips."
+        }
+      ],
+      "children": []
+    },
+    "g1": {
+      "id": "g1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "No breakpoint token",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "g1a",
+        "g1b",
+        "g1c"
+      ]
+    },
+    "g1a": {
+      "id": "g1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "CSS custom properties cannot be used in media queries, so 800px is written twice."
+        }
+      ],
+      "children": []
+    },
+    "g1b": {
+      "id": "g1b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "One copy is the "
+        },
+        {
+          "insert": "@media (max-width: 800px)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " block in "
+        },
+        {
+          "insert": "css/layout.css",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "css/layout.css"
+            }
+          }
+        },
+        {
+          "insert": ". The other is "
+        },
+        {
+          "insert": "NARROW_VIEWPORT_QUERY",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in the template, and you change both together."
+        }
+      ],
+      "children": []
+    },
+    "g1c": {
+      "id": "g1c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A build-time "
+        },
+        {
+          "insert": "@custom-media",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " plus an exported constant would make it one value."
+        }
+      ],
+      "children": []
+    },
+    "g2": {
+      "id": "g2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "No UI heading size",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "g2a",
+        "g2b"
+      ]
+    },
+    "g2a": {
+      "id": "g2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The topbar and sidebar titles use "
+        },
+        {
+          "insert": "--ds-font-size-reading",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " (18px), the closest token."
+        }
+      ],
+      "children": []
+    },
+    "g2b": {
+      "id": "g2b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A "
+        },
+        {
+          "insert": "--ds-font-size-heading",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " token would say what it means."
+        }
+      ],
+      "children": []
+    },
+    "g3": {
+      "id": "g3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Rail tooltips are native ",
+          "attributes": {
+            "bold": true
+          }
+        },
+        {
+          "insert": "title",
+          "attributes": {
+            "bold": true,
+            "code": true
+          }
+        },
+        {
+          "insert": " tooltips",
+          "attributes": {
+            "bold": true
+          }
+        }
+      ],
+      "children": [
+        "g3a",
+        "g3b"
+      ]
+    },
+    "g3a": {
+      "id": "g3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Native tooltips do not show on keyboard focus."
+        }
+      ],
+      "children": []
+    },
+    "g3b": {
+      "id": "g3b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A styled tooltip waits for a popover or anchor-positioning primitive."
+        }
+      ],
+      "children": []
+    },
+    "h-shots": {
+      "id": "h-shots",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Screenshots"
+        }
+      ],
+      "children": []
+    },
+    "shots-lead": {
+      "id": "shots-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The screenshots show the demo, "
+        },
+        {
+          "insert": "templates/app-shell-demo.html",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "templates/app-shell-demo.html"
+            }
+          }
+        },
+        {
+          "insert": ", with the sidebar expanded and collapsed in the light and dark themes."
+        }
+      ],
+      "children": []
+    },
+    "shots-grid": {
+      "id": "shots-grid",
+      "type": "image-grid",
+      "props": {
+        "columns": 2,
+        "images": [
+          {
+            "src": "./assets/images/app-shell-expanded-light.png",
+            "heading": "Expanded, Light",
+            "alt": "The demo in light theme with the sidebar expanded. Net Worth is the current subnav row under Overview, the Agent tools group sits at the bottom and the Sample Household card fills the footer."
+          },
+          {
+            "src": "./assets/images/app-shell-expanded-dark.png",
+            "heading": "Expanded, Dark",
+            "alt": "The same expanded shell in dark theme, with labels, the Overview subnav and the account footer visible."
+          },
+          {
+            "src": "./assets/images/app-shell-collapsed-light.png",
+            "heading": "Collapsed, Light",
+            "alt": "The light theme with the sidebar collapsed to the 68px icon rail. Only icons and the SH avatar show, and the Overview icon holds the fill."
+          },
+          {
+            "src": "./assets/images/app-shell-collapsed-dark.png",
+            "heading": "Collapsed, Dark",
+            "alt": "The dark theme with the sidebar collapsed to the icon rail. The expand toggle sits at the top, and the Overview icon holds the fill."
+          }
+        ]
+      },
+      "children": []
+    },
+    "shots-insp": {
+      "id": "shots-insp",
+      "type": "image",
+      "props": {
+        "alt": "The expanded light shell with the Account details inspector open on the right. It lists the Brokerage account, its entity, institution, balance and update date, and the workspace narrows to make room.",
+        "caption": "Inspector open, light theme",
+        "src": "./assets/images/app-shell-inspector-light.png"
+      },
+      "children": []
+    },
+    "shots-narrow": {
+      "id": "shots-narrow",
+      "type": "image",
+      "props": {
+        "alt": "A 390px-wide light window. The sidebar is the icon rail, the three summary cards stack, and the Details button runs past the right edge of the topbar.",
+        "caption": "390px wide, light theme. It shows the rail, 16px padding, stacked cards and scrolling topbar actions.",
+        "src": "./assets/images/app-shell-narrow-light.png"
+      },
+      "children": []
+    },
+    "shots-query": {
+      "id": "shots-query",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "For repeatable screenshots the demo takes "
+        },
+        {
+          "insert": "?sidebar=collapsed|expanded",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "?theme=light|dark",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "?inspector=open",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". These parameters do not persist."
+        }
+      ],
+      "children": []
+    }
+  }
+}

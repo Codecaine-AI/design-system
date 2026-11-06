@@ -6,14 +6,14 @@
 // Tailwind's default palette, type, radius, shadow, blur and easing scales are removed, as with
 // tailwind-strict.css, so bg-red-500, text-sm and shadow-md do not generate. Every value reads a
 // --ds-* custom property, so utilities follow data-theme; `dark:` matches data-theme="dark" and .dark,
-// also inside a light region nested in a dark one (guide/tokens.md, Theming).
+// also inside a light region nested in a dark one (dist/guide/tokens.md, Tailwind utilities).
 //
 // Usage (tailwind.config.cjs), with @codecaine-ai/design-system/tokens.css loaded before Tailwind's layers:
 //   module.exports = {
 //     presets: [require("@codecaine-ai/design-system/tailwind-v3-preset")],
 //     content: ["./index.html", "./src/**/*.{ts,tsx}"],
 //   };
-// Utility names are listed in guide/tokens.md.
+// Utility names are listed in dist/guide/tokens.md.
 "use strict";
 
 // A color. Tailwind 3 calls it with opacityVariable for a bare utility (bg-page) and with no opacity

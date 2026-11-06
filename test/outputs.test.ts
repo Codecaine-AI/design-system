@@ -6,7 +6,6 @@ import { describe, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, relative, resolve } from "node:path";
-import { MD_BEGIN, MD_END } from "../scripts/build.ts";
 import {
   cascade,
   computeInTheme,
@@ -230,15 +229,9 @@ describe("css/layout.css", () => {
 });
 
 describe("guides", () => {
-  test("guide/tokens.md has one generated reference region with a row for every token", () => {
-    const md = readText("guide/tokens.md");
-    expect(md.split(MD_BEGIN)).toHaveLength(2);
-    expect(md.split(MD_END)).toHaveLength(2);
-    const begin = md.indexOf(MD_BEGIN);
-    const end = md.indexOf(MD_END);
-    expect(begin).toBeLessThan(end);
-    const region = md.slice(begin, end);
-    const rows = new Set([...region.matchAll(/^\|\s*`([^`]+)`\s*\|/gm)].map((m) => m[1]));
+  test("dist/guide/tokens.md has a row for every token", () => {
+    const md = readText("dist/guide/tokens.md");
+    const rows = new Set([...md.matchAll(/^\|\s*`([^`]+)`\s*\|/gm)].map((m) => m[1]));
     expect(rows.has("color.surface.page")).toBe(true);
     expect(allPaths().filter((path) => !rows.has(path))).toEqual([]);
   });
@@ -254,12 +247,12 @@ describe("guides", () => {
     expect(refs.filter((name) => !declared.has(name))).toEqual([]);
   });
 
-  test.if(existsSync(join(PKG, "guide/app-shell-demo.html")))("dist/guide/index.html and guide/app-shell-demo.html load the package's own css/fonts.css", () => {
+  test("dist/guide/index.html and templates/app-shell-demo.html load the package's own css/fonts.css", () => {
     const fontLinks = (path: string) =>
       [...readText(path).matchAll(/<link\b[^>]*\bhref="([^"]+\/fonts\.css)"/g)].map((m) => resolve(PKG, dirname(path), m[1]));
     const guide = fontLinks("dist/guide/index.html");
     expect(guide).toEqual([join(PKG, "css/fonts.css")]);
-    expect(guide).toEqual(fontLinks("guide/app-shell-demo.html"));
+    expect(guide).toEqual(fontLinks("templates/app-shell-demo.html"));
   });
 });
 

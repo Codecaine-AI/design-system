@@ -1,0 +1,6417 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-263947fef685c30fe0b744e9074d9477",
+  "title": "Code Structure",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "intro",
+        "core-lead",
+        "core-1",
+        "core-2",
+        "core-3",
+        "refs",
+        "h-tree",
+        "tree-lead",
+        "tree-template",
+        "tree-nav",
+        "tree-nav-1",
+        "tree-nav-2",
+        "h-full",
+        "full-lead",
+        "tree-full",
+        "h-check",
+        "check-lead",
+        "h-place",
+        "check-1",
+        "check-2",
+        "check-3",
+        "h-verify",
+        "check-4",
+        "check-5",
+        "check-6",
+        "check-7",
+        "h-vocab",
+        "vocab-lead",
+        "vocab-table",
+        "h-rules",
+        "rules-lead",
+        "h-slices",
+        "sl-lead",
+        "sl-1",
+        "sl-2",
+        "sl-3",
+        "sl-4",
+        "sl-5",
+        "h-comp",
+        "co-lead",
+        "co-1",
+        "co-2",
+        "co-3",
+        "co-4",
+        "co-5",
+        "co-api",
+        "co-api-1",
+        "co-api-2",
+        "co-api-3",
+        "co-ex-lead",
+        "co-ex",
+        "h-files",
+        "fi-lead",
+        "fi-table",
+        "fi-css",
+        "fi-css-1",
+        "fi-css-2",
+        "fi-css-3",
+        "h-naming",
+        "na-lead",
+        "na-table",
+        "h-where",
+        "wh-lead",
+        "wh-table",
+        "wh-1",
+        "wh-2",
+        "wh-ex",
+        "h-imports",
+        "im-lead",
+        "im-allowed",
+        "im-forb-lead",
+        "im-forbidden",
+        "im-path-lead",
+        "im-1",
+        "im-2",
+        "im-3",
+        "im-4",
+        "h-size",
+        "sz-lead",
+        "sz-1",
+        "sz-2",
+        "sz-3",
+        "sz-4",
+        "h-variants",
+        "va-lead",
+        "h-vite",
+        "vi-lead",
+        "vi-1",
+        "vi-2",
+        "vi-3",
+        "vi-code",
+        "h-next",
+        "nx-lead",
+        "tree-next",
+        "nx-1",
+        "nx-2",
+        "nx-3",
+        "nx-4",
+        "nx-5",
+        "h-dom",
+        "dom-lead",
+        "dom-rules",
+        "dom-1",
+        "dom-2",
+        "dom-3",
+        "tree-dom",
+        "dom-4",
+        "dom-5",
+        "dom-code",
+        "h-example",
+        "ex-link",
+        "h-today",
+        "td-lead",
+        "td-1",
+        "td-2",
+        "td-3",
+        "td-table",
+        "h-migrate",
+        "mi-lead",
+        "h-mi-prep",
+        "mi-1",
+        "mi-2",
+        "h-mi-slice",
+        "mi-3",
+        "mi-4",
+        "mi-5",
+        "mi-6",
+        "h-mi-finish",
+        "mi-7",
+        "mi-8",
+        "h-scripts",
+        "sc-a",
+        "sc-a-code",
+        "sc-b",
+        "sc-b-code",
+        "sc-c",
+        "sc-c-code",
+        "h-notes",
+        "nb-lead",
+        "nb-1",
+        "nb-2",
+        "nb-3"
+      ]
+    },
+    "intro": {
+      "id": "intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Group code by feature, not by file type. A slice is one route folder, with its "
+        },
+        {
+          "insert": "page.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", its "
+        },
+        {
+          "insert": "_components/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and the modules that only that route uses. The same rules cover React with Vite, React with Next.js, and plain TypeScript DOM apps, as Variants shows."
+        }
+      ],
+      "children": []
+    },
+    "core-lead": {
+      "id": "core-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Three rules set where code goes."
+        }
+      ],
+      "children": []
+    },
+    "core-1": {
+      "id": "core-1",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Every component is a folder, "
+        },
+        {
+          "insert": "_components/<Name>/index.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", with its parts in its own "
+        },
+        {
+          "insert": "_components/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "core-2": {
+      "id": "core-2",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Code sits next to the one component that uses it. It moves up only when a second consumer appears."
+        }
+      ],
+      "children": []
+    },
+    "core-3": {
+      "id": "core-3",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Imports go down through an index, up to an ancestor, or out to "
+        },
+        {
+          "insert": "@/shared",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and packages. They never go sideways into the internals of another component or another slice."
+        }
+      ],
+      "children": []
+    },
+    "refs": {
+      "id": "refs",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The reference implementation is "
+        },
+        {
+          "insert": "templates/react-app-shell/",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "templates/react-app-shell/"
+            }
+          }
+        },
+        {
+          "insert": ". "
+        },
+        {
+          "insert": "Layout",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/20-layout"
+            }
+          }
+        },
+        {
+          "insert": " covers the shell that these apps render, and "
+        },
+        {
+          "insert": "Tokens",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/10-tokens"
+            }
+          }
+        },
+        {
+          "insert": " covers the values that their styles use."
+        }
+      ],
+      "children": []
+    },
+    "h-tree": {
+      "id": "h-tree",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Canonical Tree"
+        }
+      ],
+      "children": []
+    },
+    "tree-lead": {
+      "id": "tree-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The template is the smallest complete example."
+        }
+      ],
+      "children": []
+    },
+    "tree-template": {
+      "id": "tree-template",
+      "type": "file-tree",
+      "props": {
+        "entries": [
+          {
+            "path": "templates/react-app-shell/src/App.tsx",
+            "note": "Entry file. Imports AppShell and Icon through their indexes."
+          },
+          {
+            "path": "templates/react-app-shell/src/shared/_components/Icon/index.tsx"
+          },
+          {
+            "path": "templates/react-app-shell/src/_components/AppShell/index.tsx",
+            "note": "AppShell. Re-exports the nav types and resolveNav."
+          },
+          {
+            "path": "templates/react-app-shell/src/_components/AppShell/index.test.tsx"
+          },
+          {
+            "path": "templates/react-app-shell/src/_components/AppShell/useSidebarCollapsed.ts"
+          },
+          {
+            "path": "templates/react-app-shell/src/_components/AppShell/constants.ts",
+            "note": "NARROW_VIEWPORT_QUERY"
+          },
+          {
+            "path": "templates/react-app-shell/src/_components/AppShell/utils.ts",
+            "note": "Shortcut helpers that the hook uses"
+          },
+          {
+            "path": "templates/react-app-shell/src/_components/AppShell/utils.test.ts"
+          },
+          {
+            "path": "templates/react-app-shell/src/_components/AppShell/_components/Sidebar/index.tsx",
+            "note": "Sidebar. Re-exports its types and resolveNav."
+          },
+          {
+            "path": "templates/react-app-shell/src/_components/AppShell/_components/Sidebar/types.ts",
+            "note": "NavSection, NavItemConfig, ShellLinkProps"
+          },
+          {
+            "path": "templates/react-app-shell/src/_components/AppShell/_components/Sidebar/utils.ts",
+            "note": "resolveNav"
+          },
+          {
+            "path": "templates/react-app-shell/src/_components/AppShell/_components/Sidebar/utils.test.ts"
+          },
+          {
+            "path": "templates/react-app-shell/src/_components/AppShell/_components/Sidebar/_components/SidebarToggle/index.tsx",
+            "note": "Gets the shortcut label as a prop"
+          },
+          {
+            "path": "templates/react-app-shell/src/_components/AppShell/_components/Sidebar/_components/NavItem/index.tsx"
+          },
+          {
+            "path": "templates/react-app-shell/src/_components/AppShell/_components/Sidebar/_components/SubNav/index.tsx"
+          },
+          {
+            "path": "templates/react-app-shell/src/_components/AppShell/_components/Topbar/index.tsx"
+          },
+          {
+            "path": "templates/react-app-shell/src/_components/AppShell/_components/Inspector/index.tsx"
+          }
+        ]
+      },
+      "children": []
+    },
+    "tree-nav": {
+      "id": "tree-nav",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The nav model lives in "
+        },
+        {
+          "insert": "Sidebar/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " because only the sidebar subtree uses it."
+        }
+      ],
+      "children": []
+    },
+    "tree-nav-1": {
+      "id": "tree-nav-1",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "NavItem",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "SubNav",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " reach the nav model in two steps, "
+        },
+        {
+          "insert": "../../types",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "tree-nav-2": {
+      "id": "tree-nav-2",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "AppShell/index.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " re-exports the nav model, so "
+        },
+        {
+          "insert": "App.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " never reaches past an index."
+        }
+      ],
+      "children": []
+    },
+    "h-full": {
+      "id": "h-full",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Full App Tree"
+        }
+      ],
+      "children": []
+    },
+    "full-lead": {
+      "id": "full-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "This tree shows a full app on Vite with react-router."
+        }
+      ],
+      "children": []
+    },
+    "tree-full": {
+      "id": "tree-full",
+      "type": "file-tree",
+      "props": {
+        "entries": [
+          {
+            "path": "src/main.tsx",
+            "note": "createRoot(…).render(<App />)"
+          },
+          {
+            "path": "src/App.tsx",
+            "note": "Router, providers and layout route. The only file that imports pages."
+          },
+          {
+            "path": "src/_components/AppShell/",
+            "note": "The shell. Only App.tsx renders it."
+          },
+          {
+            "path": "src/shared/_components/<Name>/index.tsx",
+            "note": "Components used by 2+ slices"
+          },
+          {
+            "path": "src/shared/<module>.ts",
+            "note": "Logic used by 2+ slices"
+          },
+          {
+            "path": "src/pages/<slice>/",
+            "note": "Kebab-case route folder, such as review/ or net-worth/"
+          },
+          {
+            "path": "src/pages/<slice>/page.tsx",
+            "note": "Route entry, default export"
+          },
+          {
+            "path": "src/pages/<slice>/model.ts"
+          },
+          {
+            "path": "src/pages/<slice>/api.ts"
+          },
+          {
+            "path": "src/pages/<slice>/types.ts"
+          },
+          {
+            "path": "src/pages/<slice>/use<Slice>.ts"
+          },
+          {
+            "path": "src/pages/<slice>/_components/<Name>/index.tsx",
+            "note": "export function <Name>, export type <Name>Props"
+          },
+          {
+            "path": "src/pages/<slice>/_components/<Name>/use<Hook>.ts"
+          },
+          {
+            "path": "src/pages/<slice>/_components/<Name>/types.ts"
+          },
+          {
+            "path": "src/pages/<slice>/_components/<Name>/constants.ts"
+          },
+          {
+            "path": "src/pages/<slice>/_components/<Name>/utils.ts"
+          },
+          {
+            "path": "src/pages/<slice>/_components/<Name>/styles.css"
+          },
+          {
+            "path": "src/pages/<slice>/_components/<Name>/index.test.tsx"
+          },
+          {
+            "path": "src/pages/<slice>/_components/<Name>/utils.test.ts"
+          },
+          {
+            "path": "src/pages/<slice>/_components/<Name>/_components/<Part>/index.tsx",
+            "note": "Keep breaking down"
+          },
+          {
+            "path": "src/pages/<slice>/<sub-route>/",
+            "note": "Such as review/results/"
+          },
+          {
+            "path": "src/pages/<slice>/<sub-route>/page.tsx"
+          },
+          {
+            "path": "src/pages/<slice>/<sub-route>/_components/"
+          }
+        ]
+      },
+      "children": []
+    },
+    "h-check": {
+      "id": "h-check",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Checklist"
+        }
+      ],
+      "children": []
+    },
+    "check-lead": {
+      "id": "check-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Run through this checklist before you add or change a component."
+        }
+      ],
+      "children": []
+    },
+    "h-place": {
+      "id": "h-place",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Place the Component"
+        }
+      ],
+      "children": []
+    },
+    "check-1": {
+      "id": "check-1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Find the one component that will render the new code, and create "
+        },
+        {
+          "insert": "<that component>/_components/<Name>/index.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": [
+        "check-1a"
+      ]
+    },
+    "check-1a": {
+      "id": "check-1a",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "If "
+        },
+        {
+          "insert": "page.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " renders the new code, use "
+        },
+        {
+          "insert": "<slice>/_components/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "check-2": {
+      "id": "check-2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Name the folder in PascalCase."
+        }
+      ],
+      "children": [
+        "check-2a"
+      ]
+    },
+    "check-2a": {
+      "id": "check-2a",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "From "
+        },
+        {
+          "insert": "index.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", export "
+        },
+        {
+          "insert": "function <Name>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "type <Name>Props",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Do not use a default export."
+        }
+      ],
+      "children": []
+    },
+    "check-3": {
+      "id": "check-3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Put its hooks, types, constants, helpers, styles and tests in the same folder, under the names in Files in a Component Folder."
+        }
+      ],
+      "children": []
+    },
+    "h-verify": {
+      "id": "h-verify",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Check the Placement"
+        }
+      ],
+      "children": []
+    },
+    "check-4": {
+      "id": "check-4",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Check every import against the tables in Imports."
+        }
+      ],
+      "children": [
+        "check-4a"
+      ]
+    },
+    "check-4a": {
+      "id": "check-4a",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "If no allowed import reaches the code you need, that code is in the wrong place. Move it as the next step says."
+        }
+      ],
+      "children": []
+    },
+    "check-5": {
+      "id": "check-5",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Move code when its consumers change."
+        }
+      ],
+      "children": [
+        "check-5a",
+        "check-5b",
+        "check-5c"
+      ]
+    },
+    "check-5a": {
+      "id": "check-5a",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "When code gains a second consumer, "
+        },
+        {
+          "insert": "git mv",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " it to the nearest common ancestor in the same change."
+        }
+      ],
+      "children": []
+    },
+    "check-5b": {
+      "id": "check-5b",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "When the second consumer is in another slice, move the code to "
+        },
+        {
+          "insert": "src/shared/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "check-5c": {
+      "id": "check-5c",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "When code loses a consumer, move it back down. When nothing uses it, delete it."
+        }
+      ],
+      "children": []
+    },
+    "check-6": {
+      "id": "check-6",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Extract a child past about 150 lines, for a JSX region with its own name, or for a region with its own state."
+        }
+      ],
+      "children": [
+        "check-6a"
+      ]
+    },
+    "check-6a": {
+      "id": "check-6a",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "When one "
+        },
+        {
+          "insert": "_components/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " holds more than about 7 folders, add an intermediate component."
+        }
+      ],
+      "children": []
+    },
+    "check-7": {
+      "id": "check-7",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run the typecheck, the tests, and the four checks below. The checks use the paths of the Vite layout, and each check must print nothing."
+        }
+      ],
+      "children": [
+        "check-code"
+      ]
+    },
+    "check-code": {
+      "id": "check-code",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "# 1. Relative import that passes through a component folder (reaches past its index)\ngrep -rnE \"from ['\\\"]\\.{1,2}/([^'\\\"]*/)?[A-Z][A-Za-z0-9]*/\" src\n# 2. Relative import that climbs more than two levels (use @/)\ngrep -rnE \"from ['\\\"](\\.\\./){3,}\" src\n# 3. Shared code or the shell importing a page\ngrep -rnE \"from ['\\\"](@/pages/|(\\.\\./)+pages/)\" src/shared src/_components\n# 4. A slice importing another slice through the alias\nfor s in src/pages/*/; do grep -rnE \"from ['\\\"]@/pages/\" \"$s\" | grep -v \"@/pages/$(basename \"$s\")/\"; done"
+        }
+      ],
+      "children": []
+    },
+    "h-vocab": {
+      "id": "h-vocab",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Vocabulary"
+        }
+      ],
+      "children": []
+    },
+    "vocab-lead": {
+      "id": "vocab-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "This page uses five terms with one meaning each."
+        }
+      ],
+      "children": []
+    },
+    "vocab-table": {
+      "id": "vocab-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Term",
+          "Meaning"
+        ],
+        "rows": [
+          [
+            "Slice",
+            [
+              {
+                "insert": "One route and everything only that route uses. "
+              },
+              {
+                "insert": "src/pages/review/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " in Vite, a route segment folder in Next.js, a region folder such as "
+              },
+              {
+                "insert": "right-sidebar/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " in a plain-DOM app. Its entry is "
+              },
+              {
+                "insert": "page.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " ("
+              },
+              {
+                "insert": "index.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " for a DOM region)."
+              }
+            ]
+          ],
+          [
+            "Component folder",
+            [
+              {
+                "insert": "_components/<PascalName>/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " with an "
+              },
+              {
+                "insert": "index.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            "Subtree",
+            "A component folder and everything below it."
+          ],
+          [
+            "Nearest common ancestor",
+            "The deepest component folder, or slice root, that contains every consumer."
+          ],
+          [
+            "Promote, demote",
+            [
+              {
+                "insert": "git mv",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " code up or down the tree when its consumers change."
+              }
+            ]
+          ]
+        ],
+        "title": "Code structure terms"
+      },
+      "children": []
+    },
+    "h-rules": {
+      "id": "h-rules",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules"
+        }
+      ],
+      "children": []
+    },
+    "rules-lead": {
+      "id": "rules-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The rules cover slices, components, the files in a component folder, naming, where code lives, imports, and size."
+        }
+      ],
+      "children": []
+    },
+    "h-slices": {
+      "id": "h-slices",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Slices"
+        }
+      ],
+      "children": []
+    },
+    "sl-lead": {
+      "id": "sl-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A slice is "
+        },
+        {
+          "insert": "src/pages/<slice>/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in Vite and a route segment folder in Next.js."
+        }
+      ],
+      "children": []
+    },
+    "sl-1": {
+      "id": "sl-1",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Route folders are kebab-case, such as "
+        },
+        {
+          "insert": "net-worth/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "budget-setup/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "sl-2": {
+      "id": "sl-2",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "The route entry is "
+        },
+        {
+          "insert": "page.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". It keeps the default export that its router needs, and components never use a default export."
+        }
+      ],
+      "children": [
+        "sl-2a",
+        "sl-2b"
+      ]
+    },
+    "sl-2a": {
+      "id": "sl-2a",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Vite needs it for "
+        },
+        {
+          "insert": "lazy(() => import('./pages/review/page'))",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "sl-2b": {
+      "id": "sl-2b",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Next.js needs it for its file conventions, "
+        },
+        {
+          "insert": "page.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "layout.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and the other special files."
+        }
+      ],
+      "children": []
+    },
+    "sl-3": {
+      "id": "sl-3",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "page.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is the root of the slice tree, and the components it renders live in "
+        },
+        {
+          "insert": "<slice>/_components/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Styles for markup that "
+        },
+        {
+          "insert": "page.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " renders itself go in a "
+        },
+        {
+          "insert": "styles.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " beside it."
+        }
+      ],
+      "children": []
+    },
+    "sl-4": {
+      "id": "sl-4",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "The slice root holds "
+        },
+        {
+          "insert": "page.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "_components/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", sub-route folders, and a few slice modules: "
+        },
+        {
+          "insert": "model.ts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "api.ts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "types.ts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "use<Slice>.ts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". When the slice root holds more than 6 non-route modules, move them into "
+        },
+        {
+          "insert": "<slice>/_lib/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "sl-5": {
+      "id": "sl-5",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "A sub-route is a folder with its own "
+        },
+        {
+          "insert": "page.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", such as "
+        },
+        {
+          "insert": "review/results/page.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", never a sibling file such as "
+        },
+        {
+          "insert": "review/results.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". A sub-route follows the slice rules and has its own "
+        },
+        {
+          "insert": "_components/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-comp": {
+      "id": "h-comp",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Components"
+        }
+      ],
+      "children": []
+    },
+    "co-lead": {
+      "id": "co-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A component lives at "
+        },
+        {
+          "insert": "<parent>/_components/<PascalName>/index.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". It is always a folder, even for a 10-line leaf, so it can grow parts without moving."
+        }
+      ],
+      "children": []
+    },
+    "co-1": {
+      "id": "co-1",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Entry files are the only exception: "
+        },
+        {
+          "insert": "main.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "App.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", route entries ("
+        },
+        {
+          "insert": "page.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and in Next.js "
+        },
+        {
+          "insert": "layout.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and the other special files), and the "
+        },
+        {
+          "insert": "index.ts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " of a plain-DOM slice. They wire the app, its routes or a region together, and everything they render is a component folder."
+        }
+      ],
+      "children": []
+    },
+    "co-2": {
+      "id": "co-2",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Each "
+        },
+        {
+          "insert": "index.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " holds one component. A second component in the file is a child, so give it its own folder."
+        }
+      ],
+      "children": []
+    },
+    "co-3": {
+      "id": "co-3",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Export the component by name, matching the folder. Declare its props in the same file with "
+        },
+        {
+          "insert": "type",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", not "
+        },
+        {
+          "insert": "interface",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "co-4": {
+      "id": "co-4",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Sub-parts nest in the component's own "
+        },
+        {
+          "insert": "_components/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Keep breaking down."
+        }
+      ],
+      "children": []
+    },
+    "co-5": {
+      "id": "co-5",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "_components/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " holds only PascalCase component folders. It holds no loose "
+        },
+        {
+          "insert": ".tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " files, no stylesheets, and no category folders such as "
+        },
+        {
+          "insert": "_components/timelines/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "co-api": {
+      "id": "co-api",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "index.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is the folder's public surface. A type or helper that belongs to the component's API, such as a type its props use, is re-exported there: "
+        },
+        {
+          "insert": "export type { NavSection } from './types';",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "co-api-1": {
+      "id": "co-api-1",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Re-export types freely."
+        }
+      ],
+      "children": []
+    },
+    "co-api-2": {
+      "id": "co-api-2",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "A re-exported function, such as the template's "
+        },
+        {
+          "insert": "resolveNav",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", costs Vite Fast Refresh for that "
+        },
+        {
+          "insert": "index.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Edits to it reload through the importer instead of updating in place."
+        }
+      ],
+      "children": []
+    },
+    "co-api-3": {
+      "id": "co-api-3",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Keep value re-exports to the few helpers that callers need."
+        }
+      ],
+      "children": []
+    },
+    "co-ex-lead": {
+      "id": "co-ex-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "This listing shows the shape of a component file, not the real props of "
+        },
+        {
+          "insert": "ReviewCard",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "co-ex": {
+      "id": "co-ex",
+      "type": "code",
+      "props": {
+        "language": "tsx"
+      },
+      "text": [
+        {
+          "insert": "// …/_components/ReviewCard/index.tsx (the shape, not the real props)\nimport { CardHeader } from './_components/CardHeader';\nimport './styles.css';\n\nexport type ReviewCardProps = { title: string; onConfirm: () => void };\n\nexport function ReviewCard({ title, onConfirm }: ReviewCardProps) {\n  return (\n    <article className=\"review-card\">\n      <CardHeader title={title} />\n      <button className=\"review-card-confirm\" type=\"button\" onClick={onConfirm}>Confirm</button>\n    </article>\n  );\n}"
+        }
+      ],
+      "children": []
+    },
+    "h-files": {
+      "id": "h-files",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Files in a Component Folder"
+        }
+      ],
+      "children": []
+    },
+    "fi-lead": {
+      "id": "fi-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Only "
+        },
+        {
+          "insert": "index.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is required. Every other file in this table is optional."
+        }
+      ],
+      "children": []
+    },
+    "fi-table": {
+      "id": "fi-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "File",
+          "Holds",
+          "Rule"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "index.tsx",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "The component",
+            [
+              {
+                "insert": "One component. Named export and "
+              },
+              {
+                "insert": "<Name>Props",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "use<Name>.ts",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "A hook used in this subtree",
+            [
+              {
+                "insert": "The file name is the hook name, such as "
+              },
+              {
+                "insert": "useReviewDraft.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "types.ts",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Types shared inside the subtree",
+            "Types only, no constants."
+          ],
+          [
+            [
+              {
+                "insert": "constants.ts",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Constants shared inside the subtree",
+            ""
+          ],
+          [
+            [
+              {
+                "insert": "utils.ts",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Pure functions",
+            "No React, no DOM."
+          ],
+          [
+            [
+              {
+                "insert": "styles.css",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "This component's styles",
+            [
+              {
+                "insert": "Imported by "
+              },
+              {
+                "insert": "index.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "index.test.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "utils.test.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "use<Name>.test.ts",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Unit and component tests",
+            [
+              {
+                "insert": "Next to the file they test. No top-level "
+              },
+              {
+                "insert": "tests/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " folder for them."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "<module>/",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Non-component code that outgrew one file",
+            [
+              {
+                "insert": "Lowercase folder with an "
+              },
+              {
+                "insert": "index.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " barrel, such as "
+              },
+              {
+                "insert": "EvidenceRail/connectors/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "_components/",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Child components",
+            "PascalCase folders only."
+          ]
+        ],
+        "title": "Files in a component folder"
+      },
+      "children": []
+    },
+    "fi-css": {
+      "id": "fi-css",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A component's "
+        },
+        {
+          "insert": "styles.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " follows two more rules."
+        }
+      ],
+      "children": []
+    },
+    "fi-css-1": {
+      "id": "fi-css-1",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Every class starts with the component's kebab name, such as "
+        },
+        {
+          "insert": ".review-card",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": ".review-card-header",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "fi-css-2": {
+      "id": "fi-css-2",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Values come only from "
+        },
+        {
+          "insert": "--ds-*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " tokens, such as "
+        },
+        {
+          "insert": "var(--ds-space-2)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". "
+        },
+        {
+          "insert": "Tokens",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/10-tokens"
+            }
+          }
+        },
+        {
+          "insert": " lists them."
+        }
+      ],
+      "children": []
+    },
+    "fi-css-3": {
+      "id": "fi-css-3",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Apps on CSS Modules use "
+        },
+        {
+          "insert": "styles.module.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in place of "
+        },
+        {
+          "insert": "styles.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-naming": {
+      "id": "h-naming",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Naming"
+        }
+      ],
+      "children": []
+    },
+    "na-lead": {
+      "id": "na-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Component folders and hook files have their own case. Every other file and folder is kebab-case."
+        }
+      ],
+      "children": []
+    },
+    "na-table": {
+      "id": "na-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "What",
+          "Case",
+          "Examples"
+        ],
+        "rows": [
+          [
+            "Component folder",
+            "PascalCase",
+            [
+              {
+                "insert": "ReviewCard/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "EvidenceRail/",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Hook file",
+            "camelCase, same as the hook",
+            [
+              {
+                "insert": "useReviewDraft.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " exports "
+              },
+              {
+                "insert": "useReviewDraft",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Every other file and folder",
+            "kebab-case",
+            [
+              {
+                "insert": "utils.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "queue-model.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "evidence-connector.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "connectors/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "net-worth/",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Underscore folder",
+            [
+              {
+                "insert": "_",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " prefix"
+              }
+            ],
+            [
+              {
+                "insert": "_components/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " anywhere. "
+              },
+              {
+                "insert": "_lib/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " only at a slice root with more than 6 modules, and in Next.js route groups. Nothing else."
+              }
+            ]
+          ]
+        ],
+        "title": "Naming cases"
+      },
+      "children": []
+    },
+    "h-where": {
+      "id": "h-where",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Where Code Lives"
+        }
+      ],
+      "children": []
+    },
+    "wh-lead": {
+      "id": "wh-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The consumers of a piece of code decide where it lives."
+        }
+      ],
+      "children": []
+    },
+    "wh-table": {
+      "id": "wh-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Used by",
+          "Put it"
+        ],
+        "rows": [
+          [
+            "One component",
+            [
+              {
+                "insert": "In that component's folder. Components go in its "
+              },
+              {
+                "insert": "_components/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", and hooks, utils and types go next to its "
+              },
+              {
+                "insert": "index.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            "Two or more components",
+            [
+              {
+                "insert": "At their nearest common ancestor. Components go in its "
+              },
+              {
+                "insert": "_components/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", and hooks, utils and types go next to its "
+              },
+              {
+                "insert": "index.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            "Two or more slices",
+            [
+              {
+                "insert": "src/shared/_components/<Name>/index.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " for components, "
+              },
+              {
+                "insert": "src/shared/<module>.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " for logic, or a workspace package."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "Only "
+              },
+              {
+                "insert": "src/App.tsx",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "src/_components/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". The shell lives at "
+              },
+              {
+                "insert": "src/_components/AppShell/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", and its router wiring at "
+              },
+              {
+                "insert": "src/_components/RouterShell/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ]
+        ],
+        "title": "Where code lives"
+      },
+      "children": []
+    },
+    "wh-1": {
+      "id": "wh-1",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Never create "
+        },
+        {
+          "insert": "src/pages/_components/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Code that two slices share is shared code."
+        }
+      ],
+      "children": []
+    },
+    "wh-2": {
+      "id": "wh-2",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Promote with "
+        },
+        {
+          "insert": "git mv",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in the same change that adds the second consumer. Demote when a consumer goes away, and delete when none is left."
+        }
+      ],
+      "children": []
+    },
+    "wh-ex": {
+      "id": "wh-ex",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "In the budget app, "
+        },
+        {
+          "insert": "GroupedSelector",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " sits in "
+        },
+        {
+          "insert": "review/_components/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", but only "
+        },
+        {
+          "insert": "ClassificationPicker",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " renders it. "
+        },
+        {
+          "insert": "ReviewWorkbench",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "ReviewCard",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " import only its "
+        },
+        {
+          "insert": "SelectGroup",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " type. The component moves down to "
+        },
+        {
+          "insert": "ClassificationPicker/_components/GroupedSelector/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". "
+        },
+        {
+          "insert": "SelectGroup",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " moves to "
+        },
+        {
+          "insert": "ReviewWorkbench/types.ts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", the nearest common ancestor of every file that uses it."
+        }
+      ],
+      "children": []
+    },
+    "h-imports": {
+      "id": "h-imports",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Imports"
+        }
+      ],
+      "children": []
+    },
+    "im-lead": {
+      "id": "im-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A file can import five kinds of target. Each example is an import from "
+        },
+        {
+          "insert": "ReviewWorkbench/_components/ReviewCard/index.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "im-allowed": {
+      "id": "im-allowed",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Allowed",
+          "Example"
+        ],
+        "rows": [
+          [
+            "A child, through its index",
+            [
+              {
+                "insert": "./_components/CardHeader",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "An ancestor's module",
+            [
+              {
+                "insert": "../../types",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "../../useReviewDraft",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "A component in an ancestor's "
+              },
+              {
+                "insert": "_components/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (a sibling or a promoted part), through its index"
+              }
+            ],
+            [
+              {
+                "insert": "../EvidenceRail",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Shared code",
+            [
+              {
+                "insert": "@/shared/_components/CategoryIcon",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "@/shared/dates",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Packages",
+            [
+              {
+                "insert": "react",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "@personal-budget/classification",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ]
+        ],
+        "title": "Allowed imports"
+      },
+      "children": []
+    },
+    "im-forb-lead": {
+      "id": "im-forb-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Four kinds of import are forbidden. Each one has a fix."
+        }
+      ],
+      "children": []
+    },
+    "im-forbidden": {
+      "id": "im-forbidden",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Forbidden",
+          "Example",
+          "Fix"
+        ],
+        "rows": [
+          [
+            "Reaching past another component's index",
+            [
+              {
+                "insert": "../EvidenceRail/_components/BestGuess",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "../EvidenceRail/utils",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Promote the code you need. If it belongs to that component's API, re-export it from its "
+              },
+              {
+                "insert": "index.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            "Importing from another slice",
+            [
+              {
+                "insert": "pages/review",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " importing "
+              },
+              {
+                "insert": "pages/budget-setup/model",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Move that code to "
+              },
+              {
+                "insert": "src/shared/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " or a workspace package."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "src/shared/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " importing from "
+              },
+              {
+                "insert": "src/pages/",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "shared/AppLayout.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " importing "
+              },
+              {
+                "insert": "pages/review/navigation",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Move the code into "
+              },
+              {
+                "insert": "src/shared/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            "A child importing its parent's index",
+            [
+              {
+                "insert": "CardHeader",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " importing "
+              },
+              {
+                "insert": "'../..'",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (ReviewCard)"
+              }
+            ],
+            [
+              {
+                "insert": "Pass props, or move the shared piece to the parent's "
+              },
+              {
+                "insert": "types.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " or "
+              },
+              {
+                "insert": "utils.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ]
+        ],
+        "title": "Forbidden imports"
+      },
+      "children": []
+    },
+    "im-path-lead": {
+      "id": "im-path-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Use relative paths inside one component subtree, up to "
+        },
+        {
+          "insert": "../../",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Use the "
+        },
+        {
+          "insert": "@/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " alias for "
+        },
+        {
+          "insert": "src/shared",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and for anything more than two "
+        },
+        {
+          "insert": "../",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " up."
+        }
+      ],
+      "children": []
+    },
+    "im-1": {
+      "id": "im-1",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "A folder that is copied between apps, such as the template's "
+        },
+        {
+          "insert": "AppShell/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", uses no alias, because each app roots it somewhere else. Keep its imports within two levels."
+        }
+      ],
+      "children": [
+        "im-1a"
+      ]
+    },
+    "im-1a": {
+      "id": "im-1a",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Put types at the level that uses them, and pass values down as props, as "
+        },
+        {
+          "insert": "SidebarToggle",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " gets its shortcut label."
+        }
+      ],
+      "children": []
+    },
+    "im-2": {
+      "id": "im-2",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "The shell is shared code too. "
+        },
+        {
+          "insert": "src/_components/AppShell/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " never imports from "
+        },
+        {
+          "insert": "src/pages/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and only "
+        },
+        {
+          "insert": "src/App.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " imports pages."
+        }
+      ],
+      "children": []
+    },
+    "im-3": {
+      "id": "im-3",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Next.js ships the "
+        },
+        {
+          "insert": "@/*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " alias. In Vite, set it in both "
+        },
+        {
+          "insert": "tsconfig.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "vite.config.ts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": [
+        "im-code"
+      ]
+    },
+    "im-code": {
+      "id": "im-code",
+      "type": "code",
+      "props": {
+        "language": "ts"
+      },
+      "text": [
+        {
+          "insert": "// tsconfig.json: { \"compilerOptions\": { \"paths\": { \"@/*\": [\"./src/*\"] } } }\n// vite.config.ts:\nimport { fileURLToPath, URL } from 'node:url';\nimport { defineConfig } from 'vite';\n\nexport default defineConfig({\n  resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },\n});"
+        }
+      ],
+      "children": []
+    },
+    "im-4": {
+      "id": "im-4",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "The "
+        },
+        {
+          "insert": "'@'",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " key matches only "
+        },
+        {
+          "insert": "@",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "@/…",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", so scoped packages such as "
+        },
+        {
+          "insert": "@personal-budget/classification",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " still resolve from "
+        },
+        {
+          "insert": "node_modules",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Bun reads the tsconfig "
+        },
+        {
+          "insert": "paths",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and Vitest reads the Vite config."
+        }
+      ],
+      "children": []
+    },
+    "h-size": {
+      "id": "h-size",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Size and Splitting"
+        }
+      ],
+      "children": []
+    },
+    "sz-lead": {
+      "id": "sz-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "index.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " renders one thing."
+        }
+      ],
+      "children": []
+    },
+    "sz-1": {
+      "id": "sz-1",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Extract a child when the file passes about 150 lines, when a JSX region has its own name (header, row, picker, empty state), or when a region owns state."
+        }
+      ],
+      "children": []
+    },
+    "sz-2": {
+      "id": "sz-2",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Split a hook past about 80 lines, or when it does two jobs."
+        }
+      ],
+      "children": []
+    },
+    "sz-3": {
+      "id": "sz-3",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "More than about 7 children in one "
+        },
+        {
+          "insert": "_components/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " means that level does two jobs. Add an intermediate component that groups them."
+        }
+      ],
+      "children": []
+    },
+    "sz-4": {
+      "id": "sz-4",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Depth is fine, because the alias keeps imports short."
+        }
+      ],
+      "children": []
+    },
+    "h-variants": {
+      "id": "h-variants",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Variants"
+        }
+      ],
+      "children": []
+    },
+    "va-lead": {
+      "id": "va-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The rules hold in three app types: Vite with react-router, the Next.js app router, and plain TypeScript DOM."
+        }
+      ],
+      "children": []
+    },
+    "h-vite": {
+      "id": "h-vite",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Vite and React Router"
+        }
+      ],
+      "children": []
+    },
+    "vi-lead": {
+      "id": "vi-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The trees in Canonical Tree are the Vite shape. "
+        },
+        {
+          "insert": "App.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is the only file that imports pages."
+        }
+      ],
+      "children": []
+    },
+    "vi-1": {
+      "id": "vi-1",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "App.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " lazy-loads each "
+        },
+        {
+          "insert": "page.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and nests the routes under one layout route, "
+        },
+        {
+          "insert": "src/_components/RouterShell/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "vi-2": {
+      "id": "vi-2",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "RouterShell",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " renders "
+        },
+        {
+          "insert": "<AppShell>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " around react-router's "
+        },
+        {
+          "insert": "<Outlet />",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The "
+        },
+        {
+          "insert": "template README",
+          "attributes": {
+            "reference": {
+              "kind": "source",
+              "path": "templates/react-app-shell/README.md"
+            }
+          }
+        },
+        {
+          "insert": " shows "
+        },
+        {
+          "insert": "RouterShell",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and its link adapter."
+        }
+      ],
+      "children": []
+    },
+    "vi-3": {
+      "id": "vi-3",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "The "
+        },
+        {
+          "insert": "@/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " alias needs both config files, as Imports shows."
+        }
+      ],
+      "children": []
+    },
+    "vi-code": {
+      "id": "vi-code",
+      "type": "code",
+      "props": {
+        "language": "tsx"
+      },
+      "text": [
+        {
+          "insert": "// src/App.tsx\nconst Review = lazy(() => import('./pages/review/page'));\nconst ReviewResults = lazy(() => import('./pages/review/results/page'));\n<Route element={<RouterShell />}>  {/* src/_components/RouterShell: <AppShell …><Outlet /></AppShell> */}\n  <Route path=\"review\" element={<Review />} />\n  <Route path=\"review/results\" element={<ReviewResults />} />\n</Route>"
+        }
+      ],
+      "children": []
+    },
+    "h-next": {
+      "id": "h-next",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Next.js App Router"
+        }
+      ],
+      "children": []
+    },
+    "nx-lead": {
+      "id": "nx-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "In Next.js, a folder whose name starts with "
+        },
+        {
+          "insert": "_",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is a private folder, and the router skips it. The "
+        },
+        {
+          "insert": "_components/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " convention comes from there. A route group, "
+        },
+        {
+          "insert": "(name)/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", organizes routes without adding a URL segment."
+        }
+      ],
+      "children": []
+    },
+    "tree-next": {
+      "id": "tree-next",
+      "type": "file-tree",
+      "props": {
+        "entries": [
+          {
+            "path": "app/layout.tsx",
+            "note": "Renders <RouterShell>. Stays a server component."
+          },
+          {
+            "path": "app/_components/AppShell/",
+            "note": "Copied from the template"
+          },
+          {
+            "path": "app/_components/RouterShell/index.tsx",
+            "note": "'use client'. Uses next/link, usePathname and <AppShell>."
+          },
+          {
+            "path": "app/(tracing)/",
+            "note": "Route group, no URL segment"
+          },
+          {
+            "path": "app/(tracing)/_components/",
+            "note": "Components used by 2+ routes in the group"
+          },
+          {
+            "path": "app/(tracing)/_lib/",
+            "note": "Group modules and hooks, such as trace-utils.ts and useTraceEvents.ts"
+          },
+          {
+            "path": "app/(tracing)/traces/page.tsx"
+          },
+          {
+            "path": "app/(tracing)/traces/_components/CallsList/index.tsx"
+          },
+          {
+            "path": "app/(tracing)/traces/[callUuid]/page.tsx"
+          },
+          {
+            "path": "app/(tracing)/traces/[callUuid]/_components/TraceDetails/index.tsx"
+          },
+          {
+            "path": "app/(tracing)/traces/[callUuid]/_components/TraceDetails/_components/JsonView/index.tsx"
+          },
+          {
+            "path": "app/(tracing)/traces/[callUuid]/_components/SwimLaneTimeline/index.tsx"
+          },
+          {
+            "path": "app/(tracing)/traces/[callUuid]/_components/SwimLaneTimeline/constants.ts"
+          },
+          {
+            "path": "app/(tracing)/traces/[callUuid]/_components/SwimLaneTimeline/types.ts"
+          },
+          {
+            "path": "app/(tracing)/traces/[callUuid]/_components/SwimLaneTimeline/utils.ts"
+          },
+          {
+            "path": "app/(tracing)/traces/[callUuid]/_components/SwimLaneTimeline/_components/LaneHeader/index.tsx"
+          },
+          {
+            "path": "shared/",
+            "note": "App-wide. Replaces root components/ and lib/."
+          },
+          {
+            "path": "shared/_components/PromptView/index.tsx",
+            "note": "Used by (tracing) and (prompts)"
+          }
+        ]
+      },
+      "children": []
+    },
+    "nx-1": {
+      "id": "nx-1",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "app/layout.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " renders "
+        },
+        {
+          "insert": "app/_components/RouterShell/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", a client component that wires "
+        },
+        {
+          "insert": "AppShell",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " to "
+        },
+        {
+          "insert": "next/link",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "usePathname",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". "
+        },
+        {
+          "insert": "Layout",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/20-layout"
+            }
+          }
+        },
+        {
+          "insert": " and the "
+        },
+        {
+          "insert": "template README",
+          "attributes": {
+            "reference": {
+              "kind": "source",
+              "path": "templates/react-app-shell/README.md"
+            }
+          }
+        },
+        {
+          "insert": " describe it."
+        }
+      ],
+      "children": []
+    },
+    "nx-2": {
+      "id": "nx-2",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Each segment has its "
+        },
+        {
+          "insert": "page.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and its "
+        },
+        {
+          "insert": "_components/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". A dynamic segment such as "
+        },
+        {
+          "insert": "[callUuid]/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " has its own "
+        },
+        {
+          "insert": "_components/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "nx-3": {
+      "id": "nx-3",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Code shared by the routes of one group goes to "
+        },
+        {
+          "insert": "app/(group)/_components/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "app/(group)/_lib/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Hooks go in "
+        },
+        {
+          "insert": "_lib/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and there is no "
+        },
+        {
+          "insert": "_hooks/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "nx-4": {
+      "id": "nx-4",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "App-wide shared code goes to "
+        },
+        {
+          "insert": "src/shared/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or to root "
+        },
+        {
+          "insert": "shared/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in apps without "
+        },
+        {
+          "insert": "src/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". It does not go to root "
+        },
+        {
+          "insert": "components/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "lib/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "nx-5": {
+      "id": "nx-5",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Put "
+        },
+        {
+          "insert": "'use client'",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " only on components that need state, effects, event handlers or browser APIs. Everything a client component imports is client code already, so its children do not repeat the directive."
+        }
+      ],
+      "children": []
+    },
+    "h-dom": {
+      "id": "h-dom",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Plain TypeScript DOM"
+        }
+      ],
+      "children": []
+    },
+    "dom-lead": {
+      "id": "dom-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A page without routes splits into regions, such as "
+        },
+        {
+          "insert": "left-sidebar/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "right-sidebar/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Each region is a slice: a kebab-case folder whose "
+        },
+        {
+          "insert": "index.ts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is its entry, the way "
+        },
+        {
+          "insert": "page.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is for a route. The entry composes the region from its "
+        },
+        {
+          "insert": "_components/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and exports "
+        },
+        {
+          "insert": "render<Region>(root)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "mount<Region>(root, deps)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "dom-rules": {
+      "id": "dom-rules",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Inside a region the component rules do not change, with "
+        },
+        {
+          "insert": "index.ts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in place of "
+        },
+        {
+          "insert": "index.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "dom-1": {
+      "id": "dom-1",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Every component is a PascalCase folder in a "
+        },
+        {
+          "insert": "_components/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and its parts nest in its own "
+        },
+        {
+          "insert": "_components/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "dom-2": {
+      "id": "dom-2",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "A component folder exports "
+        },
+        {
+          "insert": "<Name>(props): string",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " for the markup."
+        }
+      ],
+      "children": []
+    },
+    "dom-3": {
+      "id": "dom-3",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "When the component is interactive, the same folder exports "
+        },
+        {
+          "insert": "mount<Name>(root: HTMLElement, deps): () => void",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". That function attaches behavior inside "
+        },
+        {
+          "insert": "root",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and returns the cleanup."
+        }
+      ],
+      "children": []
+    },
+    "tree-dom": {
+      "id": "tree-dom",
+      "type": "file-tree",
+      "props": {
+        "entries": [
+          {
+            "path": "src/ui/right-sidebar/",
+            "note": "A slice, one region of the page"
+          },
+          {
+            "path": "src/ui/right-sidebar/index.ts",
+            "note": "Entry. Exports renderRightSidebar(panel) and mountRightSidebar(panel, deps)."
+          },
+          {
+            "path": "src/ui/right-sidebar/_components/StatsBar/index.ts"
+          },
+          {
+            "path": "src/ui/right-sidebar/_components/ColorSection/index.ts",
+            "note": "ColorSection(): string, mountColorSection(root, deps)"
+          },
+          {
+            "path": "src/ui/right-sidebar/_components/ColorSection/_components/SwatchGrid/index.ts"
+          },
+          {
+            "path": "src/ui/left-sidebar/index.ts",
+            "note": "Entry. Exports renderLeftSidebar(panel) and mountLeftSidebar(panel, deps)."
+          },
+          {
+            "path": "src/ui/left-sidebar/_components/ActionButton/index.ts",
+            "note": "One of the region's components"
+          },
+          {
+            "path": "src/ui/shared/",
+            "note": "Code that 2+ regions use"
+          },
+          {
+            "path": "src/ui/shared/_components/ToggleField/index.ts"
+          },
+          {
+            "path": "src/ui/shared/styles.ts",
+            "note": "Class strings used by 2+ components"
+          }
+        ]
+      },
+      "children": []
+    },
+    "dom-4": {
+      "id": "dom-4",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "A parent's mount calls its children's mounts and returns one cleanup for all of them. The entry's mount does the same for the whole region, so there is no central controller that finds every element by id."
+        }
+      ],
+      "children": []
+    },
+    "dom-5": {
+      "id": "dom-5",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Class strings that one component uses stay in its folder. The shared "
+        },
+        {
+          "insert": "ui",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " map keeps only strings that two or more components use."
+        }
+      ],
+      "children": []
+    },
+    "dom-code": {
+      "id": "dom-code",
+      "type": "code",
+      "props": {
+        "language": "ts"
+      },
+      "text": [
+        {
+          "insert": "// src/ui/shared/_components/ToggleField/index.ts\nimport { ui } from '../../styles';\n\nexport type ToggleFieldProps = { label: string; setting: string };\n\nexport function ToggleField({ label, setting }: ToggleFieldProps): string {\n  return `<label class=\"${ui.toggleField}\">\n    <input class=\"${ui.checkbox}\" data-setting=\"${setting}\" type=\"checkbox\" /><span>${label}</span>\n  </label>`;\n}\n\nexport function mountToggleField(root: HTMLElement, deps: { onChange: (checked: boolean) => void }): () => void {\n  const input = root.querySelector<HTMLInputElement>('input[type=\"checkbox\"]')!;\n  const onChange = () => deps.onChange(input.checked);\n  input.addEventListener('change', onChange);\n  return () => input.removeEventListener('change', onChange);\n}"
+        }
+      ],
+      "children": []
+    },
+    "h-example": {
+      "id": "h-example",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Example: the Budget Review Slice"
+        }
+      ],
+      "children": []
+    },
+    "ex-link": {
+      "id": "ex-link",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The review slice of the budget app, "
+        },
+        {
+          "insert": "life/budget/apps/web/src/pages/review/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", is the deepest tree in the reference apps. "
+        },
+        {
+          "insert": "Budget Review Example",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/30-code-structure/10-budget-review-example"
+            }
+          }
+        },
+        {
+          "insert": " shows its tree today, its tree under this standard, and the reason for each move."
+        }
+      ],
+      "children": []
+    },
+    "h-today": {
+      "id": "h-today",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "What the Reference Apps Do Today"
+        }
+      ],
+      "children": []
+    },
+    "td-lead": {
+      "id": "td-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Three reference apps break this standard in the ways the table lists."
+        }
+      ],
+      "children": []
+    },
+    "td-1": {
+      "id": "td-1",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Budget is "
+        },
+        {
+          "insert": "life/budget/apps/web",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "td-2": {
+      "id": "td-2",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Ops console is "
+        },
+        {
+          "insert": "clients/past/hey-bubba/bubba-phone/helper-applications/ops-console/frontend",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", a Next.js 14 app."
+        }
+      ],
+      "children": []
+    },
+    "td-3": {
+      "id": "td-3",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Personal site is "
+        },
+        {
+          "insert": "lascari-ai/personal-site",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "td-table": {
+      "id": "td-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "App",
+          "Today",
+          "Standard"
+        ],
+        "rows": [
+          [
+            "Budget",
+            [
+              {
+                "insert": "<Name>/<Name>.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " ("
+              },
+              {
+                "insert": "ReviewWorkbench/ReviewWorkbench.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "), flat "
+              },
+              {
+                "insert": "_components/<Name>.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " ("
+              },
+              {
+                "insert": "review/_components/ReviewContent.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "accounts/_components/AccountGroups.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "), flat leaves ("
+              },
+              {
+                "insert": "AmazonEvidence/_components/OrderItem.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ")"
+              }
+            ],
+            [
+              {
+                "insert": "<Name>/index.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", always a folder"
+              }
+            ]
+          ],
+          [
+            "Budget",
+            [
+              {
+                "insert": "Components at a slice root, outside "
+              },
+              {
+                "insert": "_components/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ": "
+              },
+              {
+                "insert": "budget-spend/BudgetFlowChart.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "spending/FlowChart.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "special-rules/PersonalRules.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "connections/PurchaseSetup.tsx",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "<slice>/_components/<Name>/",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Budget",
+            [
+              {
+                "insert": "Mostly "
+              },
+              {
+                "insert": "export default function",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". "
+              },
+              {
+                "insert": "EvidenceRail",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "VenmoEvidence",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " export both ways, and "
+              },
+              {
+                "insert": "UnresolvedCredits",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " only by name. Props as "
+              },
+              {
+                "insert": "type",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and as "
+              },
+              {
+                "insert": "interface",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " ("
+              },
+              {
+                "insert": "BestGuess",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "ReviewCard",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "CardHeader",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ")."
+              }
+            ],
+            [
+              {
+                "insert": "Named export, "
+              },
+              {
+                "insert": "export type <Name>Props",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Budget",
+            [
+              {
+                "insert": "Kebab-case hook files: "
+              },
+              {
+                "insert": "use-review-draft.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " exports "
+              },
+              {
+                "insert": "useReviewDraft",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "useReviewDraft.ts",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Budget",
+            [
+              {
+                "insert": "Stylesheets per component with kebab names ("
+              },
+              {
+                "insert": "review-workbench.css",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "), at slice roots ("
+              },
+              {
+                "insert": "review-cards.css",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " styles eight components), and one PascalCase sheet ("
+              },
+              {
+                "insert": "shared/BankTextDetails.css",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ")"
+              }
+            ],
+            [
+              {
+                "insert": "styles.css",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " in the owner's folder"
+              }
+            ]
+          ],
+          [
+            "Budget",
+            [
+              {
+                "insert": "13 "
+              },
+              {
+                "insert": "review/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " files import "
+              },
+              {
+                "insert": "pages/budget-setup/model",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". "
+              },
+              {
+                "insert": "budget-spend",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " imports "
+              },
+              {
+                "insert": "budget-setup/model",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "spending/model",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". "
+              },
+              {
+                "insert": "review/suggest.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " imports "
+              },
+              {
+                "insert": "spending/model",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ],
+            [
+              {
+                "insert": "Shared parts move to "
+              },
+              {
+                "insert": "src/shared/",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Budget",
+            [
+              {
+                "insert": "Other slices' stylesheets: "
+              },
+              {
+                "insert": "ReviewContent.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " imports "
+              },
+              {
+                "insert": "accounts/transactions/_components/transactions.css",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "budget-setup/page.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " imports "
+              },
+              {
+                "insert": "accounts.css",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", and "
+              },
+              {
+                "insert": "budget-spend/page.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " imports "
+              },
+              {
+                "insert": "net-worth.css",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "spending.css",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Styles two slices use belong to a shared component"
+          ],
+          [
+            "Budget",
+            [
+              {
+                "insert": "shared/AppLayout.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " imports "
+              },
+              {
+                "insert": "pages/review/navigation",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". "
+              },
+              {
+                "insert": "shared/processed-model.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " imports a type from "
+              },
+              {
+                "insert": "pages/spending/model",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ],
+            "Shared never imports pages"
+          ],
+          [
+            "Budget",
+            [
+              {
+                "insert": "The shell is "
+              },
+              {
+                "insert": "shared/AppLayout.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". "
+              },
+              {
+                "insert": "src/shared/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " is flat (9 "
+              },
+              {
+                "insert": ".tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " files, no "
+              },
+              {
+                "insert": "_components/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "). Domain modules sit at "
+              },
+              {
+                "insert": "src/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " root: "
+              },
+              {
+                "insert": "entities.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "transaction-model.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "closed-accounts.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "manual-accounts.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ],
+            [
+              {
+                "insert": "src/_components/AppShell/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "src/shared/_components/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", modules in "
+              },
+              {
+                "insert": "src/shared/",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Budget",
+            [
+              {
+                "insert": "Routes in sibling files not named "
+              },
+              {
+                "insert": "page.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ": "
+              },
+              {
+                "insert": "review/{results,reconciliation,disagreements}.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "connections/{amazon,venmo}.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "kernel/{agents,traces}.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "config/firecrawl.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "special-rules/preview.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". Only "
+              },
+              {
+                "insert": "accounts/transactions/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " is a folder. "
+              },
+              {
+                "insert": "App.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " lazy-loads 12 routes and imports 8 eagerly."
+              }
+            ],
+            [
+              {
+                "insert": "<route>/page.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", lazy-loaded"
+              }
+            ]
+          ],
+          [
+            "Budget",
+            [
+              {
+                "insert": "review/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " root holds 24 files: 4 routes, 15 modules, 5 stylesheets"
+              }
+            ],
+            [
+              {
+                "insert": "page.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "_components/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "_lib/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", sub-route folders"
+              }
+            ]
+          ],
+          [
+            "Budget",
+            [
+              {
+                "insert": "Relative paths only. 68 imports climb more than two levels, up to nine ("
+              },
+              {
+                "insert": "OrderItem.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " to "
+              },
+              {
+                "insert": "shared/CategoryIcon",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ")."
+              }
+            ],
+            [
+              {
+                "insert": "@/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " alias"
+              }
+            ]
+          ],
+          [
+            "Budget",
+            [
+              {
+                "insert": "33 "
+              },
+              {
+                "insert": "bun:test",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " files in "
+              },
+              {
+                "insert": "apps/web/tests/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", outside the tsconfig "
+              },
+              {
+                "insert": "include",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Next to the file they test"
+          ],
+          [
+            "Budget",
+            [
+              {
+                "insert": "GroupedSelector",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " sits at "
+              },
+              {
+                "insert": "review/_components/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " with one renderer. "
+              },
+              {
+                "insert": "OrderItem",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " sits beside "
+              },
+              {
+                "insert": "OrderReceipt",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", its only consumer, and also defines "
+              },
+              {
+                "insert": "ProductImage",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ],
+            [
+              {
+                "insert": "Under the one consumer. One component per "
+              },
+              {
+                "insert": "index.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            "Ops console",
+            [
+              {
+                "insert": "Parents use "
+              },
+              {
+                "insert": "<Name>/index.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " ("
+              },
+              {
+                "insert": "TraceDetails/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "SwimLaneTimeline/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "). Leaves are flat ("
+              },
+              {
+                "insert": "TraceDetails/_components/JsonView.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ")."
+              }
+            ],
+            "Leaves are folders too"
+          ],
+          [
+            "Ops console",
+            [
+              {
+                "insert": "Lane.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " exports "
+              },
+              {
+                "insert": "LaneHeader",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". "
+              },
+              {
+                "insert": "TimelineRuler.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "EventRow.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " define two components each."
+              }
+            ],
+            "One component per folder, same name"
+          ],
+          [
+            "Ops console",
+            [
+              {
+                "insert": "Constants in "
+              },
+              {
+                "insert": "SwimLaneTimeline/types.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " ("
+              },
+              {
+                "insert": "LANES",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "PIXELS_PER_SECOND",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "). "
+              },
+              {
+                "insert": "ColumnWidthSelector.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " exports "
+              },
+              {
+                "insert": "COLUMN_WIDTH_CLASSES",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " for "
+              },
+              {
+                "insert": "page.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ],
+            [
+              {
+                "insert": "constants.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " at the nearest common ancestor"
+              }
+            ]
+          ],
+          [
+            "Ops console",
+            [
+              {
+                "insert": "Category folder "
+              },
+              {
+                "insert": "[callUuid]/_components/timelines/",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "PascalCase component folders only"
+          ],
+          [
+            "Ops console",
+            [
+              {
+                "insert": "(tracing)/_hooks/useTraceEvents.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (imported as "
+              },
+              {
+                "insert": "@/app/(tracing)/_hooks/useTraceEvents",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ") beside "
+              },
+              {
+                "insert": "(tracing)/_lib/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (imported as "
+              },
+              {
+                "insert": "@/tracing/*",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ")"
+              }
+            ],
+            [
+              {
+                "insert": "Hooks in "
+              },
+              {
+                "insert": "_lib/",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Ops console",
+            [
+              {
+                "insert": "'use client'",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " in 21 of 23 "
+              },
+              {
+                "insert": ".tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " files in "
+              },
+              {
+                "insert": "(tracing)",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", both pages included. 17 use double quotes and 4 use single quotes."
+              }
+            ],
+            "Only where needed"
+          ],
+          [
+            "Ops console",
+            [
+              {
+                "insert": "TraceDetails/_components/CopyButton.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "PromptView.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " are one-line re-exports of root "
+              },
+              {
+                "insert": "components/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". App-wide code sits in root "
+              },
+              {
+                "insert": "components/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "lib/utils.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ],
+            [
+              {
+                "insert": "Import from "
+              },
+              {
+                "insert": "shared/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " directly"
+              }
+            ]
+          ],
+          [
+            "Ops console",
+            [
+              {
+                "insert": "Never rendered: "
+              },
+              {
+                "insert": "timelines/TraceTimeline.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (480 lines), "
+              },
+              {
+                "insert": "TraceLevelSlider.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "TimelineGranularitySlider.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", the "
+              },
+              {
+                "insert": "ColumnWidthSelector",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " component"
+              }
+            ],
+            "Delete"
+          ],
+          [
+            "Ops console",
+            [
+              {
+                "insert": "(evaluations)",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " keeps kebab-case component files beside "
+              },
+              {
+                "insert": "page.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ": "
+              },
+              {
+                "insert": "runs/filter-bar.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "runs/[id]/run-detail-body.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (1,282 lines)"
+              }
+            ],
+            [
+              {
+                "insert": "_components/<Name>/index.tsx",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", split"
+              }
+            ]
+          ],
+          [
+            "Personal site",
+            [
+              {
+                "insert": "Flat "
+              },
+              {
+                "insert": "_components/<Name>.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". "
+              },
+              {
+                "insert": "right-sidebar/_components/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " holds 13 components."
+              }
+            ],
+            [
+              {
+                "insert": "<Name>/index.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". Group past about 7."
+              }
+            ]
+          ],
+          [
+            "Personal site",
+            [
+              {
+                "insert": "ui/Controls.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (542 lines) renders both sidebars, then finds elements by id. "
+              },
+              {
+                "insert": "#instance-count",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " is written in "
+              },
+              {
+                "insert": "StatsBar.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ],
+            [
+              {
+                "insert": "mount<Name>",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " in the component's folder"
+              }
+            ]
+          ],
+          [
+            "Personal site",
+            [
+              {
+                "insert": "ui/landing/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "ui/logo-lab/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " have no "
+              },
+              {
+                "insert": "_components/",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and build DOM with "
+              },
+              {
+                "insert": "document.createElement",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Same folder rules"
+          ],
+          [
+            "Personal site",
+            [
+              {
+                "insert": "PascalCase non-component files: "
+              },
+              {
+                "insert": "ui/Controls.ts",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "ui/Presets.ts",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "kebab-case"
+          ]
+        ],
+        "title": "Reference apps against the standard"
+      },
+      "children": []
+    },
+    "h-migrate": {
+      "id": "h-migrate",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Migrate a Flat App"
+        }
+      ],
+      "children": []
+    },
+    "mi-lead": {
+      "id": "mi-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Move one slice per commit. Before each commit, run the typecheck and the tests."
+        }
+      ],
+      "children": []
+    },
+    "h-mi-prep": {
+      "id": "h-mi-prep",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Prepare the App"
+        }
+      ],
+      "children": []
+    },
+    "mi-1": {
+      "id": "mi-1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Add the "
+        },
+        {
+          "insert": "@/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " alias, as Imports shows."
+        }
+      ],
+      "children": [
+        "mi-1a"
+      ]
+    },
+    "mi-1a": {
+      "id": "mi-1a",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Rewrite imports of "
+        },
+        {
+          "insert": "src/shared",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and imports that climb more than two levels to "
+        },
+        {
+          "insert": "@/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Check 2 in Checklist lists them."
+        }
+      ],
+      "children": []
+    },
+    "mi-2": {
+      "id": "mi-2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Move each shared component with "
+        },
+        {
+          "insert": "git mv src/shared/<Name>.tsx src/shared/_components/<Name>/index.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": [
+        "mi-2a",
+        "mi-2b"
+      ]
+    },
+    "mi-2a": {
+      "id": "mi-2a",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Move its stylesheet to "
+        },
+        {
+          "insert": "styles.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " beside it."
+        }
+      ],
+      "children": []
+    },
+    "mi-2b": {
+      "id": "mi-2b",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Point importers at the new path. Run "
+        },
+        {
+          "insert": "perl -pi -e \"s#@/shared/([A-Z][A-Za-z0-9]*)(['\\\"])#@/shared/_components/\\1\\2#g\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " over "
+        },
+        {
+          "insert": "src",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-mi-slice": {
+      "id": "h-mi-slice",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Restructure One Slice"
+        }
+      ],
+      "children": []
+    },
+    "mi-3": {
+      "id": "mi-3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "In one slice, make every component a folder with an "
+        },
+        {
+          "insert": "index.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Script A does this."
+        }
+      ],
+      "children": []
+    },
+    "mi-4": {
+      "id": "mi-4",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Switch the slice's components to named exports with script B. tsc lists every import to fix."
+        }
+      ],
+      "children": []
+    },
+    "mi-5": {
+      "id": "mi-5",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Colocate the slice's files."
+        }
+      ],
+      "children": [
+        "mi-5a",
+        "mi-5b",
+        "mi-5c"
+      ]
+    },
+    "mi-5a": {
+      "id": "mi-5a",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Each component's stylesheet becomes its "
+        },
+        {
+          "insert": "styles.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "mi-5b": {
+      "id": "mi-5b",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Hook files become "
+        },
+        {
+          "insert": "useX.ts",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", with script C."
+        }
+      ],
+      "children": []
+    },
+    "mi-5c": {
+      "id": "mi-5c",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Tests move next to the file they test."
+        }
+      ],
+      "children": []
+    },
+    "mi-6": {
+      "id": "mi-6",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Turn sub-route files into folders, such as with "
+        },
+        {
+          "insert": "mkdir -p src/pages/review/results && git mv src/pages/review/results.tsx src/pages/review/results/page.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": [
+        "mi-6a",
+        "mi-6b"
+      ]
+    },
+    "mi-6a": {
+      "id": "mi-6a",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Update the "
+        },
+        {
+          "insert": "lazy()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " import in "
+        },
+        {
+          "insert": "App.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "mi-6b": {
+      "id": "mi-6b",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Add one "
+        },
+        {
+          "insert": "../",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " to the moved file's relative imports with the "
+        },
+        {
+          "insert": "perl",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " line from script A."
+        }
+      ],
+      "children": []
+    },
+    "h-mi-finish": {
+      "id": "h-mi-finish",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Share and Commit"
+        }
+      ],
+      "children": []
+    },
+    "mi-7": {
+      "id": "mi-7",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Move modules that other slices import into "
+        },
+        {
+          "insert": "src/shared/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or a workspace package."
+        }
+      ],
+      "children": []
+    },
+    "mi-8": {
+      "id": "mi-8",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Typecheck, test and commit. Then start the next slice."
+        }
+      ],
+      "children": []
+    },
+    "h-scripts": {
+      "id": "h-scripts",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Migration Scripts"
+        }
+      ],
+      "children": []
+    },
+    "sc-a": {
+      "id": "sc-a",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Script A turns "
+        },
+        {
+          "insert": "<Name>/<Name>.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and flat "
+        },
+        {
+          "insert": "_components/<Name>.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " into "
+        },
+        {
+          "insert": "<Name>/index.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "sc-a-code": {
+      "id": "sc-a-code",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "slice=src/pages/review\n# <Name>/<Name>.tsx -> <Name>/index.tsx, then './_components/ReviewCard/ReviewCard' -> './_components/ReviewCard'\nfind \"$slice\" -type f -name '*.tsx' | while read -r f; do\n  dir=$(dirname \"$f\")\n  if [ \"$(basename \"$dir\")\" = \"$(basename \"$f\" .tsx)\" ]; then git mv \"$f\" \"$dir/index.tsx\"; fi\ndone\nfind \"$slice\" tests -type f \\( -name '*.ts' -o -name '*.tsx' \\) -exec perl -pi -e \"s#/([A-Z][A-Za-z0-9]+)/\\1(['\\\"])#/\\1\\2#g\" {} +\n# Flat _components/<Name>.tsx -> _components/<Name>/index.tsx. Importers keep working unchanged.\nfind \"$slice\" -type f -path '*/_components/*' -name '[A-Z]*.tsx' | while read -r f; do\n  [ \"$(basename \"$(dirname \"$f\")\")\" = _components ] || continue\n  mkdir -p \"${f%.tsx}\" && git mv \"$f\" \"${f%.tsx}/index.tsx\"\n  # The file is one level deeper now: add one ../ to each of its relative specifiers\n  perl -pi -e 's#([\"\\x27])\\.\\./#$1../../#g; s#([\"\\x27])\\./#$1../#g' \"${f%.tsx}/index.tsx\"\ndone"
+        }
+      ],
+      "children": []
+    },
+    "sc-b": {
+      "id": "sc-b",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Script B switches components to named exports. It uses the "
+        },
+        {
+          "insert": "slice",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " variable from script A, and "
+        },
+        {
+          "insert": "page.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " files keep their default export."
+        }
+      ],
+      "children": []
+    },
+    "sc-b-code": {
+      "id": "sc-b-code",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "find \"$slice\" -path '*/_components/*' -name index.tsx -exec perl -ni -e \\\n  'next if /^export default [A-Z]\\w*;\\s*$/; s/^export default function ([A-Z]\\w*)/export function $1/; print' {} +\nnpx tsc --noEmit   # each \"has no default export\" error is an import to rewrite as { Name }"
+        }
+      ],
+      "children": []
+    },
+    "sc-c": {
+      "id": "sc-c",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Script C renames hook files for the whole app in one commit, because slices import shared hooks too."
+        }
+      ],
+      "children": []
+    },
+    "sc-c-code": {
+      "id": "sc-c-code",
+      "type": "code",
+      "props": {
+        "language": "sh"
+      },
+      "text": [
+        {
+          "insert": "find src -name 'use-*.ts' | while read -r f; do\n  git mv \"$f\" \"$(dirname \"$f\")/$(basename \"$f\" .ts | perl -pe 's/-(\\w)/\\u$1/g').ts\"\ndone\nfind src tests -type f \\( -name '*.ts' -o -name '*.tsx' \\) -exec perl -pi -e \\\n  's#/use-([a-z0-9-]+)([\"\\x27])#\"/use\" . join(\"\", map { ucfirst } split /-/, $1) . $2#ge' {} +"
+        }
+      ],
+      "children": []
+    },
+    "h-notes": {
+      "id": "h-notes",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Notes for the Budget App"
+        }
+      ],
+      "children": []
+    },
+    "nb-lead": {
+      "id": "nb-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "apps/web/tsconfig.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " includes only "
+        },
+        {
+          "insert": "src",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and sets "
+        },
+        {
+          "insert": "\"types\": [\"vite/client\"]",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". tsc does not see "
+        },
+        {
+          "insert": "tests/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " today, so run "
+        },
+        {
+          "insert": "bun test",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " after every script."
+        }
+      ],
+      "children": []
+    },
+    "nb-1": {
+      "id": "nb-1",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Colocated tests import "
+        },
+        {
+          "insert": "bun:test",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". In the commit that moves the first test, add "
+        },
+        {
+          "insert": "@types/bun",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " to the app and "
+        },
+        {
+          "insert": "\"bun\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " to "
+        },
+        {
+          "insert": "types",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "nb-2": {
+      "id": "nb-2",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "Three test files use the "
+        },
+        {
+          "insert": "mock.module('../src/…')",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " call of "
+        },
+        {
+          "insert": "bun:test",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". tsc does not check those strings, so update them when their target moves."
+        }
+      ],
+      "children": []
+    },
+    "nb-3": {
+      "id": "nb-3",
+      "type": "list-item",
+      "props": {
+        "ordered": false
+      },
+      "text": [
+        {
+          "insert": "The root "
+        },
+        {
+          "insert": "test:classification",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " script lists test paths under "
+        },
+        {
+          "insert": "apps/web/tests/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Update it when those tests move."
+        }
+      ],
+      "children": []
+    }
+  }
+}
