@@ -228,10 +228,10 @@
                 }
               },
               {
-                "insert": " and "
+                "insert": ", including the token table in "
               },
               {
-                "insert": "guide/tokens.md",
+                "insert": "dist/guide/tokens.md",
                 "attributes": {
                   "code": true
                 }
@@ -520,9 +520,9 @@
                 "insert": "Packs a tgz for a vendored app. "
               },
               {
-                "insert": "guide/consume.md",
+                "insert": "Consume the Package",
                 "attributes": {
-                  "code": true
+                  "link": "30-guide/40-consume"
                 }
               },
               {
@@ -1585,12 +1585,11 @@
           "insert": " entry marks required passes. "
         },
         {
-          "insert": "guide/migrate.md",
+          "insert": "Migrate an App",
           "attributes": {
-            "code": true,
             "reference": {
-              "kind": "source",
-              "path": "guide/migrate.md"
+              "kind": "doc",
+              "path": "30-guide/50-migrate"
             }
           }
         },

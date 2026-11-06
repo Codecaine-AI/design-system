@@ -1,0 +1,2988 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-28dec6e1a7be2b804835bace99a90c97",
+  "title": "Tokens",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "intro",
+        "h-tiers",
+        "tiers-lead",
+        "tiers-table",
+        "tiers-1",
+        "tiers-2",
+        "tiers-3",
+        "h-naming",
+        "naming-lead",
+        "h-theme-vars",
+        "themevars-lead",
+        "themevars-table",
+        "themevars-1",
+        "themevars-2",
+        "themevars-3",
+        "themevars-4",
+        "h-format",
+        "format-lead",
+        "format-table",
+        "format-1",
+        "format-3",
+        "h-rules",
+        "rules-lead",
+        "rules-accent",
+        "rules-hue",
+        "rules-notion",
+        "h-solid",
+        "solid-lead",
+        "solid-1",
+        "solid-2",
+        "solid-3",
+        "h-hardcode",
+        "hard-lead",
+        "hard-1",
+        "hard-2",
+        "hard-3",
+        "hard-4",
+        "h-charts",
+        "charts-lead",
+        "charts-1",
+        "charts-2",
+        "charts-3",
+        "charts-4",
+        "charts-canvas",
+        "charts-test",
+        "h-change",
+        "change-lead",
+        "change-1",
+        "change-2",
+        "change-3",
+        "change-4",
+        "change-5",
+        "change-check",
+        "linked-lead",
+        "linked-1",
+        "linked-2",
+        "h-theming",
+        "theming-lead",
+        "th-1",
+        "th-2",
+        "th-3",
+        "h-tw",
+        "tw-lead",
+        "tw-1",
+        "tw-2",
+        "tw-3",
+        "h-darkfirst",
+        "df-lead",
+        "df-1",
+        "df-2",
+        "df-3",
+        "df-4",
+        "h-imports",
+        "fonts",
+        "host-lead",
+        "host-1",
+        "host-2",
+        "host-3",
+        "consume",
+        "h-add",
+        "add",
+        "h-ref",
+        "ref-lead",
+        "ref-1",
+        "ref-2"
+      ]
+    },
+    "intro": {
+      "id": "intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Design tokens are the named values every app styles with: colors, spacing, radius, type, motion, z-index and layout sizes. "
+        },
+        {
+          "insert": "tokens/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is the only place you write a value. "
+        },
+        {
+          "insert": "bun run build",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " compiles it into CSS custom properties, a Tailwind v4 theme, JS and JSON."
+        }
+      ],
+      "children": []
+    },
+    "h-tiers": {
+      "id": "h-tiers",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Tiers"
+        }
+      ],
+      "children": []
+    },
+    "tiers-lead": {
+      "id": "tiers-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Tokens sit in three tiers and one compat group. Each tier has its own files and its own kind of value."
+        }
+      ],
+      "children": []
+    },
+    "tiers-table": {
+      "id": "tiers-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Tier",
+          "Where",
+          "What it holds"
+        ],
+        "rows": [
+          [
+            "1. Base scales",
+            [
+              {
+                "insert": "tokens/base/*.tokens.json",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Theme-independent scales: "
+              },
+              {
+                "insert": "space",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "control.height",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "radius",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "border.width",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "focus",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "blur",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "font",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "line-height",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "letter-spacing",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "motion",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "z",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "layout",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " (lanes and app-shell sizes)."
+              }
+            ]
+          ],
+          [
+            "2. Theme colors",
+            [
+              {
+                "insert": "tokens/themes/<theme>.tokens.json",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Literal values per theme: the neutral roles ("
+              },
+              {
+                "insert": "color.surface",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "color.text",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "color.border",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "color.fill.chip",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "color.accent",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "color.link",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "), the hue roster ("
+              },
+              {
+                "insert": "color.<hue>.*",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "color.amber.text",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ") and the chart series ("
+              },
+              {
+                "insert": "color.chart.series.*",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ")."
+              }
+            ]
+          ],
+          [
+            "3. Derived roles",
+            "The same theme files",
+            [
+              {
+                "insert": "Aliases and mixes over tier 2: "
+              },
+              {
+                "insert": "color.status",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "color.category",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "color.chart.diverging",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "color.diff",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "color.selection",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "color.focus-ring",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "color.fill.*",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "color.code",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "color.syntax",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "color.annotation",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "color.glass",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "shadow",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            "Compat",
+            "The same theme files",
+            [
+              {
+                "insert": "color.notion.*",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", docs-system's Notion palette ("
+              },
+              {
+                "insert": "--color-*",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "). CSS variables only, no Tailwind utilities."
+              }
+            ]
+          ]
+        ],
+        "title": "Token tiers"
+      },
+      "children": []
+    },
+    "tiers-1": {
+      "id": "tiers-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Both theme files hold exactly the same paths. The build fails if they differ."
+        }
+      ],
+      "children": []
+    },
+    "tiers-2": {
+      "id": "tiers-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The build also fails on any other "
+        },
+        {
+          "insert": ".json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " file under "
+        },
+        {
+          "insert": "tokens/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "tiers-3": {
+      "id": "tiers-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The build fails on a key repeated inside one JSON object, because "
+        },
+        {
+          "insert": "JSON.parse",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " would silently drop it."
+        }
+      ],
+      "children": []
+    },
+    "h-naming": {
+      "id": "h-naming",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Naming"
+        }
+      ],
+      "children": []
+    },
+    "naming-lead": {
+      "id": "naming-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A token path is dotted segments of lowercase letters, digits and single hyphens, such as "
+        },
+        {
+          "insert": "color.surface.page",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "space.1-5",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The CSS variable is "
+        },
+        {
+          "insert": "--ds-",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " plus the path joined with "
+        },
+        {
+          "insert": "-",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", so "
+        },
+        {
+          "insert": "color.surface.page",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " becomes "
+        },
+        {
+          "insert": "--ds-color-surface-page",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Two paths that produce the same variable fail the build."
+        }
+      ],
+      "children": []
+    },
+    "h-theme-vars": {
+      "id": "h-theme-vars",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Theme Variables"
+        }
+      ],
+      "children": []
+    },
+    "themevars-lead": {
+      "id": "themevars-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Every theme token produces three CSS variables. One follows the active theme, and two are pinned to one theme."
+        }
+      ],
+      "children": []
+    },
+    "themevars-table": {
+      "id": "themevars-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Variable",
+          "Theme"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "--ds-<path>",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "The active theme, set by "
+              },
+              {
+                "insert": "data-theme",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " or the "
+              },
+              {
+                "insert": ".dark",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " class"
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "--ds-light-<path>",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Light, pinned"
+          ],
+          [
+            [
+              {
+                "insert": "--ds-dark-<path>",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Dark, pinned"
+          ]
+        ],
+        "title": "Variables per theme token"
+      },
+      "children": []
+    },
+    "themevars-1": {
+      "id": "themevars-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Use a pinned variable only where a region must render one theme whatever the page does, for example a dark code panel on a light page."
+        }
+      ],
+      "children": []
+    },
+    "themevars-2": {
+      "id": "themevars-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "{path}",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in a value is an alias. The build emits it as "
+        },
+        {
+          "insert": "var()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " between pinned variables, as in this example."
+        }
+      ],
+      "children": [
+        "themevars-2-code"
+      ]
+    },
+    "themevars-2-code": {
+      "id": "themevars-2-code",
+      "type": "code",
+      "props": {
+        "language": "css"
+      },
+      "text": [
+        {
+          "insert": "--ds-light-color-fill-hover: color-mix(\n  in srgb,\n  var(--ds-light-color-text-ink) 6%,\n  var(--ds-light-color-surface-panel)\n);"
+        }
+      ],
+      "children": []
+    },
+    "themevars-3": {
+      "id": "themevars-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "To restyle at runtime, override the pinned variable on "
+        },
+        {
+          "insert": ":root",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", such as "
+        },
+        {
+          "insert": "--ds-light-color-surface-panel",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Everything derived from it follows."
+        }
+      ],
+      "children": []
+    },
+    "themevars-4": {
+      "id": "themevars-4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "An override of an unqualified "
+        },
+        {
+          "insert": "--ds-*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " variable changes that one variable only."
+        }
+      ],
+      "children": []
+    },
+    "h-format": {
+      "id": "h-format",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Value Format"
+        }
+      ],
+      "children": []
+    },
+    "format-lead": {
+      "id": "format-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Every token has "
+        },
+        {
+          "insert": "$type",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "$value",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Add a "
+        },
+        {
+          "insert": "$description",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " that says where the token is used. Write each "
+        },
+        {
+          "insert": "$value",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in the format for its kind."
+        }
+      ],
+      "children": []
+    },
+    "format-table": {
+      "id": "format-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Value",
+          "Format"
+        ],
+        "rows": [
+          [
+            "Color",
+            [
+              {
+                "insert": "Lowercase "
+              },
+              {
+                "insert": "#rrggbb",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " or "
+              },
+              {
+                "insert": "#rrggbbaa",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Derived color",
+            [
+              {
+                "insert": "color-mix(in srgb, {color.text.ink} 6%, {color.surface.panel})",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Dimension",
+            [
+              {
+                "insert": "A number with a unit, such as "
+              },
+              {
+                "insert": "4px",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "13.5px",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "60ch",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " or "
+              },
+              {
+                "insert": "2.25rem",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Duration",
+            [
+              {
+                "insert": "A value in "
+              },
+              {
+                "insert": "ms",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Easing",
+            [
+              {
+                "insert": "A CSS easing, such as "
+              },
+              {
+                "insert": "ease",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " or "
+              },
+              {
+                "insert": "cubic-bezier(0.32, 0.72, 0, 1)",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ]
+          ],
+          [
+            "Weight, line-height ratio or z-index",
+            "A JSON number"
+          ],
+          [
+            "Shadow",
+            [
+              {
+                "insert": "A CSS "
+              },
+              {
+                "insert": "box-shadow",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " value"
+              }
+            ]
+          ]
+        ],
+        "title": "Value formats"
+      },
+      "children": []
+    },
+    "format-1": {
+      "id": "format-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Write a color as "
+        },
+        {
+          "insert": "rgba()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " only when the alpha is not exact in 8 bits, such as 0.1, 0.5 or 0.85."
+        }
+      ],
+      "children": [
+        "format-1a",
+        "format-2"
+      ]
+    },
+    "format-1a": {
+      "id": "format-1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The computed color then stays bit-identical."
+        }
+      ],
+      "children": []
+    },
+    "format-2": {
+      "id": "format-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The build rejects "
+        },
+        {
+          "insert": "rgba()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with an exact alpha, such as 0.2 or 0.4, and suggests the hex."
+        }
+      ],
+      "children": []
+    },
+    "format-3": {
+      "id": "format-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A shadow is "
+        },
+        {
+          "insert": "none",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or comma-separated layers."
+        }
+      ],
+      "children": [
+        "format-3a",
+        "format-3b",
+        "format-3c"
+      ]
+    },
+    "format-3a": {
+      "id": "format-3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each layer has 2 to 4 adjacent lengths: x, y, blur and spread."
+        }
+      ],
+      "children": []
+    },
+    "format-3b": {
+      "id": "format-3b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The blur is not negative."
+        }
+      ],
+      "children": []
+    },
+    "format-3c": {
+      "id": "format-3c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A layer has at most one color and an optional "
+        },
+        {
+          "insert": "inset",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-rules": {
+      "id": "h-rules",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules"
+        }
+      ],
+      "children": []
+    },
+    "rules-lead": {
+      "id": "rules-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Apps style with semantic roles: "
+        },
+        {
+          "insert": "color.surface.*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "color.text.*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "color.border.*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "color.fill.*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "color.accent",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "color.link",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "color.focus-ring",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "color.selection",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "color.status.*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "color.diff.*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "color.code.*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "color.syntax.*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "rules-accent": {
+      "id": "rules-accent",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "color.accent",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is for fills, borders and focus rings. Text uses "
+        },
+        {
+          "insert": "color.link",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", because the light accent on the page is 4.34:1, under AA."
+        }
+      ],
+      "children": []
+    },
+    "rules-hue": {
+      "id": "rules-hue",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Hue tokens ("
+        },
+        {
+          "insert": "color.blue.*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and the rest) are for categorical color only: tags, series, block families and depth cycles. When order matters, use "
+        },
+        {
+          "insert": "color.category.1",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " to "
+        },
+        {
+          "insert": "color.category.6",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "rules-notion": {
+      "id": "rules-notion",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "color.notion.*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is compat for docs-system. New code never uses it."
+        }
+      ],
+      "children": []
+    },
+    "h-solid": {
+      "id": "h-solid",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Glyphs on Solid Tiles"
+        }
+      ],
+      "children": []
+    },
+    "solid-lead": {
+      "id": "solid-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A glyph on a hue or status "
+        },
+        {
+          "insert": "solid",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " uses that tile's "
+        },
+        {
+          "insert": "on-solid",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " token, such as "
+        },
+        {
+          "insert": "color.yellow.on-solid",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "color.status.warning.on-solid",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "solid-1": {
+      "id": "solid-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each "
+        },
+        {
+          "insert": "on-solid",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " value is white or ink, whichever meets 4.5:1 on that solid."
+        }
+      ],
+      "children": []
+    },
+    "solid-2": {
+      "id": "solid-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "color.text.on-solid",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " fails on the light gray, yellow, orange and red solids."
+        }
+      ],
+      "children": []
+    },
+    "solid-3": {
+      "id": "solid-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Light red reaches 4.26:1 with white and 3.87:1 with ink, so its tiles carry icons and large text only."
+        }
+      ],
+      "children": []
+    },
+    "h-hardcode": {
+      "id": "h-hardcode",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "No Hard-Coded Values"
+        }
+      ],
+      "children": []
+    },
+    "hard-lead": {
+      "id": "hard-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Never hard-code a color, size, radius, font, shadow, duration or z-index. If no token fits, add one to "
+        },
+        {
+          "insert": "tokens/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "hard-1": {
+      "id": "hard-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "In Tailwind, the rule includes Tailwind's own scales, such as "
+        },
+        {
+          "insert": "bg-red-500",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "text-sm",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "shadow-md",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". "
+        },
+        {
+          "insert": "tailwind-strict.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " removes them."
+        }
+      ],
+      "children": []
+    },
+    "hard-2": {
+      "id": "hard-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Add or change tokens only in "
+        },
+        {
+          "insert": "tokens/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Never edit "
+        },
+        {
+          "insert": "dist/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "hard-3": {
+      "id": "hard-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Component-specific knobs, such as a callout's padding or a table's row rule, stay in the app. The app builds them from these tokens."
+        }
+      ],
+      "children": []
+    },
+    "hard-4": {
+      "id": "hard-4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Add a token to "
+        },
+        {
+          "insert": "tokens/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " only when two apps need the value, or when the value is part of the shared look."
+        }
+      ],
+      "children": []
+    },
+    "h-charts": {
+      "id": "h-charts",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Chart Colors"
+        }
+      ],
+      "children": []
+    },
+    "charts-lead": {
+      "id": "charts-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Charts use the "
+        },
+        {
+          "insert": "color.chart.*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " tokens."
+        }
+      ],
+      "children": []
+    },
+    "charts-1": {
+      "id": "charts-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Assign "
+        },
+        {
+          "insert": "color.chart.series.1",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": ".2",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and onward in order, and never cycle. A ninth series folds into \"Other\"."
+        }
+      ],
+      "children": []
+    },
+    "charts-2": {
+      "id": "charts-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Scatter and small-multiple charts use at most three series."
+        }
+      ],
+      "children": []
+    },
+    "charts-3": {
+      "id": "charts-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Polarity, such as inflow and outflow or gain and loss, uses "
+        },
+        {
+          "insert": "color.chart.diverging.*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "charts-4": {
+      "id": "charts-4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Labels, values and legends use text tokens, never the series color."
+        }
+      ],
+      "children": []
+    },
+    "charts-canvas": {
+      "id": "charts-canvas",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "ECharts and canvas cannot read CSS variables. Take the values from "
+        },
+        {
+          "insert": "flat[theme]",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in the JS module, or from "
+        },
+        {
+          "insert": "getComputedStyle",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Rebuild the chart options when the theme changes. SVG can use "
+        },
+        {
+          "insert": "var(--ds-color-chart-series-1)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " directly."
+        }
+      ],
+      "children": []
+    },
+    "charts-test": {
+      "id": "charts-test",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "test/contrast.test.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "test/contrast.test.ts"
+            }
+          }
+        },
+        {
+          "insert": " checks the palette in both themes: lightness band, chroma, color-vision separation of neighbors and 3:1 on page and panel. The 3:1 check covers page and panel only. On "
+        },
+        {
+          "insert": "color.surface.sunken",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", light series 2, 4, 5 and 8 fall to 2.84 to 2.88:1, so a chart sits on page or panel, never on a sunken well."
+        }
+      ],
+      "children": []
+    },
+    "h-change": {
+      "id": "h-change",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Change a Token"
+        }
+      ],
+      "children": []
+    },
+    "change-lead": {
+      "id": "change-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "You change a token in "
+        },
+        {
+          "insert": "tokens/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", rebuild "
+        },
+        {
+          "insert": "dist/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and commit both together."
+        }
+      ],
+      "children": []
+    },
+    "change-1": {
+      "id": "change-1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Edit the value in "
+        },
+        {
+          "insert": "tokens/base/*.tokens.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or for a color, in both "
+        },
+        {
+          "insert": "tokens/themes/*.tokens.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " files."
+        }
+      ],
+      "children": []
+    },
+    "change-2": {
+      "id": "change-2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run "
+        },
+        {
+          "insert": "bun run build",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". It validates every file, then rewrites "
+        },
+        {
+          "insert": "dist/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and the token reference in "
+        },
+        {
+          "insert": "dist/guide/tokens.md",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "change-3": {
+      "id": "change-3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run "
+        },
+        {
+          "insert": "bun run test",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "change-4": {
+      "id": "change-4",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Open "
+        },
+        {
+          "insert": "dist/guide/index.html",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and check the change in light and dark."
+        }
+      ],
+      "children": []
+    },
+    "change-5": {
+      "id": "change-5",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Commit "
+        },
+        {
+          "insert": "tokens/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "dist/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " together."
+        }
+      ],
+      "children": []
+    },
+    "change-check": {
+      "id": "change-check",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "bun run check",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " exits 1 and lists the stale files when "
+        },
+        {
+          "insert": "dist/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " no longer matches "
+        },
+        {
+          "insert": "tokens/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "linked-lead": {
+      "id": "linked-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A linked app reads the new "
+        },
+        {
+          "insert": "dist/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " directly, so nothing in the app needs editing. An app is linked through "
+        },
+        {
+          "insert": "workspace:*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "bun link",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or npm "
+        },
+        {
+          "insert": "file:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "linked-1": {
+      "id": "linked-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The change shows on the app's next reload or build."
+        }
+      ],
+      "children": []
+    },
+    "linked-2": {
+      "id": "linked-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A bun "
+        },
+        {
+          "insert": "file:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " snapshot misses new files until "
+        },
+        {
+          "insert": "bun install",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " runs again."
+        }
+      ],
+      "children": []
+    },
+    "h-theming": {
+      "id": "h-theming",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Theming"
+        }
+      ],
+      "children": []
+    },
+    "theming-lead": {
+      "id": "theming-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": ":root",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " gets the light theme. Set "
+        },
+        {
+          "insert": "data-theme=\"dark\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "class=\"dark\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on any element to switch it and everything inside it. "
+        },
+        {
+          "insert": "data-theme=\"light\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "class=\"light\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " switches a region back."
+        }
+      ],
+      "children": []
+    },
+    "th-1": {
+      "id": "th-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "tokens.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " declares custom properties, plus "
+        },
+        {
+          "insert": "color-scheme",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in each theme block. It sets no other property."
+        }
+      ],
+      "children": []
+    },
+    "th-2": {
+      "id": "th-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "An import of "
+        },
+        {
+          "insert": "tokens.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " changes only the root's "
+        },
+        {
+          "insert": "color-scheme",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", so scrollbars, form controls and the default canvas follow the active theme."
+        }
+      ],
+      "children": []
+    },
+    "th-3": {
+      "id": "th-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "--ds-light-*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "--ds-dark-*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " pin a value to one theme, for a region that must not follow the page."
+        }
+      ],
+      "children": []
+    },
+    "h-tw": {
+      "id": "h-tw",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Tailwind "
+        },
+        {
+          "insert": "dark:",
+          "attributes": {
+            "code": true
+          }
+        }
+      ],
+      "children": []
+    },
+    "tw-lead": {
+      "id": "tw-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "tailwind.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " redefines Tailwind's "
+        },
+        {
+          "insert": "dark:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " to the same switch: "
+        },
+        {
+          "insert": "data-theme=\"dark\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": ".dark",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on the element or an ancestor, not the OS setting."
+        }
+      ],
+      "children": []
+    },
+    "tw-1": {
+      "id": "tw-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "dark:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " still matches inside a light region nested in a dark one."
+        }
+      ],
+      "children": []
+    },
+    "tw-2": {
+      "id": "tw-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Style such a region with the token utilities, because they follow the nearest theme."
+        }
+      ],
+      "children": []
+    },
+    "tw-3": {
+      "id": "tw-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Tailwind v3 apps use "
+        },
+        {
+          "insert": "presets: [require(\"@codecaine-ai/design-system/tailwind-v3-preset\")]",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The preset gives the utility names of "
+        },
+        {
+          "insert": "tailwind.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", without Tailwind's default palette and scales."
+        }
+      ],
+      "children": []
+    },
+    "h-darkfirst": {
+      "id": "h-darkfirst",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Dark-First Surfaces"
+        }
+      ],
+      "children": []
+    },
+    "df-lead": {
+      "id": "df-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "A dark-first surface is tool chrome that is dark by default. It imports "
+        },
+        {
+          "insert": "tokens-dark-first.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " instead of "
+        },
+        {
+          "insert": "tokens.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". That file has the same variables, with dark on "
+        },
+        {
+          "insert": ":root",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "df-1": {
+      "id": "df-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "data-theme=\"light\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " or "
+        },
+        {
+          "insert": "class=\"light\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " switches a region back to light."
+        }
+      ],
+      "children": []
+    },
+    "df-2": {
+      "id": "df-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "If the app uses Tailwind's "
+        },
+        {
+          "insert": "dark:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", set "
+        },
+        {
+          "insert": "data-theme=\"dark\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on "
+        },
+        {
+          "insert": "<html>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " too. "
+        },
+        {
+          "insert": "dark:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " matches the attribute, not the default."
+        }
+      ],
+      "children": []
+    },
+    "df-3": {
+      "id": "df-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "dark:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " still matches inside a light region, because the dark "
+        },
+        {
+          "insert": "<html>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is still its ancestor."
+        }
+      ],
+      "children": [
+        "df-3a",
+        "df-3b",
+        "df-3c"
+      ]
+    },
+    "df-3a": {
+      "id": "df-3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A token utility under "
+        },
+        {
+          "insert": "dark:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", such as "
+        },
+        {
+          "insert": "dark:bg-panel",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", is harmless. Its "
+        },
+        {
+          "insert": "var(--ds-*)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " value follows the nearest theme."
+        }
+      ],
+      "children": []
+    },
+    "df-3b": {
+      "id": "df-3b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A "
+        },
+        {
+          "insert": "dark:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " utility whose value is not a design-system variable also fires in the light region. Examples are "
+        },
+        {
+          "insert": "dark:hidden",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "dark:invert",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "dark:opacity-80",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "dark:bg-[#0d1117]",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "df-3c": {
+      "id": "df-3c",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Dark-first apps do not use those utilities inside a light region."
+        }
+      ],
+      "children": []
+    },
+    "df-4": {
+      "id": "df-4",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The shared "
+        },
+        {
+          "insert": "dark:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " variant stays as it is, because a change to it would change existing output."
+        }
+      ],
+      "children": []
+    },
+    "h-imports": {
+      "id": "h-imports",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Fonts and Host Contracts"
+        }
+      ],
+      "children": []
+    },
+    "fonts": {
+      "id": "fonts",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Import "
+        },
+        {
+          "insert": "fonts.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " before the tokens. It declares Inter and IBM Plex Mono from font files inside the package, byte-identical to the files of "
+        },
+        {
+          "insert": "@codecaine-ai/text-measure",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "host-lead": {
+      "id": "host-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Agent-viewer hosts (viewer-ui, viewer-shell and prompt-kit) also import "
+        },
+        {
+          "insert": "host-contract.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", or "
+        },
+        {
+          "insert": "host-contract-dark-first.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", after the tokens."
+        }
+      ],
+      "children": []
+    },
+    "host-1": {
+      "id": "host-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The host contract maps the unprefixed contract variables to these tokens. Examples are "
+        },
+        {
+          "insert": "--background",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "--trace-user",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "--status-info-fill",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "--editor-bg",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "host-2": {
+      "id": "host-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "It writes them in the format the libraries read, mostly RGB triplets for "
+        },
+        {
+          "insert": "rgb(var(--x) / <alpha>)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "host-3": {
+      "id": "host-3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The build writes the triplets as "
+        },
+        {
+          "insert": "--ds-light-rgb-<path>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "--ds-dark-rgb-<path>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "consume": {
+      "id": "consume",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Consume",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/40-consume"
+            }
+          }
+        },
+        {
+          "insert": " gives the wiring per app: workspace, link, npm "
+        },
+        {
+          "insert": "file:",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", vendored tgz and Vite settings."
+        }
+      ],
+      "children": []
+    },
+    "h-add": {
+      "id": "h-add",
+      "type": "heading",
+      "props": {
+        "level": 3
+      },
+      "text": [
+        {
+          "insert": "Add a Theme"
+        }
+      ],
+      "children": []
+    },
+    "add": {
+      "id": "add",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Light and dark are one shared theme for Codecaine and Lascari AI. To add a theme, add "
+        },
+        {
+          "insert": "tokens/themes/<name>.tokens.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with the same paths as the other theme files."
+        }
+      ],
+      "children": []
+    },
+    "h-ref": {
+      "id": "h-ref",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Reference"
+        }
+      ],
+      "children": []
+    },
+    "ref-lead": {
+      "id": "ref-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "bun run build",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " writes two references from "
+        },
+        {
+          "insert": "tokens/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "ref-1": {
+      "id": "ref-1",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "dist/guide/tokens.md",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "dist/guide/tokens.md"
+            }
+          }
+        },
+        {
+          "insert": " holds the token table and the Tailwind utility names."
+        }
+      ],
+      "children": []
+    },
+    "ref-2": {
+      "id": "ref-2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "dist/guide/index.html",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "dist/guide/index.html"
+            }
+          }
+        },
+        {
+          "insert": " is the rendered style guide."
+        }
+      ],
+      "children": []
+    }
+  }
+}

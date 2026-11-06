@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-f2d661f9fd6cfcfd11d5bb43802a518d",
+  "title": "Guide",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "intro",
+        "p-tokens",
+        "p-layout",
+        "p-code",
+        "p-consume",
+        "p-migrate"
+      ]
+    },
+    "intro": {
+      "id": "intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The Guide holds the rules that every app on "
+        },
+        {
+          "insert": "@codecaine-ai/design-system",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " follows: tokens, the app shell, and the code layout. It also covers how an app consumes the package, how to move an app onto it, and which apps use it today. Start at Tokens for a color or size question, and at Migrate an App to move an app."
+        }
+      ],
+      "children": []
+    },
+    "p-tokens": {
+      "id": "p-tokens",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Tokens",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/10-tokens"
+            }
+          }
+        },
+        {
+          "insert": " gives the token tiers, the naming and value rules, and how to change a token or add a theme."
+        }
+      ],
+      "children": []
+    },
+    "p-layout": {
+      "id": "p-layout",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "App Layout",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/20-layout"
+            }
+          }
+        },
+        {
+          "insert": " gives the app shell: sidebar, topbar, inspector, content lanes, and its behavior rules."
+        }
+      ],
+      "children": []
+    },
+    "p-code": {
+      "id": "p-code",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Code Structure",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/30-code-structure"
+            }
+          }
+        },
+        {
+          "insert": " gives the vertical-slice folder layout for UI code and how to move a flat app onto it."
+        }
+      ],
+      "children": []
+    },
+    "p-consume": {
+      "id": "p-consume",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Consume the Package",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/40-consume"
+            }
+          }
+        },
+        {
+          "insert": " gives each way to wire the package into an app, the load order, and the CSS, Tailwind and JS entry points."
+        }
+      ],
+      "children": []
+    },
+    "p-migrate": {
+      "id": "p-migrate",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Migrate an App",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/50-migrate"
+            }
+          }
+        },
+        {
+          "insert": " gives the 3 migration passes and the gates each pass must clear. "
+        },
+        {
+          "insert": "Ecosystem",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/60-ecosystem"
+            }
+          }
+        },
+        {
+          "insert": " lists the apps in scope and how a token change reaches each one."
+        }
+      ],
+      "children": []
+    }
+  }
+}

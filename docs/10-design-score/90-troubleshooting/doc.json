@@ -1416,13 +1416,7 @@
       },
       "text": [
         {
-          "insert": "Files Are Missing From "
-        },
-        {
-          "insert": "guide/screenshots",
-          "attributes": {
-            "code": true
-          }
+          "insert": "Files Are Missing From the Layout Screenshots"
         }
       ],
       "children": []
@@ -1442,13 +1436,25 @@
           "insert": " in the design-system worktree shows deleted PNG files under "
         },
         {
-          "insert": "guide/screenshots/",
+          "insert": "docs/30-guide/20-layout/assets/images/",
           "attributes": {
             "code": true
           }
         },
         {
-          "insert": "."
+          "insert": ", the screenshots of the "
+        },
+        {
+          "insert": "App Layout",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/20-layout"
+            }
+          }
+        },
+        {
+          "insert": " page."
         }
       ],
       "children": []
@@ -1515,7 +1521,7 @@
           "insert": "Restore the files with "
         },
         {
-          "insert": "git checkout -- guide/screenshots",
+          "insert": "git checkout -- docs/30-guide/20-layout/assets/images",
           "attributes": {
             "code": true
           }
@@ -1535,7 +1541,7 @@
           "insert": "Run "
         },
         {
-          "insert": "git status --short guide/",
+          "insert": "git status --short docs/",
           "attributes": {
             "code": true
           }

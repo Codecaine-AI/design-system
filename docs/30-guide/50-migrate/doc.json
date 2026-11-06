@@ -1,0 +1,2564 @@
+{
+  "schemaVersion": 1,
+  "id": "doc-50d4d974a9f9a219797661f1507a00af",
+  "title": "Migrate an App",
+  "root": "root",
+  "blocks": {
+    "root": {
+      "id": "root",
+      "type": "paragraph",
+      "props": {},
+      "children": [
+        "intro",
+        "h-passes",
+        "passes-lead",
+        "passes-table",
+        "passes-apply",
+        "passes-lib3",
+        "passes-lib2",
+        "h-entry",
+        "entry-lead",
+        "entry-1",
+        "entry-2",
+        "entry-3",
+        "entry-4",
+        "fields-lead",
+        "fields-table",
+        "fields-more",
+        "fields-ports",
+        "fields-routes",
+        "fields-waived",
+        "fields-light",
+        "h-baseline",
+        "baseline-lead",
+        "baseline-1",
+        "baseline-2",
+        "baseline-3",
+        "baseline-4",
+        "h-pass1",
+        "pass1-lead",
+        "pass1-1",
+        "pass1-2",
+        "pass1-3",
+        "pass1-4",
+        "pass1-5",
+        "pass1-soft",
+        "h-pass2",
+        "pass2-lead",
+        "pass2-1",
+        "pass2-2",
+        "pass2-3",
+        "pass2-4",
+        "pass2-5",
+        "h-pass3",
+        "pass3-lead",
+        "pass3-1",
+        "pass3-2",
+        "pass3-3",
+        "pass3-4",
+        "pass3-5",
+        "h-gates",
+        "gates-lead",
+        "gates-table",
+        "gates-after",
+        "gates-1",
+        "gates-2",
+        "gates-3",
+        "gates-out",
+        "h-review",
+        "review-lead",
+        "review-1",
+        "review-2",
+        "review-3",
+        "review-4",
+        "review-stop",
+        "h-rules",
+        "rules-lead",
+        "rule-1",
+        "rule-2",
+        "rule-3",
+        "rule-4",
+        "rule-5"
+      ]
+    },
+    "intro": {
+      "id": "intro",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "An app moves onto "
+        },
+        {
+          "insert": "@codecaine-ai/design-system",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in up to three passes, and each pass ends at its gates and two reviews. Check first that the app is in scope, as the Scope section of "
+        },
+        {
+          "insert": "Ecosystem",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/60-ecosystem"
+            }
+          }
+        },
+        {
+          "insert": " says. The commands run in the design-system folder, and "
+        },
+        {
+          "insert": "App Checks and Commands",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "20-app-checks-and-commands"
+            }
+          }
+        },
+        {
+          "insert": " lists them."
+        }
+      ],
+      "children": []
+    },
+    "h-passes": {
+      "id": "h-passes",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Passes"
+        }
+      ],
+      "children": []
+    },
+    "passes-lead": {
+      "id": "passes-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each pass follows one standard and is done when its condition holds."
+        }
+      ],
+      "children": []
+    },
+    "passes-table": {
+      "id": "passes-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Pass",
+          "Standard",
+          "Done when"
+        ],
+        "rows": [
+          [
+            "1, tokens",
+            [
+              {
+                "insert": "Tokens",
+                "attributes": {
+                  "link": "30-guide/10-tokens"
+                }
+              },
+              {
+                "insert": ", wired per "
+              },
+              {
+                "insert": "Consume the Package",
+                "attributes": {
+                  "link": "30-guide/40-consume"
+                }
+              }
+            ],
+            [
+              {
+                "insert": "No hard literal above the floor, every "
+              },
+              {
+                "insert": "--ds-*",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " name exists, light and dark render from the tokens"
+              }
+            ]
+          ],
+          [
+            "2, shell",
+            [
+              {
+                "insert": "App Layout",
+                "attributes": {
+                  "link": "30-guide/20-layout"
+                }
+              }
+            ],
+            "The app renders the shell and passes the layout checklist"
+          ],
+          [
+            "3, slices",
+            [
+              {
+                "insert": "Code Structure",
+                "attributes": {
+                  "link": "30-guide/30-code-structure"
+                }
+              }
+            ],
+            "The code follows the folder standard, with 0 changed pixels"
+          ]
+        ],
+        "title": "Migration passes"
+      },
+      "children": []
+    },
+    "passes-apply": {
+      "id": "passes-apply",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The registry entry says which passes apply."
+        }
+      ],
+      "children": []
+    },
+    "passes-lib3": {
+      "id": "passes-lib3",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Libraries have no pass 3."
+        }
+      ],
+      "children": []
+    },
+    "passes-lib2": {
+      "id": "passes-lib2",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Libraries, embeds and apps without an app shell have no pass 2."
+        }
+      ],
+      "children": []
+    },
+    "h-entry": {
+      "id": "h-entry",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "1. Add the Registry Entry"
+        }
+      ],
+      "children": []
+    },
+    "entry-lead": {
+      "id": "entry-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "The app registry, "
+        },
+        {
+          "insert": "apps.json",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "apps.json"
+            }
+          }
+        },
+        {
+          "insert": ", holds one entry for each app that the tools check. Add the app's entry before you change the app."
+        }
+      ],
+      "children": []
+    },
+    "entry-1": {
+      "id": "entry-1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Copy into "
+        },
+        {
+          "insert": "apps.json",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " the entry of an app with the same consume type and run mode."
+        }
+      ],
+      "children": []
+    },
+    "entry-2": {
+      "id": "entry-2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Change every field of the copy. The types and their comments are in "
+        },
+        {
+          "insert": "scripts/lib/registry.ts",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "scripts/lib/registry.ts"
+            }
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "entry-3": {
+      "id": "entry-3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run "
+        },
+        {
+          "insert": "bun run registry:check",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "entry-4": {
+      "id": "entry-4",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Fix every line that "
+        },
+        {
+          "insert": "registry:check",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " prints."
+        }
+      ],
+      "children": []
+    },
+    "fields-lead": {
+      "id": "fields-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "These fields decide what the tools check. A waived pass, check or gate always states its reason."
+        }
+      ],
+      "children": []
+    },
+    "fields-table": {
+      "id": "fields-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Field",
+          "What to set"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "id",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "name",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "kind",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "repo",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "root",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "kind",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " is "
+              },
+              {
+                "insert": "app",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "library",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " or "
+              },
+              {
+                "insert": "site",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". "
+              },
+              {
+                "insert": "repo",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "root",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " are workspace-relative."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "consume",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "via",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " is "
+              },
+              {
+                "insert": "workspace",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "link",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "npm-file",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "vendor-tgz",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "host-css",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "relative-import",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " or "
+              },
+              {
+                "insert": "copy",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", as Pick the Wiring in "
+              },
+              {
+                "insert": "Consume the Package",
+                "attributes": {
+                  "link": "30-guide/40-consume"
+                }
+              },
+              {
+                "insert": " explains. "
+              },
+              {
+                "insert": "detail",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " says how, in one paragraph."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "entryStylesheet",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "The file that loads the package CSS. The wiring check reads its imports."
+          ],
+          [
+            [
+              {
+                "insert": "theme.rule",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "light-dark",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", or "
+              },
+              {
+                "insert": "dark-first",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " for a dark-by-default surface."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "scan",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "The paths the literal scanner reads, and what it excludes."
+          ],
+          [
+            [
+              {
+                "insert": "literalFloor",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "allowlist",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "The floor is the hard literals allowed after pass 1: 0 plus the documented exceptions. Each kept literal has a row with its reason in "
+              },
+              {
+                "insert": "apps/allowlists/<id>.json",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "shell",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "folderStandard",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Booleans. They say whether the app takes the shell from "
+              },
+              {
+                "insert": "App Layout",
+                "attributes": {
+                  "link": "30-guide/20-layout"
+                }
+              },
+              {
+                "insert": " and the folder structure from "
+              },
+              {
+                "insert": "Code Structure",
+                "attributes": {
+                  "link": "30-guide/30-code-structure"
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "passes",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "checks",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "gates",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Each item is "
+              },
+              {
+                "insert": "{ \"required\": true }",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " or "
+              },
+              {
+                "insert": "{ \"required\": false, \"reason\": \"...\" }",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "run",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "runProfile",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "How the app starts and how it is isolated. "
+              },
+              {
+                "insert": "mode",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " is "
+              },
+              {
+                "insert": "browser",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "electron",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "static",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " or "
+              },
+              {
+                "insert": "none",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". The profile sets env, removed env, fixtures, flags and ports."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "routes",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "Every view to capture: "
+              },
+              {
+                "insert": "path",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "waitFor",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", view-only "
+              },
+              {
+                "insert": "steps",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", "
+              },
+              {
+                "insert": "masks",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": "."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "verify",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "probes",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " cover the page, panel, text and border roles. "
+              },
+              {
+                "insert": "darkSwitch",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " says how to reach dark."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "tests",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "safe",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " commands the tools may run, "
+              },
+              {
+                "insert": "unsafe",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " commands with the reason they are unsafe, and "
+              },
+              {
+                "insert": "baselines",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " from the first run."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "exceptions",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Every deviation from the standards, and every baseline change, with its reason."
+          ]
+        ],
+        "title": "Registry fields"
+      },
+      "children": []
+    },
+    "fields-more": {
+      "id": "fields-more",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Four fields have rules beyond the table."
+        }
+      ],
+      "children": []
+    },
+    "fields-ports": {
+      "id": "fields-ports",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Ports sit in the app's block of ten in 47000-47999, and never on an owner port."
+        }
+      ],
+      "children": []
+    },
+    "fields-routes": {
+      "id": "fields-routes",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A route that cannot be made stable sets "
+        },
+        {
+          "insert": "gating: false",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with a "
+        },
+        {
+          "insert": "reason",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "fields-waived": {
+      "id": "fields-waived",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A role the app has no element for goes in "
+        },
+        {
+          "insert": "verify.waivedRoles",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " with a reason."
+        }
+      ],
+      "children": []
+    },
+    "fields-light": {
+      "id": "fields-light",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A light-dark app that boots dark sets "
+        },
+        {
+          "insert": "verify.lightSwitch",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", a stored value. An app that saves its theme on a server sets "
+        },
+        {
+          "insert": "verify.lightSteps",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " instead."
+        }
+      ],
+      "children": []
+    },
+    "h-baseline": {
+      "id": "h-baseline",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "2. Record the Baseline"
+        }
+      ],
+      "children": []
+    },
+    "baseline-lead": {
+      "id": "baseline-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Record the baseline before any change to the app. The lint count, the test result and the route captures make up the baseline."
+        }
+      ],
+      "children": []
+    },
+    "baseline-1": {
+      "id": "baseline-1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run "
+        },
+        {
+          "insert": "bun run lint:apps <app>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and record the hard-literal count."
+        }
+      ],
+      "children": []
+    },
+    "baseline-2": {
+      "id": "baseline-2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run "
+        },
+        {
+          "insert": "bun run test:apps <app>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and record the result in "
+        },
+        {
+          "insert": "tests.baselines",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": [
+        "baseline-2a",
+        "baseline-2b"
+      ]
+    },
+    "baseline-2a": {
+      "id": "baseline-2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Failures that already exist are not regressions."
+        }
+      ],
+      "children": []
+    },
+    "baseline-2b": {
+      "id": "baseline-2b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The baseline changes later only through the managing agent, with a reason in "
+        },
+        {
+          "insert": "exceptions",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "baseline-3": {
+      "id": "baseline-3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Unless the run mode is "
+        },
+        {
+          "insert": "none",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", capture every route twice. Run "
+        },
+        {
+          "insert": "bun run snapshot --app <id> --set before",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", then the same command with another set name."
+        }
+      ],
+      "children": []
+    },
+    "baseline-4": {
+      "id": "baseline-4",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Compare the two sets with "
+        },
+        {
+          "insert": "bun run snapshot:diff --app <id> --a <set> --b <set> --exact",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": [
+        "baseline-4a"
+      ]
+    },
+    "baseline-4a": {
+      "id": "baseline-4a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A route whose captures differ gets a fixture or a mask, or becomes non-gating with a reason."
+        }
+      ],
+      "children": []
+    },
+    "h-pass1": {
+      "id": "h-pass1",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "3. Pass 1, Tokens"
+        }
+      ],
+      "children": []
+    },
+    "pass1-lead": {
+      "id": "pass1-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Pass 1 removes hard literals and brings the app to its floor, the hard-literal count that "
+        },
+        {
+          "insert": "literalFloor",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " allows."
+        }
+      ],
+      "children": []
+    },
+    "pass1-1": {
+      "id": "pass1-1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Wire the package the way the entry's "
+        },
+        {
+          "insert": "consume",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " says, as Consume the Package explains."
+        }
+      ],
+      "children": [
+        "pass1-1a",
+        "pass1-1b"
+      ]
+    },
+    "pass1-1a": {
+      "id": "pass1-1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Load the CSS in this order: fonts, tokens, host contract (agent-viewer hosts only), layout (shell apps only). Load Order in Consume the Package gives the details."
+        }
+      ],
+      "children": []
+    },
+    "pass1-1b": {
+      "id": "pass1-1b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A Tailwind app imports "
+        },
+        {
+          "insert": "tailwind-strict.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " before "
+        },
+        {
+          "insert": "tailwind.css",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", so Tailwind's own scales do not generate."
+        }
+      ],
+      "children": []
+    },
+    "pass1-2": {
+      "id": "pass1-2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Replace the literals with the literals codemod."
+        }
+      ],
+      "children": [
+        "pass1-2a",
+        "pass1-2b",
+        "pass1-2c",
+        "pass1-2d"
+      ]
+    },
+    "pass1-2a": {
+      "id": "pass1-2a",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run "
+        },
+        {
+          "insert": "bun run codemod:literals --app <id> propose",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "pass1-2b": {
+      "id": "pass1-2b",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Review the mapping by role against "
+        },
+        {
+          "insert": "Tokens",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/10-tokens"
+            }
+          }
+        },
+        {
+          "insert": ". Rows the codemod flags have no ready replacement, so decide each of them by role."
+        }
+      ],
+      "children": []
+    },
+    "pass1-2c": {
+      "id": "pass1-2c",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Mark each row you accept "
+        },
+        {
+          "insert": "\"approve\": \"yes\"",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "pass1-2d": {
+      "id": "pass1-2d",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run "
+        },
+        {
+          "insert": "bun run codemod:literals --app <id> apply --table <mapping.json>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "pass1-3": {
+      "id": "pass1-3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Fix the remaining literals by hand until the app is at its floor."
+        }
+      ],
+      "children": [
+        "pass1-3a"
+      ]
+    },
+    "pass1-3a": {
+      "id": "pass1-3a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The scanner does not count values in JS or TS objects, such as renderer defaults, font stacks and sizes in TS. Take those values from the package's JS tokens anyway."
+        }
+      ],
+      "children": []
+    },
+    "pass1-4": {
+      "id": "pass1-4",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "If the app has a style engine, keep its size, density and grain controls, and hide its color controls."
+        }
+      ],
+      "children": [
+        "pass1-4a"
+      ]
+    },
+    "pass1-4a": {
+      "id": "pass1-4a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Bump the style engine's storage keys, so saved colors stop overriding the shared look."
+        }
+      ],
+      "children": []
+    },
+    "pass1-5": {
+      "id": "pass1-5",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run the gates in Gates for Every Pass with "
+        },
+        {
+          "insert": "--pass 1",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "pass1-soft": {
+      "id": "pass1-soft",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Soft px spacing, such as gaps, paddings and bar heights, moves to space and size tokens in pass 2 for an app with a shell pass. An app without a shell pass converts its soft px spacing in pass 1 wherever a token has the same value."
+        }
+      ],
+      "children": []
+    },
+    "h-pass2": {
+      "id": "h-pass2",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "4. Pass 2, Shell"
+        }
+      ],
+      "children": []
+    },
+    "pass2-lead": {
+      "id": "pass2-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Pass 2 puts the app in the app shell that "
+        },
+        {
+          "insert": "App Layout",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/20-layout"
+            }
+          }
+        },
+        {
+          "insert": " defines."
+        }
+      ],
+      "children": []
+    },
+    "pass2-1": {
+      "id": "pass2-1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Adopt "
+        },
+        {
+          "insert": "templates/react-app-shell/",
+          "attributes": {
+            "code": true,
+            "reference": {
+              "kind": "source",
+              "path": "templates/react-app-shell"
+            }
+          }
+        },
+        {
+          "insert": " or the markup in the Markup section of App Layout."
+        }
+      ],
+      "children": []
+    },
+    "pass2-2": {
+      "id": "pass2-2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Make the theme toggle set "
+        },
+        {
+          "insert": "data-theme",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " on "
+        },
+        {
+          "insert": "<html>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", save it, and read the attribute as the source of truth."
+        }
+      ],
+      "children": [
+        "pass2-2a"
+      ]
+    },
+    "pass2-2a": {
+      "id": "pass2-2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Light is the default unless the entry is "
+        },
+        {
+          "insert": "dark-first",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "pass2-3": {
+      "id": "pass2-3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Add an "
+        },
+        {
+          "insert": "end",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " nav section only when the app has tools or settings pages."
+        }
+      ],
+      "children": []
+    },
+    "pass2-4": {
+      "id": "pass2-4",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Pass the Checklist for a New App in App Layout."
+        }
+      ],
+      "children": []
+    },
+    "pass2-5": {
+      "id": "pass2-5",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run the gates with "
+        },
+        {
+          "insert": "--pass 2",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-pass3": {
+      "id": "h-pass3",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "5. Pass 3, Slices"
+        }
+      ],
+      "children": []
+    },
+    "pass3-lead": {
+      "id": "pass3-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Pass 3 moves the code into the folder standard of "
+        },
+        {
+          "insert": "Code Structure",
+          "attributes": {
+            "reference": {
+              "kind": "doc",
+              "path": "30-guide/30-code-structure"
+            }
+          }
+        },
+        {
+          "insert": " and changes no pixel."
+        }
+      ],
+      "children": []
+    },
+    "pass3-1": {
+      "id": "pass3-1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Capture a before set on the current tree."
+        }
+      ],
+      "children": []
+    },
+    "pass3-2": {
+      "id": "pass3-2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Move components into "
+        },
+        {
+          "insert": "_components/<Name>/index.tsx",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", and split files over 400 lines, as Migrating a Flat App in Code Structure shows."
+        }
+      ],
+      "children": [
+        "pass3-2a",
+        "pass3-2b"
+      ]
+    },
+    "pass3-2a": {
+      "id": "pass3-2a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Keep class names and markup, because registry selectors use them."
+        }
+      ],
+      "children": []
+    },
+    "pass3-2b": {
+      "id": "pass3-2b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Keep CSS rules byte-identical when you split a stylesheet."
+        }
+      ],
+      "children": []
+    },
+    "pass3-3": {
+      "id": "pass3-3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Capture an after set on the same design-system commit as the before set."
+        }
+      ],
+      "children": []
+    },
+    "pass3-4": {
+      "id": "pass3-4",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run "
+        },
+        {
+          "insert": "bun run snapshot:diff --app <id> --a <before> --b <after> --exact",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": [
+        "pass3-4a"
+      ]
+    },
+    "pass3-4a": {
+      "id": "pass3-4a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "The diff must report 0 changed pixels outside masks."
+        }
+      ],
+      "children": []
+    },
+    "pass3-5": {
+      "id": "pass3-5",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run the gates with "
+        },
+        {
+          "insert": "--pass 3",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "h-gates": {
+      "id": "h-gates",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "6. Gates for Every Pass"
+        }
+      ],
+      "children": []
+    },
+    "gates-lead": {
+      "id": "gates-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Run each gate that the entry marks required. A gate marked n/a states its reason in the entry."
+        }
+      ],
+      "children": []
+    },
+    "gates-table": {
+      "id": "gates-table",
+      "type": "structured-table",
+      "props": {
+        "columns": [
+          "Gate",
+          "Command"
+        ],
+        "rows": [
+          [
+            [
+              {
+                "insert": "lint",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "bun run lint:apps --pass <n> <app>",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", then "
+              },
+              {
+                "insert": "bun run lint:apps <app>",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " with no "
+              },
+              {
+                "insert": "--pass",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ", so every check the entry requires runs"
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "verify",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "bun run verify:apps --pass <n> <app>",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". Run mode "
+              },
+              {
+                "insert": "none",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " gets a static check."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "tests",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "bun run test:apps <app>",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". It exits 1 on a failure the baseline does not list."
+              }
+            ]
+          ],
+          [
+            [
+              {
+                "insert": "snapshot",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " and "
+              },
+              {
+                "insert": "pixelDiff",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            [
+              {
+                "insert": "bun run snapshot --app <id> --set <name>",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": " twice, then "
+              },
+              {
+                "insert": "bun run snapshot:diff --app <id> --a <set> --b <set> --exact",
+                "attributes": {
+                  "code": true
+                }
+              },
+              {
+                "insert": ". Pass 3 also diffs before against after."
+              }
+            ]
+          ]
+        ],
+        "title": "Gates"
+      },
+      "children": []
+    },
+    "gates-after": {
+      "id": "gates-after",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "After the gates, you use the app, look at the screenshots and commit the pass."
+        }
+      ],
+      "children": []
+    },
+    "gates-1": {
+      "id": "gates-1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run "
+        },
+        {
+          "insert": "bun run use:app --app <id>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": [
+        "gates-1a",
+        "gates-1b"
+      ]
+    },
+    "gates-1a": {
+      "id": "gates-1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "It visits every route in each theme, runs the route steps and toggles the sidebar."
+        }
+      ],
+      "children": []
+    },
+    "gates-1b": {
+      "id": "gates-1b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "It must exit 0."
+        }
+      ],
+      "children": []
+    },
+    "gates-2": {
+      "id": "gates-2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "For passes 1 and 2, compare the pass with the baseline."
+        }
+      ],
+      "children": [
+        "gates-2a",
+        "gates-2b",
+        "gates-2c"
+      ]
+    },
+    "gates-2a": {
+      "id": "gates-2a",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Capture an after set with "
+        },
+        {
+          "insert": "bun run snapshot --app <id> --set <after>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "gates-2b": {
+      "id": "gates-2b",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run "
+        },
+        {
+          "insert": "bun run snapshot:sheet --app <id> --a <before> --b <after>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", where "
+        },
+        {
+          "insert": "<before>",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " is a set from Record the Baseline."
+        }
+      ],
+      "children": []
+    },
+    "gates-2c": {
+      "id": "gates-2c",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Look at every route in both themes."
+        }
+      ],
+      "children": []
+    },
+    "gates-3": {
+      "id": "gates-3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Commit the pass in the app's repo, following its commit conventions."
+        }
+      ],
+      "children": []
+    },
+    "gates-out": {
+      "id": "gates-out",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Screenshots and results go to "
+        },
+        {
+          "insert": "--out-dir",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", never into a git checkout."
+        }
+      ],
+      "children": []
+    },
+    "h-review": {
+      "id": "h-review",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "7. Review and Accept"
+        }
+      ],
+      "children": []
+    },
+    "review-lead": {
+      "id": "review-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Each pass needs two independent reviews before you accept it."
+        }
+      ],
+      "children": []
+    },
+    "review-1": {
+      "id": "review-1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Get two independent reviews of the pass."
+        }
+      ],
+      "children": [
+        "review-1a"
+      ]
+    },
+    "review-1a": {
+      "id": "review-1a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Nobody reviews their own work."
+        }
+      ],
+      "children": []
+    },
+    "review-2": {
+      "id": "review-2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Fix what the reviewers find."
+        }
+      ],
+      "children": []
+    },
+    "review-3": {
+      "id": "review-3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Run the gates again."
+        }
+      ],
+      "children": []
+    },
+    "review-4": {
+      "id": "review-4",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Accept the pass when both reviews accept."
+        }
+      ],
+      "children": [
+        "review-4a"
+      ]
+    },
+    "review-4a": {
+      "id": "review-4a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Record each finding ruled not blocking with the reason."
+        }
+      ],
+      "children": []
+    },
+    "review-stop": {
+      "id": "review-stop",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "After three review-and-fix rounds without acceptance, stop and mark the pass blocked, with the reason."
+        }
+      ],
+      "children": []
+    },
+    "h-rules": {
+      "id": "h-rules",
+      "type": "heading",
+      "props": {
+        "level": 2
+      },
+      "text": [
+        {
+          "insert": "Rules"
+        }
+      ],
+      "children": []
+    },
+    "rules-lead": {
+      "id": "rules-lead",
+      "type": "paragraph",
+      "props": {},
+      "text": [
+        {
+          "insert": "Five rules hold through every pass of a migration."
+        }
+      ],
+      "children": []
+    },
+    "rule-1": {
+      "id": "rule-1",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Style only with tokens: "
+        },
+        {
+          "insert": "var(--ds-*)",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", the Tailwind theme or preset, or "
+        },
+        {
+          "insert": "cssVar()",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". Never hard-code a color, size, spacing, radius, font, shadow, duration or z-index."
+        }
+      ],
+      "children": []
+    },
+    "rule-2": {
+      "id": "rule-2",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Never copy token values into an app, and never edit "
+        },
+        {
+          "insert": "dist/",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". A value with no equal token stays as written, with an allowlist row and its reason."
+        }
+      ],
+      "children": []
+    },
+    "rule-3": {
+      "id": "rule-3",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Check light and dark. A dark-first surface is checked in dark only."
+        }
+      ],
+      "children": []
+    },
+    "rule-4": {
+      "id": "rule-4",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Never run an app, its tests or its screenshots outside its run profile."
+        }
+      ],
+      "children": [
+        "rule-4a",
+        "rule-4b"
+      ]
+    },
+    "rule-4a": {
+      "id": "rule-4a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "verify:apps",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "snapshot",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", "
+        },
+        {
+          "insert": "test:apps",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " and "
+        },
+        {
+          "insert": "use:app",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " start and stop the app under the profile, as Run Profile in App Checks and Commands describes."
+        }
+      ],
+      "children": []
+    },
+    "rule-4b": {
+      "id": "rule-4b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Run an app's tests only through "
+        },
+        {
+          "insert": "test:apps",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": "."
+        }
+      ],
+      "children": []
+    },
+    "rule-5": {
+      "id": "rule-5",
+      "type": "list-item",
+      "props": {
+        "ordered": true
+      },
+      "text": [
+        {
+          "insert": "Send no request that changes state."
+        }
+      ],
+      "children": [
+        "rule-5a",
+        "rule-5b"
+      ]
+    },
+    "rule-5a": {
+      "id": "rule-5a",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Use only navigation and view controls, and never submit, save, delete, sync or send."
+        }
+      ],
+      "children": []
+    },
+    "rule-5b": {
+      "id": "rule-5b",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "Your own browser scripts abort every non-GET request at the browser context before any click or key press."
+        }
+      ],
+      "children": []
+    }
+  }
+}
