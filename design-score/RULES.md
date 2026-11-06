@@ -9,7 +9,7 @@ Sources: the rules paraphrase Jakub Krehel's agent skills (https://github.com/ja
 - `decisions.json` holds Ford's decisions, the source catalogs and the dropped rules.
 - `scripts/design-score/rules.ts` (`loadRules`) reads the folder.
 
-- 303 rules. All 419 source ids are covered: 402 merge into a rule's `sources`, and 17 are dropped (mobile only).
+- 311 rules. All 419 source ids are covered: 402 merge into a rule's `sources`, and 17 are dropped (mobile only). 8 later rules (5 layout, 2 typography, 1 color) come from no catalog and name their own id in `sources`.
 - 13 new `ks-` rules cover "clunky": alignment, control heights, spacing and layout shift.
 - Each rule has `id`, `area`, `title`, `rule`, `severity`, `layer`, `values`, `sources` and `check`. Some also have `notes`. Taste-only rules also have `taste: true`.
 - `check` is the verifier check that decides the rule, or `null` when no check exists yet.
@@ -26,11 +26,11 @@ Sources: the rules paraphrase Jakub Krehel's agent skills (https://github.com/ja
 | Layer | fail | warn | judge | human | Total |
 | --- | --- | --- | --- | --- | --- |
 | static | 17 | 78 | | | 95 |
-| runtime | 28 | 80 | | | 108 |
+| runtime | 28 | 85 | | | 113 |
 | motion | 8 | 50 | | | 58 |
 | visual | | | 26 | | 26 |
-| human | | | | 16 | 16 |
-| Total | 53 | 208 | 26 | 16 | 303 |
+| human | | 3 | | 16 | 19 |
+| Total | 53 | 216 | 26 | 16 | 311 |
 
 - `judge` means a model judge decides it from screenshots, or from extracted text for copy rules (the notes say which).
 - `human` means taste or process. These rules are marked `taste: true` and never block a score.
@@ -39,9 +39,9 @@ Sources: the rules paraphrase Jakub Krehel's agent skills (https://github.com/ja
 
 | Area | File | Rules |
 | --- | --- | --- |
-| layout | `rules/layout.json` | 43 |
-| typography | `rules/typography.json` | 44 |
-| color | `rules/color.json` | 38 |
+| layout | `rules/layout.json` | 48 |
+| typography | `rules/typography.json` | 46 |
+| color | `rules/color.json` | 39 |
 | motion | `rules/motion.json` | 43 |
 | interaction | `rules/interaction.json` | 28 |
 | accessibility | `rules/accessibility.json` | 56 |
@@ -50,7 +50,7 @@ Sources: the rules paraphrase Jakub Krehel's agent skills (https://github.com/ja
 
 ## Check map
 
-105 rules have a check. 198 do not yet (88 static, 51 runtime, 43 motion, 16 human).
+105 rules have a check. 206 do not yet (88 static, 56 runtime, 43 motion, 19 human).
 
 | Check | Rules | Rule ids |
 | --- | --- | --- |

@@ -148,7 +148,7 @@ describe("design:score v2 logic", () => {
 
   test("every rule sits in one area file, and a rule with a check sits in its check's area", () => {
     const { rules } = loadRules(DESIGN_SYSTEM_ROOT);
-    expect(rules.length).toBe(303);
+    expect(rules.length).toBe(311);
     expect(new Set(rules.map((r) => r.id)).size).toBe(rules.length);
     const areaOf = new Map(CHECKS.map((c) => [c.id, c.area ?? "judge"]));
     for (const r of rules) {

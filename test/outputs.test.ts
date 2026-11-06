@@ -259,8 +259,9 @@ describe("guides", () => {
 describe("package.json", () => {
   const pkg = readJson("package.json");
 
-  test("is the private, dependency-free ES module @codecaine-ai/design-system, with a semver version (every repack bumps it)", () => {
-    expect(pkg).toMatchObject({ name: "@codecaine-ai/design-system", private: true, type: "module" });
+  test("is the public, dependency-free ES module @codecaine-ai/design-system, with a semver version (every repack bumps it)", () => {
+    expect(pkg).toMatchObject({ name: "@codecaine-ai/design-system", type: "module" });
+    expect(pkg.publishConfig.access).toBe("public");
     // SemVer 2.0.0: major.minor.patch, then an optional prerelease and build metadata.
     expect(pkg.version).toMatch(/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-(0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(\.(0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$/);
     for (const key of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]) expect(pkg).not.toHaveProperty(key);

@@ -27,7 +27,7 @@
       "props": {},
       "text": [
         {
-          "insert": "The color checks find hard-coded colors in the app's source and measure text contrast on the rendered page. The area has 1 static check, 1 runtime check and 38 rules in "
+          "insert": "The color checks find hard-coded colors in the app's source and measure text contrast on the rendered page. The area has 1 static check, 1 runtime check and 39 rules in "
         },
         {
           "insert": "design-score/rules/color.json",
@@ -262,7 +262,7 @@
       "props": {},
       "text": [
         {
-          "insert": "31 rules name no check yet. No finding carries their ids, so a run never scores them."
+          "insert": "32 rules name no check yet. No finding carries their ids, so a run never scores them."
         }
       ],
       "children": []
@@ -648,6 +648,18 @@
             ],
             "Theme before first paint",
             "Fail"
+          ],
+          [
+            [
+              {
+                "insert": "color-legend-for-marks",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Legend for marks",
+            "Warn"
           ]
         ],
         "title": "Rules no check decides yet"
