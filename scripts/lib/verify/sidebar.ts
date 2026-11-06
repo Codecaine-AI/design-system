@@ -1,5 +1,5 @@
 /**
- * Shell apps: the sidebar state survives a reload (guide/layout.md, "Persistence").
+ * Shell apps: the sidebar state survives a reload (docs/30-guide/20-layout, "Persistence").
  */
 import { type Assertion, fail, na, pass } from "./assertions";
 
@@ -15,7 +15,7 @@ export interface SidebarOptions {
   prepare?: (page: any) => Promise<void>;
 }
 
-/** The two states guide/layout.md gives data-sidebar (and the stored value). */
+/** The two states docs/30-guide/20-layout gives data-sidebar (and the stored value). */
 export const SIDEBAR_STATES = ["expanded", "collapsed"] as const;
 const valid = (value: string | null): value is (typeof SIDEBAR_STATES)[number] => (SIDEBAR_STATES as readonly (string | null)[]).includes(value);
 

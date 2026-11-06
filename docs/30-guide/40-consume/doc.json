@@ -2239,15 +2239,6 @@
           "insert": ", "
         },
         {
-          "insert": "guide/*.md",
-          "attributes": {
-            "code": true
-          }
-        },
-        {
-          "insert": ", "
-        },
-        {
           "insert": "AGENTS.md",
           "attributes": {
             "code": true

@@ -33,9 +33,9 @@ reviews:
     - "!verification/**/scan-literals.json"
     - "!verification/**/*.txt"
     - "!verification/**/*.stderr"
-    # Binary assets: font files and guide screenshots
+    # Binary assets: font files and docs page images
     - "!fonts/**"
-    - "!guide/screenshots/**"
+    - "!docs/**/assets/images/**"
   path_instructions:
     - path: "{scripts,verification,templates,apps}/**/*.{ts,tsx}"
       instructions: >-

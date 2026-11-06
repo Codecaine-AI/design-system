@@ -284,8 +284,6 @@ describe("owner-tree destinations", () => {
   let mirror: string;
   const copyCheckout = (to: string) => {
     for (const path of ["package.json", "tokens", "scripts", "dist", "css", "fonts", "templates", "AGENTS.md", "README.md"]) cpSync(join(PKG, path), join(to, path), { recursive: true });
-    mkdirSync(join(to, "guide"));
-    for (const name of readdirSync(join(PKG, "guide")).filter((n) => n.endsWith(".md"))) cpSync(join(PKG, "guide", name), join(to, "guide", name));
     expect(run(process.execPath, ["scripts/build.ts"], to).status).toBe(0);
   };
 

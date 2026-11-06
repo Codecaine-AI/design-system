@@ -2,7 +2,7 @@
 This block holds the owner's choices for this run. Consult it whenever a phase needs a scope or policy choice. The owner edits it before sending; treat it as fixed during the run.
 
 - Scope
-    - Every surface in waves 1, 2 and 3 of `/Users/Ford/workspace/codebases/codecaine/core/design-system/guide/audit.md`. The "Later" and "Skip" surfaces stay out of scope.
+    - Every surface in waves 1, 2 and 3 of the audit, design-system's `guide/audit.md` at commit e39df58 (`git show e39df58:guide/audit.md`). The "Later" and "Skip" surfaces stay out of scope.
 - Pilot
     - The sequence renderer, then sequence studio, before any other app starts. This overrides the audit's advice to migrate sequence studio together with canvas studio; canvas studio goes next. If a pilot app is blocked, the first unblocked app in the audit's wave order takes its place.
 - Pilot checkpoint
@@ -107,7 +107,7 @@ This block is the brief every app worker receives. Copy it into the run folder a
     - Wire the package the way the audit's "Consume via" row says.
     - Run the codemod, review its mapping by role, apply it, and fix the rest by hand until the app is at its floor. Hand mechanical replacements to Codex when that is faster.
 3. Pass 2, shell, when the registry requires it
-    - Adopt `templates/react-app-shell` or the `guide/layout.md` markup, and pass its checklist.
+    - Adopt `templates/react-app-shell` or the markup in the docs page `docs/30-guide/20-layout`, and pass its checklist.
 4. Pass 3, slices, when the registry requires it
     - Move components into `_components/<Name>/index.tsx`, and split files over 400 lines.
     - Capture passes 2 and 3 on the same design-system commit. They must show 0 changed pixels outside masks.
@@ -160,7 +160,7 @@ Build the mirror and the state file, so the run never touches the owner's tree.
 </objective>
 <steps>
 1. If `STATE.md` exists, run `verify:apps --restore` when a propagate journal exists, relaunch units marked working from their reports and commits, and resume the phase the `run_log` names last.
-2. Read design-system's `AGENTS.md` and its guides `audit.md`, `layout.md`, `code-structure.md` and `tokens.md`.
+2. Read design-system's `AGENTS.md`, the audit (`git show e39df58:guide/audit.md`), and the docs pages `docs/30-guide/20-layout`, `docs/30-guide/30-code-structure` and `docs/30-guide/10-tokens`.
 3. Record `owner_snapshot`.
 4. Build `app_ledger` from the scope in `owner_decisions`, with dependencies from the audit's wave steps. Libraries come before their hosts, docs-workbench comes before system-view and variator, canvas studio comes right after the pilot, and apps that share a repo stack one after another.
 5. Block an app when uncommitted or untracked changes touch its own paths (scan dirs, `package.json`, build config), or when its audit entry says to wait for something that has not happened, such as pen-plotter's open worktrees. Record the reason and the owner action.
@@ -204,7 +204,7 @@ Build the tools in `tooling_spec` once, and prove each one before any app uses i
 3. Merge each finished branch into `design-system/rollout` in the mirror. Only you run `bun run build` there, and never while a gate runs.
 4. Review the registry worker's entries for every in-scope app against the audit, and accept them.
 5. Prove the linter against the mirror: it passes checks 1 and 4 on docs-workbench, which is already connected, and it fails unmigrated sequence studio with one clear message per failing check.
-6. Add `lint:apps` to Core's `bun run doctor` in the mirror. Document `lint:apps`, `verify:apps` and `progress` in design-system's `AGENTS.md` and `skill/SKILL.md`.
+6. Add `lint:apps` to Core's `bun run doctor` in the mirror. Document `lint:apps`, `verify:apps` and `progress` in design-system's docs page `docs/20-app-checks-and-commands` and `skill/SKILL.md`.
 7. Run `verify_work` with the tooling as the unit, then commit.
 </steps>
 </phase>

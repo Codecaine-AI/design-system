@@ -1,5 +1,5 @@
 /**
- * Tailwind default-scale classes (guide/tokens.md rule 5): the default palette (Tailwind 4.3
+ * Tailwind default-scale classes (docs/30-guide/10-tokens, rule 5): the default palette (Tailwind 4.3
  * hues mauve, olive, mist and taupe included), text sizes, shadows, radius steps, font
  * weights, line heights, tracking, blur, easing, container sizes and animations. The
  * design system's own utilities that share a root (`text-ui-sm`, `rounded-pill`,

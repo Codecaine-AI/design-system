@@ -33,7 +33,7 @@
  *   --radius: 8px                                       radius (by name, or because
  *                                                       the file reads it in border-radius)
  *   --font-size-sm: 12px, --gap: 8px                    pxFontSize, pxSpacing
- * A shell-scoped --ds-layout-* override (guide/layout.md) is not a literal.
+ * A shell-scoped --ds-layout-* override (docs/30-guide/20-layout) is not a literal.
  *
  * Color literals are split three ways, because each migrates differently:
  *   definitions  --accent: #fff, $accent: #fff, --primary: 222 47% 11%, any
@@ -926,7 +926,7 @@ const FONT_SIZE_NAME =
   /font-?size|(?:^--|-)fs(?:-|$)|^--text-(?:2xs|xs|sm|base|md|lg|xl|[2-9]xl)$|(?:^--|-)(?:text|font|type|title|subtitle|heading|subheading|body|label|caption|h[1-6])-size(?:-|$)/i;
 /** Whole name segments only: --gap, --content-padding-x, --site-gutter (not --workspace-height). */
 const SPACING_NAME = /(?:^--|-)(?:space|spacing|spacer|gap|gutter|pad|padding|margin)(?:-|$)/i;
-/** A shell-scoped `--ds-layout-*` override is allowed (guide/layout.md, decision 32); the names check owns its scope. */
+/** A shell-scoped `--ds-layout-*` override is allowed (docs/30-guide/20-layout, decision 32); the names check owns its scope. */
 const ALLOWED_DEFINITION = /^--ds-layout-/;
 const COUNTED_READS = new Set<PropKind>(["fontFamily", "radius", "fontSize", "spacing"]);
 

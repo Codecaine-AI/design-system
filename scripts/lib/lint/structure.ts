@@ -1,5 +1,5 @@
 /**
- * Check 6, structure (guide/code-structure.md).
+ * Check 6, structure (docs/30-guide/30-code-structure).
  *
  * Folder-standard apps (`folderStandard: true`):
  * - every `_components/` folder in the scan dirs holds only PascalCase folders,
@@ -36,7 +36,7 @@ import { isDir, isFile, realpathOrNull } from "./workspace";
 const LINE_EXTS = new Set(["ts", "tsx", "js", "jsx", "css"]);
 const PASCAL = /^[A-Z][A-Za-z0-9]*$/;
 const INDEX_FILES = ["index.tsx", "index.ts", "index.jsx", "index.js"];
-/** Entry files by basename (guide/code-structure.md, "Components"), only directly in a root: they wire the app. */
+/** Entry files by basename (docs/30-guide/30-code-structure, "Components"), only directly in a root: they wire the app. */
 const APP_ENTRY_FILES = new Set(["main", "App", "mdx-components"]);
 /** The Next.js special files: entries only in a Next.js app, inside an `app/` or `pages/` router folder (`page` is a route entry for every stack). */
 const NEXT_FILES = new Set([

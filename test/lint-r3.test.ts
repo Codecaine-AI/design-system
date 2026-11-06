@@ -18,13 +18,16 @@ import { PKG } from "./support";
 let ws: Workspace;
 let ds: DesignSystemBuild;
 
-/** guide/layout.md's example of a shell-scoped layout override: the css block after "override the token on the shell". */
+/** The App Layout page's example of a shell-scoped layout override: the css code block after "override the token on the shell". */
 const GUIDE_EXAMPLE = (() => {
-  const guide = readFileSync(join(PKG, "guide/layout.md"), "utf8");
-  const at = guide.indexOf("override the token on the shell");
-  const block = /```css\n([\s\S]*?)```/.exec(guide.slice(at));
-  if (at === -1 || !block) throw new Error("guide/layout.md no longer shows a shell override example");
-  return block[1];
+  type Block = { type: string; props?: { language?: string }; text?: Array<{ insert?: unknown }> };
+  const page = JSON.parse(readFileSync(join(PKG, "docs/30-guide/20-layout/doc.json"), "utf8")) as { root: string; blocks: Record<string, Block & { children?: string[] }> };
+  const text = (b: Block) => (b.text ?? []).map((op) => (typeof op.insert === "string" ? op.insert : "")).join("");
+  const order = (page.blocks[page.root]?.children ?? []).map((id) => page.blocks[id]).filter((b): b is Block => b !== undefined);
+  const at = order.findIndex((b) => text(b).includes("override the token on the shell"));
+  const block = at === -1 ? undefined : order.slice(at + 1).find((b) => b.type === "code" && b.props?.language === "css");
+  if (!block) throw new Error("docs/30-guide/20-layout no longer shows a shell override example");
+  return `${text(block)}\n`;
 })();
 
 beforeAll(() => {
@@ -49,7 +52,7 @@ const OUTSIDE = "is declared here, outside the shell; override --ds-layout-* tok
 const DECLARED = "is declared here; apps never redefine --ds-* tokens";
 
 describe("names: a --ds-layout-* override is allowed on the shell (decision 32)", () => {
-  test("guide/layout.md's example passes; the same rule overriding a color token fails", () => {
+  test("the App Layout page's example passes; the same rule overriding a color token fails", () => {
     expect(GUIDE_EXAMPLE).toContain("--ds-layout-sidebar-width");
     expect(names("r3n-guide")).toMatchObject({ status: "pass", violations: [] });
     expectExactly(names("r3n-guide-color").violations, [at("apps/r3n-guide-color/src/index.css", 7, `--ds-color-surface-sidebar ${DECLARED}`)]);

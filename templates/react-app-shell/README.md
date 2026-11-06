@@ -1,6 +1,6 @@
 # React app shell template
 
-The reference React implementation of the default app shell ([guide/layout.md](../../guide/layout.md)), organized as vertical slices ([guide/code-structure.md](../../guide/code-structure.md)). Copy it into an app. It is not a package and has no dependencies besides React.
+The reference React implementation of the default app shell ([docs/30-guide/20-layout](../../docs/30-guide/20-layout)), organized as vertical slices ([docs/30-guide/30-code-structure](../../docs/30-guide/30-code-structure)). Copy it into an app. It is not a package and has no dependencies besides React.
 
 ## Tree
 
@@ -176,7 +176,7 @@ document.cookie = `${storageKey}=${value}; path=/; max-age=31536000; samesite=la
 The template was checked in place, with React and Bun types borrowed from `codecaine/core`. Run from `templates/react-app-shell/`:
 
 ```sh
-# Import rules from guide/code-structure.md: both print nothing
+# Import rules from docs/30-guide/30-code-structure: both print nothing
 grep -rnE "from ['\"]\.{1,2}/([^'\"]*/)?[A-Z][A-Za-z0-9]*/" src
 grep -rnE "from ['\"](\.\./){3,}" src
 
