@@ -2,7 +2,7 @@
 
 # Token reference
 
-88 base tokens and 206 theme tokens (light and dark), 706 CSS custom properties in total. Theme values show the authored value: `{path}` is an alias, emitted as `var()`.
+88 base tokens and 211 theme tokens (light and dark), 721 CSS custom properties in total. Theme values show the authored value: `{path}` is an alias, emitted as `var()`.
 
 ### Base tokens
 
@@ -232,7 +232,7 @@ Content measures. Blocks cap themselves at a lane and stay left-anchored.
 | `color.border.default` | `--ds-color-border-default` | `#e6e5e3` | `#3d444d` | Frames, rules, dividers, inputs. Seed: --palette-rule. |
 | `color.border.subtle` | `--ds-color-border-subtle` | `#efeeec` | `#262c36` | Row rules and inner separators. Seed: --palette-rule-soft. |
 | `color.border.strong` | `--ds-color-border-strong` | `color-mix(in srgb, {color.border.default} 70%, {color.text.faint} 30%)` | `color-mix(in srgb, {color.border.default} 70%, {color.text.faint} 30%)` | Header rules that must read over a default rule. Seed: --docs-border-strong. |
-| `color.border.guide` | `--ds-color-border-guide` | `color-mix(in srgb, {color.text.faint} 45%, {color.border.default})` | `color-mix(in srgb, {color.text.faint} 45%, {color.border.default})` | Tree indent guides. Seed: --docs-guide. |
+| `color.border.guide` | `--ds-color-border-guide` | `color-mix(in srgb, {color.text.muted} 70%, {color.border.default})` | `color-mix(in srgb, {color.text.muted} 45%, {color.border.default})` | Tree indent guides. Seed: --docs-guide. |
 | `color.border.image` | `--ds-color-border-image` | `#0000001a` | `#ffffff1a` | Outline on images and media: pure black at 10%, never a tinted neutral. Inset it with border.width.hairline and a negative hairline offset. |
 
 #### `color.fill`
@@ -393,6 +393,11 @@ Content measures. Blocks cap themselves at a lane and stay left-anchored.
 | `color.status.neutral.on-solid` | `--ds-color-status-neutral-on-solid` | `{color.gray.on-solid}` | `{color.gray.on-solid}` | Glyph on the neutral tile. |
 | `color.status.neutral.soft` | `--ds-color-status-neutral-soft` | `{color.gray.soft}` | `{color.gray.soft}` | Neutral fill. |
 | `color.status.neutral.line` | `--ds-color-status-neutral-line` | `{color.gray.line}` | `{color.gray.line}` | Neutral border. |
+| `color.status.decision.text` | `--ds-color-status-decision-text` | `{color.violet.text}` | `{color.violet.text}` | Decision text, icon and rail: a choice waiting on a person. |
+| `color.status.decision.solid` | `--ds-color-status-decision-solid` | `{color.violet.solid}` | `{color.violet.solid}` | Decision tile. |
+| `color.status.decision.on-solid` | `--ds-color-status-decision-on-solid` | `{color.violet.on-solid}` | `{color.violet.on-solid}` | Glyph on the decision tile. |
+| `color.status.decision.soft` | `--ds-color-status-decision-soft` | `{color.violet.soft}` | `{color.violet.soft}` | Decision fill. |
+| `color.status.decision.line` | `--ds-color-status-decision-line` | `{color.violet.line}` | `{color.violet.line}` | Decision border. |
 
 #### `color.category`
 
@@ -681,6 +686,11 @@ Keys written by `dist/tailwind/theme.css`. Each reads the token's `--ds-*` varia
 | `--color-danger-soft` | `color.status.danger.soft` | `bg-danger-soft`, `text-danger-soft`, `border-danger-soft` |
 | `--color-danger-solid` | `color.status.danger.solid` | `bg-danger-solid`, `text-danger-solid`, `border-danger-solid` |
 | `--color-danger` | `color.status.danger.text` | `bg-danger`, `text-danger`, `border-danger` |
+| `--color-decision-line` | `color.status.decision.line` | `bg-decision-line`, `text-decision-line`, `border-decision-line` |
+| `--color-decision-on-solid` | `color.status.decision.on-solid` | `bg-decision-on-solid`, `text-decision-on-solid`, `border-decision-on-solid` |
+| `--color-decision-soft` | `color.status.decision.soft` | `bg-decision-soft`, `text-decision-soft`, `border-decision-soft` |
+| `--color-decision-solid` | `color.status.decision.solid` | `bg-decision-solid`, `text-decision-solid`, `border-decision-solid` |
+| `--color-decision` | `color.status.decision.text` | `bg-decision`, `text-decision`, `border-decision` |
 | `--color-info-line` | `color.status.info.line` | `bg-info-line`, `text-info-line`, `border-info-line` |
 | `--color-info-on-solid` | `color.status.info.on-solid` | `bg-info-on-solid`, `text-info-on-solid`, `border-info-on-solid` |
 | `--color-info-soft` | `color.status.info.soft` | `bg-info-soft`, `text-info-soft`, `border-info-soft` |

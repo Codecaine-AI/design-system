@@ -661,6 +661,71 @@
         "ui-icon-inline-size"
       ],
       "check": null
+    },
+    {
+      "id": "layout-note-beside-or-below",
+      "area": "layout",
+      "title": "Note beside or below",
+      "rule": "A side note sits beside the lines it explains when the widest line fits next to it. Otherwise it sits under the last of those lines, at that line's indent.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "layout-note-beside-or-below"
+      ],
+      "check": null
+    },
+    {
+      "id": "layout-wrap-hang",
+      "area": "layout",
+      "title": "Wrapped lines hang",
+      "rule": "A wrapped line hangs at least 2 indent steps, so it never reads as a child row.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "layout-wrap-hang"
+      ],
+      "check": null
+    },
+    {
+      "id": "layout-trailing-chip-column",
+      "area": "layout",
+      "title": "Trailing chips in one column",
+      "rule": "Trailing chips sit in one aligned column on the first line of their row. The row text stops before that column.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "layout-trailing-chip-column"
+      ],
+      "check": null
+    },
+    {
+      "id": "layout-nesting-guides",
+      "area": "layout",
+      "title": "Nesting guides",
+      "rule": "Each nesting level draws a 1px color.border.guide line under the first character of the row that owns it.",
+      "severity": "warn",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "layout-nesting-guides"
+      ],
+      "check": null
+    },
+    {
+      "id": "layout-name-column-fit",
+      "area": "layout",
+      "title": "Name column fits its names",
+      "rule": "A name column fits its longest name within 10ch to 24ch. The description column takes the rest.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "layout-name-column-fit"
+      ],
+      "check": null
     }
   ]
 }

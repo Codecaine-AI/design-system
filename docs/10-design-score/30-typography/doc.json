@@ -29,7 +29,7 @@
       "props": {},
       "text": [
         {
-          "insert": "The typography checks measure rendered text: number alignment, clipped text, font size and line length. They run in a browser on every page, theme and viewport. The area has 4 runtime checks and 44 rules in "
+          "insert": "The typography checks measure rendered text: number alignment, clipped text, font size and line length. They run in a browser on every page, theme and viewport. The area has 4 runtime checks and 46 rules in "
         },
         {
           "insert": "design-score/rules/typography.json",
@@ -175,7 +175,7 @@
           }
         },
         {
-          "insert": ". Each rule names the check that decides it, and each check finding carries those rule ids. 13 rules have a check, and 31 have none yet."
+          "insert": ". Each rule names the check that decides it, and each check finding carries those rule ids. 13 rules have a check, and 33 have none yet."
         }
       ],
       "children": []
@@ -819,6 +819,32 @@
             ],
             "Emphasis is one weight step",
             "Human",
+            "Human"
+          ],
+          [
+            [
+              {
+                "insert": "typo-break-mono-at-tokens",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Mono breaks at tokens",
+            "Warn",
+            "Runtime"
+          ],
+          [
+            [
+              {
+                "insert": "typo-code-in-secondary-text",
+                "attributes": {
+                  "code": true
+                }
+              }
+            ],
+            "Code in secondary text",
+            "Warn",
             "Human"
           ]
         ],

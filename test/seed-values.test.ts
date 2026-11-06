@@ -28,7 +28,7 @@ const THEME_ROLES = [
   "--ds-color-focus-ring",
   "--ds-color-selection",
   ...HUES.flatMap((hue) => ["text", "solid", "on-solid", "soft", "line"].map((part) => `--ds-color-${hue}-${part}`)),
-  ...["info", "success", "warning", "danger", "neutral"].map((status) => `--ds-color-status-${status}-on-solid`),
+  ...["info", "success", "warning", "danger", "neutral", "decision"].map((status) => `--ds-color-status-${status}-on-solid`),
   "--ds-shadow-glass",
   "--ds-color-border-image",
   "--ds-shadow-card",

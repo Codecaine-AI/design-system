@@ -34,6 +34,7 @@
         "rules-lead",
         "rules-accent",
         "rules-hue",
+        "rules-guide",
         "rules-notion",
         "h-solid",
         "solid-lead",
@@ -1377,6 +1378,63 @@
         },
         {
           "insert": "."
+        }
+      ],
+      "children": [
+        "rules-status"
+      ]
+    },
+    "rules-status": {
+      "id": "rules-status",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "A role such as a decision callout uses its status tone, "
+        },
+        {
+          "insert": "color.status.decision.*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ", not "
+        },
+        {
+          "insert": "color.violet.*",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": ". The 6 status tones are info, success, warning, danger, neutral and decision."
+        }
+      ],
+      "children": []
+    },
+    "rules-guide": {
+      "id": "rules-guide",
+      "type": "list-item",
+      "props": {},
+      "text": [
+        {
+          "insert": "color.border.guide",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " draws tree and nesting guides. It meets 3:1 on "
+        },
+        {
+          "insert": "color.surface.panel",
+          "attributes": {
+            "code": true
+          }
+        },
+        {
+          "insert": " in both themes, so a guide needs no darker ink of its own."
         }
       ],
       "children": []

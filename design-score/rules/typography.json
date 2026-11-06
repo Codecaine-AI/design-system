@@ -650,6 +650,32 @@
       ],
       "notes": "Container widths, not viewport (the 320px value is kept as a container test).",
       "check": "R-text-clip"
+    },
+    {
+      "id": "typo-break-mono-at-tokens",
+      "area": "typography",
+      "title": "Mono breaks at tokens",
+      "rule": "Mono text prefers breaks at token boundaries, and a path prefers a break after a slash. A string of 16 characters or fewer, or a hyphenated word of 32 or fewer, stays whole. Longer text still wraps to fit.",
+      "severity": "warn",
+      "layer": "runtime",
+      "values": null,
+      "sources": [
+        "typo-break-mono-at-tokens"
+      ],
+      "check": null
+    },
+    {
+      "id": "typo-code-in-secondary-text",
+      "area": "typography",
+      "title": "Code in secondary text",
+      "rule": "A code span inside secondary text takes the mono font and the surrounding ink. A span that fits on one line stays whole, and a longer one wraps.",
+      "severity": "warn",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "typo-code-in-secondary-text"
+      ],
+      "check": null
     }
   ]
 }

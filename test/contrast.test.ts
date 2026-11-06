@@ -8,7 +8,7 @@ import { evaluateColor } from "../scripts/lib/color.ts";
 import { readJson, type Theme, THEMES } from "./support.ts";
 
 const HUES = ["gray", "blue", "teal", "green", "yellow", "orange", "red", "violet", "pink"];
-const STATUS_HUE: Record<string, string> = { info: "blue", success: "green", warning: "yellow", danger: "red", neutral: "gray" };
+const STATUS_HUE: Record<string, string> = { info: "blue", success: "green", warning: "yellow", danger: "red", neutral: "gray", decision: "violet" };
 const AA = 4.5;
 
 function channel(hex: string, offset: number): number {
@@ -73,6 +73,14 @@ describe("text colors", () => {
     for (const surface of ["page", "panel"]) {
       expect(contrast(v["color.link"], v[`color.surface.${surface}`])).toBeGreaterThanOrEqual(AA);
     }
+  });
+});
+
+describe("guides", () => {
+  test.each([...THEMES])("%s color.border.guide meets 3:1 on surface.panel (tree and nesting guides)", (theme) => {
+    const { r, g, b } = evaluateColor(values(theme)["color.border.guide"]);
+    const hex = `#${[r, g, b].map((c) => Math.round(c).toString(16).padStart(2, "0")).join("")}`;
+    expect(contrast(hex, values(theme)["color.surface.panel"])).toBeGreaterThanOrEqual(3);
   });
 });
 

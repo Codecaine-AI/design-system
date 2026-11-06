@@ -179,7 +179,7 @@ export const tokens = {
       },
       "border": {
         "default": "#e6e5e3",
-        "guide": "color-mix(in srgb, #9b9a97 45%, #e6e5e3)",
+        "guide": "color-mix(in srgb, #666562 70%, #e6e5e3)",
         "image": "#0000001a",
         "strong": "color-mix(in srgb, #e6e5e3 70%, #9b9a97 30%)",
         "subtle": "#efeeec"
@@ -351,6 +351,13 @@ export const tokens = {
           "solid": "#e03e3e",
           "text": "#c62121"
         },
+        "decision": {
+          "line": "color-mix(in srgb, #6940a5 45%, #f8f8f7)",
+          "on-solid": "#ffffff",
+          "soft": "#eae4f2",
+          "solid": "#6940a5",
+          "text": "#6940a5"
+        },
         "info": {
           "line": "color-mix(in srgb, #0b6e99 45%, #f8f8f7)",
           "on-solid": "#ffffff",
@@ -473,7 +480,7 @@ export const tokens = {
       },
       "border": {
         "default": "#3d444d",
-        "guide": "color-mix(in srgb, #656c76 45%, #3d444d)",
+        "guide": "color-mix(in srgb, #9198a1 45%, #3d444d)",
         "image": "#ffffff1a",
         "strong": "color-mix(in srgb, #3d444d 70%, #656c76 30%)",
         "subtle": "#262c36"
@@ -644,6 +651,13 @@ export const tokens = {
           "soft": "color-mix(in srgb, #f85149 13%, #151b23)",
           "solid": "#f85149",
           "text": "#f85b53"
+        },
+        "decision": {
+          "line": "color-mix(in srgb, #ab7df8 50%, #151b23)",
+          "on-solid": "#0d1117",
+          "soft": "color-mix(in srgb, #ab7df8 13%, #151b23)",
+          "solid": "#ab7df8",
+          "text": "#ab7df8"
         },
         "info": {
           "line": "color-mix(in srgb, #4493f8 50%, #151b23)",
@@ -853,7 +867,7 @@ export const flat = {
     "color.blue.solid": "#0b6e99",
     "color.blue.text": "#0b6e99",
     "color.border.default": "#e6e5e3",
-    "color.border.guide": "color-mix(in srgb, #9b9a97 45%, #e6e5e3)",
+    "color.border.guide": "color-mix(in srgb, #666562 70%, #e6e5e3)",
     "color.border.image": "#0000001a",
     "color.border.strong": "color-mix(in srgb, #e6e5e3 70%, #9b9a97 30%)",
     "color.border.subtle": "#efeeec",
@@ -971,6 +985,11 @@ export const flat = {
     "color.status.danger.soft": "#fbe4e4",
     "color.status.danger.solid": "#e03e3e",
     "color.status.danger.text": "#c62121",
+    "color.status.decision.line": "color-mix(in srgb, #6940a5 45%, #f8f8f7)",
+    "color.status.decision.on-solid": "#ffffff",
+    "color.status.decision.soft": "#eae4f2",
+    "color.status.decision.solid": "#6940a5",
+    "color.status.decision.text": "#6940a5",
     "color.status.info.line": "color-mix(in srgb, #0b6e99 45%, #f8f8f7)",
     "color.status.info.on-solid": "#ffffff",
     "color.status.info.soft": "#ddebf1",
@@ -1061,7 +1080,7 @@ export const flat = {
     "color.blue.solid": "#4493f8",
     "color.blue.text": "#4493f8",
     "color.border.default": "#3d444d",
-    "color.border.guide": "color-mix(in srgb, #656c76 45%, #3d444d)",
+    "color.border.guide": "color-mix(in srgb, #9198a1 45%, #3d444d)",
     "color.border.image": "#ffffff1a",
     "color.border.strong": "color-mix(in srgb, #3d444d 70%, #656c76 30%)",
     "color.border.subtle": "#262c36",
@@ -1179,6 +1198,11 @@ export const flat = {
     "color.status.danger.soft": "color-mix(in srgb, #f85149 13%, #151b23)",
     "color.status.danger.solid": "#f85149",
     "color.status.danger.text": "#f85b53",
+    "color.status.decision.line": "color-mix(in srgb, #ab7df8 50%, #151b23)",
+    "color.status.decision.on-solid": "#0d1117",
+    "color.status.decision.soft": "color-mix(in srgb, #ab7df8 13%, #151b23)",
+    "color.status.decision.solid": "#ab7df8",
+    "color.status.decision.text": "#ab7df8",
     "color.status.info.line": "color-mix(in srgb, #4493f8 50%, #151b23)",
     "color.status.info.on-solid": "#0d1117",
     "color.status.info.soft": "color-mix(in srgb, #4493f8 13%, #151b23)",

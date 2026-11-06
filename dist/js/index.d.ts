@@ -232,6 +232,11 @@ export type ThemeTokenPath =
   | "color.status.danger.soft"
   | "color.status.danger.solid"
   | "color.status.danger.text"
+  | "color.status.decision.line"
+  | "color.status.decision.on-solid"
+  | "color.status.decision.soft"
+  | "color.status.decision.solid"
+  | "color.status.decision.text"
   | "color.status.info.line"
   | "color.status.info.on-solid"
   | "color.status.info.soft"
@@ -478,7 +483,7 @@ export declare const tokens: {
       };
       readonly "border": {
         readonly "default": "#e6e5e3";
-        readonly "guide": "color-mix(in srgb, #9b9a97 45%, #e6e5e3)";
+        readonly "guide": "color-mix(in srgb, #666562 70%, #e6e5e3)";
         readonly "image": "#0000001a";
         readonly "strong": "color-mix(in srgb, #e6e5e3 70%, #9b9a97 30%)";
         readonly "subtle": "#efeeec";
@@ -650,6 +655,13 @@ export declare const tokens: {
           readonly "solid": "#e03e3e";
           readonly "text": "#c62121";
         };
+        readonly "decision": {
+          readonly "line": "color-mix(in srgb, #6940a5 45%, #f8f8f7)";
+          readonly "on-solid": "#ffffff";
+          readonly "soft": "#eae4f2";
+          readonly "solid": "#6940a5";
+          readonly "text": "#6940a5";
+        };
         readonly "info": {
           readonly "line": "color-mix(in srgb, #0b6e99 45%, #f8f8f7)";
           readonly "on-solid": "#ffffff";
@@ -772,7 +784,7 @@ export declare const tokens: {
       };
       readonly "border": {
         readonly "default": "#3d444d";
-        readonly "guide": "color-mix(in srgb, #656c76 45%, #3d444d)";
+        readonly "guide": "color-mix(in srgb, #9198a1 45%, #3d444d)";
         readonly "image": "#ffffff1a";
         readonly "strong": "color-mix(in srgb, #3d444d 70%, #656c76 30%)";
         readonly "subtle": "#262c36";
@@ -943,6 +955,13 @@ export declare const tokens: {
           readonly "soft": "color-mix(in srgb, #f85149 13%, #151b23)";
           readonly "solid": "#f85149";
           readonly "text": "#f85b53";
+        };
+        readonly "decision": {
+          readonly "line": "color-mix(in srgb, #ab7df8 50%, #151b23)";
+          readonly "on-solid": "#0d1117";
+          readonly "soft": "color-mix(in srgb, #ab7df8 13%, #151b23)";
+          readonly "solid": "#ab7df8";
+          readonly "text": "#ab7df8";
         };
         readonly "info": {
           readonly "line": "color-mix(in srgb, #4493f8 50%, #151b23)";
@@ -1152,7 +1171,7 @@ export declare const flat: {
     readonly "color.blue.solid": "#0b6e99";
     readonly "color.blue.text": "#0b6e99";
     readonly "color.border.default": "#e6e5e3";
-    readonly "color.border.guide": "color-mix(in srgb, #9b9a97 45%, #e6e5e3)";
+    readonly "color.border.guide": "color-mix(in srgb, #666562 70%, #e6e5e3)";
     readonly "color.border.image": "#0000001a";
     readonly "color.border.strong": "color-mix(in srgb, #e6e5e3 70%, #9b9a97 30%)";
     readonly "color.border.subtle": "#efeeec";
@@ -1270,6 +1289,11 @@ export declare const flat: {
     readonly "color.status.danger.soft": "#fbe4e4";
     readonly "color.status.danger.solid": "#e03e3e";
     readonly "color.status.danger.text": "#c62121";
+    readonly "color.status.decision.line": "color-mix(in srgb, #6940a5 45%, #f8f8f7)";
+    readonly "color.status.decision.on-solid": "#ffffff";
+    readonly "color.status.decision.soft": "#eae4f2";
+    readonly "color.status.decision.solid": "#6940a5";
+    readonly "color.status.decision.text": "#6940a5";
     readonly "color.status.info.line": "color-mix(in srgb, #0b6e99 45%, #f8f8f7)";
     readonly "color.status.info.on-solid": "#ffffff";
     readonly "color.status.info.soft": "#ddebf1";
@@ -1360,7 +1384,7 @@ export declare const flat: {
     readonly "color.blue.solid": "#4493f8";
     readonly "color.blue.text": "#4493f8";
     readonly "color.border.default": "#3d444d";
-    readonly "color.border.guide": "color-mix(in srgb, #656c76 45%, #3d444d)";
+    readonly "color.border.guide": "color-mix(in srgb, #9198a1 45%, #3d444d)";
     readonly "color.border.image": "#ffffff1a";
     readonly "color.border.strong": "color-mix(in srgb, #3d444d 70%, #656c76 30%)";
     readonly "color.border.subtle": "#262c36";
@@ -1478,6 +1502,11 @@ export declare const flat: {
     readonly "color.status.danger.soft": "color-mix(in srgb, #f85149 13%, #151b23)";
     readonly "color.status.danger.solid": "#f85149";
     readonly "color.status.danger.text": "#f85b53";
+    readonly "color.status.decision.line": "color-mix(in srgb, #ab7df8 50%, #151b23)";
+    readonly "color.status.decision.on-solid": "#0d1117";
+    readonly "color.status.decision.soft": "color-mix(in srgb, #ab7df8 13%, #151b23)";
+    readonly "color.status.decision.solid": "#ab7df8";
+    readonly "color.status.decision.text": "#ab7df8";
     readonly "color.status.info.line": "color-mix(in srgb, #4493f8 50%, #151b23)";
     readonly "color.status.info.on-solid": "#0d1117";
     readonly "color.status.info.soft": "color-mix(in srgb, #4493f8 13%, #151b23)";

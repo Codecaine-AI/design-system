@@ -575,6 +575,19 @@
         "td-theme-before-first-paint"
       ],
       "check": null
+    },
+    {
+      "id": "color-legend-for-marks",
+      "area": "color",
+      "title": "Legend for marks",
+      "rule": "A view that marks state with its own glyphs or colors, such as change or required marks, has a legend. The legend lists only the marks the view uses.",
+      "severity": "warn",
+      "layer": "human",
+      "values": null,
+      "sources": [
+        "color-legend-for-marks"
+      ],
+      "check": null
     }
   ]
 }
