@@ -76,6 +76,14 @@ describe("text colors", () => {
   });
 });
 
+describe("guides", () => {
+  test.each([...THEMES])("%s color.border.guide meets 3:1 on surface.panel (tree and nesting guides)", (theme) => {
+    const { r, g, b } = evaluateColor(values(theme)["color.border.guide"]);
+    const hex = `#${[r, g, b].map((c) => Math.round(c).toString(16).padStart(2, "0")).join("")}`;
+    expect(contrast(hex, values(theme)["color.surface.panel"])).toBeGreaterThanOrEqual(3);
+  });
+});
+
 /**
  * The chart palette (color.chart.*) against the dataviz checks, recomputed here from the published values:
  * OKLab for lightness, chroma and distance (Delta E x 100), and the Machado-Oliveira-Fernandes 2009 matrices
