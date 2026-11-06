@@ -48,8 +48,6 @@ afterAll(async () => {
 function scratchRoot(root = mkdtempSync(join(scratch, "root-"))) {
   const ds = designSystemIn(root);
   for (const path of ["package.json", "tokens", "scripts", "dist"]) cpSync(join(DESIGN_SYSTEM_ROOT, path), join(ds, path), { recursive: true });
-  mkdirSync(join(ds, "guide"));
-  cpSync(join(DESIGN_SYSTEM_ROOT, "guide/tokens.md"), join(ds, "guide/tokens.md"));
   const build = runPackageScript(ds, "build");
   if (!build.ok) throw new Error(build.output);
   const out = join(root, "out");
@@ -70,23 +68,21 @@ function contents(dir: string, base = dir, files: Record<string, string> = {}): 
 function snapshot(ds: string): Record<string, string> {
   const files: Record<string, string> = {};
   for (const dir of ["tokens/themes", "dist"]) contents(join(ds, dir), ds, files);
-  files["guide/tokens.md"] = readFileSync(join(ds, "guide/tokens.md"), "utf8");
   return files;
 }
 
 const THEME = `${JSON.stringify({ color: { surface: { page: { $value: "#ffffff" } } } }, null, 2)}\n`;
 
 /**
- * A minimal design-system (one theme, a built dist/ and guide/tokens.md) whose toy build copies the theme
+ * A minimal design-system (one theme and a built dist/) whose toy build copies the theme
  * into dist/light.json and whose check compares the two. No real build, so a test costs milliseconds.
  */
 function miniDs(build = "cp tokens/themes/light.tokens.json dist/light.json") {
   const root = mkdtempSync(join(scratch, "mini-"));
   const ds = designSystemIn(root);
-  for (const dir of ["tokens/themes", "dist", "guide"]) mkdirSync(join(ds, dir), { recursive: true });
+  for (const dir of ["tokens/themes", "dist"]) mkdirSync(join(ds, dir), { recursive: true });
   writeFileSync(join(ds, "tokens/themes/light.tokens.json"), THEME);
   writeFileSync(join(ds, "dist/light.json"), THEME);
-  writeFileSync(join(ds, "guide/tokens.md"), "tokens\n");
   writeFileSync(join(ds, "package.json"), JSON.stringify({ scripts: { build, check: "cmp tokens/themes/light.tokens.json dist/light.json" } }));
   return { ds, journal: join(root, "out/propagate-journal") };
 }
@@ -421,7 +417,6 @@ describe("links out of the design-system", () => {
       },
       /dist\/light\.json in \S+ is hard-linked/,
     ],
-    ["guide/tokens.md as a symlink", (ds: string, outside: string) => linkOut(join(ds, "guide/tokens.md"), join(outside, "tokens.md")), /guide\/tokens\.md in \S+ is a symlink/],
     [
       "scripts/build.ts as a symlink (it builds the tree above its real path)",
       (ds: string, outside: string) => {

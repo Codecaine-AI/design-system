@@ -46,7 +46,7 @@ test("a connected app passes every check at pass 3, a 400-line file included", (
 test("the linter refuses a design-system build whose dist/ is stale against tokens/", () => {
   const copy = mkdtempSync(join(tmpdir(), "lint-ds-stale-"));
   try {
-    for (const p of ["tokens", "dist", "css", "templates", "guide/tokens.md"]) cpSync(join(PKG, p), join(copy, p), { recursive: true });
+    for (const p of ["tokens", "dist", "css", "templates"]) cpSync(join(PKG, p), join(copy, p), { recursive: true });
     expect(loadDesignSystem(copy).tokensCssSha256).toBe(sha256(readFileSync(REAL_TOKENS_CSS, "utf8")));
     appendFileSync(join(copy, "dist/css/tokens.css"), STALE_SUFFIX);
     expect(() => loadDesignSystem(copy)).toThrow("dist/css/tokens.css (out of date)");

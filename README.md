@@ -90,7 +90,7 @@ The font files are byte-identical to `@codecaine-ai/text-measure`'s, so browser 
 
 - **Text in the accent color is `text-link`.** `accent` is for fills, borders and focus rings: the light `accent` on the page is 4.34:1, under AA for text.
 - **A glyph on a solid tile is that tile's `on-solid`**: `bg-yellow-solid text-yellow-on-solid`, `bg-warning-solid text-warning-on-solid`. It is white or ink, whichever meets 4.5:1 on that solid. `text-on-solid` is white in light and fails on the light gray, yellow, orange and red solids. Light red tops out at 4.26:1 (white; ink is 3.87:1), so its tiles carry icons and large text only.
-- The full list is in [guide/tokens.md](guide/tokens.md#tailwind-utilities). There is no `bg-muted`: muted is a text color (`text-muted`); the neutral fill is `bg-active`.
+- The full list is in [dist/guide/tokens.md](dist/guide/tokens.md#tailwind-utilities). There is no `bg-muted`: muted is a text color (`text-muted`); the neutral fill is `bg-active`.
 
 ### Tailwind v3
 
@@ -137,7 +137,7 @@ Do not use `file:` with bun. Bun snapshots the folder at install time (bun 1.4 l
 ## Change a token
 
 1. Edit the value in `tokens/base/*.tokens.json`, or in both `tokens/themes/*.tokens.json` for a color.
-2. Run `bun run build`. It validates every file, then rewrites `dist/` and the reference table in `guide/tokens.md`.
+2. Run `bun run build`. It validates every file, then rewrites `dist/`, including the reference table in `dist/guide/tokens.md`.
 3. Run `bun run test`.
 4. Open `dist/guide/index.html` and check light and dark.
 5. Commit `tokens/` and `dist/` together.
@@ -157,7 +157,7 @@ A linked app (`workspace:*`, `bun link` or npm `file:`) reads the new `dist/` di
 
 | Command | What it does |
 | --- | --- |
-| `bun run build` | Validate `tokens/`, write `dist/` and the reference in `guide/tokens.md`. |
+| `bun run build` | Validate `tokens/`, write `dist/`, including the reference in `dist/guide/tokens.md`. |
 | `bun run check` | Rebuild in memory. Exit 1 and list the stale files when `dist/` is out of date. Core's doctor runs this. |
 | `bun run test` | Run the test suite. |
 

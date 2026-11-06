@@ -27,7 +27,7 @@ function runBuild(cwd: string, ...args: string[]) {
 }
 
 describe("committed outputs", () => {
-  test("dist/ and guide/tokens.md match a fresh build; `--check` exits 0", () => {
+  test("dist/ matches a fresh build; `--check` exits 0", () => {
     expect(staleFiles(ROOT)).toEqual([]);
     expect(runBuild(ROOT, "--check")).toEqual({ status: 0, stderr: "" });
   });
@@ -39,8 +39,6 @@ describe("on a temp copy of the package", () => {
   beforeEach(() => {
     dir = mkdtempSync(join(tmpdir(), "design-system-test-"));
     for (const path of ["tokens", "scripts", "dist"]) cpSync(join(ROOT, path), join(dir, path), { recursive: true });
-    mkdirSync(join(dir, "guide"));
-    cpSync(join(ROOT, "guide/tokens.md"), join(dir, "guide/tokens.md"));
     // Start from outputs built in the copy, so these tests do not depend on the committed dist/ being fresh.
     const build = runBuild(dir);
     if (build.status !== 0) throw new Error(`build of the temp copy failed:\n${build.stderr}`);

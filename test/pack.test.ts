@@ -177,8 +177,6 @@ test("a stale build refuses to pack: exit 1, the stale file named, no tgz writte
   const dir = mkdtempSync(join(tmpdir(), "design-system-pack-stale-"));
   try {
     for (const path of ["package.json", "tokens", "scripts", "dist", "css", "fonts"]) cpSync(join(PKG, path), join(dir, path), { recursive: true });
-    mkdirSync(join(dir, "guide"));
-    cpSync(join(PKG, "guide/tokens.md"), join(dir, "guide/tokens.md"));
     // Fresh outputs in the copy first, so only the token edit below makes the build stale.
     expect(run(process.execPath, ["scripts/build.ts"], dir).status).toBe(0);
     const file = join(dir, "tokens/themes/light.tokens.json");
