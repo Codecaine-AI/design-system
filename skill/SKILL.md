@@ -1,8 +1,9 @@
 ---
 name: design-system
-description: Workspace styling and UI-structure standards. Use for any UI work in /Users/Ford/workspace, including CSS, Tailwind, colors, spacing, type, radius, light and dark themes, app layout or sidebars, new pages or components, component folder structure, restyling an app, or moving an app onto the shared tokens.
+description: "Workspace UI standards: the shared tokens, the app shell and code structure, plus Jakub Krehel's principles for how a screen should feel, with a scorer that verifies every page. Use this skill for any UI work in /Users/Ford/workspace: CSS, Tailwind, colors, spacing, type, radius, light and dark themes, layout, sidebars, new pages or components, restyling an app or moving it onto the shared tokens. Also use it to polish or review a design, for \"make it feel better\", \"why does this feel clunky\", alignment, motion, states or copy fixes, and \"verify the design\" or \"is the design done\". For real app examples, use design-references. For PR screenshots, use ui-proof."
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
+  origin: "The principles part is adapted from jakubkrehel/skills (MIT, see LICENSE-jakub-krehel) and Interfaces Magazine"
 ---
 
 # Design System
@@ -58,3 +59,92 @@ Run these in `/Users/Ford/workspace/codebases/codecaine/core/design-system`. `--
 2. Run `bun run codemod:literals --app <id> propose`, mark the rows you accept `"approve": "yes"`, then run `bun run codemod:literals apply --table <mapping.json>`.
 3. Wire the CSS (`docs/30-guide/40-consume`) and fix what is left until `lint:apps --pass <n>` and `verify:apps --pass <n>` both pass, and `test:apps <id>` shows no failure beyond the baseline.
 4. Run `bun run snapshot --app <id> --set after`, then `bun run snapshot:sheet --app <id> --a before --b after` (and `snapshot:diff` with the same flags) to prove the change.
+
+## Judge How It Feels
+
+These rules say how a screen should feel: alignment, spacing, type, color, motion, states and copy. They never set a value. Every number maps to a `--ds-*` token. When a rule needs a value no token has, stop and propose a token in `tokens/`. Never hard-code it. Desktop only, with no mobile or touch rules.
+
+### Pick a Mode
+
+1. **Build**: you are writing or changing UI. Apply the rules as you go.
+2. **Review**: someone asks you to look at a diff, PR or page. Report, do not edit.
+3. **Verify**: someone asks "is it done", "verify the design" or "make it better". Run the scorer and climb.
+
+A build ends in verify. Never say "design done" without a fresh scorecard.
+
+A Stop hook enforces this. When a turn edits UI source (tsx, jsx, css, html, svelte, vue) and runs no `design:score --app` after the edit, the hook asks once for a fresh scorecard. Answer with a run, or say why the app cannot be scored and mark the design `Not verified`.
+
+### Rules by Area
+
+Each file lists rules with their rule id, verifier check id and token. Read the files for the area you touch.
+
+| Area | File |
+| --- | --- |
+| Alignment, spacing, grouping | `references/layout-and-alignment.md` |
+| Type, measure, numbers | `references/typography.md` |
+| Color roles, contrast | `references/color-and-contrast.md` |
+| Motion | `references/motion.md` |
+| Hover, press, focus, states | `references/interaction-and-states.md` |
+| Names, keyboard, focus | `references/accessibility.md` |
+| Labels, errors, empty states | `references/writing.md` |
+| The verify loop | `references/hill-climb.md` |
+
+### Build Mode
+
+1. Read the Style UI rules above and the reference files for what you touch.
+2. Prefer the cheaper fix, in this order: delete, use the native element, reuse a token or component, correct a value, add something new.
+3. Cover every state, not just the default: empty, loading, error, long text, disabled.
+4. Never introduce a trigger (list below).
+5. Finish in verify mode.
+
+### Review Mode
+
+Read only. Edit only when asked to fix the findings.
+
+1. State the scope: app, pages, states, and the diff range for a PR.
+2. For a diff, grep the removed lines for lost signals: `aria-*`, `alt`, `label`, `:focus-visible`, `outline`, `prefers-reduced-motion`, `tabular-nums`.
+3. Run what can run: `bun scripts/scan-literals.ts <path>`, `bun run lint:apps <id>` and `bun run design:score --app <id>`, in the design-system checkout. Inspect the rendered page when the claim is about rendering.
+4. Write one findings table, ranked by severity, then by reach. Cap it at 15. One root cause is one row with every location.
+5. End with a verdict: `Block` if any HIGH remains, else `Approve`.
+
+Findings table columns: Severity, Area, Location (`file:line`), Before, After, Why.
+
+**Not verified.** A check you could not run is `Not verified`, never a finding and never `Clear`. A rendering claim backed only by source is `Not verified`. `Approve` covers only what you inspected, so name every area you skipped in the verdict line.
+
+**Severity.**
+
+- HIGH: blocks a task, hides content, misleads, risks data loss, or is a trigger.
+- MEDIUM: hurts reading, speed or consistency.
+- LOW: isolated polish.
+
+**Triggers** are HIGH on sight, however small the surface:
+
+1. A control with no accessible name, or no visible focus ring.
+2. A path that works by pointer but not by keyboard.
+3. Text or control contrast below its WCAG 2 ratio, or meaning carried by color alone.
+4. Content clipped or cut off with no way to see all of it.
+5. A destructive action with no confirm or undo, or an error with no way to recover.
+
+The full list of 13 is in `references/accessibility.md`.
+
+### Verify Mode
+
+The loop and its stop rules are in `references/hill-climb.md`. In short:
+
+1. Score the app: `bun run design:score --app <id> --label base`, then `--quick --label base-quick`, in `~/workspace/codebases/codecaine/core/design-system`. Save the run folder path. An app with no `design-score/apps/<id>.json` cannot be scored yet: say so, and report verify as `Not verified`.
+2. Fix the worst failing check: the most fail pages.
+3. Rerun with `--quick` on the same pages as `base-quick`, and compare it with `base-quick`. Keep the change only if the score rises and no other check fails that passed before. Otherwise revert it.
+4. Stop at the target score, the cost cap, or three tries with no gain.
+5. Finish with a full `--label after` run, and report its path and the `bun run design:score --compare <app>/base <app>/after` output.
+6. Capture the Before and After screens and a recording for the PR with the `ui-proof` skill.
+
+Never game the score: no edits to the page list, rules, thresholds or allowlists, and no hiding elements to dodge a check.
+
+### Report "Design Done"
+
+A done message has all four, or it is not done:
+
+1. The scorecard path, newer than your last UI edit.
+2. The before and after scores, from `--compare`.
+3. Any HIGH still open, for the user.
+4. The checks that did not run, marked `Not verified`. `V-judge` never runs yet, so each `V-judge` rule is `Not verified` unless you inspected it by eye.
