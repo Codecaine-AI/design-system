@@ -8,7 +8,7 @@ import { appendFileSync, existsSync, mkdirSync, mkdtempSync, realpathSync, rmSyn
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { appScope, gitDirsOf, writeScope } from "../scripts/lib/checkouts.ts";
+import { appDirs, appScope, gitDirsOf, writeScope } from "../scripts/lib/checkouts.ts";
 import { markAppsStarted, pinRepos, resetPinsForTests } from "../scripts/lib/git.ts";
 import { headlessShellPath, noteAppStarted, PackageChanged, pinElectron, pinPlaywright, playwrightDirs, resetPlaywrightPinsForTests, toolPackageDirs } from "../scripts/lib/playwright.ts";
 import type { AppEntry } from "../scripts/lib/registry.ts";
@@ -79,6 +79,13 @@ describe("appScope (decision 29)", () => {
     expect(toolPackageDirs(t.root)).toEqual([realpathSync(join(t.core, "node_modules", "playwright")), realpathSync(join(t.core, "node_modules", "playwright-core"))]);
   });
 
+  test("a launcher (run.cwd) in another repository adds that checkout, so the run can write there", () => {
+    const t = tree();
+    const scope = appScope(t.root, entry({ repo: "codecaine/core/sequence", root: "codecaine/core/sequence", run: { mode: "browser", cwd: "codecaine/core/canvas" } }));
+    expect(scope.writable).toEqual([realpathSync(t.sibling), realpathSync(t.app)].sort());
+    expect(scope.readOnly).toEqual(expect.arrayContaining([realpathSync(join(t.sibling, ".git"))]));
+  });
+
   test("an app in no checkout inside --root gets its own folder, never --root itself", () => {
     const root = mkdtempSync(join(scratch, "plain-"));
     mkdirSync(join(root, "app", "src"), { recursive: true });
@@ -104,6 +111,17 @@ describe("appScope (decision 29)", () => {
     markAppsStarted();
     expect(appScope(t.root, entry({ repo: "codecaine/core/sequence", root: "codecaine/core/sequence" })).writable).toEqual([realpathSync(t.app)]);
     expect(() => appScope(t.root, entry({ repo: "codecaine/core/canvas", root: "codecaine/core/canvas" }))).toThrow(/not recorded before the first app started/);
+  });
+
+  test("a batch pinned from appDirs: a later app whose launcher (run.cwd) is in another checkout still gets its scope", () => {
+    const t = tree();
+    const first = entry({ id: "first", repo: "codecaine/core/sequence", root: "codecaine/core/sequence" });
+    const viewer = entry({ id: "viewer", repo: "codecaine/core/sequence", root: "codecaine/core/sequence", run: { mode: "browser", cwd: "codecaine/core/canvas" } });
+    // What verify:apps and registry:prove pin before the first app starts.
+    pinRepos([first, viewer].flatMap((app) => appDirs(t.root, app)));
+    appScope(t.root, first);
+    markAppsStarted();
+    expect(appScope(t.root, viewer).checkouts).toEqual([realpathSync(t.sibling), realpathSync(t.app)].sort());
   });
 
   test("gitDirsOf reads a worktree's git dir and common dir from its `.git` file, without git", () => {

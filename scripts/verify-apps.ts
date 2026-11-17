@@ -27,6 +27,7 @@
 import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
+import { appDirs } from "./lib/checkouts";
 import { GitPinError, pinFor, pinnedGit, pinRepos } from "./lib/git";
 import { type AppEntry, DESIGN_SYSTEM_ROOT, getApp, loadRegistry, type PassId, REGISTRY_PATH, type Registry, resolvePath, workspaceRoot, designSystemIn } from "./lib/registry";
 import { toolOutputDir } from "./lib/output-dir";
@@ -131,10 +132,9 @@ function git(dir: string, ...args: string[]): string | null {
   return result.status === 0 ? result.stdout.trim() : null;
 }
 
-/** Pins every repository this run reads (git.ts) before the first app starts: the design-system checkouts and each app's. */
+/** Pins every repository this run reads (git.ts) before the first app starts: the design-system checkouts and each app's (checkouts.ts appDirs, run.cwd included). */
 function pinAppRepos(root: string, apps: AppEntry[]) {
-  const dirs = apps.flatMap((app) => [app.repo, app.root, ...(app.scan?.paths ?? [])].filter((path): path is string => typeof path === "string").map((path) => resolvePath(root, path)));
-  pinRepos([DESIGN_SYSTEM_ROOT, designSystemIn(root), ...dirs.filter((dir) => existsSync(dir))]);
+  pinRepos([DESIGN_SYSTEM_ROOT, designSystemIn(root), ...apps.flatMap((app) => appDirs(root, app))]);
 }
 
 function designSystemMeta(values: BuildValues): AppResult["designSystem"] {

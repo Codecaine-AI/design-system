@@ -37,10 +37,10 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { cleanupRuns, guardedContext, installSignalHandlers, launchBrowser, startApp, validateLoadedRegistry, type RunningApp } from "./lib/app-runner";
-import { appScope, changedCheckouts, checkoutStates } from "./lib/checkouts";
+import { appDirs, appScope, changedCheckouts, checkoutStates } from "./lib/checkouts";
 import { pinRepos } from "./lib/git";
 import { toolOutputDir } from "./lib/output-dir";
-import { DESIGN_SYSTEM_ROOT, getApp, lightSeed, lightSteps, loadRegistry, resolvePath, type AppEntry, type Registry, type RouteSpec, workspaceRoot, designSystemIn } from "./lib/registry";
+import { DESIGN_SYSTEM_ROOT, getApp, lightSeed, lightSteps, loadRegistry, type AppEntry, type Registry, type RouteSpec, workspaceRoot, designSystemIn } from "./lib/registry";
 import { safeChildPath } from "./lib/safe-paths";
 
 /** The connection classifier lives in scripts/lib/egress.ts (the runner samples with it). */
@@ -344,7 +344,7 @@ if (import.meta.main) {
   pinRepos([
     DESIGN_SYSTEM_ROOT,
     designSystemIn(root),
-    ...apps.flatMap((app) => [app.repo, app.root, ...(app.scan?.paths ?? [])].filter((path): path is string => typeof path === "string").map((path) => resolvePath(root, path))),
+    ...apps.flatMap((app) => appDirs(root, app)),
   ]);
   let failed = false;
   for (const app of apps) {

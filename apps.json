@@ -2375,11 +2375,11 @@
       "name": "agent-kernel viewer-shell (library)",
       "wave": 1,
       "kind": "library",
-      "repo": "codecaine/core/agent-kernel",
-      "root": "codecaine/core/agent-kernel/packages/viewer-shell",
+      "repo": "codecaine/core/trace-viewer",
+      "root": "codecaine/core/trace-viewer/packages/viewer-shell",
       "scan": {
         "paths": [
-          "codecaine/core/agent-kernel/packages/viewer-shell/src"
+          "codecaine/core/trace-viewer/packages/viewer-shell/src"
         ],
         "exclude": []
       },
@@ -2463,14 +2463,14 @@
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
       },
       "commands": {
-        "cwd": "codecaine/core/agent-kernel",
+        "cwd": "codecaine/core/trace-viewer",
         "typecheck": "bun --no-env-file run typecheck:viewer-shell"
       },
       "tests": {
         "safe": [
           {
             "cmd": "bun --no-env-file test ./packages/viewer-shell/src",
-            "cwd": "codecaine/core/agent-kernel"
+            "cwd": "codecaine/core/trace-viewer"
           }
         ],
         "baselines": {
@@ -2620,11 +2620,11 @@
       "name": "agent-kernel viewer-ui (library)",
       "wave": 1,
       "kind": "library",
-      "repo": "codecaine/core/agent-kernel",
-      "root": "codecaine/core/agent-kernel/packages/viewer-ui",
+      "repo": "codecaine/core/trace-viewer",
+      "root": "codecaine/core/trace-viewer/packages/viewer-ui",
       "scan": {
         "paths": [
-          "codecaine/core/agent-kernel/packages/viewer-ui/src"
+          "codecaine/core/trace-viewer/packages/viewer-ui/src"
         ],
         "exclude": [
           "nucleo-src"
@@ -2710,14 +2710,14 @@
         "readyPattern": "Local:\\s+(http://127\\.0\\.0\\.1:\\d+/?)"
       },
       "commands": {
-        "cwd": "codecaine/core/agent-kernel",
+        "cwd": "codecaine/core/trace-viewer",
         "typecheck": "bun --no-env-file run typecheck:viewer-ui"
       },
       "tests": {
         "safe": [
           {
             "cmd": "bun --no-env-file test ./src/agent-viewer/catalog-client.test.ts ./src/agent-viewer/prompt-edit-client.test.ts ./src/agent-viewer/prompt-edit-loop.e2e.test.ts ./src/agent-viewer/prompt-edit-session-view.test.ts ./src/agent-viewer/prompt-lab-session-controller.test.ts ./src/agent-viewer/prompt-lab-session-mode.test.ts ./src/kernel-route-parity.test.ts ./src/trace-viewer/SpanCard/node-display.test.ts ./src/trace-viewer/SpanCard/span-indent.test.tsx ./src/trace-viewer/detail-panel/DetailShell.test.tsx ./src/trace-viewer/detail-panel/DetailShellExtensions.test.tsx ./src/trace-viewer/detail-panel/DetailsView.test.tsx ./src/trace-viewer/detail-panel/blocks.test.tsx ./src/trace-viewer/detail-panel/contract-conformance.test.tsx ./src/trace-viewer/detail-panel/doc-figure/Clamped.test.tsx ./src/trace-viewer/detail-panel/doc-figure/DocFigure.test.tsx ./src/trace-viewer/detail-panel/doc-figure/rendered-height.test.ts ./src/trace-viewer/detail-panel/doc-figure/tokenize.test.ts ./src/trace-viewer/detail-panel/renderers/AggregateBodies.test.tsx ./src/trace-viewer/detail-panel/renderers/ContextBuildBody.test.tsx ./src/trace-viewer/detail-panel/renderers/FactCard.test.tsx ./src/trace-viewer/detail-panel/renderers/MessageBody.test.tsx ./src/trace-viewer/detail-panel/renderers/ToolBody.test.tsx ./src/trace-viewer/detail-panel/renderers/TurnBody.test.tsx ./src/trace-viewer/detail-panel/renderers/_components/CallBody/index.test.tsx ./src/trace-viewer/detail-panel/renderers/_components/CallBody/utils.test.ts ./src/trace-viewer/detail-panel/renderers/_components/DecisionBody/_components/ProbabilityBars/utils.test.ts ./src/trace-viewer/detail-panel/renderers/_components/DecisionBody/index.test.tsx ./src/trace-viewer/detail-panel/renderers/_components/DecisionBody/utils.test.ts ./src/trace-viewer/detail-panel/renderers/_components/GateBody/index.test.tsx ./src/trace-viewer/detail-panel/renderers/_components/GateBody/utils.test.ts ./src/trace-viewer/detail-panel/renderers/_components/StepBody/utils.test.ts ./src/trace-viewer/detail-panel/renderers/json-document.test.ts ./src/trace-viewer/detail-panel/renderers/node-facts.test.ts ./src/trace-viewer/detail-panel/renderers/real-snapshot-render.test.tsx ./src/trace-viewer/detail-panel/renderers/request-snapshot-api.test.tsx ./src/trace-viewer/detail-panel/renderers/snapshot-message-view.test.tsx ./src/trace-viewer/detail-panel/renderers/turn-sections.test.tsx ./src/trace-viewer/detail-panel/renderers/turn/ToolsSection.test.tsx ./src/trace-viewer/detail-panel/renderers/turn/turn-block-content.test.tsx ./src/trace-viewer/detail-panel/renderers/useTraceBlob.mounted.test.tsx ./src/trace-viewer/detail-panel/renderers/useTraceBlob.test.ts ./src/trace-viewer/icons/span-icons.test.tsx ./src/trace-viewer/model-node-component-paths.test.ts ./src/trace-viewer/model-node-tree.test.tsx ./src/trace-viewer/selection.test.tsx ./src/trace-viewer/trace-tree-utils.test.ts ./src/trace-viewer/usage-summary.test.ts",
-            "cwd": "codecaine/core/agent-kernel/packages/viewer-ui"
+            "cwd": "codecaine/core/trace-viewer/packages/viewer-ui"
           },
           {
             "cmd": "bun --no-env-file test ./examples/simple-research-kernel/scripts/model-nodes-demo/shape.test.ts ./examples/simple-research-kernel/scripts/model-nodes-demo/generate-fixture.test.ts",
