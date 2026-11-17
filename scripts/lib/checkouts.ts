@@ -74,12 +74,23 @@ export interface AppScope {
  * no checkout inside --root (or only in --root's own) adds the app's own folder (repo, else root) instead.
  * Throws when that folder is --root itself or outside it.
  */
-export function appScope(root: string, app: Pick<AppEntry, "id" | "repo" | "root" | "scan"> & { run?: Pick<AppEntry["run"], "cwd"> }): AppScope {
-  const realRoot = canonicalPath(root);
-  const dirs = [app.repo, app.root, ...(app.scan?.paths ?? []), app.run?.cwd]
+type ScopedApp = Pick<AppEntry, "id" | "repo" | "root" | "scan"> & { run?: Pick<AppEntry["run"], "cwd"> };
+
+/**
+ * Every dir of an app that exists under --root and decides its checkouts: repo, root, scan paths and
+ * run.cwd (absolute). appScope reads its checkouts from these, so a tool that runs several apps must pin
+ * all of them (git.ts pinRepos) before the first app starts, or a later app's checkout is refused.
+ */
+export function appDirs(root: string, app: ScopedApp): string[] {
+  return [app.repo, app.root, ...(app.scan?.paths ?? []), app.run?.cwd]
     .filter((path): path is string => typeof path === "string" && path.length > 0)
     .map((path) => resolvePath(root, path))
     .filter((path) => existsSync(path));
+}
+
+export function appScope(root: string, app: ScopedApp): AppScope {
+  const realRoot = canonicalPath(root);
+  const dirs = appDirs(root, app);
   const own = new Set<string>();
   let fallback: string | undefined;
   for (const dir of dirs) {
