@@ -79,6 +79,13 @@ describe("appScope (decision 29)", () => {
     expect(toolPackageDirs(t.root)).toEqual([realpathSync(join(t.core, "node_modules", "playwright")), realpathSync(join(t.core, "node_modules", "playwright-core"))]);
   });
 
+  test("a launcher (run.cwd) in another repository adds that checkout, so the run can write there", () => {
+    const t = tree();
+    const scope = appScope(t.root, entry({ repo: "codecaine/core/sequence", root: "codecaine/core/sequence", run: { mode: "browser", cwd: "codecaine/core/canvas" } }));
+    expect(scope.writable).toEqual([realpathSync(t.sibling), realpathSync(t.app)].sort());
+    expect(scope.readOnly).toEqual(expect.arrayContaining([realpathSync(join(t.sibling, ".git"))]));
+  });
+
   test("an app in no checkout inside --root gets its own folder, never --root itself", () => {
     const root = mkdtempSync(join(scratch, "plain-"));
     mkdirSync(join(root, "app", "src"), { recursive: true });

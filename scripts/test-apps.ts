@@ -11,7 +11,7 @@
  *     fresh temp dir with the profile's fixtures, BUN_OPTIONS=--no-env-file, runProfile.env, unsetEnv removed),
  *     placeholders ({root}, {tmp}, {ds}, {port:<name>}) substituted;
  *   - inside the OS sandbox (sandbox.ts runPolicy, one place: commandPolicy). Writes: only the app's own
- *     writable scope (checkouts.ts appScope, decision 29: the checkouts holding its repo, root and scan paths)
+ *     writable scope (checkouts.ts appScope, decision 29: the checkouts holding its repo, root, scan paths and run.cwd)
  *     and its temp dir; never a `.git` entry, a git dir inside --root, another repository's checkout nested
  *     in the app's, the enclosing checkout (Core), the design-system checkout, the run folder or the out dir.
  *     No `.env` reads. Network (decision 31): a test command connects only to its port block and the
