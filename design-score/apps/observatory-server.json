@@ -1,0 +1,132 @@
+{
+  "app": "observatory-server",
+  "name": "Observatory (server mode)",
+  "repo": "codecaine/core/observatory",
+  "baseUrl": "http://127.0.0.1:4991",
+  "sourceDirs": [
+    "src/ui"
+  ],
+  "themes": {
+    "light": {
+      "localStorage": {
+        "observatory.theme": "light"
+      },
+      "colorScheme": "light",
+      "assert": "html[data-theme=\"light\"]"
+    },
+    "dark": {
+      "localStorage": {
+        "observatory.theme": "dark"
+      },
+      "colorScheme": "dark",
+      "assert": "html[data-theme=\"dark\"]"
+    }
+  },
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "width": 1024,
+      "height": 768
+    }
+  ],
+  "settleMs": 700,
+  "loading": [
+    "Loading the"
+  ],
+  "cap": 6,
+  "motionAllow": [
+    {
+      "name": "ds-shell-sidebar",
+      "selector": ".ds-shell",
+      "props": [
+        "grid-template-columns"
+      ],
+      "reason": "The design-system app shell animates its sidebar column when it collapses (css/layout.css .ds-shell). The shell owns it; allowed by Ford."
+    }
+  ],
+  "pages": [
+    {
+      "id": "work",
+      "path": "/work",
+      "waitFor": "[data-session-row]",
+      "waitForTimeoutMs": 60000,
+      "note": "The Work tab in server mode: the source age row, the Session list and the No parent groups. Live data, read-only: start the API with OBSERVATORY_MODE=server and TRACES_SQL_PASSWORD on port 4990, and the built UI with API_TARGET=http://127.0.0.1:4990 FRONTEND_PORT=4991 bunx --bun vite preview --config src/ui/vite.config.ts."
+    },
+    {
+      "id": "work-orphans",
+      "path": "/work",
+      "waitFor": "[data-orphan-groups]",
+      "waitForTimeoutMs": 60000,
+      "actions": [
+        {
+          "click": "[data-orphan-group=\"orphans\"] > button"
+        },
+        {
+          "click": "[data-orphan-row] >> nth=0"
+        },
+        {
+          "waitFor": "[data-node-detail]"
+        },
+        {
+          "scrollTo": "#work-no-parent"
+        }
+      ],
+      "note": "The Orphans group open, with one orphan in the node detail pane."
+    },
+    {
+      "id": "session-tree",
+      "path": "/work",
+      "waitFor": "[data-session-row]",
+      "waitForTimeoutMs": 60000,
+      "note": "The most recently active Session as a tree, opened from the Work tab, with the Session node in the detail pane.",
+      "actions": [
+        {
+          "click": "[data-session-row] a >> nth=0"
+        },
+        {
+          "waitFor": "[data-tree-row]"
+        }
+      ]
+    },
+    {
+      "id": "call",
+      "path": "/work",
+      "waitFor": "[data-session-row]",
+      "waitForTimeoutMs": 60000,
+      "actions": [
+        {
+          "click": "[data-session-row] a >> nth=0"
+        },
+        {
+          "waitFor": "[data-tree-row]"
+        },
+        {
+          "click": "[data-tree-row=\"conversation\"] >> nth=0"
+        },
+        {
+          "waitFor": "[data-call-row]"
+        },
+        {
+          "click": "[data-call-row] >> nth=0"
+        },
+        {
+          "waitFor": "[data-call-detail]"
+        },
+        {
+          "wait": 1500
+        }
+      ],
+      "note": "The most recently active Session, its first conversation, then that conversation's first call: the prompt, the answer and the usage."
+    },
+    {
+      "id": "workflows",
+      "path": "/workflows",
+      "waitFor": "[data-workflow-group]",
+      "waitForTimeoutMs": 60000,
+      "note": "The Workflows tab: the Archon runs by workflow, the newest group open."
+    }
+  ]
+}
