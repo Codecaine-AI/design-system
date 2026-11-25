@@ -20,7 +20,8 @@
   },
   "sources": {
     "skills": "outputs/skills-rule-catalog.json (248 rules)",
-    "magazine": "outputs/magazine-rule-catalog.json (171 rules)"
+    "magazine": "outputs/magazine-rule-catalog.json (171 rules)",
+    "goodCss": "https://github.com/vojtaholik/good-css @ 35e0e8c (47 techniques)"
   },
   "dropped": [
     {
@@ -90,6 +91,30 @@
     {
       "id": "07-swipe-actions-keyboard",
       "reason": "Swipe rows (touch-only gesture); a11y-keyboard-path-for-pointer still covers any drag UI."
+    },
+    {
+      "id": "good-css-oklch-light-dark-tokens",
+      "reason": "tokens/ uses static sRGB values so scripts/build.ts can emit RGB triplets for host-contract.css, tokens-dark-first.css, scoped [data-theme] subtrees, and standalone SVG/PDF exports without shifting pixels across 27 apps."
+    },
+    {
+      "id": "good-css-global-reset",
+      "reason": "A shipped global reset would break 27 mixed-stack apps: font-synthesis: none breaks italics because css/fonts.css ships upright faces only; max(16px, 1rem) breaks the dense desktop scale; * { min-width: 0 } risks collapsing flex children; :root text-wrap: pretty shifts lines in editors."
+    },
+    {
+      "id": "good-css-static-logical-lint",
+      "reason": "Block logical Tailwind utilities (mbs-, inset-bs-) require Tailwind 4.2+; our fleet spans Tailwind v3.4 through v4.3 and UnoCSS with no RTL product."
+    },
+    {
+      "id": "good-css-fluid-clamp-chrome",
+      "reason": "Viewport-fluid clamp()/pow() scales conflict with our desktop-only 4px spacing grid (R-spacing-grid, R-control-height); keep for editorial/marketing pages only."
+    },
+    {
+      "id": "good-css-blind-overflow-clip",
+      "reason": "overflow: clip does not establish a scroll container (flex items keep min-width: auto, and clip + text-overflow: ellipsis is untested in Firefox). Restrict to pure non-ellipsis clipping boxes."
+    },
+    {
+      "id": "good-css-left-out-on-purpose",
+      "reason": "Adopted negative rules from good-css: never add * { text-box: trim-both cap alphabetic }, text-rendering: optimizeLegibility, or resets setting display: contents / shared grid-area: 1 / 1 on every element."
     }
   ]
 }

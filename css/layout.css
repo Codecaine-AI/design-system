@@ -23,6 +23,10 @@
 /* Shell grid                                                          */
 /* ------------------------------------------------------------------ */
 
+html:has(.ds-shell) {
+  scroll-padding-block-start: var(--ds-layout-topbar-height);
+}
+
 .ds-shell {
   display: grid;
   grid-template-areas: "sidebar workspace inspector";
@@ -34,7 +38,6 @@
   font-family: var(--ds-font-family-sans);
   font-size: var(--ds-font-size-ui-lg);
   line-height: var(--ds-line-height-ui);
-  transition: grid-template-columns var(--ds-motion-duration-slow) var(--ds-motion-easing-standard);
 }
 
 .ds-shell[data-sidebar="collapsed"] {
@@ -87,7 +90,7 @@
   height: 100vh;
   height: 100dvh;
   min-width: 0;
-  overflow: hidden;
+  overflow: clip;
   background: var(--ds-color-surface-sidebar);
   /* Inset edge instead of a border: the edge takes no width, so the rail
      centre stays at width-collapsed / 2 and the toggle lines up with the icons. */
@@ -137,6 +140,7 @@
   padding: var(--ds-space-4) var(--ds-layout-sidebar-padding-x);
   overflow-x: hidden;
   overflow-y: auto;
+  overscroll-behavior: contain;
   scrollbar-width: thin;
 }
 
@@ -183,10 +187,12 @@
   color: var(--ds-color-text-muted);
 }
 
-.ds-shell-button:hover,
-.ds-shell-icon-button:hover {
-  background: var(--ds-color-fill-hover);
-  color: var(--ds-color-text-ink);
+@media (hover: hover) and (pointer: fine) {
+  .ds-shell-button:hover,
+  .ds-shell-icon-button:hover {
+    background: var(--ds-color-fill-hover);
+    color: var(--ds-color-text-ink);
+  }
 }
 
 .ds-shell-button[aria-pressed="true"],
@@ -232,7 +238,6 @@
 .ds-sidebar-toggle-arrow {
   transform-box: fill-box;
   transform-origin: center;
-  transition: transform var(--ds-motion-duration-base) var(--ds-motion-easing-standard);
 }
 
 /* ------------------------------------------------------------------ */
@@ -292,9 +297,11 @@
     color var(--ds-motion-duration-fast) var(--ds-motion-easing-standard);
 }
 
-.ds-nav-item:hover {
-  background: var(--ds-color-fill-hover);
-  color: var(--ds-color-text-ink);
+@media (hover: hover) and (pointer: fine) {
+  .ds-nav-item:hover {
+    background: var(--ds-color-fill-hover);
+    color: var(--ds-color-text-ink);
+  }
 }
 
 /* Current page: filled row, ink text, accent icon. */
@@ -402,9 +409,11 @@
     color var(--ds-motion-duration-fast) var(--ds-motion-easing-standard);
 }
 
-.ds-subnav-item:hover {
-  background: var(--ds-color-fill-hover);
-  color: var(--ds-color-text-ink);
+@media (hover: hover) and (pointer: fine) {
+  .ds-subnav-item:hover {
+    background: var(--ds-color-fill-hover);
+    color: var(--ds-color-text-ink);
+  }
 }
 
 .ds-subnav-item[aria-current="page"] {
@@ -451,7 +460,7 @@
     ),
     var(--ds-space-1)
   );
-  overflow: hidden;
+  overflow: clip;
   white-space: nowrap;
 }
 
@@ -606,7 +615,7 @@
     var(--ds-layout-content-padding-bottom);
 }
 
-.ds-main:focus {
+.ds-main[tabindex="-1"]:focus {
   outline: none;
 }
 
@@ -637,13 +646,11 @@
   height: 100vh;
   height: 100dvh;
   min-width: 0;
-  overflow: hidden;
+  overflow: clip;
   visibility: hidden;
   background: var(--ds-color-surface-panel);
   /* Inset edge instead of a border: a closed inspector takes no width at all. */
   box-shadow: inset var(--ds-border-width-hairline) 0 0 var(--ds-color-border-default);
-  /* Hide only after the closing slide finishes. */
-  transition: visibility 0s linear var(--ds-motion-duration-slow);
 }
 
 [dir="rtl"] .ds-inspector {
@@ -652,7 +659,6 @@
 
 .ds-shell[data-inspector="open"] .ds-inspector {
   visibility: visible;
-  transition-delay: 0s;
 }
 
 .ds-inspector-header {
@@ -687,6 +693,7 @@
   min-height: 0;
   padding: var(--ds-space-6);
   overflow-y: auto;
+  overscroll-behavior: contain;
   scrollbar-width: thin;
 }
 
@@ -722,9 +729,6 @@
       var(--ds-shadow-glass),
       inset var(--ds-border-width-hairline) 0 0 var(--ds-color-border-default);
     transform: translateX(100%);
-    transition:
-      transform var(--ds-motion-duration-slow) var(--ds-motion-easing-emphasized),
-      visibility 0s linear var(--ds-motion-duration-slow);
   }
 
   [dir="rtl"] .ds-inspector {
@@ -736,7 +740,6 @@
 
   .ds-shell[data-inspector="open"] .ds-inspector {
     transform: none;
-    transition-delay: 0s;
   }
 
   .ds-inspector-header,
@@ -749,19 +752,50 @@
 /* Preferences and media                                               */
 /* ------------------------------------------------------------------ */
 
-@media (prefers-reduced-motion: reduce) {
-  .ds-shell,
-  .ds-sidebar-title,
+/* Opt-in motion: movement, layout slides and press scale only when the
+   reader has not requested reduced motion. Gentle color/opacity fades stay on. */
+@media (prefers-reduced-motion: no-preference) {
+  .ds-shell {
+    transition: grid-template-columns var(--ds-motion-duration-slow) var(--ds-motion-easing-standard);
+  }
+
   .ds-shell-button,
-  .ds-shell-icon-button,
-  .ds-sidebar-toggle-arrow,
-  .ds-nav-item,
-  .ds-nav-label,
-  .ds-subnav-item,
-  .ds-sidebar-footer-text,
-  .ds-inspector,
+  .ds-shell-icon-button {
+    transition:
+      background-color var(--ds-motion-duration-fast) var(--ds-motion-easing-standard),
+      border-color var(--ds-motion-duration-fast) var(--ds-motion-easing-standard),
+      color var(--ds-motion-duration-fast) var(--ds-motion-easing-standard),
+      transform var(--ds-motion-duration-base) var(--ds-motion-easing-out);
+  }
+
+  .ds-shell-button:not(:disabled):active,
+  .ds-shell-icon-button:not(:disabled):active {
+    transform: scale(var(--ds-motion-scale-press));
+  }
+
+  .ds-sidebar-toggle-arrow {
+    transition: transform var(--ds-motion-duration-base) var(--ds-motion-easing-standard);
+  }
+
+  /* Hide only after the closing slide finishes. */
+  .ds-inspector {
+    transition: visibility 0s linear var(--ds-motion-duration-slow);
+  }
+
   .ds-shell[data-inspector="open"] .ds-inspector {
-    transition: none;
+    transition-delay: 0s;
+  }
+
+  @media (max-width: 800px) {
+    .ds-inspector {
+      transition:
+        transform var(--ds-motion-duration-slow) var(--ds-motion-easing-emphasized),
+        visibility 0s linear var(--ds-motion-duration-slow);
+    }
+
+    .ds-shell[data-inspector="open"] .ds-inspector {
+      transition-delay: 0s;
+    }
   }
 }
 

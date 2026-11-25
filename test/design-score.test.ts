@@ -37,11 +37,32 @@ describe("design:score static checks", () => {
     expect(found["S-transition-all"]).toEqual(["fail src/a.css:1", "fail src/b.tsx:1"]);
   });
 
-  test("motion literals fail outside reduced-motion rules and var() fallbacks", () => {
+  test("motion literals and ease-in fail outside reduced-motion rules and var() fallbacks", () => {
     const found = staticFindings({
-      "a.css": ".a { animation: spin 1s linear infinite; }\n.b { transition: opacity var(--ds-motion-duration-base, 150ms); }\n@media (prefers-reduced-motion: reduce) { .a { transition-duration: 1ms; } }\n",
+      "a.css": [
+        ".a { animation: spin 1s linear infinite; }",
+        ".b { transition: opacity var(--ds-motion-duration-base, 150ms); }",
+        ".c { transition: opacity var(--ds-motion-duration-base) ease-in; }",
+        ".d { transition: opacity var(--ds-motion-duration-base) ease-in-out; }",
+        "@media (prefers-reduced-motion: reduce) { .a { transition-duration: 1ms; } }",
+      ].join("\n"),
+      "b.tsx": 'export const B = () => <><div className="ease-in" /><div className="ease-in-out" /></>;\n',
     });
-    expect(found["S-motion-literal"]).toEqual(["fail src/a.css:1"]);
+    expect(found["S-motion-literal"]).toEqual(["fail src/a.css:1", "fail src/a.css:3", "fail src/b.tsx:1"]);
+  });
+
+  test("shipped css/layout.css passes every design:score static check", () => {
+    const run = runStaticChecks(DESIGN_SYSTEM_ROOT, [join(DESIGN_SYSTEM_ROOT, "css/layout.css")]);
+    const summary = Object.fromEntries(
+      Object.entries(run.results).map(([id, r]) => [id, r.findings.map((f) => `${f.severity} ${f.file}:${f.line} ${f.measured}`)]),
+    );
+    expect(summary).toEqual({
+      "S-color-literal": [],
+      "S-transition-all": [],
+      "S-motion-literal": [],
+      "S-hover-unguarded": [],
+      "S-outline-none": [],
+    });
   });
 
   test(":hover counts as guarded only inside @media (hover: hover)", () => {

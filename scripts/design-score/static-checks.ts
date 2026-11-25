@@ -264,8 +264,11 @@ function cssFindings(rel: string, rules: CssRule[]): Record<string, RawFinding[]
         const bare = withoutVars(d.value);
         const durations = [...bare.matchAll(/(?<![\w.-])(\d*\.?\d+)(ms|s)\b/g)].filter((m) => Number(m[1]) !== 0).map((m) => m[0]);
         const easings = [...bare.matchAll(/\b(cubic-bezier|steps)\([^)]*\)/g)].map((m) => m[0]);
+        const easeIn = /(?<![\w-])ease-in(?![\w-])/.test(bare);
         if (durations.length || easings.length)
           add("S-motion-literal", "fail", d.line, `${d.prop}: ${d.value}`, "var(--ds-motion-duration-*) and var(--ds-motion-easing-*)", rule.selector);
+        else if (easeIn)
+          add("S-motion-literal", "fail", d.line, `${d.prop}: ${d.value}`, "var(--ds-motion-easing-*) (never ease-in on UI)", rule.selector);
       }
       // S-outline-none
       if (OUTLINE_NONE(d)) {
@@ -326,6 +329,7 @@ function jsFindings(rel: string, src: string, ringClasses: Set<string>): Record<
     for (const m of str.matchAll(/(?<![\w:-])((?:[\w-]+:)*)transition-all(?![\w-])/g)) add("S-transition-all", s + m.index!, m[0], "transition-colors / transition-opacity / transition-transform");
     for (const m of str.matchAll(/(?<![\w-])((?:[\w-]+:)*)(duration|delay)-(\d+|\[[^\]]+\])(?![\w-])/g)) add("S-motion-literal", s + m.index!, m[0], "a motion-token utility (duration-(--ds-motion-duration-*))");
     for (const m of str.matchAll(/(?<![\w-])((?:[\w-]+:)*)ease-\[[^\]]+\](?![\w-])/g)) add("S-motion-literal", s + m.index!, m[0], "ease-(--ds-motion-easing-*)");
+    for (const m of str.matchAll(/(?<![\w-])((?:[\w-]+:)*)ease-in(?![\w-])/g)) add("S-motion-literal", s + m.index!, m[0], "ease-(--ds-motion-easing-*) (never ease-in on UI)");
     for (const m of str.matchAll(/(?<![\w-])((?:[\w-]+:)*)outline-(none|hidden)(?![\w-])/g)) {
       const variant = m[1] ?? "";
       if (/focus-visible:|focus-within:/.test(variant)) {
@@ -355,7 +359,8 @@ function jsFindings(rel: string, src: string, ringClasses: Set<string>): Record<
     const value = text.slice(at + 1, end);
     if (/^\s*all\b/.test(value) || (!m[1] && splitTop(value).some((seg) => segmentAnimatesAll(seg) === true))) add("S-transition-all", at, `${m[0]}${q}${value}${q}`, "name the properties that change");
     const bare = withoutVars(value);
-    if ([...bare.matchAll(/(?<![\w.-])(\d*\.?\d+)(ms|s)\b/g)].some((x) => Number(x[1]) !== 0) || /cubic-bezier\(/.test(bare)) add("S-motion-literal", at, `${m[0]}${q}${value}${q}`, "var(--ds-motion-duration-*) and var(--ds-motion-easing-*)");
+    if ([...bare.matchAll(/(?<![\w.-])(\d*\.?\d+)(ms|s)\b/g)].some((x) => Number(x[1]) !== 0) || /cubic-bezier\(/.test(bare) || /(?<![\w-])ease-in(?![\w-])/.test(bare))
+      add("S-motion-literal", at, `${m[0]}${q}${value}${q}`, "var(--ds-motion-duration-*) and var(--ds-motion-easing-*)");
   }
   for (const m of text.matchAll(/\b(transitionDuration|animationDuration|transitionTimingFunction)\s*:\s*(["'`])([^"'`]{1,80})\2/g)) {
     if (/var\(/.test(m[3]!)) continue;
