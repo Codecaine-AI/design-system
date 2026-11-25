@@ -36,6 +36,8 @@ export function toPx(value: string): number | null {
 
 /** Sizes for uppercase labels: an exact match takes one only when no general size has the same value. */
 const LABEL_SIZES = new Set(["font.size.micro", "font.size.ui-2xs"]);
+/** Deprecated duplicate base tokens kept for backwards compatibility; prefer their canonical twins in proposals. */
+const DEPRECATED_BASE = new Set(["font.size.ui-2xs", "letter-spacing.micro-wide", "motion.easing.decelerate"]);
 
 export function pickFontSize(data: TokenData, value: string, ctx: Context): Pick {
   if (/(em|%)$/.test(value.trim()) && !/rem$/.test(value.trim())) return none(`relative size ${value}: keep, or set a token size on the parent`);
@@ -46,12 +48,14 @@ export function pickFontSize(data: TokenData, value: string, ctx: Context): Pick
   const exact = scale.filter(([, v]) => v === px);
   if (exact.length) {
     const fits = exact.filter(([p]) => (mono ? p === "font.size.code" : p !== "font.size.code"));
-    const path = (fits.find(([p]) => !LABEL_SIZES.has(p)) ?? fits[0] ?? exact[0])[0];
+    const nonDeprecated = exact.filter(([p]) => !DEPRECATED_BASE.has(p));
+    const pool = fits.length ? fits : nonDeprecated.length ? nonDeprecated : exact;
+    const path = (pool.find(([p]) => !LABEL_SIZES.has(p) && !DEPRECATED_BASE.has(p)) ?? pool[0])[0];
     return { path, method: "role", deltaE: null, why: `font size ${value}${exact.length > 1 ? (mono ? " in code" : " in UI text") : ""}` };
   }
   const near = scale
     .map(([p, v]) => ({ p, v, d: Math.abs(v - px) }))
-    .filter((x) => x.d <= 1 && (mono || x.p !== "font.size.code"))
+    .filter((x) => x.d <= 1 && !DEPRECATED_BASE.has(x.p) && (mono || x.p !== "font.size.code"))
     .sort((a, b) => a.d - b.d || b.v - a.v)[0];
   if (near) return { path: near.p, method: "role", deltaE: null, why: `font size ${value} becomes ${near.v}px` };
   const below = scale.filter(([, v]) => v < px).pop();
@@ -279,7 +283,7 @@ function pickClassBody(data: TokenData, cls: string, ctx: Context, opts: ClassOp
       return { ...p, utility: p.path ? themeUtility(data, "--font-", "font", p.path) : null, root };
     }
     const prefix = root === "leading" ? "line-height." : "letter-spacing.";
-    const match = Object.entries(data.base).find(([p, x]) => p.startsWith(prefix) && String(x) === v);
+    const match = Object.entries(data.base).find(([p, x]) => p.startsWith(prefix) && !DEPRECATED_BASE.has(p) && String(x) === v);
     if (match) return { path: match[0], method: "role", deltaE: null, why: `${root} ${v}`, utility: themeUtility(data, `--${root}-`, root, match[0]), root };
     return { ...none(`${root} ${v}: no token`), root };
   }
@@ -303,7 +307,9 @@ function pickClassBody(data: TokenData, cls: string, ctx: Context, opts: ClassOp
     if (z) return { path: z[0], method: "role", deltaE: null, why: `z-index ${value}`, utility: themeUtility(data, "--z-index-", "z", z[0]), root };
   }
   if (root === "ease") {
-    const e = Object.entries(data.base).find(([p, x]) => p.startsWith("motion.easing.") && String(x).replace(/\s+/g, "") === value.replace(/\s+/g, ""));
+    const e = Object.entries(data.base).find(
+      ([p, x]) => p.startsWith("motion.easing.") && !DEPRECATED_BASE.has(p) && String(x).replace(/\s+/g, "") === value.replace(/\s+/g, ""),
+    );
     if (e) return { path: e[0], method: "role", deltaE: null, why: `easing ${value}`, utility: themeUtility(data, "--ease-", "ease", e[0]), root };
   }
   return { ...none(`${root}-[${value}]: no design-system utility`), root };
