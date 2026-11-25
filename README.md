@@ -48,7 +48,6 @@ templates/                        starter app shell
 templates/app-shell-demo.html     static demo of the app shell
 skill/SKILL.md                    the design-system agent skill (source of truth; infrastructure/agent-config registers it)
 test/                             bun test
-verification/docs-system/         screenshot harness and mapping.md for the docs-system migration
 ```
 
 `dist/` is committed. The package has no dependencies, so a read-only mount (Docker) works without an install or a build step.

@@ -18,7 +18,7 @@ import { DESIGN_SYSTEM_ROOT } from "../scripts/lib/registry";
 
 const RULES = judgeRules(DESIGN_SYSTEM_ROOT);
 const IDS = RULES.still.map((r) => r.id);
-const SHOT = readFileSync(join(DESIGN_SYSTEM_ROOT, "design-score/fixtures/V-judge/shots/good.png"));
+const SHOT = readFileSync(join(DESIGN_SYSTEM_ROOT, "test/fixtures/judge-shot.png"));
 const tmp = mkdtempSync(join(tmpdir(), "ds-judge-"));
 afterAll(() => rmSync(tmp, { recursive: true, force: true }));
 
