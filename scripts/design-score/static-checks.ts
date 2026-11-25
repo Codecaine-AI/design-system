@@ -260,11 +260,13 @@ function cssFindings(rel: string, rules: CssRule[]): Record<string, RawFinding[]
         if (segs.some((s) => segmentAnimatesAll(s) === true)) add("S-transition-all", "fail", d.line, `transition: ${d.value}`, "name the properties that change (a shorthand with no property animates all)", rule.selector);
       } else if (d.prop === "@apply" && /(^|\s)transition-all(\s|$)/.test(d.value)) add("S-transition-all", "fail", d.line, `@apply ${d.value}`, "transition-colors / transition-opacity / transition-transform", rule.selector);
       // S-motion-literal
-      if (MOTION_PROPS.has(d.prop) && !reduced) {
+      if (d.prop === "@apply" && !reduced && /(?:^|\s)(?:[^\s:]+:)*!?ease-in!?(?=\s|$)/.test(d.value)) {
+        add("S-motion-literal", "fail", d.line, `@apply ${d.value}`, "ease-(--ds-motion-easing-*) (never ease-in on UI)", rule.selector);
+      } else if (MOTION_PROPS.has(d.prop) && !reduced) {
         const bare = withoutVars(d.value);
         const durations = [...bare.matchAll(/(?<![\w.-])(\d*\.?\d+)(ms|s)\b/g)].filter((m) => Number(m[1]) !== 0).map((m) => m[0]);
         const easings = [...bare.matchAll(/\b(cubic-bezier|steps)\([^)]*\)/g)].map((m) => m[0]);
-        const easeIn = /(?<![\w-])ease-in(?![\w-])/.test(bare);
+        const easeIn = /(?<![\w-])ease-in(?![\w-])/i.test(bare);
         if (durations.length || easings.length)
           add("S-motion-literal", "fail", d.line, `${d.prop}: ${d.value}`, "var(--ds-motion-duration-*) and var(--ds-motion-easing-*)", rule.selector);
         else if (easeIn)
@@ -306,6 +308,20 @@ function stringSpans(inStr: Uint8Array): Array<[number, number]> {
   return spans;
 }
 
+/** Whether the end of `scope` sits inside an unclosed call whose callee matches `callee`. */
+function insideCall(scope: string, callee: RegExp): boolean {
+  let depth = 0;
+  for (let i = scope.length - 1; i >= 0; i--) {
+    const ch = scope[i];
+    if (ch === ")") depth++;
+    else if (ch === "(") {
+      if (depth === 0) return callee.test(scope.slice(0, i));
+      depth--;
+    }
+  }
+  return false;
+}
+
 function jsFindings(rel: string, src: string, ringClasses: Set<string>): Record<string, RawFinding[]> {
   const out: Record<string, RawFinding[]> = { "S-transition-all": [], "S-motion-literal": [], "S-outline-none": [] };
   const { text, inStr } = lexJs(src);
@@ -329,7 +345,21 @@ function jsFindings(rel: string, src: string, ringClasses: Set<string>): Record<
     for (const m of str.matchAll(/(?<![\w:-])((?:[\w-]+:)*)transition-all(?![\w-])/g)) add("S-transition-all", s + m.index!, m[0], "transition-colors / transition-opacity / transition-transform");
     for (const m of str.matchAll(/(?<![\w-])((?:[\w-]+:)*)(duration|delay)-(\d+|\[[^\]]+\])(?![\w-])/g)) add("S-motion-literal", s + m.index!, m[0], "a motion-token utility (duration-(--ds-motion-duration-*))");
     for (const m of str.matchAll(/(?<![\w-])((?:[\w-]+:)*)ease-\[[^\]]+\](?![\w-])/g)) add("S-motion-literal", s + m.index!, m[0], "ease-(--ds-motion-easing-*)");
-    for (const m of str.matchAll(/(?<![\w-])((?:[\w-]+:)*)ease-in(?![\w-])/g)) add("S-motion-literal", s + m.index!, m[0], "ease-(--ds-motion-easing-*) (never ease-in on UI)");
+    const before = text.slice(Math.max(0, s - 200), s);
+    const noArrows = before.replace(/=>/g, "  ");
+    const scope = before.slice(Math.max(noArrows.lastIndexOf(">"), noArrows.lastIndexOf(";")) + 1);
+    const inInlineMotionProp = /(?:transition|animation)(?:Property|Duration|Delay|TimingFunction)?\s*:\s*["'`]?$/.test(scope);
+    const inClassContext =
+      /(?:^|[\s{,])(?:className|class)\s*=\s*["'`]?$/.test(scope) ||
+      /(?:^|[\s{,])(?:className|class)\s*=\s*\{[^}]*$/.test(scope) ||
+      insideCall(scope, /\b(?:cn|clsx|cx|cva|twMerge|classList\.(?:add|remove|toggle))\s*$/);
+    if (inClassContext && !inInlineMotionProp) {
+      for (const m of withoutVars(str).matchAll(/(?:^|\s)((?:[^\s:]+:)*!?ease-in!?)(?=\s|$)/g)) {
+        const token = m[1]!;
+        const offset = m.index! + m[0].length - token.length;
+        add("S-motion-literal", s + offset, token, "ease-(--ds-motion-easing-*) (never ease-in on UI)");
+      }
+    }
     for (const m of str.matchAll(/(?<![\w-])((?:[\w-]+:)*)outline-(none|hidden)(?![\w-])/g)) {
       const variant = m[1] ?? "";
       if (/focus-visible:|focus-within:/.test(variant)) {
@@ -349,20 +379,24 @@ function jsFindings(rel: string, src: string, ringClasses: Set<string>): Record<
       add("S-outline-none", s + m.index!, m[0], "a focus-visible: ring or outline next to it");
     }
   }
-  // Inline style objects: transition: "all 150ms", transitionDuration: "200ms".
-  for (const m of text.matchAll(/\btransition(Property)?\s*:\s*/g)) {
+  // Inline style objects: transition: "all 150ms", animation: "spin 1s ease-in", transitionDuration: "200ms".
+  for (const m of text.matchAll(/\b(transition(?:Property)?|animation)\s*:\s*/g)) {
     const at = m.index! + m[0].length;
     const q = text[at];
     if (q !== '"' && q !== "'" && q !== "`") continue;
     const end = text.indexOf(q, at + 1);
     if (end < 0 || end - at > 300) continue;
     const value = text.slice(at + 1, end);
-    if (/^\s*all\b/.test(value) || (!m[1] && splitTop(value).some((seg) => segmentAnimatesAll(seg) === true))) add("S-transition-all", at, `${m[0]}${q}${value}${q}`, "name the properties that change");
+    const prop = m[1]!;
+    if (prop === "transition" || prop === "transitionProperty") {
+      if (/^\s*all\b/.test(value) || (prop === "transition" && splitTop(value).some((seg) => segmentAnimatesAll(seg) === true)))
+        add("S-transition-all", at, `${m[0]}${q}${value}${q}`, "name the properties that change");
+    }
     const bare = withoutVars(value);
-    if ([...bare.matchAll(/(?<![\w.-])(\d*\.?\d+)(ms|s)\b/g)].some((x) => Number(x[1]) !== 0) || /cubic-bezier\(/.test(bare) || /(?<![\w-])ease-in(?![\w-])/.test(bare))
+    if ([...bare.matchAll(/(?<![\w.-])(\d*\.?\d+)(ms|s)\b/g)].some((x) => Number(x[1]) !== 0) || /cubic-bezier\(/.test(bare) || /(?<![\w-])ease-in(?![\w-])/i.test(bare))
       add("S-motion-literal", at, `${m[0]}${q}${value}${q}`, "var(--ds-motion-duration-*) and var(--ds-motion-easing-*)");
   }
-  for (const m of text.matchAll(/\b(transitionDuration|animationDuration|transitionTimingFunction)\s*:\s*(["'`])([^"'`]{1,80})\2/g)) {
+  for (const m of text.matchAll(/\b(transitionDuration|animationDuration|transitionTimingFunction|animationTimingFunction)\s*:\s*(["'`])([^"'`]{1,80})\2/g)) {
     if (/var\(/.test(m[3]!)) continue;
     if (/^0(m?s)?$/.test(m[3]!.trim())) continue;
     add("S-motion-literal", m.index!, m[0], "var(--ds-motion-*)");

@@ -44,11 +44,43 @@ describe("design:score static checks", () => {
         ".b { transition: opacity var(--ds-motion-duration-base, 150ms); }",
         ".c { transition: opacity var(--ds-motion-duration-base) ease-in; }",
         ".d { transition: opacity var(--ds-motion-duration-base) ease-in-out; }",
+        ".e { transition: opacity var(--ds-motion-duration-base) EASE-IN; }",
+        ".f { @apply ease-in; }",
+        ".g { @apply !ease-in; }",
+        ".h { @apply data-[state=open]:ease-in; }",
+        ".i { @apply ease-in!; }",
         "@media (prefers-reduced-motion: reduce) { .a { transition-duration: 1ms; } }",
       ].join("\n"),
-      "b.tsx": 'export const B = () => <><div className="ease-in" /><div className="ease-in-out" /></>;\n',
+      "b.tsx": [
+        'const note = "never use ease-in in UI";',
+        'const cls = cn(getBaseClass(), "ease-in");',
+        'const cls2 = clsx(items.map(x => x.className), "ease-in");',
+        'export const B = () => <>',
+        '  <div className="ease-in!" />',
+        '  <div className="ease-in-out before:content-[\'ease-in\']" />',
+        '  <div className="p-2" title="never use ease-in" />',
+        '  <div style={{ transition: "opacity var(--ds-motion-duration-base) ease-in" }} />',
+        '  <div style={{ animation: "spin var(--ds-motion-duration-base) ease-in" }} />',
+        '  <div style={{ animationTimingFunction: "ease-in" }} />',
+        '  <div style={{ transition: "opacity var(--ds-motion-duration-base) var(--ds-motion-easing-standard, ease-in)" }} />',
+        '</>;',
+      ].join("\n"),
     });
-    expect(found["S-motion-literal"]).toEqual(["fail src/a.css:1", "fail src/a.css:3", "fail src/b.tsx:1"]);
+    expect(found["S-motion-literal"]).toEqual([
+      "fail src/a.css:1",
+      "fail src/a.css:3",
+      "fail src/a.css:5",
+      "fail src/a.css:6",
+      "fail src/a.css:7",
+      "fail src/a.css:8",
+      "fail src/a.css:9",
+      "fail src/b.tsx:2",
+      "fail src/b.tsx:3",
+      "fail src/b.tsx:5",
+      "fail src/b.tsx:8",
+      "fail src/b.tsx:9",
+      "fail src/b.tsx:10",
+    ]);
   });
 
   test("shipped css/layout.css passes every design:score static check", () => {

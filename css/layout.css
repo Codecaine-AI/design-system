@@ -785,17 +785,17 @@ html:has(.ds-shell) {
   .ds-shell[data-inspector="open"] .ds-inspector {
     transition-delay: 0s;
   }
+}
 
-  @media (max-width: 800px) {
-    .ds-inspector {
-      transition:
-        transform var(--ds-motion-duration-slow) var(--ds-motion-easing-emphasized),
-        visibility 0s linear var(--ds-motion-duration-slow);
-    }
+@media (prefers-reduced-motion: no-preference) and (max-width: 800px) {
+  .ds-inspector {
+    transition:
+      transform var(--ds-motion-duration-slow) var(--ds-motion-easing-emphasized),
+      visibility 0s linear var(--ds-motion-duration-slow);
+  }
 
-    .ds-shell[data-inspector="open"] .ds-inspector {
-      transition-delay: 0s;
-    }
+  .ds-shell[data-inspector="open"] .ds-inspector {
+    transition-delay: 0s;
   }
 }
 
