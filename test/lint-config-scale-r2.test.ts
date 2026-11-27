@@ -170,9 +170,7 @@ describe("default-scale classes: Tailwind 4.3 hues and container utilities", () 
   test("@container variant: the default container sizes in @<step>:, @max-, @min- and named containers", () => {
     expect(scales(`<div className="@md:flex @max-2xl:hidden" />`)).toEqual(["@md: container size", "@max-2xl: container size"]);
     expect(classes(`const c = "dark:@min-lg:grid @md/main:flex @3xs:block @7xl:hidden";`)).toEqual(["@min-lg:", "@md/main:", "@3xs:", "@7xl:"]);
-  });
-
-  test("@container, @container/main and arbitrary container values do not match", () => {
+    // @container, @container/main and arbitrary container values do not match, nor does an @ inside prose.
     expect(classes(`<div className="@container @container/main @[500px]:flex @min-[400px]:grid @max-[30rem]:hidden" />`)).toEqual([]);
     expect(classes(`const mail = "write to user@md: soon";`)).toEqual([]);
   });

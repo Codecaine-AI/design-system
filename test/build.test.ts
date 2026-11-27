@@ -144,9 +144,7 @@ describe("duplicateKeys", () => {
     expect(duplicateKeys('{"list": [{"x": 1}, {"x": 1, "x": 2}]}')).toEqual([{ path: "list.1", key: "x", line: 1 }]);
     // Keys compare after unescaping.
     expect(duplicateKeys('{"\\u0061": 1, "a": 2}')).toEqual([{ path: "", key: "a", line: 1 }]);
-  });
-
-  test("ignores the same key in sibling objects and braces, commas or quotes inside strings", () => {
+    // Sibling objects keep their own keys; braces, commas and quotes inside strings are not structure.
     expect(duplicateKeys('{"a": {"x": 1}, "b": {"x": 1}}')).toEqual([]);
     expect(duplicateKeys('{"a": "}{,\\"x\\":", "x": ["{", "}"], "b\\"": 1, "b": 2}')).toEqual([]);
   });

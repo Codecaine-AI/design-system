@@ -48,11 +48,8 @@ describe('resolveNav', () => {
     expect(stateFor('/')).toEqual({ ...idle, home: 'current' });
   });
 
-  test('marks a section active when its child is the current page', () => {
-    expect(stateFor('/transactions/review')).toEqual({ ...idle, transactions: 'active', review: 'current' });
-  });
-
   test('marks every ancestor of a nested page active', () => {
+    expect(stateFor('/transactions/review')).toEqual({ ...idle, transactions: 'active', review: 'current' });
     expect(stateFor('/transactions/rules/new')).toEqual({
       ...idle,
       transactions: 'active',

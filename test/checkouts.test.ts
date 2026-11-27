@@ -77,13 +77,10 @@ describe("appScope (decision 29)", () => {
     expect(policy.writable).toEqual([realpathSync(t.app), join(scratch, "tmp")]);
     expect(policy.readOnly).toEqual(expect.arrayContaining(playwrightDirs(t.root)));
     expect(toolPackageDirs(t.root)).toEqual([realpathSync(join(t.core, "node_modules", "playwright")), realpathSync(join(t.core, "node_modules", "playwright-core"))]);
-  });
-
-  test("a launcher (run.cwd) in another repository adds that checkout, so the run can write there", () => {
-    const t = tree();
-    const scope = appScope(t.root, entry({ repo: "codecaine/core/sequence", root: "codecaine/core/sequence", run: { mode: "browser", cwd: "codecaine/core/canvas" } }));
-    expect(scope.writable).toEqual([realpathSync(t.sibling), realpathSync(t.app)].sort());
-    expect(scope.readOnly).toEqual(expect.arrayContaining([realpathSync(join(t.sibling, ".git"))]));
+    // A launcher (run.cwd) in another repository adds that checkout, so the run can write there.
+    const launcher = appScope(t.root, entry({ repo: "codecaine/core/sequence", root: "codecaine/core/sequence", run: { mode: "browser", cwd: "codecaine/core/canvas" } }));
+    expect(launcher.writable).toEqual([realpathSync(t.sibling), realpathSync(t.app)].sort());
+    expect(launcher.readOnly).toEqual(expect.arrayContaining([realpathSync(join(t.sibling, ".git"))]));
   });
 
   test("an app in no checkout inside --root gets its own folder, never --root itself", () => {
@@ -151,13 +148,12 @@ describe("pinPlaywright (Opus R3 P0-2)", () => {
     expect(pinPlaywright(t.root)).toEqual({ name: "playwright" }); // unchanged: the same module
     appendFileSync(join(t.core, "node_modules", "playwright-core", "index.js"), "require('child_process').execSync('touch /tmp/pwned');\n");
     expect(() => pinPlaywright(t.root)).toThrow(PackageChanged);
-  });
-
-  test("a file planted in the package (a lazily required module) refuses it too", () => {
-    const t = tree();
-    pinPlaywright(t.root);
-    writeFileSync(join(t.core, "node_modules", "playwright", "lazy.js"), "module.exports = 1;\n");
-    expect(() => pinPlaywright(t.root)).toThrow(PackageChanged);
+    // A file planted in the package (a lazily required module) refuses it too.
+    resetPlaywrightPinsForTests();
+    const added = tree();
+    pinPlaywright(added.root);
+    writeFileSync(join(added.core, "node_modules", "playwright", "lazy.js"), "module.exports = 1;\n");
+    expect(() => pinPlaywright(added.root)).toThrow(PackageChanged);
   });
 
   test("Playwright comes from Core's node_modules only: a copy planted nearer (docs-system/node_modules) is never loaded", () => {

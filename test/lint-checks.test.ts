@@ -329,10 +329,6 @@ describe("shell", () => {
     expect(messages(check("unconnected", "shell").violations)).toEqual([expect.stringContaining("renders no .ds-shell markup")]);
   });
 
-  test(".ds-shell markup without .ds-topbar names the missing class", () => {
-    expect(check("shell-no-topbar", "shell").violations).toEqual([at("apps/shell-no-topbar/App.tsx", 3, "the .ds-shell markup has no .ds-topbar")]);
-  });
-
   test("a copy of the AppShell template passes; without Topbar/index.tsx it names the missing file", () => {
     expect(check("templated", "shell")).toMatchObject({ status: "pass", violations: [] });
     expect(check("templated-no-topbar", "shell").violations).toContainEqual(
@@ -357,6 +353,8 @@ describe("shell", () => {
         at("apps/shell-dead/src/App.tsx", 4, `the .ds-shell markup has no .${c} in its file or the modules it imports`),
       ),
     );
+    // One missing part gives exactly one violation that names it.
+    expect(check("shell-no-topbar", "shell").violations).toEqual([at("apps/shell-no-topbar/App.tsx", 3, "the .ds-shell markup has no .ds-topbar")]);
   });
 
   test("markup split across a component subtree passes, through a lazy import, an @/ alias and cn() class lists", () => {
