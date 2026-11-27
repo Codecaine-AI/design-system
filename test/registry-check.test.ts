@@ -246,6 +246,12 @@ describe("registry:check keeps runs off the owner's ports and .env files", () =>
       { verify: { probes: PROBES, darkSwitch: { kind: "steps", steps: [{ action: "click", target: 'a[href="https://localhost"]' }] } } },
       "verify.darkSwitch.steps[0].target names loopback URL https://localhost without an explicit port",
     ],
+    ...["http://localhost/x", "https://127.0.0.1", "postgres://localhost/db", "redis://127.0.0.1", "ws://[::1]/", "postgres://u:p@localhost/db"].map(
+      (url): [string, Partial<AppEntry>, string] => [`the loopback URL ${url}, which has no explicit port`, { runProfile: profile({ env: { API: url } }) }, `runProfile.env.API names loopback URL ${url} without an explicit port`],
+    ),
+    ...["-p 47130", "-p47130", "-p=47130", "--port:47130", "--Port 47130", "-port 47130", "port=47130", "api_port:47130"].map(
+      (flag): [string, Partial<AppEntry>, string] => [`the port option ${flag} outside the block`, { runProfile: profile({ flags: [flag] }) }, "runProfile.flags names port 47130 outside its block"],
+    ),
   ])("reports %s", (_, over, message) => {
     const problems = check([entry(over)]);
     expect(problems.some((p) => p.includes(message))).toBe(true);
@@ -264,18 +270,6 @@ describe("registry:check keeps runs off the owner's ports and .env files", () =>
     "http://0x7f.1:47130",
   ])("reports the loopback port outside the block in %s", (value) => {
     expect(check([env(value)]).some((p) => p.includes("runProfile.env.API names port 47130 outside its block 47000-47009"))).toBe(true);
-  });
-
-  test.each(["http://localhost/x", "https://127.0.0.1", "postgres://localhost/db", "redis://127.0.0.1", "ws://[::1]/", "postgres://u:p@localhost/db"])(
-    "reports the loopback URL %s, which has no explicit port",
-    (url) => {
-      expect(check([env(url)]).some((p) => p.includes(`runProfile.env.API names loopback URL ${url} without an explicit port`))).toBe(true);
-    },
-  );
-
-  test.each(["-p 47130", "-p47130", "-p=47130", "--port:47130", "--Port 47130", "-port 47130", "port=47130", "api_port:47130"])("reports the port option %s outside the block", (flag) => {
-    const problems = check([entry({ runProfile: profile({ flags: [flag] }) })]);
-    expect(problems.some((p) => p.includes("runProfile.flags names port 47130 outside its block"))).toBe(true);
   });
 
   test("accepts the app's own ports, placeholders, non-port options and bun runs that pass --no-env-file first", () => {

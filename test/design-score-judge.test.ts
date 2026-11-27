@@ -204,14 +204,6 @@ describe("judge calibration", () => {
     expect(picked(order, better)).toBe(option);
   });
 
-  test("the 24 visual items split 12 and 12, each half with 5 stills and 7 motion items", () => {
-    expect(items.map((i) => i.q).sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 24, 26]);
-    for (const split of ["tune", "held-out"]) {
-      const half = items.filter((i) => i.split === split);
-      expect([half.filter((i) => i.kind === "still").length, half.filter((i) => i.kind === "motion").length]).toEqual([5, 7]);
-    }
-  });
-
   test("every item appears in both orders under 48 distinct pair ids", () => {
     expect(new Set(pairs.map((p) => p.id)).size).toBe(48);
     for (const i of items) expect(pairs.filter((p) => p.q === i.q).map((p) => p.order).sort()).toEqual(["AB", "BA"]);

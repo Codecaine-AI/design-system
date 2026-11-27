@@ -374,13 +374,11 @@ describe.skipIf(!!process.env.DS_SKIP_BROWSER)("design:score v2 in a browser", (
     expect(measured.length).toBe(1);
     expect(measured[0]).toMatch(/^hovering button\.grow "Grow": moves or resizes the control/);
     expect(hits[0]!.finding.severity).toBe("fail");
-  });
-
-  test("R-state-shift: a control that moves itself on hover fails, without resizing or moving a neighbour", async () => {
+    // A control that moves itself on hover fails too, without resizing or moving a neighbour.
     await page.setContent(`<style>button { border: 1px solid #888; height: 32px; position: relative; } .nudge:hover { left: 8px; }</style>
       <body style="margin:40px"><div style="display:flex;gap:8px"><button class="nudge">Nudge</button><span>Next</span></div></body>`);
-    const { hits } = await stateShiftPass(page, { ignore: [], open: [], max: 8 });
-    expect(hits.map((h) => h.finding.measured)).toEqual([expect.stringMatching(/^hovering button\.nudge "Nudge": moves or resizes the control/)]);
+    const moved = await stateShiftPass(page, { ignore: [], open: [], max: 8 });
+    expect(moved.hits.map((h) => h.finding.measured)).toEqual([expect.stringMatching(/^hovering button\.nudge "Nudge": moves or resizes the control/)]);
   });
 
   test("R-state-shift: a centered control that moves only because its menu hides the scrollbar passes", async () => {

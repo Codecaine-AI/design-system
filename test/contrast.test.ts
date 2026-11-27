@@ -45,14 +45,9 @@ describe("on-solid glyphs", () => {
     expect(glyphs(theme)).toContain(glyph);
     if (best >= AA) expect(contrast(glyph, solid)).toBeGreaterThanOrEqual(AA);
     else expect(contrast(glyph, solid)).toBe(best);
-  });
-
-  test("only light red stays under 4.5:1 (white 4.26:1; ink is 3.87:1)", () => {
-    const under = pairs
-      .map(([theme, hue]) => [theme, hue, contrast(values(theme)[`color.${hue}.on-solid`], values(theme)[`color.${hue}.solid`])] as const)
-      .filter(([, , ratio]) => ratio < AA)
-      .map(([theme, hue, ratio]) => `${theme} ${hue} ${ratio.toFixed(2)}:1`);
-    expect(under).toEqual(["light red 4.26:1"]);
+    // Only light red stays under 4.5:1 (white 4.26:1; ink is 3.87:1).
+    const ratio = contrast(glyph, solid);
+    if (ratio < AA) expect(`${theme} ${hue} ${ratio.toFixed(2)}:1`).toBe("light red 4.26:1");
   });
 
   test.each([...THEMES])("%s status tiles use their hue's solid and on-solid", (theme) => {
@@ -143,13 +138,9 @@ describe("chart palette", () => {
       const [cvdE, normal] = [cvd(s[i], hex), deltaE(s[i], hex)];
       return cvdE < 8 || normal < 15 ? [`series.${i + 1}-${i + 2}: cvd ${cvdE.toFixed(1)}, normal ${normal.toFixed(1)}`] : [];
     });
+    // Series 1 and 3 meet too (scatter plots and small multiples use the first three together).
+    if (cvd(s[0], s[2]) < 8 || deltaE(s[0], s[2]) < 15) close.push(`series.1-3: cvd ${cvd(s[0], s[2]).toFixed(1)}, normal ${deltaE(s[0], s[2]).toFixed(1)}`);
     expect(close).toEqual([]);
-  });
-
-  test.each([...THEMES])("%s series 1-3 pass all pairs, for scatter and small multiples", (theme) => {
-    const [a, b, c] = series(theme);
-    const pairs: Array<[string, string]> = [[a, b], [a, c], [b, c]];
-    expect(pairs.filter(([x, y]) => cvd(x, y) < 8 || deltaE(x, y) < 15)).toEqual([]);
   });
 
   test.each([...THEMES])("%s diverging: the poles stay apart under color-vision deficiency and the midpoint is a gray", (theme) => {

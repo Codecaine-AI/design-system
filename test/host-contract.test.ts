@@ -126,23 +126,11 @@ describe("dist/css/host-contract.css", () => {
         const expected = format === "rgb" ? triplet(values[token]) : format === "color" ? values[token] : base[token];
         const got = get(`--${name}`);
         if (got !== expected) wrong.push(`${theme} --${name}: ${got} (expected ${expected} from ${token})`);
+        // viewer-ui paints a sticky gutter with these two, so they must compute to opaque colors.
+        if ((name === "editor-bg" || name === "editor-gutter-bg") && evaluateColor(got).a !== 1) wrong.push(`${theme} --${name}: ${got} is translucent`);
       }
     }
     expect(wrong).toEqual([]);
-  });
-
-  test.each(PAIRS)("%s: --editor-bg and --editor-gutter-bg compute to opaque colors in both themes (viewer-ui paints a sticky gutter with them)", (host, tokens, first) => {
-    const sheets = [parseCss(readText(tokens)), parseCss(readText(host))];
-    const other: Theme = first === "light" ? "dark" : "light";
-    const translucent: string[] = [];
-    for (const chain of [[{ root: true }], [{ root: true }, { theme: other }]] as El[][]) {
-      const get = cascade(sheets, chain);
-      for (const name of ["--editor-bg", "--editor-gutter-bg"]) {
-        const value = get(name);
-        if (evaluateColor(value).a !== 1) translucent.push(`${name}: ${value}`);
-      }
-    }
-    expect(translucent).toEqual([]);
   });
 
   test.each(["editor-bg", "editor-gutter-bg"])("a translucent token behind --%s fails the build, naming the alias and the token", (name) => {

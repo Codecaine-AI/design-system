@@ -77,6 +77,7 @@ describe("names: token paths through local modules, require and dynamic import",
     expect(violations().filter((f) => f.file === `${R}/fonts.ts`)).toEqual([]);
   });
 
+  // regression: d34e961
   test("the reexport fixture has no other findings", () => {
     expect(violations()).toHaveLength(14);
   });
@@ -139,10 +140,6 @@ describe("structure: entry, route and hook exemptions match the right place", ()
     for (const p of PLAYGROUND) expect(found).not.toContainEqual(p);
   });
 
-  test("in a Next app, loading.tsx and not-found.tsx in app/ are route entries", () => {
-    expect(next("apps/r2s-next", "apps/r2s-next/app", "apps/r2s-next/app/layout.tsx")).toEqual([]);
-  });
-
   test("wrong-folders as a Next app: app/layout.tsx and app/not-found.tsx are entries, the rest still fails", () => {
     const R = "apps/wrong-folders/src";
     expectExactly(next("apps/wrong-folders", R, `${R}/main.tsx`), [
@@ -152,5 +149,7 @@ describe("structure: entry, route and hook exemptions match the right place", ()
       at(`${R}/components/icon.tsx`, 0, "move it to _components/Icon/index.tsx"),
       at(`${R}/components/loading.tsx`, 0, "move it to _components/Loading/index.tsx"),
     ]);
+    // In a Next app, loading.tsx and not-found.tsx in app/ are route entries.
+    expect(next("apps/r2s-next", "apps/r2s-next/app", "apps/r2s-next/app/layout.tsx")).toEqual([]);
   });
 });

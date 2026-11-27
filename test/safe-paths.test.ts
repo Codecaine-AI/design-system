@@ -115,9 +115,7 @@ describe("safeChildPath", () => {
 
   test("refuses a symlinked directory on the way, even one that points outside the owner's tree", () => {
     expect(() => at("app", "linked", "x.png")).toThrow(/is a symlink/);
-  });
-
-  test("refuses a symlink as the final component (a write would follow it)", () => {
+    // A symlink as the final component is refused too: a write would follow it.
     expect(() => at("app", "shots", "home-light.png")).toThrow(/is a symlink/);
   });
 
@@ -141,6 +139,8 @@ describe("safeTempBase", () => {
 
   test("returns the canonical spelling of a system temp dir", () => {
     expect(check(tmpdir())).toBe(realpathSync(tmpdir()));
+    // An ordinary dir under home that is not forbidden is accepted as it is.
+    expect(check(join(home, "tmp"))).toBe(join(home, "tmp"));
   });
 
   test.each([
@@ -152,9 +152,5 @@ describe("safeTempBase", () => {
     ["a missing dir", () => join(scratch, "missing")],
   ])("refuses %s", (_, dir) => {
     expect(() => check(dir())).toThrow(UnsafePathError);
-  });
-
-  test("an ordinary dir under home that is not forbidden is accepted", () => {
-    expect(check(join(home, "tmp"))).toBe(join(home, "tmp"));
   });
 });

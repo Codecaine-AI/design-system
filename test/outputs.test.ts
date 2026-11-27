@@ -139,10 +139,7 @@ describe("dist/js", () => {
     expect(js.cssVar("color.surface.page", "dark")).toBe("var(--ds-dark-color-surface-page)");
     expect(() => js.cssVar("color.surface.nope")).toThrow(/color\.surface\.nope/);
     expect(() => js.cssVar("color.surface.page", "sepia")).toThrow(/sepia/);
-  });
-
-  test("flat and nested values match dist/json", async () => {
-    const js = await import("../dist/js/index.js");
+    // Flat and nested values match dist/json (Sequence and Docs Publish import flat).
     for (const scope of ["base", ...THEMES]) expect(js.flat[scope]).toEqual(readJson(`dist/json/${scope}.json`));
     expect(js.tokens).toEqual(readJson("dist/json/tokens.json"));
   });
